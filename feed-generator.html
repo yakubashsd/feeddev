@@ -1,0 +1,3327 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Генератор фидов недвижимости</title>
+  <style>
+    :root {
+      --bg: #f5f7f8;
+      --surface: #ffffff;
+      --surface-2: #eef2f3;
+      --text: #17201c;
+      --muted: #66736d;
+      --line: #dbe2df;
+      --green: #0f7a4f;
+      --green-2: #e8f5ee;
+      --amber: #b36b00;
+      --amber-2: #fff3d8;
+      --red: #b4332a;
+      --red-2: #fff0ee;
+      --shadow: 0 16px 40px rgba(19, 31, 27, .08);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 9px 12px;
+      cursor: pointer;
+      min-height: 38px;
+    }
+
+    button:hover { border-color: #aebbb6; }
+    button.primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+    }
+    button.ghost {
+      background: transparent;
+    }
+    button.danger {
+      color: var(--red);
+      border-color: #e7bab5;
+      background: var(--red-2);
+    }
+
+    .icon-btn {
+      width: 38px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 224px minmax(520px, 1fr) 390px;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #17201c;
+      color: white;
+      padding: 22px 16px;
+    }
+
+    .brand {
+      font-size: 19px;
+      font-weight: 760;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      color: rgba(255,255,255,.76);
+      padding: 10px 12px;
+      border-radius: 7px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item.active {
+      background: rgba(255,255,255,.12);
+      color: white;
+    }
+
+    .side-note {
+      margin-top: 26px;
+      padding: 14px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      color: rgba(255,255,255,.76);
+      line-height: 1.45;
+    }
+
+    .main {
+      padding: 22px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 5px;
+      font-size: 25px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 720px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 13px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 150px 140px;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .platform-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .platform-tab {
+      text-align: left;
+      padding: 10px 12px;
+      min-height: 58px;
+    }
+
+    .platform-tab.active {
+      border-color: var(--green);
+      background: var(--green-2);
+      color: var(--green);
+    }
+
+    .platform-tab strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .platform-tab span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bulk-panel {
+      display: grid;
+      grid-template-columns: 170px 150px 1fr auto;
+      gap: 10px;
+      align-items: end;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .bulk-status {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      margin-top: 6px;
+    }
+
+    .platform-note {
+      background: #fbfcfc;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 12px;
+      display: grid;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .platform-note a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .field label, .editor label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--text);
+      min-height: 38px;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      min-height: 16px;
+      padding: 0;
+      accent-color: var(--green);
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(15, 122, 79, .12);
+    }
+
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      background: #fbfcfc;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    tr {
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: #f8faf9;
+    }
+
+    tbody tr.selected {
+      background: var(--green-2);
+    }
+
+    tbody tr.checked {
+      box-shadow: inset 3px 0 0 var(--green);
+    }
+
+    .name {
+      font-weight: 720;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .ok { color: var(--green); background: var(--green-2); }
+    .warn { color: var(--amber); background: var(--amber-2); }
+    .bad { color: var(--red); background: var(--red-2); }
+
+    .editor {
+      background: var(--surface);
+      border-left: 1px solid var(--line);
+      min-width: 0;
+      padding: 22px;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .editor h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .section-title {
+      grid-column: 1 / -1;
+      margin-top: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--text);
+      font-weight: 760;
+    }
+
+    .validation {
+      margin: 14px 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .validation div {
+      border-radius: 7px;
+      padding: 9px 10px;
+      line-height: 1.35;
+    }
+
+    .feed-link {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .feed-link input {
+      min-width: 0;
+    }
+
+    .load-status {
+      grid-column: 1 / -1;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .feed-actions {
+      grid-column: 1 / -1;
+      justify-content: stretch;
+      margin-top: 0;
+    }
+
+    .feed-actions button {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .preview {
+      margin-top: 16px;
+      background: #111815;
+      color: #d7f7e7;
+      border-radius: var(--radius);
+      padding: 14px;
+      white-space: pre-wrap;
+      overflow: auto;
+      max-height: 330px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    @media (max-width: 1120px) {
+      .app {
+        grid-template-columns: 80px 1fr;
+      }
+      .sidebar {
+        padding: 18px 10px;
+      }
+      .brand {
+        font-size: 14px;
+      }
+      .nav-text, .side-note {
+        display: none;
+      }
+      .editor {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        display: block;
+      }
+      .sidebar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        overflow-x: auto;
+      }
+      .brand {
+        margin: 0;
+        min-width: 120px;
+      }
+      .nav-item {
+        white-space: nowrap;
+        margin: 0;
+      }
+      .nav-text {
+        display: inline;
+      }
+      .topbar {
+        display: block;
+      }
+      .actions {
+        justify-content: flex-start;
+        margin-top: 12px;
+      }
+      .stats, .toolbar, .form-grid, .bulk-panel, .platform-tabs {
+        grid-template-columns: 1fr;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        min-width: 720px;
+      }
+    }
+
+    body {
+      background: #fff;
+      color: #111116;
+      border-top: 16px solid #40384b;
+      font-size: 15px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      background: #f1f1f3;
+      min-height: 48px;
+      padding: 0 22px;
+      font-weight: 560;
+    }
+
+    button:hover {
+      background: #e9e9ec;
+      border-color: transparent;
+    }
+
+    button.primary {
+      background: #24242d;
+      border-color: #24242d;
+      box-shadow: 0 12px 24px rgba(22, 22, 28, .14);
+    }
+
+    button.ghost {
+      background: #f5f5f6;
+    }
+
+    .app {
+      display: block;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      height: 92px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 0 56px;
+      background: #fff;
+      color: #17171c;
+      border-bottom: 0;
+    }
+
+    .brand {
+      margin: 0 auto 0 0;
+      font-size: 31px;
+      line-height: 1;
+      font-weight: 860;
+      letter-spacing: -.02em;
+    }
+
+    .nav-item {
+      width: auto;
+      padding: 0;
+      margin: 0;
+      gap: 8px;
+      border-radius: 0;
+      color: #1d1d23;
+      font-size: 17px;
+      white-space: nowrap;
+    }
+
+    .nav-item.active {
+      background: transparent;
+      color: #111116;
+    }
+
+    .side-note {
+      display: none;
+    }
+
+    .main {
+      max-width: none;
+      padding: 0 56px 46px;
+    }
+
+    .topbar {
+      display: block;
+      text-align: center;
+      margin: 0;
+      padding: 108px 0 78px;
+    }
+
+    h1 {
+      font-size: clamp(44px, 5.2vw, 82px);
+      line-height: .98;
+      font-weight: 420;
+      letter-spacing: -.045em;
+      margin: 0 auto;
+      max-width: 1050px;
+    }
+
+    .subtitle {
+      margin: 22px auto 0;
+      max-width: 660px;
+      color: #8d8d98;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .actions {
+      justify-content: center;
+      margin-top: 34px;
+    }
+
+    .actions button {
+      min-height: 52px;
+      padding: 0 26px;
+    }
+
+    .platform-tabs {
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto 72px;
+      display: flex;
+      gap: 0;
+      padding: 6px;
+      border-radius: 999px;
+      background: #f0f0f2;
+      overflow-x: auto;
+    }
+
+    .platform-tab {
+      min-width: 158px;
+      min-height: 58px;
+      text-align: center;
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: transparent;
+      color: #2f2f36;
+      box-shadow: none;
+    }
+
+    .platform-tab.active {
+      background: #fff;
+      color: #15151a;
+      border-color: transparent;
+      box-shadow: 0 8px 18px rgba(32, 32, 38, .08);
+    }
+
+    .platform-tab strong {
+      font-size: 16px;
+      font-weight: 560;
+    }
+
+    .platform-tab span {
+      font-size: 12px;
+      color: #a0a0aa;
+    }
+
+    .stats {
+      max-width: 1100px;
+      margin: 0 auto 38px;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      border-top: 1px solid #ececef;
+      border-bottom: 1px solid #ececef;
+      gap: 0;
+    }
+
+    .stat {
+      border: 0;
+      border-radius: 0;
+      padding: 18px 22px;
+      background: transparent;
+      text-align: center;
+    }
+
+    .stat strong {
+      font-size: 24px;
+      font-weight: 560;
+      margin-bottom: 2px;
+    }
+
+    .platform-note {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+      border: 0;
+      border-radius: 24px;
+      background: #f5f5f6;
+      padding: 18px 22px;
+      color: #686872;
+    }
+
+    .platform-note strong {
+      color: #16161b;
+    }
+
+    .toolbar {
+      max-width: 1100px;
+      margin: 0 auto 18px;
+      grid-template-columns: minmax(260px, 1fr) 220px 190px;
+      gap: 12px;
+    }
+
+    .field label, .editor label {
+      margin-bottom: 8px;
+      color: #9a9aa4;
+      font-size: 13px;
+      font-weight: 520;
+    }
+
+    input, textarea, select {
+      min-height: 52px;
+      border: 0;
+      border-radius: 999px;
+      background: #f1f1f3;
+      padding: 0 22px;
+      color: #1a1a20;
+      font-size: 16px;
+    }
+
+    textarea {
+      border-radius: 24px;
+      padding: 16px 20px;
+      min-height: 116px;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: transparent;
+      box-shadow: 0 0 0 3px rgba(36, 36, 45, .08);
+      background: #f7f7f8;
+    }
+
+    .bulk-panel {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+      grid-template-columns: 190px 180px 1fr auto;
+      border: 0;
+      border-radius: 28px;
+      background: #f7f7f8;
+      padding: 18px;
+    }
+
+    .bulk-status {
+      color: #8d8d98;
+    }
+
+    .table-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      border: 0;
+      border-radius: 32px;
+      background: #f1f1f3;
+      box-shadow: none;
+      padding: 16px;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    th {
+      background: transparent;
+      border-bottom: 0;
+      color: #9a9aa4;
+      font-size: 12px;
+      padding: 8px 14px;
+    }
+
+    td {
+      background: #fff;
+      border-bottom: 0;
+      padding: 16px 14px;
+    }
+
+    tbody tr td:first-child {
+      border-radius: 18px 0 0 18px;
+    }
+
+    tbody tr td:last-child {
+      border-radius: 0 18px 18px 0;
+    }
+
+    tbody tr:hover td {
+      background: #fafafa;
+    }
+
+    tbody tr.selected td {
+      background: #fff;
+      box-shadow: inset 0 0 0 2px #24242d;
+    }
+
+    tbody tr.checked {
+      box-shadow: none;
+    }
+
+    tbody tr.checked td:first-child {
+      box-shadow: inset 4px 0 0 #24242d;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 560;
+    }
+
+    .ok {
+      color: #1c6b47;
+      background: #edf6f1;
+    }
+
+    .warn {
+      color: #8a6500;
+      background: #fff5d9;
+    }
+
+    .bad {
+      color: #9f312b;
+      background: #fff0ee;
+    }
+
+    .editor {
+      max-width: 1100px;
+      margin: 34px auto 72px;
+      border: 0;
+      border-radius: 32px;
+      background: #f5f5f6;
+      padding: 28px;
+      max-height: none;
+      overflow: visible;
+    }
+
+    .editor-head {
+      margin-bottom: 22px;
+    }
+
+    .editor h2 {
+      font-size: 28px;
+      font-weight: 520;
+      letter-spacing: -.02em;
+    }
+
+    .form-grid {
+      gap: 16px;
+    }
+
+    .section-title {
+      border-top: 1px solid #e2e2e6;
+      margin-top: 14px;
+      padding-top: 20px;
+      font-weight: 560;
+      font-size: 17px;
+    }
+
+    .feed-link {
+      background: #fff;
+      border-radius: 24px;
+      padding: 16px;
+    }
+
+    .preview {
+      border-radius: 28px;
+      background: #24242d;
+      color: #f5f5f6;
+      max-height: 360px;
+      padding: 20px;
+    }
+
+    @media (max-width: 920px) {
+      body {
+        border-top-width: 10px;
+      }
+
+      .sidebar {
+        height: auto;
+        padding: 22px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .brand {
+        width: 100%;
+      }
+
+      .main {
+        padding: 0 18px 32px;
+      }
+
+      .topbar {
+        padding: 64px 0 44px;
+      }
+
+      .stats, .toolbar, .bulk-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .feed-link {
+        grid-template-columns: 1fr;
+      }
+
+      .platform-tabs {
+        width: 100%;
+        justify-content: flex-start;
+        margin-bottom: 36px;
+      }
+
+      .editor {
+        margin: 24px 18px 48px;
+        padding: 20px;
+      }
+    }
+
+    /* Service workspace layout */
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: #f6f6f7;
+      border-top-width: 8px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(720px, 1fr) 430px;
+      grid-template-rows: 74px minmax(0, 1fr);
+      min-height: calc(100vh - 8px);
+      height: calc(100vh - 8px);
+      background: #f6f6f7;
+    }
+
+    .sidebar {
+      grid-column: 1 / -1;
+      height: 74px;
+      padding: 0 32px;
+      border-bottom: 1px solid #ececf0;
+      background: #fff;
+    }
+
+    .brand {
+      font-size: 28px;
+    }
+
+    .nav-item {
+      font-size: 15px;
+    }
+
+    .main {
+      min-height: 0;
+      overflow: auto;
+      padding: 24px 24px 42px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      text-align: left;
+      padding: 0;
+      margin: 0 0 18px;
+    }
+
+    h1 {
+      font-size: 32px;
+      line-height: 1.08;
+      font-weight: 520;
+      letter-spacing: -.02em;
+      margin: 0;
+      max-width: none;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      max-width: none;
+      font-size: 14px;
+      color: #8d8d98;
+    }
+
+    .actions {
+      justify-content: flex-end;
+      margin-top: 0;
+      flex-wrap: nowrap;
+    }
+
+    .actions button {
+      min-height: 44px;
+      padding: 0 18px;
+      white-space: nowrap;
+    }
+
+    .feed-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .feed-actions button {
+      min-height: 42px;
+      padding: 0 12px;
+      font-size: 13px;
+      white-space: normal;
+    }
+
+    .platform-tabs {
+      width: 100%;
+      margin: 0 0 16px;
+      justify-content: flex-start;
+    }
+
+    .platform-tab {
+      min-width: 0;
+      flex: 1 1 0;
+      min-height: 52px;
+      padding: 8px 14px;
+    }
+
+    .stats {
+      max-width: none;
+      margin: 0 0 16px;
+      background: #fff;
+      border: 0;
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    .stat {
+      padding: 14px 16px;
+    }
+
+    .stat strong {
+      font-size: 22px;
+    }
+
+    .platform-note {
+      max-width: none;
+      margin: 0 0 14px;
+      border-radius: 20px;
+      padding: 14px 16px;
+      background: #fff;
+    }
+
+    .toolbar {
+      max-width: none;
+      margin: 0 0 12px;
+      grid-template-columns: minmax(240px, 1fr) 180px;
+    }
+
+    .bulk-panel {
+      max-width: none;
+      margin: 0 0 14px;
+      grid-template-columns: 160px 190px 150px minmax(220px, 1fr) 132px;
+      background: #fff;
+      border-radius: 24px;
+    }
+
+    .table-wrap {
+      max-width: none;
+      margin: 0;
+      border-radius: 24px;
+      background: #ededf0;
+      padding: 12px;
+    }
+
+    .editor {
+      grid-column: 2;
+      grid-row: 2;
+      min-height: 0;
+      max-height: none;
+      height: 100%;
+      overflow: auto;
+      margin: 0;
+      border-left: 1px solid #e6e6ea;
+      border-radius: 0;
+      background: #fff;
+      padding: 22px;
+    }
+
+    .editor-head {
+      position: sticky;
+      top: -22px;
+      z-index: 5;
+      background: #fff;
+      padding: 0 0 16px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #ececf0;
+    }
+
+    .editor h2 {
+      font-size: 24px;
+    }
+
+    .feed-link {
+      background: #f6f6f7;
+      border-radius: 20px;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    input,
+    textarea,
+    select {
+      min-height: 46px;
+      font-size: 14px;
+      padding: 0 16px;
+    }
+
+    textarea {
+      padding: 14px 16px;
+      min-height: 104px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      padding-top: 16px;
+    }
+
+    .preview {
+      max-height: 260px;
+      border-radius: 22px;
+    }
+
+    @media (max-width: 1120px) {
+      body {
+        height: auto;
+        overflow: auto;
+      }
+
+      .app {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .main {
+        overflow: visible;
+        padding: 22px;
+      }
+
+      .editor {
+        height: auto;
+        border-left: 0;
+        border-top: 1px solid #e6e6ea;
+      }
+
+      .toolbar,
+      .bulk-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Strict monochrome service UI */
+    :root {
+      --ink: #101014;
+      --ink-2: #202026;
+      --panel: #ffffff;
+      --page: #f3f3f4;
+      --line-strong: #cfcfd4;
+      --line-soft: #e8e8eb;
+      --muted-strong: #6f6f78;
+    }
+
+    body {
+      background: var(--page);
+      border-top: 0;
+      color: var(--ink);
+    }
+
+    .app {
+      grid-template-columns: 178px minmax(760px, 1fr) 430px;
+      grid-template-rows: minmax(0, 1fr);
+      min-height: 100vh;
+      height: 100vh;
+      background: var(--page);
+    }
+
+    .sidebar {
+      grid-column: 1;
+      grid-row: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      padding: 24px 14px;
+      background: #171719;
+      color: #fff;
+      border-right: 1px solid #0f0f11;
+      border-bottom: 0;
+    }
+
+    .brand {
+      width: auto;
+      margin: 0 0 34px;
+      color: #fff;
+      font-size: 28px;
+      letter-spacing: -.03em;
+    }
+
+    .nav-item {
+      height: 44px;
+      width: 100%;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: #aaaab1;
+      font-size: 14px;
+      font-weight: 560;
+    }
+
+    .nav-item.active {
+      background: #2c2c31;
+      color: #fff;
+      box-shadow: inset 3px 0 0 #fff;
+    }
+
+    .side-note {
+      display: none;
+      margin-top: auto;
+      padding: 14px 12px;
+      border: 1px solid #303036;
+      border-radius: 10px;
+      background: #202024;
+      color: #bdbdc4;
+      font-size: 12px;
+    }
+
+    .main {
+      grid-column: 2;
+      grid-row: 1;
+      padding: 26px;
+      background: var(--page);
+      border-right: 1px solid var(--line-strong);
+    }
+
+    .app.feeds-mode {
+      grid-template-columns: 178px minmax(760px, 1fr);
+    }
+
+    .app.feeds-mode .main {
+      grid-column: 2 / -1;
+      border-right: 0;
+    }
+
+    .app.feeds-mode .editor,
+    .page-hidden {
+      display: none;
+    }
+
+    .feeds-panel,
+    .publish-panel,
+    .source-panel,
+    .quality-panel {
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      color: #111116;
+    }
+
+    .feeds-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .monitor-add {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: #f7f7f8;
+    }
+
+    .source-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .source-status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #f7f7f8;
+      color: #6f6f78;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .source-status.ok {
+      background: #eef7f2;
+      color: #14613e;
+      border-color: #cfe7da;
+    }
+
+    .source-status.bad {
+      background: #fff0ee;
+      color: #a02f27;
+      border-color: #f1c5c1;
+    }
+
+    .detected-source {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .detected-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .detected-card span {
+      display: block;
+      color: #777780;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .detected-card strong {
+      color: #111116;
+      font-size: 14px;
+    }
+
+    .detected-card.primary {
+      background: #111116;
+      border-color: #111116;
+    }
+
+    .detected-card.primary span,
+    .detected-card.primary strong {
+      color: #fff;
+    }
+
+    .quality-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .quality-title {
+      margin: 0;
+      font-weight: 820;
+      color: #111116;
+    }
+
+    .quality-meta {
+      color: #777780;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .quality-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .feeds-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr));
+      gap: 8px;
+      flex: 1 1 520px;
+    }
+
+    .feeds-tab {
+      min-height: 42px;
+      background: #f7f7f8;
+      color: #505058;
+      font-weight: 720;
+    }
+
+    .feeds-tab.active {
+      background: #111116;
+      border-color: #111116;
+      color: #fff;
+    }
+
+    .feeds-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .feed-row {
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) 128px 128px auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f7f7f8;
+    }
+
+    .feed-name {
+      min-width: 0;
+      font-weight: 780;
+    }
+
+    .feed-url {
+      display: block;
+      margin-top: 3px;
+      color: #6f6f78;
+      font-size: 12px;
+      font-weight: 520;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .feed-status {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 6px 9px;
+      background: #ececf0;
+      color: #45454c;
+      font-size: 12px;
+      font-weight: 780;
+    }
+
+    .feed-status.ok {
+      background: #e5f2ea;
+      color: #14613e;
+    }
+
+    .feed-status.bad {
+      background: #f7e2df;
+      color: #a02f27;
+    }
+
+    .feed-status.pending {
+      background: #ececf0;
+      color: #5e5e66;
+    }
+
+    .feed-meta,
+    .feed-error,
+    .monitor-note {
+      color: #777780;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .feed-error {
+      grid-column: 1 / -1;
+      padding-top: 2px;
+      color: #a02f27;
+    }
+
+    .feed-monitor-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .feed-empty {
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      padding: 18px;
+      background: #fafafa;
+      color: #6f6f78;
+      line-height: 1.45;
+    }
+
+    .monitor-note {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .publish-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .generated-link {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #f7f7f8;
+      color: #505058;
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .topbar {
+      padding: 0 0 18px;
+      margin: 0 0 18px;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    h1 {
+      font-size: 30px;
+      font-weight: 760;
+      letter-spacing: -.025em;
+    }
+
+    .subtitle {
+      color: var(--muted-strong);
+      font-weight: 520;
+    }
+
+    .platform-tabs {
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #e6e6e9;
+      padding: 4px;
+      margin-bottom: 14px;
+    }
+
+    .platform-tab {
+      border-radius: 8px;
+      min-height: 50px;
+      color: #55555d;
+    }
+
+    .platform-tab.active {
+      background: #fff;
+      color: #111116;
+      box-shadow: inset 0 0 0 1px #111116;
+    }
+
+    .platform-tab strong {
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .platform-tab span {
+      color: #777780;
+      font-weight: 560;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      padding: 16px;
+      text-align: left;
+      border-right: 1px solid var(--line-soft);
+    }
+
+    .stat:last-child {
+      border-right: 0;
+    }
+
+    .stat strong {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .stat span {
+      color: var(--muted-strong);
+      font-weight: 640;
+    }
+
+    .toolbar,
+    .bulk-panel {
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    .toolbar {
+      margin-bottom: 12px;
+    }
+
+    .bulk-panel {
+      grid-template-columns: 150px 190px 150px minmax(110px, 1fr);
+      margin-bottom: 14px;
+    }
+
+    #applyBulkBtn {
+      grid-column: 4;
+      grid-row: 1;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .bulk-panel .field:nth-child(4) {
+      grid-column: 1 / -1;
+    }
+
+    .bulk-panel #bulkValue {
+      width: 100%;
+    }
+
+    .field label,
+    .editor label {
+      color: #777780;
+      font-weight: 700;
+      text-transform: none;
+    }
+
+    input,
+    textarea,
+    select {
+      border: 1px solid #d7d7dc;
+      border-radius: 8px;
+      background: #f7f7f8;
+      color: #141418;
+      font-weight: 520;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      background: #fff;
+      border-color: #111116;
+      box-shadow: 0 0 0 3px rgba(17, 17, 22, .10);
+    }
+
+    button {
+      border-radius: 8px;
+      background: #ededf0;
+      color: #111116;
+      font-weight: 760;
+    }
+
+    button:hover {
+      background: #dedee2;
+    }
+
+    button.primary {
+      background: #111116;
+      border-color: #111116;
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      padding: 0;
+      overflow: auto;
+      max-height: clamp(320px, calc(100vh - 420px), 640px);
+      min-height: 280px;
+    }
+
+    table {
+      border-spacing: 0;
+      border-collapse: collapse;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 13px 14px;
+      background: #eeeef1;
+      color: #6c6c74;
+      border-bottom: 1px solid var(--line-strong);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .sort-btn {
+      width: 100%;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      font-size: inherit;
+      cursor: pointer;
+    }
+
+    .sort-btn:hover {
+      background: transparent;
+      color: #111116;
+    }
+
+    .sort-btn.active::after {
+      content: " ↑";
+    }
+
+    .sort-btn.active.desc::after {
+      content: " ↓";
+    }
+
+    td {
+      padding: 14px;
+      background: #fff;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fbfbfc;
+    }
+
+    tbody tr td:first-child,
+    tbody tr td:last-child {
+      border-radius: 0;
+    }
+
+    tbody tr:hover td {
+      background: #f5f5f6;
+    }
+
+    tbody tr.selected td {
+      background: #fff;
+      box-shadow: inset 0 0 0 1px #111116;
+    }
+
+    tbody tr.checked td:first-child {
+      box-shadow: inset 4px 0 0 #111116;
+    }
+
+    .badge,
+    .ok,
+    .warn,
+    .bad {
+      background: #eeeef1;
+      color: #111116;
+      border: 1px solid #cfcfd4;
+    }
+
+    .editor {
+      grid-column: 3;
+      grid-row: 1;
+      background: #fff;
+      border-left: 0;
+      padding: 24px;
+    }
+
+    .editor-head {
+      top: -24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .editor h2 {
+      font-size: 26px;
+      font-weight: 780;
+    }
+
+    .feed-link {
+      background: #f0f0f2;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .feed-actions {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .reset-floating {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 20;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 2px solid #111116;
+      background: #fff;
+      color: #111116;
+      box-shadow: 0 10px 26px rgba(17, 17, 22, .18);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      z-index: 30;
+      transform: translate(-50%, 140%);
+      max-width: min(520px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid #111116;
+      border-radius: 10px;
+      background: #111116;
+      color: #fff;
+      font-weight: 720;
+      opacity: 0;
+      transition: transform .2s ease, opacity .2s ease;
+      box-shadow: 0 16px 34px rgba(17, 17, 22, .22);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .reset-floating:hover {
+      background: #111116;
+      color: #fff;
+    }
+
+    .section-title {
+      border-top: 1px solid var(--line-strong);
+      color: #111116;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      font-size: 13px;
+    }
+
+    .preview {
+      background: #111116;
+      color: #f4f4f5;
+      border-radius: 12px;
+    }
+
+    @media (max-width: 1120px) {
+      .app {
+        display: block;
+        height: auto;
+      }
+
+      .sidebar {
+        height: auto;
+      }
+
+      .main,
+      .editor {
+        border-right: 0;
+      }
+
+      .feeds-tabs,
+      .feed-row,
+      .monitor-add,
+      .source-grid,
+      .quality-panel,
+      .detected-source,
+      .publish-row {
+        grid-template-columns: 1fr;
+      }
+
+      .feeds-toolbar > button {
+        flex: 1 1 180px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app" id="appShell">
+    <aside class="sidebar">
+      <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
+      <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Фиды</span></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1>Фиды недвижимости</h1>
+          <div class="subtitle">Кастомизация выгрузок Profitbase для ЦИАН, Авито, Яндекс Недвижимости и Домклик</div>
+        </div>
+      </div>
+
+      <section class="source-panel" data-page="objects">
+        <h2 class="panel-title">Источник фида</h2>
+        <div class="source-grid">
+          <div class="field">
+            <label for="feedUrl">Ссылка на исходный фид</label>
+            <input id="feedUrl" type="url" placeholder="https://site.ru/feed.xml">
+          </div>
+          <button id="loadUrlBtn" type="button" class="primary">Подтянуть фид</button>
+          <button id="importBtn">Загрузить XML</button>
+          <input id="fileInput" class="file-input" type="file" accept=".json,.xml,.csv,text/xml,application/xml,application/json,text/csv">
+        </div>
+        <div id="loadStatus" class="source-status">Начните с постоянной ссылки или XML-файла. Сервис определит формат фида и подсветит его ниже.</div>
+        <div class="detected-source" id="detectedSource">
+          <div class="detected-card primary"><span>Формат</span><strong id="detectedPlatform">Не загружен</strong></div>
+          <div class="detected-card"><span>Источник</span><strong id="detectedProvider">-</strong></div>
+          <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
+        </div>
+      </section>
+
+      <section class="feeds-panel page-hidden" id="feedsPanel" data-page="feeds">
+        <h2 class="panel-title">Фиды</h2>
+        <div class="monitor-add">
+          <div class="field">
+            <label for="monitorFeedUrl">Ссылка на фид для мониторинга</label>
+            <input id="monitorFeedUrl" type="url" placeholder="https://site.ru/feed.xml">
+          </div>
+          <button id="addMonitorFeedBtn" type="button" class="primary">Добавить фид</button>
+        </div>
+        <div class="feeds-toolbar">
+          <div class="feeds-tabs" id="feedMonitorTabs"></div>
+          <button id="checkFeedsBtn" type="button">Проверить сейчас</button>
+        </div>
+        <div class="feeds-list" id="feedsList"></div>
+        <div class="monitor-note">Проверки по расписанию, уведомления и подписочные ограничения готовы к подключению к серверу хранения фидов.</div>
+      </section>
+
+      <section class="toolbar" data-page="objects">
+        <div class="field">
+          <label for="search">Поиск</label>
+          <input id="search" type="search" placeholder="ID, квартира, секция, ЖК">
+        </div>
+        <div class="field">
+          <label for="statusFilter">Статус</label>
+          <select id="statusFilter">
+            <option value="all">Все</option>
+            <option value="ok">Готовые</option>
+            <option value="warn">С ошибками</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="bulk-panel" data-page="objects">
+        <div class="field">
+          <label for="bulkSection">Раздел</label>
+          <select id="bulkSection"></select>
+        </div>
+        <div class="field">
+          <label for="bulkField">Что изменить</label>
+          <select id="bulkField"></select>
+        </div>
+        <div class="field">
+          <label for="bulkMode">Как применить</label>
+          <select id="bulkMode">
+            <option value="replace">Заменить</option>
+            <option value="append">Добавить в конец</option>
+            <option value="prepend">Добавить в начало</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bulkValue">Значение</label>
+          <input id="bulkValue" placeholder="Например: новый текст, ссылка или 5 для цены +5%">
+          <div class="bulk-status" id="bulkStatus">Выберите объекты галочками в таблице.</div>
+        </div>
+        <button id="applyBulkBtn" class="primary">Применить</button>
+      </section>
+
+      <section class="table-wrap" data-page="objects">
+        <table>
+          <thead>
+            <tr>
+              <th><input id="selectVisible" type="checkbox" title="Выбрать видимые"></th>
+              <th><button class="sort-btn" type="button" data-sort="externalId">ID</button></th>
+              <th>Квартира</th>
+              <th>Дом и секция</th>
+              <th><button class="sort-btn" type="button" data-sort="totalArea">Площадь</button></th>
+              <th><button class="sort-btn" type="button" data-sort="price">Цена</button></th>
+              <th><button class="sort-btn" type="button" data-sort="status">Статус</button></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </section>
+
+      <section class="quality-panel" data-page="objects">
+        <div>
+          <p class="quality-title" id="qualityTitle">Фид готов к проверке</p>
+          <div class="quality-meta" id="qualityMeta">Проверьте обязательные поля перед финальной выгрузкой.</div>
+        </div>
+        <div class="quality-actions">
+          <button id="validateBtn">Проверить фид</button>
+          <button id="downloadBtn">Скачать XML</button>
+          <button id="saveWorkspaceFeedBtn" type="button">Сохранить в мониторинг</button>
+        </div>
+      </section>
+
+      <section class="publish-panel" data-page="objects">
+        <h2 class="panel-title">Финальная выгрузка</h2>
+        <div class="publish-row">
+          <div class="field">
+            <label for="serverBaseUrl">Сервер публикации</label>
+            <input id="serverBaseUrl" type="url" placeholder="https://feeds.example.ru">
+          </div>
+          <button id="generateLinkBtn" type="button" class="primary">Сгенерировать ссылку</button>
+          <button id="copyGeneratedLinkBtn" type="button">Копировать</button>
+        </div>
+        <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Сейчас она сохраняется локально как черновик будущей серверной публикации.</div>
+      </section>
+    </main>
+
+    <aside class="editor">
+      <div class="editor-head">
+        <div class="muted" id="selectedHint">Выберите строку для редактирования</div>
+      </div>
+
+      <div id="validation" class="validation"></div>
+
+      <form id="editorForm" class="form-grid">
+        <div class="section-title">Основное</div>
+        <div class="field">
+          <label for="externalId">ID объекта</label>
+          <input id="externalId" name="externalId" required>
+        </div>
+        <div class="field">
+          <label for="flatNumber">Номер квартиры</label>
+          <input id="flatNumber" name="flatNumber">
+        </div>
+        <div class="field span-2">
+          <label for="description">Описание</label>
+          <textarea id="description" name="description"></textarea>
+        </div>
+        <div class="field span-2">
+          <label for="address">Адрес</label>
+          <input id="address" name="address">
+        </div>
+        <div class="field">
+          <label for="phone">Телефон</label>
+          <input id="phone" name="phone">
+        </div>
+        <div class="field">
+          <label for="price">Цена, ₽</label>
+          <input id="price" name="price" type="number" min="0">
+        </div>
+
+        <div class="section-title">Параметры квартиры</div>
+        <div class="field">
+          <label for="rooms">Комнат</label>
+          <input id="rooms" name="rooms" type="number" min="0">
+        </div>
+        <div class="field">
+          <label for="floor">Этаж</label>
+          <input id="floor" name="floor" type="number" min="0">
+        </div>
+        <div class="field">
+          <label for="totalArea">Общая площадь</label>
+          <input id="totalArea" name="totalArea" type="number" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label for="livingArea">Жилая площадь</label>
+          <input id="livingArea" name="livingArea" type="number" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label for="decoration">Отделка</label>
+          <select id="decoration" name="decoration">
+            <option value="preFine">Предчистовая</option>
+            <option value="fine">Чистовая</option>
+            <option value="without">Без отделки</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="isApartments">Апартаменты</label>
+          <select id="isApartments" name="isApartments">
+            <option value="false">Нет</option>
+            <option value="true">Да</option>
+          </select>
+        </div>
+
+        <div class="section-title">ЖК и дом</div>
+        <div class="field">
+          <label for="complexName">ЖК</label>
+          <input id="complexName" name="complexName">
+        </div>
+        <div class="field">
+          <label for="developer">Застройщик</label>
+          <input id="developer" name="developer">
+        </div>
+        <div class="field">
+          <label for="complexId">ID ЖК в ЦИАН</label>
+          <input id="complexId" name="complexId">
+        </div>
+        <div class="field">
+          <label for="houseId">ID дома в ЦИАН</label>
+          <input id="houseId" name="houseId">
+        </div>
+        <div class="field">
+          <label for="buildingName">Корпус</label>
+          <input id="buildingName" name="buildingName">
+        </div>
+        <div class="field">
+          <label for="sectionNumber">Секция</label>
+          <input id="sectionNumber" name="sectionNumber">
+        </div>
+        <div class="field">
+          <label for="floorsCount">Этажей в доме</label>
+          <input id="floorsCount" name="floorsCount" type="number" min="0">
+        </div>
+        <div class="field">
+          <label for="ceilingHeight">Высота потолка</label>
+          <input id="ceilingHeight" name="ceilingHeight" type="number" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label for="quarter">Квартал сдачи</label>
+          <select id="quarter" name="quarter">
+            <option value="first">1 квартал</option>
+            <option value="second">2 квартал</option>
+            <option value="third">3 квартал</option>
+            <option value="fourth">4 квартал</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="year">Год сдачи</label>
+          <input id="year" name="year" type="number" min="2024">
+        </div>
+
+        <div class="section-title">Точечная кастомизация</div>
+        <div class="field span-2">
+          <label for="layoutPhoto">Планировка, которую увидит ЦИАН</label>
+          <input id="layoutPhoto" name="layoutPhoto" placeholder="https://...">
+        </div>
+        <div class="field span-2">
+          <label for="photos">Фото, каждое с новой строки</label>
+          <textarea id="photos" name="photos"></textarea>
+        </div>
+
+        <div class="section-title">Действия</div>
+        <button type="submit" class="primary">Сохранить карточку</button>
+        <button type="button" id="duplicateBtn">Дублировать</button>
+        <button type="button" id="deleteBtn" class="danger span-2">Удалить объект</button>
+      </form>
+
+      <pre id="preview" class="preview"></pre>
+    </aside>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <button id="resetChangesBtn" type="button" class="reset-floating">↺ Сбросить правки</button>
+  </div>
+
+  <script>
+    const storageKey = "feed-generator-cian-v2";
+    const legacyStorageKey = "feed-generator-cian-v1";
+    const publishedStorageKey = "feed-generator-published-v1";
+    const monitoredStorageKey = "feed-generator-monitor-v1";
+    const bulkSections = {
+      main: {
+        label: "Основное",
+        fields: [
+          ["externalId", "ID объекта"],
+          ["flatNumber", "Номер квартиры"],
+          ["description", "Описание"],
+          ["address", "Адрес"],
+          ["phone", "Телефон"],
+          ["price", "Цена, ₽"],
+          ["pricePercent", "Цена, %"]
+        ]
+      },
+      flat: {
+        label: "Параметры квартиры",
+        fields: [
+          ["rooms", "Комнат"],
+          ["floor", "Этаж"],
+          ["totalArea", "Общая площадь"],
+          ["livingArea", "Жилая площадь"],
+          ["decoration", "Отделка"],
+          ["isApartments", "Апартаменты"]
+        ]
+      },
+      building: {
+        label: "ЖК и дом",
+        fields: [
+          ["complexName", "ЖК"],
+          ["developer", "Застройщик"],
+          ["complexId", "ID ЖК в ЦИАН"],
+          ["houseId", "ID дома в ЦИАН"],
+          ["buildingName", "Корпус"],
+          ["sectionNumber", "Секция"],
+          ["floorsCount", "Этажей в доме"],
+          ["ceilingHeight", "Высота потолка"],
+          ["quarter", "Квартал сдачи"],
+          ["year", "Год сдачи"]
+        ]
+      },
+      media: {
+        label: "Изображения",
+        fields: [
+          ["layoutPhoto", "Планировка"],
+          ["photos", "Фото"]
+        ]
+      }
+    };
+    const platformProfiles = {
+      cian: {
+        name: "ЦИАН",
+        format: "Profitbase / CIAN XML",
+        downloadPrefix: "cian-feed",
+        note: "Для ЦИАН используется структура текущего фида подрядчика: <feed>, <object>, Category, JKSchema, Building, BargainTerms, LayoutPhoto и Photos."
+      },
+      avito: {
+        name: "Авито",
+        format: "Avito XML",
+        downloadPrefix: "avito-feed",
+        note: "Авито ведет документацию автозагрузки в новом разделе шаблонов. В прототипе выгрузка собирается в типовой формат <Ads>/<Ad>; перед боевой загрузкой нужно сверить обязательные поля с шаблоном вашего кабинета."
+      },
+      yandex: {
+        name: "Яндекс Недвижимость",
+        format: "YRL",
+        downloadPrefix: "yandex-realty-feed",
+        note: "Яндекс использует YRL: корень <realty-feed>, объявления <offer internal-id=\"...\">, обязательны тип сделки, тип недвижимости, категория, адрес, продавец, цена и параметры объекта."
+      },
+      domclick: {
+        name: "Домклик",
+        format: "профиль площадки",
+        downloadPrefix: "domclick-feed",
+        note: "Домклик часто принимает фиды через партнерский кабинет или интеграцию. В прототипе раздел вынесен отдельно, чтобы хранить свои проверки и правки; финальную схему нужно подтвердить в кабинете Домклик."
+      }
+    };
+    const defaultDescription = "Продается квартира в современном жилом комплексе в районе Лесобазы. Для жителей предусмотрены детские и спортивные площадки, приватные дворы-парки и комфортные зоны отдыха. Квартиры отличаются высокими потолками, панорамными окнами и предчистовой отделкой.";
+    const seed = [
+      {
+        externalId: "16665323",
+        description: defaultDescription,
+        address: "Тюменская область, Тюмень ул Василия Малкова, 32",
+        phone: "3452675991",
+        totalArea: "59.2",
+        livingArea: "25.09",
+        layoutPhoto: "http://dev.vasnaidut.ru/html/sozdateli/plans/simvol/1_59%2C20.png",
+        photos: "https://pb19924.profitbase.ru/uploads/layout/19924/68ff3300f0dd3.png\nhttps://pb19924.profitbase.ru/uploads/house/19924/690c52b2e2434.jpg",
+        rooms: "2",
+        isApartments: "false",
+        floor: "1",
+        complexId: "5315516",
+        complexName: "ЖК «Символ»",
+        houseId: "10218740",
+        flatNumber: "1",
+        sectionNumber: "ГП-8.1",
+        developer: "ГК Создатели",
+        decoration: "preFine",
+        buildingName: "Символ",
+        floorsCount: "9",
+        ceilingHeight: "3",
+        quarter: "first",
+        year: "2027",
+        price: "8640000"
+      },
+      {
+        externalId: "16665336",
+        description: defaultDescription,
+        address: "Тюменская область, Тюмень ул Василия Малкова, 32",
+        phone: "3452675991",
+        totalArea: "38.26",
+        livingArea: "11.94",
+        layoutPhoto: "http://dev.vasnaidut.ru/html/sozdateli/plans/simvol/2_38%2C26.png",
+        photos: "https://pb19924.profitbase.ru/uploads/layout/19924/68ff33015c1e1.png\nhttps://pb19924.profitbase.ru/uploads/house/19924/690c52b2e2434.jpg",
+        rooms: "1",
+        isApartments: "false",
+        floor: "2",
+        complexId: "5315516",
+        complexName: "ЖК «Символ»",
+        houseId: "10218740",
+        flatNumber: "4",
+        sectionNumber: "ГП-8.1",
+        developer: "ГК Создатели",
+        decoration: "preFine",
+        buildingName: "Символ",
+        floorsCount: "9",
+        ceilingHeight: "3",
+        quarter: "first",
+        year: "2027",
+        price: "6240000"
+      }
+    ];
+
+    let appState = load();
+    let objects = appState.objects;
+    let originalObjects = appState.originalObjects;
+    let activePlatform = appState.activePlatform;
+    let activeMonitorPlatform = activePlatform;
+    let activePage = "objects";
+    let sortState = { key: "", direction: "asc" };
+    let selectedId = objects[0]?.externalId || "";
+    let checkedIds = new Set();
+    let validated = false;
+
+    const form = document.querySelector("#editorForm");
+    const rows = document.querySelector("#rows");
+    const preview = document.querySelector("#preview");
+    const validation = document.querySelector("#validation");
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (saved?.objects?.length) return {
+          objects: saved.objects,
+          originalObjects: saved.originalObjects?.length ? saved.originalObjects : structuredClone(saved.objects),
+          activePlatform: saved.activePlatform || "cian",
+          feedUrl: saved.feedUrl || "",
+          serverBaseUrl: saved.serverBaseUrl || "",
+          generatedLink: saved.generatedLink || "",
+          generatedFeedId: saved.generatedFeedId || ""
+        };
+        const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
+        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+      } catch {
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+      }
+    }
+
+    function save() {
+      appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
+      appState.serverBaseUrl = document.querySelector("#serverBaseUrl")?.value || appState.serverBaseUrl || "";
+      appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
+      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+    }
+
+    function escapeXml(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&apos;");
+    }
+
+    function cdata(value = "") {
+      return String(value).replaceAll("]]>", "]]]]><![CDATA[>");
+    }
+
+    function numberValue(value) {
+      const n = Number(String(value).replace(",", "."));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function money(value) {
+      return new Intl.NumberFormat("ru-RU").format(numberValue(value)) + " ₽";
+    }
+
+    function requiredIssues(item) {
+      const rules = [
+        ["externalId", "ID объекта"],
+        ["address", "адрес"],
+        ["phone", "телефон"],
+        ["totalArea", "общая площадь"],
+        ["rooms", "количество комнат"],
+        ["floor", "этаж"],
+        ["complexName", "название ЖК"],
+        ["developer", "застройщик"],
+        ["price", "цена"],
+        ["layoutPhoto", "планировка"]
+      ];
+      if (activePlatform === "avito") rules.push(["floorsCount", "этажность дома"]);
+      if (activePlatform === "yandex") rules.push(["buildingName", "корпус или дом"]);
+      const missing = rules.filter(([key]) => !String(item[key] || "").trim()).map(([, label]) => label);
+      const photos = String(item.photos || "").split(/\n+/).filter(Boolean);
+      if (!photos.length) missing.push("хотя бы одно фото");
+      return missing;
+    }
+
+    function itemStatus(item) {
+      const issues = requiredIssues(item);
+      return issues.length ? { type: "warn", label: `${issues.length} ошибок`, issues } : { type: "ok", label: "Готово", issues: [] };
+    }
+
+    function filteredObjects() {
+      const term = document.querySelector("#search").value.trim().toLowerCase();
+      const status = document.querySelector("#statusFilter").value;
+      const filtered = objects.filter(item => {
+        const joined = [item.externalId, item.flatNumber, item.sectionNumber, item.complexName, item.buildingName].join(" ").toLowerCase();
+        const matchesTerm = !term || joined.includes(term);
+        const st = itemStatus(item).type;
+        const matchesStatus = status === "all" || status === st || (status === "warn" && st !== "ok");
+        return matchesTerm && matchesStatus;
+      });
+      return sortObjects(filtered);
+    }
+
+    function sortObjects(items) {
+      if (!sortState.key) return items;
+      const direction = sortState.direction === "desc" ? -1 : 1;
+      const statusRank = { warn: 0, ok: 1 };
+      return [...items].sort((a, b) => {
+        let left;
+        let right;
+        if (sortState.key === "price" || sortState.key === "totalArea") {
+          left = numberValue(a[sortState.key]);
+          right = numberValue(b[sortState.key]);
+        } else if (sortState.key === "status") {
+          left = statusRank[itemStatus(a).type] ?? 9;
+          right = statusRank[itemStatus(b).type] ?? 9;
+        } else {
+          left = String(a[sortState.key] || "");
+          right = String(b[sortState.key] || "");
+          const leftNumber = Number(left);
+          const rightNumber = Number(right);
+          if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+            left = leftNumber;
+            right = rightNumber;
+          }
+        }
+        if (left < right) return -1 * direction;
+        if (left > right) return 1 * direction;
+        return 0;
+      });
+    }
+
+    function renderSortButtons() {
+      document.querySelectorAll("[data-sort]").forEach(button => {
+        const active = button.dataset.sort === sortState.key;
+        button.classList.toggle("active", active);
+        button.classList.toggle("desc", active && sortState.direction === "desc");
+        button.title = active
+          ? `Сортировка: ${sortState.direction === "desc" ? "по убыванию" : "по возрастанию"}`
+          : "Нажмите для сортировки";
+      });
+    }
+
+    function toggleSort(key) {
+      if (sortState.key === key) {
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+      } else {
+        sortState = { key, direction: "asc" };
+      }
+      renderRows();
+    }
+
+    function renderRows() {
+      const visible = filteredObjects();
+      rows.innerHTML = visible.map(item => {
+        const status = itemStatus(item);
+        const title = `${item.rooms || "?"}-комн., кв. ${item.flatNumber || "?"}`;
+        return `
+          <tr class="${item.externalId === selectedId ? "selected" : ""} ${checkedIds.has(item.externalId) ? "checked" : ""}" data-id="${escapeXml(item.externalId)}">
+            <td><input class="row-check" type="checkbox" ${checkedIds.has(item.externalId) ? "checked" : ""} aria-label="Выбрать объект ${escapeXml(item.externalId)}"></td>
+            <td><span class="name">${escapeXml(item.externalId)}</span></td>
+            <td><div class="name">${escapeXml(title)}</div><div class="muted">${escapeXml(item.complexName || "")}</div></td>
+            <td>${escapeXml(item.buildingName || "")}<div class="muted">${escapeXml(item.sectionNumber || "")}</div></td>
+            <td>${escapeXml(item.totalArea || "0")} м²</td>
+            <td>${money(item.price)}</td>
+            <td><span class="badge ${status.type}">${status.label}</span></td>
+          </tr>
+        `;
+      }).join("");
+      document.querySelector("#selectVisible").checked = visible.length > 0 && visible.every(item => checkedIds.has(item.externalId));
+      renderSortButtons();
+      renderBulkStatus();
+    }
+
+    function renderPage() {
+      const isFeedsPage = activePage === "feeds";
+      document.querySelector("#appShell").classList.toggle("feeds-mode", isFeedsPage);
+      document.querySelectorAll("[data-page]").forEach(section => {
+        section.classList.toggle("page-hidden", section.dataset.page !== activePage);
+      });
+      document.querySelectorAll("[data-nav]").forEach(item => {
+        item.classList.toggle("active", item.dataset.nav === activePage);
+      });
+      const profile = platformProfiles[activePlatform];
+      document.querySelector("h1").textContent = isFeedsPage ? "Фиды" : "Фиды недвижимости";
+      document.querySelector(".subtitle").textContent = isFeedsPage
+        ? "Мониторинг рабочих ссылок на фиды по площадкам и сообщения об ошибках"
+        : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
+    }
+
+    function providerFromUrl(url = "") {
+      try {
+        return new URL(url).hostname.replace(/^www\./, "");
+      } catch {
+        return url ? "файл" : "-";
+      }
+    }
+
+    function renderDetectedSource() {
+      const profile = platformProfiles[activePlatform] || platformProfiles.cian;
+      document.querySelector("#detectedPlatform").textContent = appState.feedUrl || objects.length ? profile.name : "Не загружен";
+      document.querySelector("#detectedProvider").textContent = providerFromUrl(appState.feedUrl);
+      document.querySelector("#detectedCount").textContent = objects.length;
+    }
+
+    function readMonitoredFeeds() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(monitoredStorageKey));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveMonitoredFeeds(feeds) {
+      localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80)));
+    }
+
+    function monitorStatus(feed) {
+      const labels = {
+        ok: "Работает",
+        bad: "Ошибка",
+        pending: "Ожидает сервер",
+        checking: "Проверяется"
+      };
+      return labels[feed.status] || labels.pending;
+    }
+
+    function formatCheckDate(value) {
+      if (!value) return "еще не проверялся";
+      return new Date(value).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function renderFeedMonitorTabs() {
+      document.querySelector("#feedMonitorTabs").innerHTML = Object.entries(platformProfiles).map(([id, profile]) => `
+        <button class="feeds-tab ${id === activeMonitorPlatform ? "active" : ""}" type="button" data-feed-platform="${id}">
+          ${escapeXml(profile.name)}
+        </button>
+      `).join("");
+    }
+
+    function renderFeedsList() {
+      const list = document.querySelector("#feedsList");
+      const feeds = readMonitoredFeeds().filter(feed => feed.platform === activeMonitorPlatform);
+      if (!feeds.length) {
+        list.innerHTML = `
+          <div class="feed-empty">
+            В разделе «${escapeXml(platformProfiles[activeMonitorPlatform].name)}» пока нет сохраненных фидов. Вставьте ссылку выше и добавьте ее для мониторинга.
+          </div>
+        `;
+        return;
+      }
+      list.innerHTML = feeds.map(feed => `
+        <div class="feed-row" data-feed-id="${escapeXml(feed.id)}">
+          <div class="feed-name">
+            ${escapeXml(feed.name)}
+            <span class="feed-url">${escapeXml(feed.url)}</span>
+          </div>
+          <span class="feed-status ${escapeXml(feed.status || "pending")}">${escapeXml(monitorStatus(feed))}</span>
+          <div class="feed-meta">Проверка: ${escapeXml(formatCheckDate(feed.lastChecked))}</div>
+          <div class="feed-monitor-actions">
+            <button type="button" data-check-feed="${escapeXml(feed.id)}">Проверить</button>
+            <button type="button" class="danger" data-delete-feed="${escapeXml(feed.id)}">Удалить</button>
+          </div>
+          ${feed.error ? `<div class="feed-error">Сообщение ошибки: ${escapeXml(feed.error)}</div>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function saveFeedForMonitoring({ url, platform, name, objectCount, error }) {
+      const sourceUrl = (url || "").trim();
+      if (!sourceUrl) {
+        alert("Вставьте ссылку на фид.");
+        return;
+      }
+      try {
+        new URL(sourceUrl);
+      } catch {
+        alert("Ссылка выглядит некорректно. Нужен полный адрес, например https://site.ru/feed.xml.");
+        return;
+      }
+      const feedPlatform = platformProfiles[platform] ? platform : activePlatform;
+      const feeds = readMonitoredFeeds();
+      const existingIndex = feeds.findIndex(feed => feed.url === sourceUrl && feed.platform === feedPlatform);
+      const feed = {
+        id: existingIndex >= 0 ? feeds[existingIndex].id : `feed-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        platform: feedPlatform,
+        name: name || `${platformProfiles[feedPlatform].name} • ${objectCount || 0} объектов`,
+        url: sourceUrl,
+        status: "pending",
+        lastChecked: "",
+        error: error || "Автоматическая проверка по расписанию будет работать после подключения серверного мониторинга.",
+        objectCount: objectCount || 0,
+        createdAt: existingIndex >= 0 ? feeds[existingIndex].createdAt : new Date().toISOString()
+      };
+      if (existingIndex >= 0) feeds[existingIndex] = { ...feeds[existingIndex], ...feed };
+      else feeds.unshift(feed);
+      saveMonitoredFeeds(feeds);
+      activeMonitorPlatform = feedPlatform;
+      renderFeedMonitorTabs();
+      renderFeedsList();
+      showToast("Фид сохранён в мониторинг");
+    }
+
+    function saveCurrentFeedForMonitoring() {
+      const sourceUrl = (appState.generatedLink || document.querySelector("#generatedLink").dataset.url || document.querySelector("#feedUrl").value || "").trim();
+      saveFeedForMonitoring({
+        url: sourceUrl,
+        platform: activePlatform,
+        name: `${platformProfiles[activePlatform].name} • ${objects.length || 0} объектов`,
+        objectCount: objects.length
+      });
+    }
+
+    function addManualMonitoredFeed() {
+      const input = document.querySelector("#monitorFeedUrl");
+      saveFeedForMonitoring({
+        url: input.value,
+        platform: activeMonitorPlatform,
+        name: `${platformProfiles[activeMonitorPlatform].name} • внешний фид`,
+        objectCount: 0
+      });
+      input.value = "";
+    }
+
+    function isLocalDraftUrl(url) {
+      return /feeds\.example\.ru|feeds\.sozdateli\.test/.test(url);
+    }
+
+    async function checkMonitoredFeed(feed) {
+      if (isLocalDraftUrl(feed.url)) {
+        return {
+          ...feed,
+          status: "pending",
+          lastChecked: new Date().toISOString(),
+          error: "Это локальный черновик ссылки. Для настоящей проверки нужен сервер, который будет отдавать обновленный XML."
+        };
+      }
+      try {
+        const response = await fetch(feed.url, { cache: "no-store" });
+        if (!response.ok) throw new Error(`источник вернул HTTP ${response.status}`);
+        const text = await response.text();
+        const xml = new DOMParser().parseFromString(text, "text/xml");
+        if (xml.querySelector("parsererror")) throw new Error("ответ не похож на корректный XML");
+        return {
+          ...feed,
+          status: "ok",
+          lastChecked: new Date().toISOString(),
+          error: ""
+        };
+      } catch (error) {
+        return {
+          ...feed,
+          status: "bad",
+          lastChecked: new Date().toISOString(),
+          error: `${error.message}. Если ссылка открывается вручную, браузер мог упереться в CORS; в сервисной версии проверку будет выполнять сервер.`
+        };
+      }
+    }
+
+    async function checkSavedFeeds(onlyId = "") {
+      const feeds = readMonitoredFeeds();
+      const next = [];
+      for (const feed of feeds) {
+        if ((onlyId && feed.id !== onlyId) || (!onlyId && feed.platform !== activeMonitorPlatform)) {
+          next.push(feed);
+          continue;
+        }
+        next.push(await checkMonitoredFeed({ ...feed, status: "checking" }));
+      }
+      saveMonitoredFeeds(next);
+      renderFeedsList();
+    }
+
+    function deleteMonitoredFeed(id) {
+      saveMonitoredFeeds(readMonitoredFeeds().filter(feed => feed.id !== id));
+      renderFeedsList();
+    }
+
+    function renderGeneratedLink() {
+      const serverInput = document.querySelector("#serverBaseUrl");
+      const box = document.querySelector("#generatedLink");
+      if (serverInput && !serverInput.value) serverInput.value = appState.serverBaseUrl || "";
+      if (appState.generatedLink) {
+        box.dataset.url = appState.generatedLink;
+        box.textContent = `${appState.generatedLink} — локальный черновик публикации. На сервере эта ссылка будет отдавать обновленный XML.`;
+      } else {
+        box.dataset.url = "";
+        box.textContent = "Ссылка появится после генерации. Сейчас она сохраняется локально как черновик будущей серверной публикации.";
+      }
+    }
+
+    function renderBulkControls() {
+      const sectionSelect = document.querySelector("#bulkSection");
+      const fieldSelect = document.querySelector("#bulkField");
+      const currentSection = sectionSelect.value || Object.keys(bulkSections)[0];
+      const currentField = fieldSelect.value;
+      sectionSelect.innerHTML = Object.entries(bulkSections).map(([id, section]) =>
+        `<option value="${id}">${escapeXml(section.label)}</option>`
+      ).join("");
+      sectionSelect.value = bulkSections[currentSection] ? currentSection : Object.keys(bulkSections)[0];
+      fieldSelect.innerHTML = bulkSections[sectionSelect.value].fields.map(([id, label]) =>
+        `<option value="${id}">${escapeXml(label)}</option>`
+      ).join("");
+      if (bulkSections[sectionSelect.value].fields.some(([id]) => id === currentField)) fieldSelect.value = currentField;
+      updateBulkMode();
+    }
+
+    function selectedItem() {
+      return objects.find(item => item.externalId === selectedId) || objects[0];
+    }
+
+    function fillForm() {
+      const item = selectedItem();
+      if (!item) return;
+      selectedId = item.externalId;
+      Array.from(form.elements).forEach(el => {
+        if (el.name) el.value = item[el.name] ?? "";
+      });
+      document.querySelector("#selectedHint").textContent = `Редактируется ID ${item.externalId}`;
+      renderValidation(item);
+      preview.textContent = buildXml([item], activePlatform);
+    }
+
+    function collectForm() {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    function renderValidation(item = selectedItem()) {
+      const issues = item ? requiredIssues(item) : [];
+      if (!validated && !issues.length) {
+        validation.innerHTML = "";
+        return;
+      }
+      validation.innerHTML = issues.length
+        ? issues.map(issue => `<div class="bad">Заполните: ${escapeXml(issue)}</div>`).join("")
+        : `<div class="ok">Все обязательные поля заполнены. Можно выгружать XML.</div>`;
+    }
+
+    function renderBulkStatus() {
+      document.querySelector("#bulkStatus").textContent = checkedIds.size
+        ? `Выбрано объектов: ${checkedIds.size}. Правка применится только к ним.`
+        : "Выберите объекты галочками в таблице.";
+    }
+
+    function updateBulkMode() {
+      const field = document.querySelector("#bulkField").value;
+      const mode = document.querySelector("#bulkMode");
+      const value = document.querySelector("#bulkValue");
+      const isPricePercent = field === "pricePercent";
+      mode.disabled = isPricePercent;
+      value.placeholder = isPricePercent ? "Например: 5 для +5% или -3 для скидки 3%" : "Новый текст, ссылка или значение";
+    }
+
+    function resetChanges() {
+      if (!originalObjects.length) {
+        alert("Нет исходной версии фида для сброса.");
+        return;
+      }
+      if (!confirm("Сбросить все внесенные правки и вернуться к исходному фиду?")) return;
+      objects = structuredClone(originalObjects);
+      selectedId = objects[0]?.externalId || "";
+      checkedIds = new Set();
+      validated = false;
+      save();
+      renderAll();
+      setLoadStatus("Правки сброшены. Фид вернулся к исходной загруженной версии.");
+    }
+
+    function applyBulkChange() {
+      const field = document.querySelector("#bulkField").value;
+      const mode = document.querySelector("#bulkMode").value;
+      const value = document.querySelector("#bulkValue").value;
+      if (!checkedIds.size) {
+        alert("Сначала выберите объекты галочками.");
+        return;
+      }
+      if (!value.trim()) {
+        alert("Введите значение для массового изменения.");
+        return;
+      }
+      objects = objects.map(item => {
+        if (!checkedIds.has(item.externalId)) return item;
+        const next = { ...item };
+        if (field === "pricePercent") {
+          const percent = Number(value.replace(",", "."));
+          if (!Number.isFinite(percent)) return next;
+          next.price = String(Math.round(numberValue(next.price) * (1 + percent / 100)));
+          return next;
+        }
+        if (mode === "append") next[field] = `${next[field] || ""}${next[field] ? "\n" : ""}${value}`;
+        else if (mode === "prepend") next[field] = `${value}${next[field] ? "\n" : ""}${next[field] || ""}`;
+        else next[field] = value;
+        return next;
+      });
+      save();
+      renderAll();
+      showToast(`Массовая правка применена к ${checkedIds.size} объектам`);
+    }
+
+    function buildXml(items = objects, platform = activePlatform) {
+      if (platform === "yandex") return buildYandexXml(items);
+      if (platform === "avito") return buildAvitoXml(items);
+      if (platform === "domclick") return buildDomclickXml(items);
+      return buildCianXml(items);
+    }
+
+    function photoList(item) {
+      return String(item.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean);
+    }
+
+    function buildCianXml(items = objects) {
+      const body = items.map(item => {
+        const photos = photoList(item);
+        const photoXml = photos.map((url, index) => `      <PhotoSchema>
+        <FullUrl>${escapeXml(url)}</FullUrl>
+        <IsDefault>${index === 0 ? 1 : 0}</IsDefault>
+      </PhotoSchema>`).join("\n");
+        return `  <object>
+    <Category>newBuildingFlatSale</Category>
+    <Description><![CDATA[${cdata(item.description || "")}]]></Description>
+    <Address>${escapeXml(item.address || "")}</Address>
+    <ExternalId>${escapeXml(item.externalId || "")}</ExternalId>
+    <Phones>
+      <PhoneSchema>
+        <CountryCode>+7</CountryCode>
+        <Number>${escapeXml(item.phone || "")}</Number>
+      </PhoneSchema>
+    </Phones>
+    <TotalArea>${escapeXml(item.totalArea || "")}</TotalArea>
+    <LayoutPhoto>
+      <FullUrl>${escapeXml(item.layoutPhoto || "")}</FullUrl>
+      <IsDefault>1</IsDefault>
+    </LayoutPhoto>
+    <Photos>
+${photoXml}
+    </Photos>
+    <FlatRoomsCount>${escapeXml(item.rooms || "")}</FlatRoomsCount>
+    <IsApartments>${escapeXml(item.isApartments || "false")}</IsApartments>
+    <FloorNumber>${escapeXml(item.floor || "")}</FloorNumber>
+    <JKSchema>
+      <Id>${escapeXml(item.complexId || "")}</Id>
+      <Name>${escapeXml(item.complexName || "")}</Name>
+      <House>
+        <Id>${escapeXml(item.houseId || "")}</Id>
+        <Name/>
+        <Flat>
+          <FlatNumber>${escapeXml(item.flatNumber || "")}</FlatNumber>
+          <SectionNumber>${escapeXml(item.sectionNumber || "")}</SectionNumber>
+        </Flat>
+      </House>
+      <Developer>${escapeXml(item.developer || "")}</Developer>
+    </JKSchema>
+    <LivingArea>${escapeXml(item.livingArea || "")}</LivingArea>
+    <Decoration>${escapeXml(item.decoration || "preFine")}</Decoration>
+    <Building>
+      <Name>${escapeXml(item.buildingName || "")}</Name>
+      <FloorsCount>${escapeXml(item.floorsCount || "")}</FloorsCount>
+      <CeilingHeight>${escapeXml(item.ceilingHeight || "")}</CeilingHeight>
+      <Deadline>
+        <Quarter>${escapeXml(item.quarter || "first")}</Quarter>
+        <Year>${escapeXml(item.year || "")}</Year>
+        <IsComplete>false</IsComplete>
+      </Deadline>
+    </Building>
+    <BargainTerms>
+      <Price>${escapeXml(item.price || "")}</Price>
+      <currency>rur</currency>
+    </BargainTerms>
+  </object>`;
+      }).join("\n");
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<feed>\n  <feed_version>2</feed_version>\n${body}\n</feed>\n`;
+    }
+
+    function buildYandexXml(items = objects) {
+      const body = items.map(item => {
+        const images = [item.layoutPhoto, ...photoList(item)].filter(Boolean).map(url => `    <image>${escapeXml(url)}</image>`).join("\n");
+        return `  <offer internal-id="${escapeXml(item.externalId || "")}">
+    <type>продажа</type>
+    <property-type>жилая</property-type>
+    <category>квартира</category>
+    <creation-date>${new Date().toISOString()}</creation-date>
+    <location>
+      <country>Россия</country>
+      <address>${escapeXml(item.address || "")}</address>
+    </location>
+    <sales-agent>
+      <phone>+7${escapeXml(item.phone || "")}</phone>
+      <organization>${escapeXml(item.developer || "")}</organization>
+    </sales-agent>
+    <price>
+      <value>${escapeXml(item.price || "")}</value>
+      <currency>RUB</currency>
+    </price>
+    <area>
+      <value>${escapeXml(item.totalArea || "")}</value>
+      <unit>кв. м</unit>
+    </area>
+    <living-space>
+      <value>${escapeXml(item.livingArea || "")}</value>
+      <unit>кв. м</unit>
+    </living-space>
+    <rooms>${escapeXml(item.rooms || "")}</rooms>
+    <floor>${escapeXml(item.floor || "")}</floor>
+    <floors-total>${escapeXml(item.floorsCount || "")}</floors-total>
+    <building-name>${escapeXml(item.complexName || "")}</building-name>
+    <building-section>${escapeXml(item.sectionNumber || "")}</building-section>
+    <description><![CDATA[${cdata(item.description || "")}]]></description>
+${images}
+  </offer>`;
+      }).join("\n");
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<realty-feed xmlns="http://webmaster.yandex.ru/schemas/feed/realty/2010-06">\n  <generation-date>${new Date().toISOString()}</generation-date>\n${body}\n</realty-feed>\n`;
+    }
+
+    function buildAvitoXml(items = objects) {
+      const body = items.map(item => {
+        const images = [item.layoutPhoto, ...photoList(item)].filter(Boolean).map(url => `      <Image url="${escapeXml(url)}"/>`).join("\n");
+        return `  <Ad>
+    <Id>${escapeXml(item.externalId || "")}</Id>
+    <Category>Квартиры</Category>
+    <OperationType>Продам</OperationType>
+    <Address>${escapeXml(item.address || "")}</Address>
+    <Description><![CDATA[${cdata(item.description || "")}]]></Description>
+    <Price>${escapeXml(item.price || "")}</Price>
+    <Rooms>${escapeXml(item.rooms || "")}</Rooms>
+    <Square>${escapeXml(item.totalArea || "")}</Square>
+    <Floor>${escapeXml(item.floor || "")}</Floor>
+    <Floors>${escapeXml(item.floorsCount || "")}</Floors>
+    <PropertyRights>Застройщик</PropertyRights>
+    <Images>
+${images}
+    </Images>
+  </Ad>`;
+      }).join("\n");
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<Ads formatVersion="3" target="Avito.ru">\n${body}\n</Ads>\n`;
+    }
+
+    function buildDomclickXml(items = objects) {
+      const body = items.map(item => {
+        const photos = [item.layoutPhoto, ...photoList(item)].filter(Boolean).map(url => `      <Photo>${escapeXml(url)}</Photo>`).join("\n");
+        return `  <Offer>
+    <ExternalId>${escapeXml(item.externalId || "")}</ExternalId>
+    <ComplexName>${escapeXml(item.complexName || "")}</ComplexName>
+    <Developer>${escapeXml(item.developer || "")}</Developer>
+    <Address>${escapeXml(item.address || "")}</Address>
+    <Phone>+7${escapeXml(item.phone || "")}</Phone>
+    <Price>${escapeXml(item.price || "")}</Price>
+    <Rooms>${escapeXml(item.rooms || "")}</Rooms>
+    <TotalArea>${escapeXml(item.totalArea || "")}</TotalArea>
+    <Floor>${escapeXml(item.floor || "")}</Floor>
+    <FloorsTotal>${escapeXml(item.floorsCount || "")}</FloorsTotal>
+    <Description><![CDATA[${cdata(item.description || "")}]]></Description>
+    <Photos>
+${photos}
+    </Photos>
+  </Offer>`;
+      }).join("\n");
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<DomclickFeed>\n  <GeneratedAt>${new Date().toISOString()}</GeneratedAt>\n${body}\n</DomclickFeed>\n`;
+    }
+
+    function renderAll() {
+      if (!selectedItem() && objects.length) selectedId = objects[0].externalId;
+      renderFeedMonitorTabs();
+      renderFeedsList();
+      renderBulkControls();
+      renderRows();
+      fillForm();
+      if (!document.querySelector("#feedUrl").value) document.querySelector("#feedUrl").value = appState.feedUrl || "";
+      renderGeneratedLink();
+      renderQualitySummary();
+      renderDetectedSource();
+      renderPage();
+    }
+
+    function setLoadStatus(message, type = "") {
+      const node = document.querySelector("#loadStatus");
+      node.textContent = message;
+      node.className = `source-status ${type}`;
+    }
+
+    function showToast(message) {
+      const toast = document.querySelector("#toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function currentIssueCount() {
+      return objects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
+    }
+
+    function renderQualitySummary() {
+      const issues = currentIssueCount();
+      const ready = objects.filter(item => itemStatus(item).type === "ok").length;
+      const title = document.querySelector("#qualityTitle");
+      const meta = document.querySelector("#qualityMeta");
+      if (!objects.length) {
+        title.textContent = "Загрузите фид";
+        meta.textContent = "После загрузки здесь появится сводка по объектам и ошибкам.";
+        return;
+      }
+      if (issues) {
+        title.textContent = `Нужно исправить: ${issues}`;
+        meta.textContent = `Готово к выгрузке: ${ready} из ${objects.length}. Отфильтруйте объекты со статусом «С ошибками».`;
+      } else if (validated) {
+        title.textContent = "Фид прошёл проверку";
+        meta.textContent = `Все ${objects.length} объектов готовы. Можно скачать XML, сгенерировать ссылку или сохранить фид в мониторинг.`;
+      } else {
+        title.textContent = "Фид готов к проверке";
+        meta.textContent = `Объектов: ${objects.length}. Проверьте обязательные поля перед выгрузкой.`;
+      }
+    }
+
+    async function loadFeedFromUrl() {
+      const input = document.querySelector("#feedUrl");
+      const url = input.value.trim();
+      if (!url) {
+        setLoadStatus("Вставьте ссылку на XML-фид.", "bad");
+        return;
+      }
+      try {
+        new URL(url);
+      } catch {
+        setLoadStatus("Ссылка выглядит некорректно. Нужен полный адрес, например https://site.ru/feed.xml.", "bad");
+        return;
+      }
+      setLoadStatus("Загружаю фид по ссылке...");
+      document.querySelector("#loadUrlBtn").disabled = true;
+      document.querySelector("#loadUrlBtn").textContent = "Загружаю...";
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Источник вернул ошибку ${response.status}`);
+        const text = await response.text();
+        const parsed = parseXmlFile(text, url);
+        if (!parsed.objects.length) throw new Error("В XML не найдено объектов");
+        activePlatform = parsed.platform;
+        activeMonitorPlatform = parsed.platform;
+        objects = parsed.objects;
+        originalObjects = structuredClone(parsed.objects);
+        selectedId = objects[0].externalId;
+        checkedIds = new Set();
+        appState.feedUrl = url;
+        save();
+        renderAll();
+        setLoadStatus(`Фид загружен. Определено: ${platformProfiles[activePlatform].name}. Объектов: ${objects.length}.`, "ok");
+        showToast(`Фид загружен: ${objects.length} объектов`);
+      } catch (error) {
+        setLoadStatus(`Не удалось загрузить фид из браузера: ${error.message}. Если ссылка рабочая, источник может блокировать чтение с другого сайта. В боевой версии это решается серверной загрузкой фида.`, "bad");
+      } finally {
+        document.querySelector("#loadUrlBtn").disabled = false;
+        document.querySelector("#loadUrlBtn").textContent = "Подтянуть фид";
+      }
+    }
+
+    function downloadXml() {
+      validated = true;
+      renderValidation();
+      const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Скачать все равно?`)) return;
+      const blob = new Blob([buildXml(objects, activePlatform)], { type: "application/xml;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${platformProfiles[activePlatform].downloadPrefix}-${new Date().toISOString().slice(0, 10)}.xml`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast("XML скачан");
+    }
+
+    function normalizeBaseUrl(value) {
+      const raw = (value || "").trim() || "https://feeds.example.ru";
+      return raw.replace(/\/+$/, "");
+    }
+
+    function generatedFeedId() {
+      const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+      const random = Math.random().toString(36).slice(2, 8);
+      return `${platformProfiles[activePlatform].downloadPrefix}-${date}-${random}`;
+    }
+
+    function readPublishedFeeds() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(publishedStorageKey));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function generateFeedLink() {
+      validated = true;
+      renderValidation();
+      const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Сгенерировать ссылку все равно?`)) return;
+      const base = normalizeBaseUrl(document.querySelector("#serverBaseUrl").value);
+      const id = generatedFeedId();
+      const url = `${base}/${activePlatform}/${id}.xml`;
+      const xml = buildXml(objects, activePlatform);
+      const published = readPublishedFeeds();
+      published.unshift({
+        id,
+        url,
+        platform: activePlatform,
+        createdAt: new Date().toISOString(),
+        objectCount: objects.length,
+        xml
+      });
+      localStorage.setItem(publishedStorageKey, JSON.stringify(published.slice(0, 20)));
+      appState.serverBaseUrl = base;
+      appState.generatedFeedId = id;
+      appState.generatedLink = url;
+      document.querySelector("#serverBaseUrl").value = base;
+      renderGeneratedLink();
+      save();
+      renderQualitySummary();
+      renderDetectedSource();
+      showToast("Новая ссылка на фид сгенерирована");
+    }
+
+    async function copyGeneratedLink() {
+      const url = document.querySelector("#generatedLink").dataset.url;
+      if (!url) {
+        alert("Сначала сгенерируйте ссылку.");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("Ссылка скопирована");
+      } catch {
+        prompt("Скопируйте ссылку:", url);
+      }
+    }
+
+    function textOf(node, selectors, fallback = "") {
+      for (const selector of selectors) {
+        const value = node.querySelector(selector)?.textContent?.trim();
+        if (value) return value;
+      }
+      return fallback;
+    }
+
+    function detectPlatform(doc, sourceUrl = "") {
+      const url = sourceUrl.toLowerCase();
+      if (doc.querySelector("Ads > Ad, Ad") || url.includes("avito")) return "avito";
+      if (doc.querySelector("realty-feed offer, offer[internal-id]") || url.includes("yandex")) return "yandex";
+      if (doc.querySelector("DomclickFeed Offer, Offer") || url.includes("domclick")) return "domclick";
+      return "cian";
+    }
+
+    function parseXmlFile(text, sourceUrl = "") {
+      const doc = new DOMParser().parseFromString(text, "application/xml");
+      const parseError = doc.querySelector("parsererror");
+      if (parseError) throw new Error("XML не удалось прочитать");
+      const platform = detectPlatform(doc, sourceUrl);
+      const selector = platform === "cian" ? "object" : platform === "avito" ? "Ad" : platform === "yandex" ? "offer" : "Offer";
+      const nodes = Array.from(doc.querySelectorAll(selector));
+      const objects = nodes.map((node, index) => ({
+        externalId: textOf(node, ["ExternalId", "Id"], node.getAttribute("internal-id") || `object-${index + 1}`),
+        description: textOf(node, ["Description", "description"]),
+        address: textOf(node, ["Address", "address", "location address"]),
+        phone: textOf(node, ["PhoneSchema Number", "Phone", "phone", "sales-agent phone"]).replace(/^\+7/, ""),
+        totalArea: textOf(node, ["TotalArea", "Square", "area value", "total-area value"]),
+        livingArea: textOf(node, ["LivingArea", "living-space value"]),
+        layoutPhoto: textOf(node, ["LayoutPhoto FullUrl", "Images Image", "image", "Photo"]),
+        photos: Array.from(node.querySelectorAll("Photos PhotoSchema FullUrl, Images Image, image, Photo")).map(el => el.getAttribute("url") || el.textContent.trim()).filter(Boolean).join("\n"),
+        rooms: textOf(node, ["FlatRoomsCount", "Rooms", "rooms"]),
+        isApartments: node.querySelector("IsApartments")?.textContent || "false",
+        floor: textOf(node, ["FloorNumber", "Floor", "floor"]),
+        complexId: textOf(node, ["JKSchema > Id"]),
+        complexName: textOf(node, ["JKSchema > Name", "ComplexName", "building-name"]),
+        houseId: textOf(node, ["House > Id"]),
+        flatNumber: textOf(node, ["FlatNumber"]),
+        sectionNumber: textOf(node, ["SectionNumber", "building-section"]),
+        developer: textOf(node, ["Developer", "PropertyRights", "sales-agent organization"]),
+        decoration: node.querySelector("Decoration")?.textContent || "preFine",
+        buildingName: textOf(node, ["Building > Name", "building-name", "ComplexName"]),
+        floorsCount: textOf(node, ["FloorsCount", "Floors", "floors-total", "FloorsTotal"]),
+        ceilingHeight: textOf(node, ["CeilingHeight"]),
+        quarter: node.querySelector("Quarter")?.textContent || "first",
+        year: node.querySelector("Year")?.textContent || "",
+        price: textOf(node, ["BargainTerms Price", "Price", "price value"])
+      }));
+      return { platform, objects };
+    }
+
+    function parseCsvFile(text) {
+      const [headLine, ...lines] = text.trim().split(/\r?\n/);
+      const headers = headLine.split(";").map(v => v.trim());
+      return lines.filter(Boolean).map(line => {
+        const values = line.split(";").map(v => v.trim());
+        return Object.fromEntries(headers.map((key, index) => [key, values[index] || ""]));
+      });
+    }
+
+    rows.addEventListener("click", event => {
+      const checkbox = event.target.closest(".row-check");
+      if (checkbox) {
+        const row = event.target.closest("tr");
+        const id = row.dataset.id;
+        if (checkbox.checked) checkedIds.add(id);
+        else checkedIds.delete(id);
+        renderRows();
+        return;
+      }
+      const row = event.target.closest("tr");
+      if (!row) return;
+      selectedId = row.dataset.id;
+      renderAll();
+    });
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const current = collectForm();
+      const existingIndex = objects.findIndex(item => item.externalId === selectedId);
+      if (existingIndex >= 0) objects[existingIndex] = current;
+      selectedId = current.externalId;
+      save();
+      renderAll();
+    });
+
+    form.addEventListener("input", () => {
+      const draft = collectForm();
+      preview.textContent = buildXml([draft], activePlatform);
+      renderValidation(draft);
+    });
+
+    document.querySelector("#duplicateBtn").addEventListener("click", () => {
+      const copy = { ...collectForm(), externalId: `${collectForm().externalId}-copy` };
+      objects.unshift(copy);
+      selectedId = copy.externalId;
+      save();
+      renderAll();
+    });
+
+    document.querySelector("#deleteBtn").addEventListener("click", () => {
+      if (!selectedItem() || !confirm("Удалить выбранный объект?")) return;
+      objects = objects.filter(item => item.externalId !== selectedId);
+      checkedIds.delete(selectedId);
+      selectedId = objects[0]?.externalId || "";
+      save();
+      renderAll();
+    });
+
+    document.querySelector("#search").addEventListener("input", renderRows);
+    document.querySelector("#statusFilter").addEventListener("change", renderRows);
+    document.querySelector(".table-wrap thead").addEventListener("click", event => {
+      const button = event.target.closest("[data-sort]");
+      if (button) toggleSort(button.dataset.sort);
+    });
+    document.querySelector("#feedMonitorTabs").addEventListener("click", event => {
+      const tab = event.target.closest("[data-feed-platform]");
+      if (!tab) return;
+      activeMonitorPlatform = platformProfiles[tab.dataset.feedPlatform] ? tab.dataset.feedPlatform : activePlatform;
+      renderFeedMonitorTabs();
+      renderFeedsList();
+    });
+    document.querySelector("#feedsList").addEventListener("click", event => {
+      const checkButton = event.target.closest("[data-check-feed]");
+      const deleteButton = event.target.closest("[data-delete-feed]");
+      if (checkButton) checkSavedFeeds(checkButton.dataset.checkFeed);
+      if (deleteButton) deleteMonitoredFeed(deleteButton.dataset.deleteFeed);
+    });
+    document.querySelector(".sidebar").addEventListener("click", event => {
+      const item = event.target.closest("[data-nav]");
+      if (!item) return;
+      activePage = item.dataset.nav === "feeds" ? "feeds" : "objects";
+      renderPage();
+    });
+    document.querySelector("#selectVisible").addEventListener("change", event => {
+      filteredObjects().forEach(item => {
+        if (event.target.checked) checkedIds.add(item.externalId);
+        else checkedIds.delete(item.externalId);
+      });
+      renderRows();
+    });
+    document.querySelector("#bulkSection").addEventListener("change", renderBulkControls);
+    document.querySelector("#bulkField").addEventListener("change", () => {
+      updateBulkMode();
+    });
+    document.querySelector("#applyBulkBtn").addEventListener("click", applyBulkChange);
+    document.querySelector("#validateBtn").addEventListener("click", () => {
+      validated = true;
+      renderValidation();
+      renderRows();
+      renderQualitySummary();
+      renderDetectedSource();
+      const issues = currentIssueCount();
+      showToast(issues ? `Проверка завершена: ${issues} ошибок` : "Проверка завершена: ошибок нет");
+    });
+    document.querySelector("#downloadBtn").addEventListener("click", downloadXml);
+    document.querySelector("#resetChangesBtn").addEventListener("click", resetChanges);
+    document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
+    document.querySelector("#loadUrlBtn").addEventListener("click", loadFeedFromUrl);
+    document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
+    document.querySelector("#copyGeneratedLinkBtn").addEventListener("click", copyGeneratedLink);
+    document.querySelector("#saveWorkspaceFeedBtn").addEventListener("click", saveCurrentFeedForMonitoring);
+    document.querySelector("#addMonitorFeedBtn").addEventListener("click", addManualMonitoredFeed);
+    document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
+    document.querySelector("#serverBaseUrl").addEventListener("change", save);
+    document.querySelector("#feedUrl").addEventListener("change", save);
+    document.querySelector("#monitorFeedUrl").addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addManualMonitoredFeed();
+      }
+    });
+    document.querySelector("#feedUrl").addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        loadFeedFromUrl();
+      }
+    });
+    document.querySelector("#fileInput").addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        const parsed = file.name.endsWith(".xml") ? parseXmlFile(text, file.name) : { platform: "cian", objects: file.name.endsWith(".json") ? JSON.parse(text) : parseCsvFile(text) };
+        const next = parsed.objects;
+        if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
+        activePlatform = parsed.platform || "cian";
+        activeMonitorPlatform = activePlatform;
+        objects = next;
+        originalObjects = structuredClone(next);
+        selectedId = objects[0].externalId;
+        checkedIds = new Set();
+        appState.feedUrl = file.name;
+        save();
+        renderAll();
+        showToast(`Файл загружен: ${objects.length} объектов`);
+      } catch (error) {
+        alert(error.message || "Файл не удалось импортировать");
+      } finally {
+        event.target.value = "";
+      }
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "sites": [
+    {
+      "id": "brusnika_tyumen",
+      "name": "Брусника Тюмень - минимальная цена квартиры",
+      "url": "https://tyumen.brusnika.ru/api/filter/facets/",
+      "currency": "₽",
+      "price_regex": "\"price\"\\s*:\\s*\\{\\s*\"min\"\\s*:\\s*([\\d.]+)",
+      "change_threshold_percent": 0,
+      "min_price": 1000000,
+      "max_price": 100000000,
+      "headers": {
+        "Accept": "application/json",
+        "Referer": "https://tyumen.brusnika.ru/flat/"
+      }
+    }
+  ]
+}
