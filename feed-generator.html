@@ -1362,6 +1362,47 @@
       background: rgba(255,255,255,.58);
     }
 
+    .monitor-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .monitor-card {
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,.78);
+    }
+
+    .monitor-card span {
+      display: block;
+      color: #777780;
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .monitor-card strong {
+      display: block;
+      margin-top: 7px;
+      color: #111116;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 860;
+    }
+
+    .monitor-filters {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 180px auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+      flex: 1 1 620px;
+    }
+
     .source-grid {
       display: grid;
       grid-template-columns: minmax(260px, 1fr) auto auto auto;
@@ -1530,7 +1571,7 @@
 
     .feed-row {
       display: grid;
-      grid-template-columns: minmax(210px, 1fr) 128px 128px auto;
+      grid-template-columns: minmax(210px, 1fr) 110px 128px 128px auto;
       gap: 10px;
       align-items: center;
       border: 1px solid var(--line-strong);
@@ -1586,6 +1627,12 @@
       animation: pulse-status 1s ease-in-out infinite;
     }
 
+    .feed-platform {
+      color: #111116;
+      font-size: 12px;
+      font-weight: 780;
+    }
+
     .feed-meta,
     .feed-error,
     .monitor-note {
@@ -1624,7 +1671,7 @@
 
     .publish-row {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) auto auto auto auto;
+      grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto auto auto;
       gap: 10px;
       align-items: end;
     }
@@ -1757,11 +1804,49 @@
     }
 
     .bulk-panel {
-      grid-template-columns: minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(120px, 1fr) minmax(150px, auto);
-      gap: 14px;
+      grid-template-columns: minmax(120px, .85fr) minmax(150px, 1fr) minmax(120px, .85fr) minmax(180px, auto);
+      gap: 12px;
       margin-bottom: 22px;
-      background: linear-gradient(135deg, #fff 0%, var(--violet) 100%);
-      box-shadow: 9px 9px 0 rgba(17, 17, 22, .08), inset 0 8px 0 #d8c4ff;
+      background: #fff;
+      box-shadow: 9px 9px 0 rgba(17, 17, 22, .08), inset 0 6px 0 #d8c4ff;
+    }
+
+    .bulk-head {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .bulk-head > div:first-child {
+      min-width: 0;
+    }
+
+    .bulk-head .panel-title {
+      margin: 0;
+    }
+
+    .bulk-head .panel-caption {
+      margin: 4px 0 0;
+    }
+
+    .bulk-selection {
+      flex: 0 0 auto;
+      min-width: 150px;
+      padding: 8px 10px;
+      border: 1px solid #111116;
+      background: #fff;
+      color: #111116;
+      font-size: 12px;
+      font-weight: 820;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .bulk-panel .field {
+      min-width: 0;
     }
 
     #applyBulkBtn {
@@ -1771,6 +1856,8 @@
       min-width: 0;
       padding-left: 14px;
       padding-right: 14px;
+      align-self: end;
+      white-space: normal;
     }
 
     .bulk-panel .bulk-value-field {
@@ -1830,6 +1917,12 @@
       box-shadow: 6px 6px 0 rgba(244, 199, 107, .50);
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .48;
+      box-shadow: none;
+    }
+
     button:active {
       transform: translateY(1px);
     }
@@ -1863,18 +1956,39 @@
       border-radius: 0;
       background: #fff;
       padding: 0;
-      overflow: auto;
-      max-height: clamp(320px, calc(100vh - 420px), 640px);
-      min-height: 280px;
+      overflow: hidden;
+      min-height: clamp(520px, calc(100vh - 300px), 780px);
       box-shadow: 9px 9px 0 rgba(17, 17, 22, .08);
       margin-bottom: 26px;
     }
 
     .table-wrap .panel-title {
       margin: 0;
+      padding: 0;
+      background: #fff;
+      border-bottom: 0;
+    }
+
+    .table-headline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
       padding: 16px 16px 10px;
       background: #fff;
       border-bottom: 1px solid var(--line-strong);
+    }
+
+    .reset-inline {
+      min-height: 38px;
+      border-color: #111116;
+      background: #111116;
+      color: #fff;
+      box-shadow: 5px 5px 0 rgba(244, 199, 107, .50);
+    }
+
+    .reset-inline[hidden] {
+      display: none;
     }
 
     .table-wrap .panel-caption {
@@ -1884,9 +1998,46 @@
       border-bottom: 1px solid var(--line-soft);
     }
 
+    .platform-guidance {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line-soft);
+      background: rgba(255,255,255,.74);
+      color: #5f5f67;
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 620;
+    }
+
+    .object-filter-panel {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr) minmax(100px, .8fr) repeat(4, minmax(96px, .75fr)) minmax(132px, 1fr);
+      gap: 10px;
+      padding: 14px 16px 16px;
+      background: linear-gradient(135deg, #fff 0%, var(--blue) 100%);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .object-filter-panel .field {
+      min-width: 0;
+    }
+
+    .object-filter-panel input,
+    .object-filter-panel select {
+      min-height: 40px;
+    }
+
+    .table-scroll {
+      overflow: auto;
+      max-height: clamp(460px, calc(100vh - 390px), 780px);
+      min-height: 420px;
+    }
+
     table {
       border-spacing: 0;
       border-collapse: collapse;
+      width: 100%;
+      min-width: 960px;
     }
 
     th {
@@ -2072,19 +2223,6 @@
       gap: 8px;
     }
 
-    .reset-floating {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 20;
-      min-height: 46px;
-      padding: 0 18px;
-      border: 2px solid #111116;
-      background: #111116;
-      color: #fff;
-      box-shadow: 6px 6px 0 rgba(255, 217, 198, .86);
-    }
-
     .toast {
       position: fixed;
       left: 50%;
@@ -2106,11 +2244,6 @@
     .toast.show {
       opacity: 1;
       transform: translate(-50%, 0);
-    }
-
-    .reset-floating:hover {
-      background: #fff;
-      color: #111116;
     }
 
     .source-panel,
@@ -2195,12 +2328,26 @@
       .feeds-tabs,
       .feed-row,
       .monitor-add,
+      .object-filter-panel,
       .source-grid,
       .issue-card,
       .quality-panel,
       .detected-source,
       .publish-row {
         grid-template-columns: 1fr;
+      }
+
+      .table-headline {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bulk-head {
+        flex-direction: column;
+      }
+
+      .bulk-selection {
+        width: 100%;
       }
 
       .feeds-toolbar > button {
@@ -2222,7 +2369,7 @@
   <div class="app" id="appShell">
     <aside class="sidebar">
       <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
-      <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Фиды</span></div>
+      <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Мониторинг</span></div>
     </aside>
 
     <main class="main">
@@ -2250,10 +2397,14 @@
           <div class="detected-card"><span>Источник</span><strong id="detectedProvider">-</strong></div>
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
+        <div class="platform-guidance">
+          После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
+        </div>
       </section>
 
       <section class="feeds-panel page-hidden" id="feedsPanel" data-page="feeds">
-        <h2 class="panel-title">Фиды</h2>
+        <h2 class="panel-title">Мониторинг фидов</h2>
+        <div class="panel-caption">Сохраняйте рабочие ссылки и проверяйте, открываются ли они без ошибок. После подключения сервера здесь появятся проверки по расписанию и уведомления.</div>
         <div class="monitor-add">
           <div class="field">
             <label for="monitorFeedUrl">Ссылка на фид для мониторинга</label>
@@ -2261,80 +2412,121 @@
           </div>
           <button id="addMonitorFeedBtn" type="button" class="primary">Добавить фид</button>
         </div>
+        <div class="monitor-summary" id="monitorSummary"></div>
         <div class="feeds-toolbar">
-          <div class="feeds-tabs" id="feedMonitorTabs"></div>
+          <div class="monitor-filters">
+            <div class="field compact">
+              <label for="monitorSearch">Поиск</label>
+              <input id="monitorSearch" placeholder="Название, ссылка или площадка">
+            </div>
+            <div class="field compact">
+              <label for="monitorStatusFilter">Статус</label>
+              <select id="monitorStatusFilter">
+                <option value="all">Все</option>
+                <option value="bad">С ошибками</option>
+                <option value="ok">Работают</option>
+                <option value="pending">Ожидают сервера</option>
+              </select>
+            </div>
+          </div>
           <button id="checkFeedsBtn" type="button">Проверить сейчас</button>
         </div>
         <div class="feeds-list" id="feedsList"></div>
         <div class="monitor-note">Проверки по расписанию, уведомления и подписочные ограничения готовы к подключению к серверу хранения фидов.</div>
       </section>
 
-      <section class="toolbar" data-page="objects">
-        <h2 class="panel-title">Фильтры объектов</h2>
-        <div class="panel-caption">Сузьте список перед точечным редактированием или массовыми правками.</div>
-        <div class="field">
-          <label for="search">Поиск</label>
-          <input id="search" type="search" placeholder="ID, квартира, секция, ЖК">
+      <section class="table-wrap" data-page="objects">
+        <div class="table-headline">
+          <h2 class="panel-title">Объекты в фиде</h2>
+          <button id="resetChangesBtn" type="button" class="reset-inline" hidden>Сбросить правки</button>
         </div>
-        <div class="field">
-          <label for="statusFilter">Статус</label>
-          <select id="statusFilter">
-            <option value="all">Все</option>
-            <option value="ok">Готовые</option>
-            <option value="warn">С ошибками</option>
-          </select>
+        <div class="panel-caption">Найдите объекты, отметьте галочками нужные строки и редактируйте их точечно справа или массово в блоке ниже.</div>
+        <div class="object-filter-panel">
+          <div class="field">
+            <label for="search">Поиск</label>
+            <input id="search" type="search" placeholder="ID, квартира, секция, ЖК">
+          </div>
+          <div class="field">
+            <label for="statusFilter">Статус</label>
+            <select id="statusFilter">
+              <option value="all">Все</option>
+              <option value="ok">Готовые</option>
+              <option value="warn">С ошибками</option>
+            </select>
+          </div>
+          <div class="field compact">
+            <label for="roomsFilter">Комнат</label>
+            <select id="roomsFilter">
+              <option value="all">Все</option>
+              <option value="studio">Студия</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+          <div class="field compact">
+            <label for="priceFrom">Цена от</label>
+            <input id="priceFrom" type="number" min="0" placeholder="₽">
+          </div>
+          <div class="field compact">
+            <label for="priceTo">Цена до</label>
+            <input id="priceTo" type="number" min="0" placeholder="₽">
+          </div>
+          <div class="field compact">
+            <label for="areaFrom">Площадь от</label>
+            <input id="areaFrom" type="number" min="0" step="0.1" placeholder="м²">
+          </div>
+          <div class="field compact">
+            <label for="areaTo">Площадь до</label>
+            <input id="areaTo" type="number" min="0" step="0.1" placeholder="м²">
+          </div>
+          <div class="field compact">
+            <label for="issueFilter">Ошибка</label>
+            <select id="issueFilter">
+              <option value="all">Все</option>
+              <option value="externalId">ID объекта</option>
+              <option value="layoutPhoto">Планировка</option>
+              <option value="photos">Фото</option>
+              <option value="price">Цена</option>
+              <option value="address">Адрес</option>
+              <option value="phone">Телефон</option>
+              <option value="totalArea">Площадь</option>
+              <option value="rooms">Комнаты</option>
+              <option value="floor">Этаж</option>
+              <option value="complexName">ЖК</option>
+              <option value="developer">Застройщик</option>
+              <option value="floorsCount">Этажность</option>
+              <option value="buildingName">Корпус</option>
+            </select>
+          </div>
         </div>
-        <div class="field compact">
-          <label for="roomsFilter">Комнат</label>
-          <select id="roomsFilter">
-            <option value="all">Все</option>
-            <option value="studio">Студия</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4+</option>
-          </select>
-        </div>
-        <div class="field compact">
-          <label for="priceFrom">Цена от</label>
-          <input id="priceFrom" type="number" min="0" placeholder="₽">
-        </div>
-        <div class="field compact">
-          <label for="priceTo">Цена до</label>
-          <input id="priceTo" type="number" min="0" placeholder="₽">
-        </div>
-        <div class="field compact">
-          <label for="areaFrom">Площадь от</label>
-          <input id="areaFrom" type="number" min="0" step="0.1" placeholder="м²">
-        </div>
-        <div class="field compact">
-          <label for="areaTo">Площадь до</label>
-          <input id="areaTo" type="number" min="0" step="0.1" placeholder="м²">
-        </div>
-        <div class="field compact">
-          <label for="issueFilter">Ошибка</label>
-          <select id="issueFilter">
-            <option value="all">Все</option>
-            <option value="externalId">ID объекта</option>
-            <option value="layoutPhoto">Планировка</option>
-            <option value="photos">Фото</option>
-            <option value="price">Цена</option>
-            <option value="address">Адрес</option>
-            <option value="phone">Телефон</option>
-            <option value="totalArea">Площадь</option>
-            <option value="rooms">Комнаты</option>
-            <option value="floor">Этаж</option>
-            <option value="complexName">ЖК</option>
-            <option value="developer">Застройщик</option>
-            <option value="floorsCount">Этажность</option>
-            <option value="buildingName">Корпус</option>
-          </select>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th><input id="selectVisible" type="checkbox" title="Выбрать видимые"></th>
+                <th><button class="sort-btn" type="button" data-sort="externalId">ID</button></th>
+                <th>Квартира</th>
+                <th>Дом и секция</th>
+                <th><button class="sort-btn" type="button" data-sort="totalArea">Площадь</button></th>
+                <th><button class="sort-btn" type="button" data-sort="price">Цена</button></th>
+                <th><button class="sort-btn" type="button" data-sort="status">Статус</button></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
         </div>
       </section>
 
       <section class="bulk-panel" data-page="objects">
-        <h2 class="panel-title">Массовые правки</h2>
-        <div class="panel-caption">Выберите объекты галочками в таблице и примените одно изменение сразу к группе.</div>
+        <div class="bulk-head">
+          <div>
+            <h2 class="panel-title">Массовые правки</h2>
+            <div class="panel-caption">Отметьте строки в таблице выше и измените одно поле сразу у выбранных объектов.</div>
+          </div>
+          <div class="bulk-selection" id="bulkSelection">Ничего не выбрано</div>
+        </div>
         <div class="field">
           <label for="bulkSection">Раздел</label>
           <select id="bulkSection"></select>
@@ -2354,28 +2546,9 @@
         <div class="field bulk-value-field">
           <label for="bulkValue">Значение</label>
           <input id="bulkValue" placeholder="Например: новый текст, ссылка или 5 для цены +5%">
-          <div class="bulk-status" id="bulkStatus">Выберите объекты галочками в таблице.</div>
+          <div class="bulk-status" id="bulkStatus">Сначала отметьте объекты галочками в таблице.</div>
         </div>
-        <button id="applyBulkBtn" class="primary">Применить</button>
-      </section>
-
-      <section class="table-wrap" data-page="objects">
-        <h2 class="panel-title">Объекты в фиде</h2>
-        <div class="panel-caption">Клик по строке открывает карточку справа. Клик по заголовкам ID, площадь, цена и статус сортирует таблицу.</div>
-        <table>
-          <thead>
-            <tr>
-              <th><input id="selectVisible" type="checkbox" title="Выбрать видимые"></th>
-              <th><button class="sort-btn" type="button" data-sort="externalId">ID</button></th>
-              <th>Квартира</th>
-              <th>Дом и секция</th>
-              <th><button class="sort-btn" type="button" data-sort="totalArea">Площадь</button></th>
-              <th><button class="sort-btn" type="button" data-sort="price">Цена</button></th>
-              <th><button class="sort-btn" type="button" data-sort="status">Статус</button></th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+        <button id="applyBulkBtn" class="primary">Применить к выбранным</button>
       </section>
 
       <section class="quality-panel" data-page="objects">
@@ -2388,17 +2561,21 @@
 
       <section class="publish-panel" data-page="objects">
         <h2 class="panel-title">Финальная выгрузка</h2>
+        <div class="panel-caption">Последний шаг после проверки: назовите фид и выберите, что нужно сейчас — постоянная ссылка или обычный XML-файл.</div>
         <div class="publish-row">
           <div class="field">
-            <label for="serverBaseUrl">Сервер публикации</label>
-            <input id="serverBaseUrl" type="url" placeholder="https://feeds.example.ru">
+            <label for="feedName">Название фида</label>
+            <input id="feedName" placeholder="Например: Символ ЦИАН июль">
           </div>
-          <button id="generateLinkBtn" type="button" class="primary">Сгенерировать ссылку</button>
+          <div class="field">
+            <label for="serverBaseUrl">Домен сервера</label>
+            <input id="serverBaseUrl" type="url" placeholder="Автоматически или https://feeds.example.ru">
+          </div>
+          <button id="generateLinkBtn" type="button" class="primary">Получить ссылку</button>
           <button id="downloadBtn">Скачать XML</button>
           <button id="copyGeneratedLinkBtn" type="button">Копировать</button>
-          <button id="saveWorkspaceFeedBtn" type="button">В мониторинг</button>
         </div>
-        <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Сейчас она сохраняется локально как черновик будущей серверной публикации.</div>
+        <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.</div>
       </section>
     </main>
 
@@ -2541,7 +2718,6 @@
       <pre id="preview" class="preview"></pre>
     </aside>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <button id="resetChangesBtn" type="button" class="reset-floating">↺ Сбросить правки</button>
   </div>
 
   <script>
@@ -2702,23 +2878,25 @@
           originalObjects: saved.originalObjects?.length ? saved.originalObjects : structuredClone(saved.objects),
           activePlatform: saved.activePlatform || "cian",
           feedUrl: saved.feedUrl || "",
+          feedName: saved.feedName || "",
           serverBaseUrl: saved.serverBaseUrl || "",
           generatedLink: saved.generatedLink || "",
           generatedFeedId: saved.generatedFeedId || ""
         };
         const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
-        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
       } catch {
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
       }
     }
 
     function save() {
       appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
+      appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = document.querySelector("#serverBaseUrl")?.value || appState.serverBaseUrl || "";
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
-      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
     }
 
     function escapeXml(value = "") {
@@ -2968,9 +3146,9 @@
         item.classList.toggle("active", item.dataset.nav === activePage);
       });
       const profile = platformProfiles[activePlatform];
-      document.querySelector("h1").textContent = isFeedsPage ? "Фиды" : "Фиды недвижимости";
+      document.querySelector("h1").textContent = isFeedsPage ? "Мониторинг" : "Фиды недвижимости";
       document.querySelector(".subtitle").textContent = isFeedsPage
-        ? "Мониторинг рабочих ссылок на фиды по площадкам и сообщения об ошибках"
+        ? "Контроль рабочих ссылок, статусов проверки и ошибок по сохраненным фидам"
         : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
     }
 
@@ -3002,6 +3180,16 @@
       localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80)));
     }
 
+    function hasFeedChanges() {
+      return JSON.stringify(objects) !== JSON.stringify(originalObjects);
+    }
+
+    function renderResetControl() {
+      const resetButton = document.querySelector("#resetChangesBtn");
+      if (!resetButton) return;
+      resetButton.hidden = !hasFeedChanges();
+    }
+
     function monitorStatus(feed) {
       const labels = {
         ok: "Работает",
@@ -3017,23 +3205,58 @@
       return new Date(value).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
     }
 
+    function detectPlatformFromUrl(url = "") {
+      const value = url.toLowerCase();
+      if (value.includes("avito")) return "avito";
+      if (value.includes("yandex") || value.includes("realty") || value.includes("яндекс")) return "yandex";
+      if (value.includes("domclick") || value.includes("домклик")) return "domclick";
+      if (value.includes("cian") || value.includes("циан")) return "cian";
+      return activePlatform;
+    }
+
     function renderFeedMonitorTabs() {
-      document.querySelector("#feedMonitorTabs").innerHTML = Object.entries(platformProfiles).map(([id, profile]) => `
-        <button class="feeds-tab ${id === activeMonitorPlatform ? "active" : ""}" type="button" data-feed-platform="${id}">
-          ${escapeXml(profile.name)}
-        </button>
-      `).join("");
+      renderMonitorSummary();
+    }
+
+    function monitorFilteredFeeds() {
+      const feeds = readMonitoredFeeds();
+      const status = document.querySelector("#monitorStatusFilter")?.value || "all";
+      const term = (document.querySelector("#monitorSearch")?.value || "").trim().toLowerCase();
+      return feeds.filter(feed => {
+        const matchesStatus = status === "all" || feed.status === status;
+        const platformName = platformProfiles[feed.platform]?.name || feed.platform || "";
+        const joined = [feed.name, feed.url, platformName, feed.error].join(" ").toLowerCase();
+        return matchesStatus && (!term || joined.includes(term));
+      });
+    }
+
+    function renderMonitorSummary() {
+      const feeds = readMonitoredFeeds();
+      const ok = feeds.filter(feed => feed.status === "ok").length;
+      const bad = feeds.filter(feed => feed.status === "bad").length;
+      const pending = feeds.filter(feed => !feed.status || feed.status === "pending").length;
+      const checked = feeds
+        .map(feed => feed.lastChecked ? new Date(feed.lastChecked).getTime() : 0)
+        .filter(Boolean)
+        .sort((a, b) => b - a)[0];
+      document.querySelector("#monitorSummary").innerHTML = `
+        <div class="monitor-card"><span>Всего фидов</span><strong>${feeds.length}</strong></div>
+        <div class="monitor-card"><span>Работают</span><strong>${ok}</strong></div>
+        <div class="monitor-card"><span>С ошибками</span><strong>${bad}</strong></div>
+        <div class="monitor-card"><span>Последняя проверка</span><strong>${checked ? formatCheckDate(new Date(checked).toISOString()).slice(0, 5) : "-"}</strong></div>
+      `;
     }
 
     function renderFeedsList() {
       const list = document.querySelector("#feedsList");
-      const feeds = readMonitoredFeeds().filter(feed => feed.platform === activeMonitorPlatform);
+      const feeds = monitorFilteredFeeds();
       if (!feeds.length) {
         list.innerHTML = `
           <div class="feed-empty">
-            В разделе «${escapeXml(platformProfiles[activeMonitorPlatform].name)}» пока нет сохраненных фидов. Вставьте ссылку выше и добавьте ее для мониторинга.
+            Сохраненных фидов по текущим условиям нет. Добавьте ссылку выше или очистите поиск и фильтр статуса.
           </div>
         `;
+        renderMonitorSummary();
         return;
       }
       list.innerHTML = feeds.map(feed => `
@@ -3042,6 +3265,7 @@
             ${escapeXml(feed.name)}
             <span class="feed-url">${escapeXml(feed.url)}</span>
           </div>
+          <div class="feed-platform">${escapeXml(platformProfiles[feed.platform]?.name || "Не определено")}</div>
           <span class="feed-status ${escapeXml(feed.status || "pending")}">${escapeXml(monitorStatus(feed))}</span>
           <div class="feed-meta">Проверка: ${escapeXml(formatCheckDate(feed.lastChecked))}</div>
           <div class="feed-monitor-actions">
@@ -3051,6 +3275,7 @@
           ${feed.error ? `<div class="feed-error">Сообщение ошибки: ${escapeXml(feed.error)}</div>` : ""}
         </div>
       `).join("");
+      renderMonitorSummary();
     }
 
     function saveFeedForMonitoring({ url, platform, name, objectCount, error }) {
@@ -3065,7 +3290,7 @@
         alert("Ссылка выглядит некорректно. Нужен полный адрес, например https://site.ru/feed.xml.");
         return;
       }
-      const feedPlatform = platformProfiles[platform] ? platform : activePlatform;
+      const feedPlatform = platformProfiles[platform] ? platform : detectPlatformFromUrl(sourceUrl);
       const feeds = readMonitoredFeeds();
       const existingIndex = feeds.findIndex(feed => feed.url === sourceUrl && feed.platform === feedPlatform);
       const feed = {
@@ -3082,7 +3307,6 @@
       if (existingIndex >= 0) feeds[existingIndex] = { ...feeds[existingIndex], ...feed };
       else feeds.unshift(feed);
       saveMonitoredFeeds(feeds);
-      activeMonitorPlatform = feedPlatform;
       renderFeedMonitorTabs();
       renderFeedsList();
       showToast("Фид сохранён в мониторинг");
@@ -3100,10 +3324,11 @@
 
     function addManualMonitoredFeed() {
       const input = document.querySelector("#monitorFeedUrl");
+      const platform = detectPlatformFromUrl(input.value);
       saveFeedForMonitoring({
         url: input.value,
-        platform: activeMonitorPlatform,
-        name: `${platformProfiles[activeMonitorPlatform].name} • внешний фид`,
+        platform,
+        name: `${platformProfiles[platform]?.name || "Фид"} • внешний фид`,
         objectCount: 0
       });
       input.value = "";
@@ -3146,13 +3371,13 @@
 
     async function checkSavedFeeds(onlyId = "") {
       const feeds = readMonitoredFeeds();
-      saveMonitoredFeeds(feeds.map(feed => ((onlyId && feed.id === onlyId) || (!onlyId && feed.platform === activeMonitorPlatform))
+      saveMonitoredFeeds(feeds.map(feed => (onlyId ? feed.id === onlyId : true)
         ? { ...feed, status: "checking" }
         : feed));
       renderFeedsList();
       const next = [];
       for (const feed of feeds) {
-        if ((onlyId && feed.id !== onlyId) || (!onlyId && feed.platform !== activeMonitorPlatform)) {
+        if (onlyId && feed.id !== onlyId) {
           next.push(feed);
           continue;
         }
@@ -3173,12 +3398,15 @@
       const box = document.querySelector("#generatedLink");
       if (serverInput && !serverInput.value) serverInput.value = appState.serverBaseUrl || "";
       if (appState.generatedLink) {
+        const isDraft = isLocalDraftUrl(appState.generatedLink);
         box.dataset.url = appState.generatedLink;
-        box.textContent = `${appState.generatedLink} — локальный черновик публикации. На сервере эта ссылка будет отдавать обновленный XML.`;
+        box.textContent = isDraft
+          ? `${appState.generatedLink} — черновая ссылка. Запустите backend или укажите публичный домен сервера, чтобы ссылка стала доступна агрегатору.`
+          : `${appState.generatedLink} — постоянная ссылка на XML. Ее можно передать агрегатору после финальной проверки.`;
         box.classList.add("ready");
       } else {
         box.dataset.url = "";
-        box.textContent = "Ссылка появится после генерации. Сейчас она сохраняется локально как черновик будущей серверной публикации.";
+        box.textContent = "Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.";
         box.classList.remove("ready");
       }
     }
@@ -3269,6 +3497,7 @@
         checkedIds.add(selectedId);
       }
       invalidateGeneratedLink();
+      renderResetControl();
       setEditorStatus("Сохраняю...");
       scheduleSave();
       return draft;
@@ -3286,9 +3515,19 @@
     }
 
     function renderBulkStatus() {
+      const selection = document.querySelector("#bulkSelection");
+      const applyButton = document.querySelector("#applyBulkBtn");
+      const bulkInputs = ["#bulkSection", "#bulkField", "#bulkMode", "#bulkValue"].map(selector => document.querySelector(selector)).filter(Boolean);
+      if (selection) {
+        selection.textContent = checkedIds.size ? `Выбрано ${checkedIds.size}` : "Выберите объекты";
+      }
+      if (applyButton) applyButton.disabled = !checkedIds.size;
+      bulkInputs.forEach(input => {
+        input.disabled = !checkedIds.size;
+      });
       document.querySelector("#bulkStatus").textContent = checkedIds.size
-        ? `Выбрано объектов: ${checkedIds.size}. Правка применится только к ним.`
-        : "Выберите объекты галочками в таблице.";
+        ? `Изменение применится только к ${checkedIds.size} выбранным объектам.`
+        : "Сначала отметьте одну или несколько строк в таблице выше.";
     }
 
     function updateBulkMode() {
@@ -3515,9 +3754,11 @@ ${photos}
       renderRows();
       fillForm();
       if (!document.querySelector("#feedUrl").value) document.querySelector("#feedUrl").value = appState.feedUrl || "";
+      if (!document.querySelector("#feedName").value) document.querySelector("#feedName").value = appState.feedName || defaultFeedName();
       renderGeneratedLink();
       renderQualitySummary();
       renderDetectedSource();
+      renderResetControl();
       renderPage();
     }
 
@@ -3608,6 +3849,25 @@ ${photos}
       renderIssueDiagnostics(groups);
     }
 
+    async function fetchFeedXmlByUrl(url) {
+      try {
+        const response = await fetch("/api/feeds/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.xml) return data.xml;
+        }
+      } catch {
+        // Static prototype fallback: direct browser fetch can still work for CORS-friendly feeds.
+      }
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Источник вернул ошибку ${response.status}`);
+      return response.text();
+    }
+
     async function loadFeedFromUrl() {
       const input = document.querySelector("#feedUrl");
       const url = input.value.trim();
@@ -3626,9 +3886,7 @@ ${photos}
       document.querySelector("#loadUrlBtn").classList.add("loading");
       document.querySelector("#loadUrlBtn").textContent = "Загружаю...";
       try {
-        const response = await fetch(url, { cache: "no-store" });
-        if (!response.ok) throw new Error(`Источник вернул ошибку ${response.status}`);
-        const text = await response.text();
+        const text = await fetchFeedXmlByUrl(url);
         const parsed = parseXmlFile(text, url);
         if (!parsed.objects.length) throw new Error("В XML не найдено объектов");
         activePlatform = parsed.platform;
@@ -3638,14 +3896,16 @@ ${photos}
         selectedId = "";
         checkedIds = new Set();
         appState.feedUrl = url;
+        appState.feedName = defaultFeedName(url);
         appState.generatedLink = "";
         appState.generatedFeedId = "";
+        document.querySelector("#feedName").value = appState.feedName;
         save();
         renderAll();
         setLoadStatus(`Фид загружен. Определено: ${platformProfiles[activePlatform].name}. Объектов: ${objects.length}.`, "ok");
         showToast(`Фид загружен: ${objects.length} объектов`);
       } catch (error) {
-        setLoadStatus(`Не удалось загрузить фид из браузера: ${error.message}. Если ссылка рабочая, источник может блокировать чтение с другого сайта. В боевой версии это решается серверной загрузкой фида.`, "bad");
+        setLoadStatus(`Не удалось загрузить фид: ${error.message}. Проверьте ссылку, доступность XML и права доступа к источнику.`, "bad");
       } finally {
         document.querySelector("#loadUrlBtn").disabled = false;
         document.querySelector("#loadUrlBtn").classList.remove("loading");
@@ -3672,7 +3932,47 @@ ${photos}
       return raw.replace(/\/+$/, "");
     }
 
-    function generatedFeedId() {
+    function sourceNameFromUrl(value = "") {
+      try {
+        const url = new URL(value);
+        const last = url.pathname.split("/").filter(Boolean).pop() || url.hostname;
+        return decodeURIComponent(last).replace(/\.(xml|json|csv)$/i, "") || url.hostname;
+      } catch {
+        return String(value || "").replace(/\.(xml|json|csv)$/i, "").trim();
+      }
+    }
+
+    function defaultFeedName(source = appState.feedUrl) {
+      const profile = platformProfiles[activePlatform]?.name || "Фид";
+      const sourceName = sourceNameFromUrl(source);
+      return sourceName ? `${sourceName} · ${profile}` : `${profile} · ${new Date().toLocaleDateString("ru-RU")}`;
+    }
+
+    function currentFeedName() {
+      return document.querySelector("#feedName").value.trim();
+    }
+
+    const slugTranslitMap = {
+      а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y",
+      к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",
+      х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya"
+    };
+
+    function slugifyFeedName(value = "") {
+      return String(value)
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[а-яё]/gi, char => slugTranslitMap[char.toLowerCase()] || "")
+        .toLowerCase()
+        .replace(/\.xml$/i, "")
+        .replace(/[^a-z0-9-]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+    }
+
+    function generatedFeedId(feedName = "") {
+      const namedSlug = slugifyFeedName(feedName);
+      if (namedSlug) return namedSlug;
       const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
       const random = Math.random().toString(36).slice(2, 8);
       return `${platformProfiles[activePlatform].downloadPrefix}-${date}-${random}`;
@@ -3687,20 +3987,87 @@ ${photos}
       }
     }
 
-    function generateFeedLink() {
+    async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
+      const payload = {
+        platform,
+        sourceUrl,
+        sourceType,
+        xml,
+        objectCount,
+        name: name || `${platformProfiles[platform]?.name || platform} • ${objectCount} объектов`,
+        slug
+      };
+      const endpoint = id ? `/api/feeds/${encodeURIComponent(id)}` : "/api/feeds";
+      const response = await fetch(endpoint, {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || `Сервер вернул HTTP ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function generateFeedLink() {
       validated = true;
       renderValidation();
       const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Сгенерировать ссылку все равно?`)) return;
+      const feedName = currentFeedName();
+      if (!feedName) {
+        const input = document.querySelector("#feedName");
+        input.value = defaultFeedName();
+        input.focus();
+        showToast("Проверьте название фида перед генерацией ссылки");
+        return;
+      }
       const base = normalizeBaseUrl(document.querySelector("#serverBaseUrl").value);
-      const id = generatedFeedId();
-      const url = `${base}/${activePlatform}/${id}.xml`;
       const xml = buildXml(objects, activePlatform);
+      const button = document.querySelector("#generateLinkBtn");
+      const hadPublishedId = Boolean(appState.generatedFeedId);
+      button.disabled = true;
+      button.classList.add("loading");
+      button.textContent = "Публикую...";
+
+      try {
+        const publishedFeed = await publishFeedToServer({
+          id: appState.generatedFeedId,
+          platform: activePlatform,
+          sourceUrl: appState.feedUrl || document.querySelector("#feedUrl").value,
+          sourceType: /^https?:\/\//i.test(appState.feedUrl || "") ? "url" : "file",
+          xml,
+          objectCount: objects.length,
+          name: feedName,
+          slug: generatedFeedId(feedName)
+        });
+        appState.serverBaseUrl = new URL(publishedFeed.url).origin;
+        appState.generatedFeedId = publishedFeed.id;
+        appState.generatedLink = publishedFeed.url;
+        document.querySelector("#serverBaseUrl").value = appState.serverBaseUrl;
+        renderGeneratedLink();
+        save();
+        renderQualitySummary();
+        renderDetectedSource();
+        showToast(hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
+        return;
+      } catch (error) {
+        console.warn("Server publish failed, using local draft link:", error);
+      } finally {
+        button.disabled = false;
+        button.classList.remove("loading");
+        button.textContent = "Сгенерировать ссылку";
+      }
+
+      const id = appState.generatedFeedId || generatedFeedId(feedName);
+      const url = `${base}/${activePlatform}/${id}.xml`;
       const published = readPublishedFeeds();
       published.unshift({
         id,
         url,
         platform: activePlatform,
+        name: feedName,
         createdAt: new Date().toISOString(),
         objectCount: objects.length,
         xml
@@ -3714,7 +4081,7 @@ ${photos}
       save();
       renderQualitySummary();
       renderDetectedSource();
-      showToast("Новая ссылка на фид сгенерирована");
+      showToast("Backend не найден: создана локальная черновая ссылка");
     }
 
     async function copyGeneratedLink() {
@@ -3853,12 +4220,9 @@ ${photos}
       const button = event.target.closest("[data-sort]");
       if (button) toggleSort(button.dataset.sort);
     });
-    document.querySelector("#feedMonitorTabs").addEventListener("click", event => {
-      const tab = event.target.closest("[data-feed-platform]");
-      if (!tab) return;
-      activeMonitorPlatform = platformProfiles[tab.dataset.feedPlatform] ? tab.dataset.feedPlatform : activePlatform;
-      renderFeedMonitorTabs();
-      renderFeedsList();
+    ["#monitorSearch", "#monitorStatusFilter"].forEach(selector => {
+      document.querySelector(selector).addEventListener("input", renderFeedsList);
+      document.querySelector(selector).addEventListener("change", renderFeedsList);
     });
     document.querySelector("#feedsList").addEventListener("click", event => {
       const checkButton = event.target.closest("[data-check-feed]");
@@ -3899,10 +4263,13 @@ ${photos}
     document.querySelector("#loadUrlBtn").addEventListener("click", loadFeedFromUrl);
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
     document.querySelector("#copyGeneratedLinkBtn").addEventListener("click", copyGeneratedLink);
-    document.querySelector("#saveWorkspaceFeedBtn").addEventListener("click", saveCurrentFeedForMonitoring);
     document.querySelector("#addMonitorFeedBtn").addEventListener("click", addManualMonitoredFeed);
     document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
     document.querySelector("#serverBaseUrl").addEventListener("change", save);
+    document.querySelector("#feedName").addEventListener("change", () => {
+      invalidateGeneratedLink();
+      save();
+    });
     document.querySelector("#feedUrl").addEventListener("change", save);
     document.querySelector("#monitorFeedUrl").addEventListener("keydown", event => {
       if (event.key === "Enter") {
@@ -3931,8 +4298,10 @@ ${photos}
         selectedId = "";
         checkedIds = new Set();
         appState.feedUrl = file.name;
+        appState.feedName = defaultFeedName(file.name);
         appState.generatedLink = "";
         appState.generatedFeedId = "";
+        document.querySelector("#feedName").value = appState.feedName;
         save();
         renderAll();
         showToast(`Файл загружен: ${objects.length} объектов`);
