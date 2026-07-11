@@ -4023,7 +4023,6 @@ ${photos}
         showToast("Проверьте название фида перед генерацией ссылки");
         return;
       }
-      const base = normalizeBaseUrl(document.querySelector("#serverBaseUrl").value);
       const xml = buildXml(objects, activePlatform);
       const button = document.querySelector("#generateLinkBtn");
       const hadPublishedId = Boolean(appState.generatedFeedId);
@@ -4053,35 +4052,17 @@ ${photos}
         showToast(hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
         return;
       } catch (error) {
-        console.warn("Server publish failed, using local draft link:", error);
+        console.warn("Server publish failed:", error);
+        const message = error?.message || "Не удалось опубликовать фид";
+        document.querySelector("#generatedLink").classList.remove("ready");
+        document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}. Проверьте подключение Vercel Blob и повторите попытку.`;
+        showToast(`Не удалось создать ссылку: ${message}`);
+        return;
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
         button.textContent = "Сгенерировать ссылку";
       }
-
-      const id = appState.generatedFeedId || generatedFeedId(feedName);
-      const url = `${base}/${activePlatform}/${id}.xml`;
-      const published = readPublishedFeeds();
-      published.unshift({
-        id,
-        url,
-        platform: activePlatform,
-        name: feedName,
-        createdAt: new Date().toISOString(),
-        objectCount: objects.length,
-        xml
-      });
-      localStorage.setItem(publishedStorageKey, JSON.stringify(published.slice(0, 20)));
-      appState.serverBaseUrl = base;
-      appState.generatedFeedId = id;
-      appState.generatedLink = url;
-      document.querySelector("#serverBaseUrl").value = base;
-      renderGeneratedLink();
-      save();
-      renderQualitySummary();
-      renderDetectedSource();
-      showToast("Backend не найден: создана локальная черновая ссылка");
     }
 
     async function copyGeneratedLink() {

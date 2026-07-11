@@ -108,6 +108,15 @@ function sendError(res, status, message) {
 }
 
 function parseBody(req) {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === "object") return Promise.resolve(req.body);
+    try {
+      return Promise.resolve(JSON.parse(String(req.body)));
+    } catch {
+      return Promise.reject(new Error("Некорректный JSON в запросе."));
+    }
+  }
+
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
@@ -226,7 +235,11 @@ async function handleApi(req, res, url) {
   if (req.method === "OPTIONS") return send(res, 204, {});
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    return send(res, 200, { ok: true });
+    return send(res, 200, {
+      ok: true,
+      storage: usesBlobStorage() ? "vercel-blob" : "local",
+      feedPublishingReady: usesBlobStorage() || !process.env.VERCEL
+    });
   }
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
