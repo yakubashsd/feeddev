@@ -3851,7 +3851,7 @@ ${photos}
 
     async function fetchFeedXmlByUrl(url) {
       try {
-        const response = await fetch("/api/feeds/import", {
+        const response = await fetch("/api/feeds-import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url })
@@ -3997,7 +3997,7 @@ ${photos}
         name: name || `${platformProfiles[platform]?.name || platform} • ${objectCount} объектов`,
         slug
       };
-      const endpoint = id ? `/api/feeds/${encodeURIComponent(id)}` : "/api/feeds";
+      const endpoint = id ? `/api/feeds?slug=${encodeURIComponent(id)}` : "/api/feeds";
       const response = await fetch(endpoint, {
         method: id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },

@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { list, put } = require("@vercel/blob");
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/, "");
@@ -25,7 +26,11 @@ function ensureStorage() {
   if (!fs.existsSync(INDEX_FILE)) fs.writeFileSync(INDEX_FILE, "[]\n");
 }
 
-function readIndex() {
+function usesBlobStorage() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
+function readLocalIndex() {
   ensureStorage();
   try {
     const parsed = JSON.parse(fs.readFileSync(INDEX_FILE, "utf8"));
@@ -35,9 +40,56 @@ function readIndex() {
   }
 }
 
-function writeIndex(feeds) {
+function writeLocalIndex(feeds) {
   ensureStorage();
   fs.writeFileSync(INDEX_FILE, `${JSON.stringify(feeds, null, 2)}\n`);
+}
+
+async function readFeeds() {
+  if (!usesBlobStorage()) return readLocalIndex();
+
+  const result = await list({ prefix: "feed-records/", limit: 1000 });
+  const records = await Promise.all(result.blobs.map(async blob => {
+    const response = await fetch(blob.url, { cache: "no-store" });
+    return response.ok ? response.json() : null;
+  }));
+
+  return records
+    .filter(Boolean)
+    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+}
+
+async function persistFeedXml(slug, xml) {
+  if (!usesBlobStorage()) {
+    ensureStorage();
+    fs.writeFileSync(path.join(FEEDS_DIR, `${slug}.xml`), xml);
+    return null;
+  }
+
+  return put(`feeds/${slug}.xml`, xml, {
+    access: "public",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/xml; charset=utf-8",
+    cacheControlMaxAge: 60
+  });
+}
+
+async function persistFeedRecord(record) {
+  if (!usesBlobStorage()) {
+    const feeds = readLocalIndex().filter(feed => feed.slug !== record.slug);
+    feeds.unshift(record);
+    writeLocalIndex(feeds);
+    return;
+  }
+
+  await put(`feed-records/${record.slug}.json`, JSON.stringify(record), {
+    access: "public",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json; charset=utf-8",
+    cacheControlMaxAge: 60
+  });
 }
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
@@ -126,9 +178,9 @@ function validateFeedPayload(payload) {
   };
 }
 
-function saveFeed(req, payload, existingSlug = "") {
+async function saveFeed(req, payload, existingSlug = "") {
   const data = validateFeedPayload(payload);
-  const feeds = readIndex();
+  const feeds = await readFeeds();
   const now = new Date().toISOString();
   const requestedSlug = existingSlug || payload.slug || data.name || `${data.platform}-${new Date().toISOString().slice(0, 10)}-${crypto.randomBytes(3).toString("hex")}`;
   let slug = makeSlug(requestedSlug);
@@ -138,8 +190,7 @@ function saveFeed(req, payload, existingSlug = "") {
     slug = `${slug}-${crypto.randomBytes(3).toString("hex")}`;
   }
 
-  const filePath = path.join(FEEDS_DIR, `${slug}.xml`);
-  fs.writeFileSync(filePath, data.xml);
+  const blob = await persistFeedXml(slug, data.xml);
 
   const record = {
     id: slug,
@@ -150,14 +201,12 @@ function saveFeed(req, payload, existingSlug = "") {
     name: data.name || `${data.platform} feed`,
     objectCount: Number(payload.objectCount || 0),
     file: `feeds/${slug}.xml`,
-    url: feedUrl(req, slug),
+    url: blob?.url || feedUrl(req, slug),
     updatedAt: now,
     createdAt: existing?.createdAt || now
   };
 
-  const next = feeds.filter(feed => feed.slug !== slug);
-  next.unshift(record);
-  writeIndex(next);
+  await persistFeedRecord(record);
   return record;
 }
 
@@ -181,10 +230,10 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
-    return send(res, 200, { feeds: readIndex() });
+    return send(res, 200, { feeds: await readFeeds() });
   }
 
-  if (req.method === "POST" && url.pathname === "/api/feeds/import") {
+  if (req.method === "POST" && ["/api/feeds/import", "/api/feeds-import"].includes(url.pathname)) {
     const payload = await parseBody(req);
     const sourceUrl = String(payload.url || "").trim();
     if (!sourceUrl) return sendError(res, 400, "Передайте ссылку на фид.");
@@ -196,14 +245,20 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/feeds") {
     const payload = await parseBody(req);
-    const record = saveFeed(req, payload);
+    const record = await saveFeed(req, payload);
     return send(res, 201, record);
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/feeds" && url.searchParams.get("slug")) {
+    const payload = await parseBody(req);
+    const record = await saveFeed(req, payload, url.searchParams.get("slug"));
+    return send(res, 200, record);
   }
 
   const updateMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)$/i);
   if (req.method === "PUT" && updateMatch) {
     const payload = await parseBody(req);
-    const record = saveFeed(req, payload, updateMatch[1]);
+    const record = await saveFeed(req, payload, updateMatch[1]);
     return send(res, 200, record);
   }
 
@@ -212,12 +267,18 @@ async function handleApi(req, res, url) {
 
 async function handleRequest(req, res) {
   try {
-    ensureStorage();
     const url = new URL(req.url, `http://${req.headers.host}`);
     const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.xml$/i);
 
     if (publicFeedMatch && req.method === "GET") {
       const slug = publicFeedMatch[1];
+      if (usesBlobStorage()) {
+        const record = (await readFeeds()).find(feed => feed.slug === slug);
+        if (!record?.url) return sendError(res, 404, "Feed not found");
+        const response = await fetch(record.url, { cache: "no-store" });
+        if (!response.ok) return sendError(res, 502, "Feed storage is unavailable");
+        return send(res, 200, await response.text(), "application/xml; charset=utf-8");
+      }
       const filePath = path.join(FEEDS_DIR, `${slug}.xml`);
       if (!fs.existsSync(filePath)) return sendError(res, 404, "Feed not found");
       res.writeHead(200, {
@@ -234,7 +295,11 @@ async function handleRequest(req, res) {
   }
 }
 
-http.createServer(handleRequest).listen(PORT, () => {
-  ensureStorage();
-  console.log(`FeedDev server is running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  http.createServer(handleRequest).listen(PORT, () => {
+    ensureStorage();
+    console.log(`FeedDev server is running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = handleRequest;
