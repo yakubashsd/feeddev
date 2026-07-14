@@ -2922,6 +2922,32 @@
 
     .publish-panel { margin-bottom: 0; }
 
+    .publish-row {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      align-items: end;
+      gap: 12px;
+    }
+
+    .publish-row button {
+      width: 100%;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.18;
+    }
+
+    .generated-field {
+      margin-top: 14px;
+    }
+
+    .generated-field input {
+      width: 100%;
+      font-family: Arial, "Helvetica Neue", sans-serif;
+      color: var(--brand);
+      background: var(--brand-soft);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .generated-link {
       border: 0;
       border-radius: 17px;
@@ -3007,19 +3033,32 @@
 
     .layout-upload {
       display: grid;
-      grid-template-columns: minmax(220px, 1.3fr) minmax(160px, 1fr) repeat(3, minmax(92px, .55fr)) minmax(170px, 1fr);
+      grid-template-columns: repeat(12, minmax(0, 1fr));
       gap: 12px;
       padding: 14px;
       border-radius: 20px;
       background: var(--site-gray);
     }
 
+    .layout-upload .field:nth-child(1) { grid-column: span 3; }
+    .layout-upload .field:nth-child(2) { grid-column: span 2; }
+    .layout-upload .field:nth-child(3),
+    .layout-upload .field:nth-child(4),
+    .layout-upload .field:nth-child(5) { grid-column: span 1; }
+    .layout-upload .field:nth-child(6) { grid-column: span 4; }
+
     .layout-file-control {
-      grid-column: span 2;
+      grid-column: span 5;
       display: flex;
       align-items: center;
       gap: 10px;
       min-width: 0;
+    }
+
+    #uploadLayoutBtn {
+      grid-column: span 3;
+      width: 100%;
+      align-self: center;
     }
 
     .layout-file-control span {
@@ -3041,7 +3080,7 @@
 
     .layouts-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
@@ -3095,9 +3134,16 @@
     .layout-url { white-space: nowrap; }
 
     .layout-actions {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
+    }
+
+    .layout-actions button {
+      min-width: 0;
+      width: 100%;
+      white-space: normal;
+      line-height: 1.2;
     }
 
     .layout-empty {
@@ -3163,6 +3209,15 @@
       .detected-source,
       .quality-panel,
       .publish-row { grid-template-columns: 1fr; }
+      .layout-upload { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .layout-upload .field:nth-child(1),
+      .layout-upload .field:nth-child(2),
+      .layout-upload .field:nth-child(6),
+      .layout-file-control,
+      #uploadLayoutBtn { grid-column: 1 / -1; }
+      .layout-upload .field:nth-child(3),
+      .layout-upload .field:nth-child(4),
+      .layout-upload .field:nth-child(5) { grid-column: span 2; }
       .detected-card,
       .detected-card.primary { padding: 8px 0; border-right: 0; border-bottom: 1px solid var(--line); }
     }
@@ -3192,7 +3247,10 @@
       .bulk-panel { grid-template-columns: 1fr; }
       .layout-upload,
       .layout-toolbar { grid-template-columns: 1fr; }
+      .layout-upload .field:nth-child(n),
       .layout-file-control { grid-column: 1; }
+      #uploadLayoutBtn { grid-column: 1; }
+      .layout-actions { grid-template-columns: 1fr; }
       .bulk-panel .bulk-value-field,
       #applyBulkBtn { grid-column: 1; }
       .editor { padding: 18px 14px; }
@@ -3476,9 +3534,13 @@
             <label for="serverBaseUrl">Домен сервера</label>
             <input id="serverBaseUrl" type="url" placeholder="Автоматически или https://feeds.example.ru">
           </div>
-          <button id="generateLinkBtn" type="button" class="primary">Получить ссылку</button>
+          <button id="generateLinkBtn" type="button" class="primary">Сгенерировать ссылку</button>
           <button id="downloadBtn">Скачать XML</button>
           <button id="copyGeneratedLinkBtn" type="button">Копировать</button>
+        </div>
+        <div class="field generated-field">
+          <label for="generatedLinkInput">Итоговая ссылка на фид</label>
+          <input id="generatedLinkInput" readonly placeholder="Ссылка появится после генерации">
         </div>
         <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.</div>
       </section>
@@ -4617,16 +4679,19 @@
     function renderGeneratedLink() {
       const serverInput = document.querySelector("#serverBaseUrl");
       const box = document.querySelector("#generatedLink");
+      const input = document.querySelector("#generatedLinkInput");
       if (serverInput && !serverInput.value) serverInput.value = appState.serverBaseUrl || "";
       if (appState.generatedLink) {
         const isDraft = isLocalDraftUrl(appState.generatedLink);
         box.dataset.url = appState.generatedLink;
+        if (input) input.value = appState.generatedLink;
         box.textContent = isDraft
           ? `${appState.generatedLink} — черновая ссылка. Запустите backend или укажите публичный домен сервера, чтобы ссылка стала доступна агрегатору.`
           : `${appState.generatedLink} — постоянная ссылка на XML. Ее можно передать агрегатору после финальной проверки.`;
         box.classList.add("ready");
       } else {
         box.dataset.url = "";
+        if (input) input.value = "";
         box.textContent = "Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.";
         box.classList.remove("ready");
       }
@@ -4642,6 +4707,8 @@
         box.classList.remove("ready");
         box.textContent = "Фид изменен. Сгенерируйте новую ссылку в финальной выгрузке, чтобы получить актуальную версию.";
       }
+      const input = document.querySelector("#generatedLinkInput");
+      if (input) input.value = "";
     }
 
     function renderBulkControls() {
@@ -5158,9 +5225,9 @@ ${photos}
       try {
         const url = new URL(value);
         const last = url.pathname.split("/").filter(Boolean).pop() || url.hostname;
-        return decodeURIComponent(last).replace(/\.(xml|json|csv)$/i, "") || url.hostname;
+        return decodeURIComponent(last).replace(/\.(xml|php|json|csv)$/i, "") || url.hostname;
       } catch {
-        return String(value || "").replace(/\.(xml|json|csv)$/i, "").trim();
+        return String(value || "").replace(/\.(xml|php|json|csv)$/i, "").trim();
       }
     }
 
@@ -5186,7 +5253,7 @@ ${photos}
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[а-яё]/gi, char => slugTranslitMap[char.toLowerCase()] || "")
         .toLowerCase()
-        .replace(/\.xml$/i, "")
+        .replace(/\.(xml|php)$/i, "")
         .replace(/[^a-z0-9-]+/gi, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 80);
@@ -5267,6 +5334,7 @@ ${photos}
         appState.generatedFeedId = publishedFeed.id;
         appState.generatedLink = publishedFeed.url;
         document.querySelector("#serverBaseUrl").value = appState.serverBaseUrl;
+        document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
         save();
         renderQualitySummary();
@@ -5278,6 +5346,7 @@ ${photos}
         const message = error?.message || "Не удалось опубликовать фид";
         document.querySelector("#generatedLink").classList.remove("ready");
         document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}. Проверьте подключение Vercel Blob и повторите попытку.`;
+        document.querySelector("#generatedLinkInput").value = "";
         showToast(`Не удалось создать ссылку: ${message}`);
         return;
       } finally {

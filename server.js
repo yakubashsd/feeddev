@@ -321,7 +321,7 @@ function makeSlug(value = "") {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[а-яё]/gi, char => transliterate(char))
     .toLowerCase()
-    .replace(/\.xml$/i, "")
+    .replace(/\.(xml|php)$/i, "")
     .replace(/[^a-z0-9-]+/gi, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
@@ -330,7 +330,7 @@ function makeSlug(value = "") {
 
 function feedUrl(req, slug) {
   const base = PUBLIC_BASE_URL || `http://${req.headers.host}`;
-  return `${base}/f/${slug}.xml`;
+  return `${base}/f/${slug}.php`;
 }
 
 function layoutUrl(req, fileName) {
@@ -375,7 +375,8 @@ async function saveFeed(req, payload, existingSlug = "") {
     name: data.name || `${data.platform} feed`,
     objectCount: Number(payload.objectCount || 0),
     file: `feeds/${slug}.xml`,
-    url: blob?.url || feedUrl(req, slug),
+    blobUrl: blob?.url || "",
+    url: feedUrl(req, slug),
     updatedAt: now,
     createdAt: existing?.createdAt || now
   };
@@ -553,15 +554,16 @@ async function handleApi(req, res, url) {
 async function handleRequest(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.xml$/i);
+    const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.(php|xml)$/i);
     const publicLayoutMatch = url.pathname.match(/^\/layouts\/([^/]+)$/i);
 
     if (publicFeedMatch && req.method === "GET") {
       const slug = publicFeedMatch[1];
       if (usesBlobStorage()) {
         const record = (await readFeeds()).find(feed => feed.slug === slug);
-        if (!record?.url) return sendError(res, 404, "Feed not found");
-        const response = await fetch(record.url, { cache: "no-store" });
+        const sourceUrl = record?.blobUrl || record?.url;
+        if (!sourceUrl) return sendError(res, 404, "Feed not found");
+        const response = await fetch(sourceUrl, { cache: "no-store" });
         if (!response.ok) return sendError(res, 502, "Feed storage is unavailable");
         return send(res, 200, await response.text(), "application/xml; charset=utf-8");
       }
