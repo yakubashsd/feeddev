@@ -45,6 +45,15 @@ function usesBlobStorage() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
+function canUseLocalStorage() {
+  return !process.env.VERCEL;
+}
+
+function requireWritableStorage() {
+  if (usesBlobStorage() || canUseLocalStorage()) return;
+  throw new Error("Vercel Blob не подключен. Добавьте BLOB_READ_WRITE_TOKEN в Environment Variables для Production и сделайте Redeploy.");
+}
+
 function readLocalIndex() {
   ensureStorage();
   try {
@@ -76,6 +85,7 @@ function writeLocalLayoutsIndex(layouts) {
 }
 
 async function readFeeds() {
+  if (!usesBlobStorage() && !canUseLocalStorage()) return [];
   if (!usesBlobStorage()) return readLocalIndex();
 
   const result = await list({ prefix: "feed-records/", limit: 1000 });
@@ -90,6 +100,7 @@ async function readFeeds() {
 }
 
 async function readLayouts() {
+  if (!usesBlobStorage() && !canUseLocalStorage()) return [];
   if (!usesBlobStorage()) return readLocalLayoutsIndex();
 
   const result = await list({ prefix: "layout-records/", limit: 1000 });
@@ -104,6 +115,7 @@ async function readLayouts() {
 }
 
 async function persistFeedXml(slug, xml) {
+  requireWritableStorage();
   if (!usesBlobStorage()) {
     ensureStorage();
     fs.writeFileSync(path.join(FEEDS_DIR, `${slug}.xml`), xml);
@@ -120,6 +132,7 @@ async function persistFeedXml(slug, xml) {
 }
 
 async function persistFeedRecord(record) {
+  requireWritableStorage();
   if (!usesBlobStorage()) {
     const feeds = readLocalIndex().filter(feed => feed.slug !== record.slug);
     feeds.unshift(record);
@@ -137,6 +150,7 @@ async function persistFeedRecord(record) {
 }
 
 async function persistLayoutFile(fileName, bytes, contentType) {
+  requireWritableStorage();
   if (!usesBlobStorage()) {
     ensureStorage();
     fs.writeFileSync(path.join(LAYOUTS_DIR, fileName), bytes);
@@ -153,6 +167,7 @@ async function persistLayoutFile(fileName, bytes, contentType) {
 }
 
 async function persistLayoutRecord(record) {
+  requireWritableStorage();
   if (!usesBlobStorage()) {
     const layouts = readLocalLayoutsIndex().filter(layout => layout.id !== record.id);
     layouts.unshift(record);
