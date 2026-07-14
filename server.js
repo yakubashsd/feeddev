@@ -11,6 +11,11 @@ const DATA_DIR = path.join(ROOT, "data");
 const FEEDS_DIR = path.join(DATA_DIR, "feeds");
 const INDEX_FILE = path.join(DATA_DIR, "feeds-index.json");
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
+const AUTH_USERNAME = String(process.env.AUTH_USERNAME || "sozdateli");
+const AUTH_PASSWORD = String(process.env.AUTH_PASSWORD || "");
+const AUTH_SECRET = String(process.env.AUTH_SECRET || AUTH_PASSWORD);
+const AUTH_COOKIE = "feeddev_session";
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -105,6 +110,55 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
 
 function sendError(res, status, message) {
   send(res, status, { error: message });
+}
+
+function safeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left));
+  const rightBuffer = Buffer.from(String(right));
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function parseCookies(req) {
+  return String(req.headers.cookie || "").split(";").reduce((cookies, part) => {
+    const separator = part.indexOf("=");
+    if (separator < 0) return cookies;
+    const key = part.slice(0, separator).trim();
+    const value = part.slice(separator + 1).trim();
+    if (key) cookies[key] = value;
+    return cookies;
+  }, {});
+}
+
+function signSession(payload) {
+  return crypto.createHmac("sha256", AUTH_SECRET).update(payload).digest("base64url");
+}
+
+function createSessionToken(username) {
+  const payload = Buffer.from(JSON.stringify({
+    username,
+    expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000
+  })).toString("base64url");
+  return `${payload}.${signSession(payload)}`;
+}
+
+function isAuthenticated(req) {
+  if (!AUTH_PASSWORD || !AUTH_SECRET) return false;
+  const token = parseCookies(req)[AUTH_COOKIE] || "";
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature || !safeEqual(signature, signSession(payload))) return false;
+  try {
+    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return session.username === AUTH_USERNAME && Number(session.expiresAt) > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function setSessionCookie(req, res, token, maxAge = SESSION_TTL_SECONDS) {
+  const isSecure = Boolean(process.env.VERCEL) || req.headers["x-forwarded-proto"] === "https";
+  res.setHeader("Set-Cookie", [
+    `${AUTH_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${isSecure ? "; Secure" : ""}`
+  ]);
 }
 
 function parseBody(req) {
@@ -240,6 +294,36 @@ async function handleApi(req, res, url) {
       storage: usesBlobStorage() ? "vercel-blob" : "local",
       feedPublishingReady: usesBlobStorage() || !process.env.VERCEL
     });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/auth-session") {
+    return send(res, 200, {
+      authenticated: isAuthenticated(req),
+      configured: Boolean(AUTH_PASSWORD && AUTH_SECRET)
+    });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth-login") {
+    if (!AUTH_PASSWORD || !AUTH_SECRET) {
+      return sendError(res, 503, "Вход ещё не настроен на сервере.");
+    }
+    const payload = await parseBody(req);
+    const usernameMatches = safeEqual(payload.username || "", AUTH_USERNAME);
+    const passwordMatches = safeEqual(payload.password || "", AUTH_PASSWORD);
+    if (!usernameMatches || !passwordMatches) {
+      return sendError(res, 401, "Неверный логин или пароль.");
+    }
+    setSessionCookie(req, res, createSessionToken(AUTH_USERNAME));
+    return send(res, 200, { authenticated: true });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth-logout") {
+    setSessionCookie(req, res, "", 0);
+    return send(res, 200, { authenticated: false });
+  }
+
+  if (!isAuthenticated(req)) {
+    return sendError(res, 401, "Требуется вход в сервис.");
   }
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {

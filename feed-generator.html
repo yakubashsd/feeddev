@@ -32,6 +32,73 @@
       font-size: 14px;
     }
 
+    [hidden] { display: none !important; }
+
+    .auth-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(rgba(23, 32, 28, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 28, .035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 48px 48px;
+    }
+
+    .auth-card {
+      width: min(100%, 390px);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 30px;
+    }
+
+    .auth-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 24px;
+      border-radius: 7px;
+      background: var(--green);
+      color: white;
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .auth-card h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .auth-description {
+      margin: 0 0 24px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .auth-fields {
+      display: grid;
+      gap: 16px;
+    }
+
+    .auth-fields input {
+      width: 100%;
+    }
+
+    .auth-submit {
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .auth-error {
+      min-height: 20px;
+      color: var(--red);
+      line-height: 1.4;
+    }
+
     button, input, textarea, select {
       font: inherit;
     }
@@ -78,6 +145,8 @@
       background: #17201c;
       color: white;
       padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
     }
 
     .brand {
@@ -111,6 +180,20 @@
       border-radius: var(--radius);
       color: rgba(255,255,255,.76);
       line-height: 1.45;
+    }
+
+    .sidebar-spacer { flex: 1; }
+
+    .logout-btn {
+      width: 100%;
+      color: rgba(255,255,255,.78);
+      border-color: rgba(255,255,255,.18);
+      background: transparent;
+    }
+
+    .logout-btn:hover {
+      color: white;
+      border-color: rgba(255,255,255,.42);
     }
 
     .main {
@@ -2366,10 +2449,32 @@
   </style>
 </head>
 <body>
-  <div class="app" id="appShell">
+  <section class="auth-screen" id="authScreen">
+    <form class="auth-card" id="loginForm">
+      <div class="auth-mark">F</div>
+      <h1>Вход в сервис</h1>
+      <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
+      <div class="auth-fields">
+        <div class="field">
+          <label for="loginUsername">Логин</label>
+          <input id="loginUsername" name="username" autocomplete="username" required autofocus>
+        </div>
+        <div class="field">
+          <label for="loginPassword">Пароль</label>
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="auth-error" id="loginError" role="alert"></div>
+        <button class="primary auth-submit" id="loginButton" type="submit">Войти</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="app" id="appShell" hidden>
     <aside class="sidebar">
       <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
       <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Мониторинг</span></div>
+      <div class="sidebar-spacer"></div>
+      <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
     </aside>
 
     <main class="main">
@@ -2869,6 +2974,79 @@
     const rows = document.querySelector("#rows");
     const preview = document.querySelector("#preview");
     const validation = document.querySelector("#validation");
+    const authScreen = document.querySelector("#authScreen");
+    const appShell = document.querySelector("#appShell");
+    const loginForm = document.querySelector("#loginForm");
+    const loginError = document.querySelector("#loginError");
+    const loginButton = document.querySelector("#loginButton");
+    let appInitialized = false;
+
+    function showLogin(message = "") {
+      authScreen.hidden = false;
+      appShell.hidden = true;
+      loginError.textContent = message;
+      document.querySelector("#loginPassword").value = "";
+    }
+
+    function showWorkspace() {
+      authScreen.hidden = true;
+      appShell.hidden = false;
+      renderAll();
+      appInitialized = true;
+    }
+
+    async function initializeAuth() {
+      loginButton.disabled = true;
+      loginButton.textContent = "Проверяю доступ...";
+      try {
+        const response = await fetch("/api/auth-session", { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) throw new Error(`Сервер вернул HTTP ${response.status}`);
+        const state = await response.json();
+        if (state.authenticated) showWorkspace();
+        else showLogin(state.configured ? "" : "Вход ещё не настроен в параметрах Vercel.");
+      } catch (error) {
+        showLogin(`Не удалось проверить доступ: ${error.message}`);
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = "Войти";
+      }
+    }
+
+    async function submitLogin(event) {
+      event.preventDefault();
+      loginError.textContent = "";
+      loginButton.disabled = true;
+      loginButton.textContent = "Вхожу...";
+      try {
+        const response = await fetch("/api/auth-login", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.querySelector("#loginUsername").value.trim(),
+            password: document.querySelector("#loginPassword").value
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+        showWorkspace();
+      } catch (error) {
+        showLogin(error.message || "Не удалось войти.");
+        document.querySelector("#loginPassword").focus();
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = "Войти";
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch("/api/auth-logout", { method: "POST", credentials: "same-origin" });
+      } finally {
+        showLogin("Вы вышли из сервиса.");
+        document.querySelector("#loginUsername").focus();
+      }
+    }
 
     function load() {
       try {
@@ -4293,7 +4471,9 @@ ${photos}
       }
     });
 
-    renderAll();
+    loginForm.addEventListener("submit", submitLogin);
+    document.querySelector("#logoutButton").addEventListener("click", logout);
+    initializeAuth();
   </script>
 </body>
 </html>
