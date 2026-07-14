@@ -2498,18 +2498,11 @@
     }
 
     .auth-mark {
-      width: auto;
-      height: auto;
       display: block;
+      width: min(100%, 260px);
+      height: auto;
       margin: 0 0 40px;
       background: transparent;
-      color: var(--brand);
-      font-size: 27px;
-      font-weight: 700;
-    }
-
-    .auth-mark::after {
-      content: "eedDev";
     }
 
     .auth-card h1 {
@@ -2572,6 +2565,13 @@
       font-size: 27px;
       font-weight: 700;
       letter-spacing: 0;
+    }
+
+    .brand-logo {
+      display: block;
+      width: 168px;
+      max-width: 100%;
+      height: auto;
     }
 
     .brand small {
@@ -3198,6 +3198,7 @@
         border-bottom: 1px solid var(--line);
       }
       .brand { width: auto; min-height: 54px; margin-right: auto; padding: 0 8px; }
+      .brand-logo { width: 156px; }
       .brand small { display: none; }
       .nav-item { width: auto; padding-inline: 15px; }
       .sidebar-spacer { display: none; }
@@ -3228,6 +3229,7 @@
       .app { border-top-width: 6px; }
       .sidebar { align-items: stretch; flex-wrap: wrap; }
       .brand { width: 100%; min-height: 44px; }
+      .brand-logo { width: 168px; }
       .nav-item { flex: 1; justify-content: center; }
       .logout-btn { flex: 1; text-align: center; }
       .main { padding: 18px 14px 30px; }
@@ -3261,7 +3263,7 @@
 <body>
   <section class="auth-screen" id="authScreen">
     <form class="auth-card" id="loginForm">
-      <div class="auth-mark">F</div>
+      <img class="auth-mark" src="assets/sozdateli-logo.png" alt="Создатели">
       <h1>Вход в сервис</h1>
       <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
       <div class="auth-fields">
@@ -3281,7 +3283,10 @@
 
   <div class="app" id="appShell" hidden>
     <aside class="sidebar">
-      <div class="brand">FeedDev<small>управление фидами</small></div>
+      <div class="brand">
+        <img class="brand-logo" src="assets/sozdateli-logo.png" alt="Создатели">
+        <small>управление фидами</small>
+      </div>
       <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
       <div class="nav-item" data-nav="layouts">▧ <span class="nav-text">Планировки</span></div>
       <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Мониторинг</span></div>
