@@ -495,6 +495,14 @@ async function handleApi(req, res, url) {
     return send(res, 200, { authenticated: false });
   }
 
+  if (req.method === "GET" && url.pathname === "/api/public-feed") {
+    return servePublicFeed(req, res, String(url.searchParams.get("slug") || ""));
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/public-layout") {
+    return servePublicLayout(req, res, String(url.searchParams.get("file") || ""));
+  }
+
   if (!isAuthenticated(req)) {
     return sendError(res, 401, "Требуется вход в сервис.");
   }
@@ -551,6 +559,53 @@ async function handleApi(req, res, url) {
   return sendError(res, 404, "API route not found");
 }
 
+async function servePublicFeed(req, res, slug) {
+  if (!/^[a-z0-9а-яё-]+$/i.test(slug)) return sendError(res, 400, "Invalid feed slug");
+
+  if (usesBlobStorage()) {
+    const record = (await readFeeds()).find(feed => feed.slug === slug);
+    const sourceUrl = record?.blobUrl || record?.url;
+    if (!sourceUrl) return sendError(res, 404, "Feed not found");
+    const response = await fetch(sourceUrl, { cache: "no-store" });
+    if (!response.ok) return sendError(res, 502, "Feed storage is unavailable");
+    return send(res, 200, await response.text(), "application/xml; charset=utf-8");
+  }
+
+  const filePath = path.join(FEEDS_DIR, `${slug}.xml`);
+  if (!fs.existsSync(filePath)) return sendError(res, 404, "Feed not found");
+  res.writeHead(200, {
+    "Content-Type": "application/xml; charset=utf-8",
+    "Cache-Control": "public, max-age=60"
+  });
+  return fs.createReadStream(filePath).pipe(res);
+}
+
+async function servePublicLayout(req, res, fileName) {
+  fileName = decodeURIComponent(fileName);
+  if (!/^[a-z0-9а-яё-]+\.(png|jpe?g|webp|pdf)$/i.test(fileName)) {
+    return sendError(res, 400, "Invalid layout file name");
+  }
+  const ext = path.extname(fileName).toLowerCase();
+  if (usesBlobStorage()) {
+    const record = (await readLayouts()).find(layout => layout.fileName === fileName);
+    if (!record?.blobUrl) return sendError(res, 404, "Layout not found");
+    const response = await fetch(record.blobUrl, { cache: "no-store" });
+    if (!response.ok) return sendError(res, 502, "Layout storage is unavailable");
+    res.writeHead(200, {
+      "Content-Type": record.contentType || mimeTypes[ext] || "application/octet-stream",
+      "Cache-Control": "public, max-age=31536000"
+    });
+    return res.end(Buffer.from(await response.arrayBuffer()));
+  }
+  const filePath = path.join(LAYOUTS_DIR, fileName);
+  if (!filePath.startsWith(LAYOUTS_DIR) || !fs.existsSync(filePath)) return sendError(res, 404, "Layout not found");
+  res.writeHead(200, {
+    "Content-Type": mimeTypes[ext] || "application/octet-stream",
+    "Cache-Control": "public, max-age=31536000"
+  });
+  return fs.createReadStream(filePath).pipe(res);
+}
+
 async function handleRequest(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -558,48 +613,11 @@ async function handleRequest(req, res) {
     const publicLayoutMatch = url.pathname.match(/^\/layouts\/([^/]+)$/i);
 
     if (publicFeedMatch && req.method === "GET") {
-      const slug = publicFeedMatch[1];
-      if (usesBlobStorage()) {
-        const record = (await readFeeds()).find(feed => feed.slug === slug);
-        const sourceUrl = record?.blobUrl || record?.url;
-        if (!sourceUrl) return sendError(res, 404, "Feed not found");
-        const response = await fetch(sourceUrl, { cache: "no-store" });
-        if (!response.ok) return sendError(res, 502, "Feed storage is unavailable");
-        return send(res, 200, await response.text(), "application/xml; charset=utf-8");
-      }
-      const filePath = path.join(FEEDS_DIR, `${slug}.xml`);
-      if (!fs.existsSync(filePath)) return sendError(res, 404, "Feed not found");
-      res.writeHead(200, {
-        "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=60"
-      });
-      return fs.createReadStream(filePath).pipe(res);
+      return servePublicFeed(req, res, publicFeedMatch[1]);
     }
 
     if (publicLayoutMatch && req.method === "GET") {
-      const fileName = decodeURIComponent(publicLayoutMatch[1]);
-      if (!/^[a-z0-9а-яё-]+\.(png|jpe?g|webp|pdf)$/i.test(fileName)) {
-        return sendError(res, 400, "Invalid layout file name");
-      }
-      const ext = path.extname(fileName).toLowerCase();
-      if (usesBlobStorage()) {
-        const record = (await readLayouts()).find(layout => layout.fileName === fileName);
-        if (!record?.blobUrl) return sendError(res, 404, "Layout not found");
-        const response = await fetch(record.blobUrl, { cache: "no-store" });
-        if (!response.ok) return sendError(res, 502, "Layout storage is unavailable");
-        res.writeHead(200, {
-          "Content-Type": record.contentType || mimeTypes[ext] || "application/octet-stream",
-          "Cache-Control": "public, max-age=31536000"
-        });
-        return res.end(Buffer.from(await response.arrayBuffer()));
-      }
-      const filePath = path.join(LAYOUTS_DIR, fileName);
-      if (!filePath.startsWith(LAYOUTS_DIR) || !fs.existsSync(filePath)) return sendError(res, 404, "Layout not found");
-      res.writeHead(200, {
-        "Content-Type": mimeTypes[ext] || "application/octet-stream",
-        "Cache-Control": "public, max-age=31536000"
-      });
-      return fs.createReadStream(filePath).pipe(res);
+      return servePublicLayout(req, res, publicLayoutMatch[1]);
     }
 
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res, url);

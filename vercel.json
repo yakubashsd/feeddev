@@ -2,6 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/f/:slug.php",
+      "destination": "/api/public-feed?slug=:slug"
+    },
+    {
+      "source": "/f/:slug.xml",
+      "destination": "/api/public-feed?slug=:slug"
+    },
+    {
+      "source": "/layouts/:file",
+      "destination": "/api/public-layout?file=:file"
+    },
+    {
       "source": "/",
       "destination": "/feed-generator.html"
     }
