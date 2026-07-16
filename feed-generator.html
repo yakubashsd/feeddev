@@ -4988,13 +4988,27 @@
       }
     }
 
-    function canvasToBlob(canvas) {
+    function canvasToBlob(canvas, type = "image/webp", quality = .88) {
       return new Promise((resolve, reject) => {
-        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось сохранить брендированную планировку.")), "image/png");
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось сохранить брендированную планировку.")), type, quality);
       });
     }
 
-    async function uploadBrandedLayout({ item, sourceUrl, blob }) {
+    async function brandedLayoutBlob(canvas) {
+      const variants = [
+        ["image/webp", .88, "webp"],
+        ["image/webp", .74, "webp"],
+        ["image/jpeg", .82, "jpg"],
+        ["image/jpeg", .68, "jpg"]
+      ];
+      for (const [contentType, quality, ext] of variants) {
+        const blob = await canvasToBlob(canvas, contentType, quality);
+        if (blob.size <= 9 * 1024 * 1024) return { blob, contentType, ext };
+      }
+      throw new Error("Итоговая планировка слишком большая. Попробуйте уменьшить исходную картинку или плашку.");
+    }
+
+    async function uploadBrandedLayout({ item, sourceUrl, blob, contentType, ext }) {
       const fileBase64 = await blobToBase64(blob);
       const response = await fetch("/api/layouts", {
         method: "POST",
@@ -5006,13 +5020,22 @@
           rooms: item.rooms || "",
           area: item.totalArea || "",
           tags: `brand, ${sourceUrl}`.slice(0, 220),
-          fileName: `branded-${item.externalId || Date.now()}.png`,
-          contentType: "image/png",
+          fileName: `branded-${item.externalId || Date.now()}.${ext}`,
+          contentType,
           fileBase64
         })
       });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+      const raw = await response.text();
+      let result = {};
+      try {
+        result = raw ? JSON.parse(raw) : {};
+      } catch {
+        result = {};
+      }
+      if (!response.ok) {
+        const details = result.error || raw.slice(0, 180) || `Сервер вернул HTTP ${response.status}`;
+        throw new Error(details);
+      }
       return result;
     }
 
@@ -5048,8 +5071,9 @@
           brandStatus(`Создаю брендированную планировку ${index + 1} из ${uniqueUrls.length}...`);
           const baseImage = await loadCanvasImage(proxyImageUrl(sourceUrl));
           drawBrandedLayout(baseImage, badgeImage, canvas);
-          const blob = await canvasToBlob(canvas);
-          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, blob });
+          const output = await brandedLayoutBlob(canvas);
+          brandStatus(`Загружаю брендированную планировку ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
+          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
           urlMap.set(sourceUrl, record.url);
         }
 
@@ -5061,8 +5085,12 @@
         showToast(`Плашка добавлена к ${targets.length} объектам`);
         brandStatus(`Готово: обновлено объектов ${targets.length}, создано файлов ${urlMap.size}. Сгенерируйте новую ссылку в финальной выгрузке.`);
       } catch (error) {
-        brandStatus(`Не удалось наложить плашку: ${error.message}`);
-        alert(error.message || "Не удалось наложить плашку.");
+        const message = error.message || "Не удалось наложить плашку.";
+        const hint = /too large|слишком больш|413|body/i.test(message)
+          ? " Итоговое изображение превышает лимит загрузки. Уменьшите исходную планировку или плашку и попробуйте снова."
+          : " Проверьте, что планировка открывается по ссылке, а плашка загружена в PNG, JPG, WebP или SVG.";
+        brandStatus(`Не удалось наложить плашку: ${message}.${hint}`);
+        alert(`${message}.${hint}`);
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
