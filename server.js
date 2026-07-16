@@ -344,6 +344,22 @@ function layoutUrl(req, fileName) {
   return `${base}/layouts/${encodeURIComponent(fileName)}`;
 }
 
+function imageContentTypeFromPath(value = "") {
+  const pathname = (() => {
+    try {
+      return new URL(value).pathname;
+    } catch {
+      return value;
+    }
+  })().toLowerCase();
+  if (pathname.endsWith(".png")) return "image/png";
+  if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")) return "image/jpeg";
+  if (pathname.endsWith(".webp")) return "image/webp";
+  if (pathname.endsWith(".gif")) return "image/gif";
+  if (pathname.endsWith(".svg")) return "image/svg+xml";
+  return "";
+}
+
 function validateFeedPayload(payload) {
   const xml = String(payload.xml || "").trim();
   if (!xml) throw new Error("XML фида пустой.");
@@ -673,8 +689,12 @@ async function serveImageProxy(res, sourceUrl) {
   });
   if (!response.ok) return sendError(res, 502, `Источник изображения вернул HTTP ${response.status}`);
 
-  const contentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-  if (!contentType.startsWith("image/")) return sendError(res, 400, "Ссылка должна вести на изображение планировки.");
+  const headerContentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const inferredContentType = imageContentTypeFromPath(parsed.href);
+  const contentType = headerContentType.startsWith("image/") ? headerContentType : inferredContentType;
+  if (!contentType.startsWith("image/")) {
+    return sendError(res, 400, `Ссылка должна вести на изображение планировки. Источник вернул Content-Type: ${headerContentType || "не указан"}.`);
+  }
 
   const bytes = Buffer.from(await response.arrayBuffer());
   if (bytes.length > MAX_LAYOUT_BYTES) return sendError(res, 413, "Изображение слишком большое. Максимум 12 МБ.");

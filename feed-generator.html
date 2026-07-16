@@ -4926,6 +4926,35 @@
       });
     }
 
+    async function loadImageForCanvas(src) {
+      const value = String(src || "").trim();
+      if (!value) throw new Error("Ссылка на изображение пустая.");
+      if (value.startsWith("data:")) return loadCanvasImage(value);
+
+      const response = await fetch(value, { cache: "no-store", credentials: "same-origin" });
+      if (!response.ok) {
+        const raw = await response.text().catch(() => "");
+        let details = raw.slice(0, 220);
+        try {
+          details = JSON.parse(raw).error || details;
+        } catch {
+          // Keep raw text when the server did not return JSON.
+        }
+        throw new Error(details || `Сервер вернул HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      if (!String(blob.type || "").startsWith("image/")) {
+        throw new Error(`Источник вернул файл типа ${blob.type || "без типа"}, это не похоже на изображение.`);
+      }
+      const objectUrl = URL.createObjectURL(blob);
+      try {
+        return await loadCanvasImage(objectUrl);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
     function brandConfig() {
       return {
         position: document.querySelector("#brandPosition")?.value || "top-left",
@@ -4978,8 +5007,8 @@
       try {
         brandStatus("Готовлю предпросмотр...");
         const [baseImage, badgeImage] = await Promise.all([
-          loadCanvasImage(proxyImageUrl(target.layoutPhoto)),
-          loadCanvasImage(brandBadgeDataUrl)
+          loadImageForCanvas(proxyImageUrl(target.layoutPhoto)),
+          loadImageForCanvas(brandBadgeDataUrl)
         ]);
         drawBrandedLayout(baseImage, badgeImage, canvas);
         brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}. После применения сервис создаст новые ссылки на брендированные планировки.`);
@@ -5057,7 +5086,7 @@
 
       const button = document.querySelector("#applyBrandBtn");
       const canvas = document.createElement("canvas");
-      const badgeImage = await loadCanvasImage(brandBadgeDataUrl);
+      const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
       const urlMap = new Map();
       button.disabled = true;
       button.classList.add("loading");
@@ -5069,7 +5098,7 @@
           const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
           button.textContent = `Плашка ${index + 1}/${uniqueUrls.length}`;
           brandStatus(`Создаю брендированную планировку ${index + 1} из ${uniqueUrls.length}...`);
-          const baseImage = await loadCanvasImage(proxyImageUrl(sourceUrl));
+          const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
           drawBrandedLayout(baseImage, badgeImage, canvas);
           const output = await brandedLayoutBlob(canvas);
           brandStatus(`Загружаю брендированную планировку ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
