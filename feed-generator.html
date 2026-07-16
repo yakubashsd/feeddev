@@ -3069,10 +3069,11 @@
     .layout-upload .field:nth-child(3),
     .layout-upload .field:nth-child(4),
     .layout-upload .field:nth-child(5) { grid-column: span 1; }
-    .layout-upload .field:nth-child(6) { grid-column: span 4; }
+    .layout-upload .field:nth-child(6) { grid-column: span 3; }
+    .layout-upload-target { grid-column: span 3; }
 
     .layout-file-control {
-      grid-column: span 5;
+      grid-column: span 6;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -3096,13 +3097,17 @@
 
     .layout-branding {
       display: grid;
-      grid-template-columns: minmax(220px, .7fr) minmax(360px, 1.3fr);
-      gap: 16px;
+      grid-template-columns: 1fr;
+      gap: 14px;
       margin-top: 16px;
       padding: 16px;
       border-radius: 22px;
       background: #fff;
       border: 1px solid var(--line);
+    }
+
+    .brand-intro {
+      max-width: 820px;
     }
 
     .layout-branding h3 {
@@ -3121,14 +3126,103 @@
 
     .brand-controls {
       display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-columns: minmax(190px, 1.2fr) minmax(96px, .55fr) minmax(96px, .55fr) minmax(210px, 1fr) auto;
       gap: 10px;
       align-items: end;
+      padding: 14px;
+      border-radius: 18px;
+      background: var(--site-gray);
     }
 
-    .brand-controls .layout-file-control { grid-column: span 12; }
-    .brand-controls .field { grid-column: span 3; }
-    #applyBrandBtn { grid-column: span 3; width: 100%; }
+    .brand-controls .layout-file-control { grid-column: 1 / -1; }
+    .brand-controls .field { grid-column: auto; }
+    #applyBrandBtn { width: 100%; min-width: 170px; }
+
+    .brand-source-panel {
+      grid-column: 1 / -1;
+      padding: 14px;
+      border-radius: 18px;
+      background: var(--site-gray);
+    }
+
+    .brand-source-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .brand-source-head strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .brand-source-head span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .brand-source-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .brand-layout-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+      max-height: 300px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .brand-layout-option {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid transparent;
+      border-radius: 16px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .brand-layout-option:hover,
+    .brand-layout-option:has(input:checked) {
+      border-color: #c9c6cd;
+      background: var(--brand-soft);
+    }
+
+    .brand-layout-option input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--brand);
+    }
+
+    .brand-layout-option strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .brand-layout-option span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
 
     .brand-preview {
       grid-column: 1 / -1;
@@ -3299,6 +3393,7 @@
       .layout-upload .field:nth-child(1),
       .layout-upload .field:nth-child(2),
       .layout-upload .field:nth-child(6),
+      .layout-upload-target,
       .layout-file-control,
       #uploadLayoutBtn { grid-column: 1 / -1; }
       .layout-upload .field:nth-child(3),
@@ -3306,8 +3401,9 @@
       .layout-upload .field:nth-child(5) { grid-column: span 2; }
       .layout-branding,
       .brand-preview { grid-template-columns: 1fr; }
-      .brand-controls .field,
-      #applyBrandBtn { grid-column: span 6; }
+      .brand-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .brand-controls .layout-file-control,
+      #applyBrandBtn { grid-column: 1 / -1; }
       .detected-card,
       .detected-card.primary { padding: 8px 0; border-right: 0; border-bottom: 1px solid var(--line); }
     }
@@ -3340,8 +3436,14 @@
       .layout-toolbar { grid-template-columns: 1fr; }
       .layout-upload .field:nth-child(n),
       .layout-file-control,
+      .layout-upload-target,
       .brand-controls .field,
       #applyBrandBtn { grid-column: 1; }
+      .brand-controls { grid-template-columns: 1fr; }
+      .brand-controls .layout-file-control { grid-column: 1; }
+      .brand-source-head { flex-direction: column; }
+      .brand-source-actions { justify-content: flex-start; }
+      .brand-layout-picker { grid-template-columns: 1fr; max-height: 360px; }
       #uploadLayoutBtn { grid-column: 1; }
       .layout-actions { grid-template-columns: 1fr; }
       .bulk-panel .bulk-value-field,
@@ -3482,10 +3584,18 @@
             <button id="pickLayoutFileBtn" type="button">Выбрать файл</button>
             <span id="layoutPickedFile">Файл не выбран</span>
           </div>
+          <div class="field compact layout-upload-target">
+            <label for="layoutApplyTarget">После загрузки</label>
+            <select id="layoutApplyTarget">
+              <option value="library">Только в библиотеку</option>
+              <option value="checked">В выбранные объекты</option>
+              <option value="open">В открытую карточку</option>
+            </select>
+          </div>
           <button id="uploadLayoutBtn" type="button" class="primary">Загрузить планировку</button>
         </div>
         <div class="layout-branding">
-          <div>
+          <div class="brand-intro">
             <h3>Брендированная плашка</h3>
             <p>Загрузите PNG, JPG, WebP или SVG-плашку, выберите позицию и примените её к планировкам из текущего фида. Файлы AI сначала экспортируйте в PNG или SVG.</p>
           </div>
@@ -3517,11 +3627,25 @@
             <div class="field compact">
               <label for="brandScope">Применить</label>
               <select id="brandScope">
-                <option value="checked">К выбранным</option>
+                <option value="selected-layouts">К выбранным планировкам</option>
+                <option value="checked">К объектам из рабочей области</option>
                 <option value="all">Ко всем с планировкой</option>
               </select>
             </div>
             <button id="applyBrandBtn" type="button" class="primary">Наложить плашку</button>
+          </div>
+          <div class="brand-source-panel">
+            <div class="brand-source-head">
+              <div>
+                <strong>Планировки из текущего фида</strong>
+                <span id="brandLayoutSummary">Загрузите фид, чтобы выбрать планировки.</span>
+              </div>
+              <div class="brand-source-actions">
+                <button id="selectAllBrandLayoutsBtn" type="button">Выбрать все</button>
+                <button id="clearBrandLayoutsBtn" type="button">Очистить</button>
+              </div>
+            </div>
+            <div id="brandLayoutPicker" class="brand-layout-picker"></div>
           </div>
           <div class="brand-preview">
             <canvas id="brandPreviewCanvas" width="960" height="640"></canvas>
@@ -3978,6 +4102,8 @@
     let layoutsLoaded = false;
     let brandBadgeDataUrl = "";
     let brandBadgeFileName = "";
+    let selectedBrandLayoutUrls = new Set();
+    let brandSelectionTouched = false;
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -4342,7 +4468,10 @@
           ? "Библиотека макетов с публичными ссылками для XML-фидов"
           : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
       if (isLayoutsPage && !layoutsLoaded) loadLayouts();
-      if (isLayoutsPage) renderBrandPreview();
+      if (isLayoutsPage) {
+        renderBrandLayoutPicker();
+        renderBrandPreview();
+      }
     }
 
     function switchPage(page) {
@@ -4628,6 +4757,15 @@
       if (!nameInput.value.trim()) {
         nameInput.value = file.name.replace(/\.(png|jpe?g|webp|pdf)$/i, "");
       }
+      const target = document.querySelector("#layoutApplyTarget")?.value || "library";
+      if (target === "checked" && !checkedIds.size) {
+        alert("Сначала отметьте объекты в рабочей области или выберите «Только в библиотеку».");
+        return;
+      }
+      if (target === "open" && !selectedItem()) {
+        alert("Сначала откройте карточку объекта в рабочей области или выберите «Только в библиотеку».");
+        return;
+      }
       const button = document.querySelector("#uploadLayoutBtn");
       button.disabled = true;
       button.classList.add("loading");
@@ -4651,9 +4789,21 @@
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+        if (target === "checked") {
+          objects = objects.map(item => checkedIds.has(item.externalId) ? { ...item, layoutPhoto: result.url } : item);
+          invalidateGeneratedLink();
+          save();
+        }
+        if (target === "open") {
+          const item = selectedItem();
+          objects = objects.map(object => object.externalId === item.externalId ? { ...object, layoutPhoto: result.url } : object);
+          invalidateGeneratedLink();
+          save();
+        }
         clearLayoutUploadForm();
         await loadLayouts({ silent: true });
-        showToast("Планировка загружена и получила публичную ссылку");
+        renderAll();
+        showToast(target === "library" ? "Планировка загружена и получила публичную ссылку" : "Планировка загружена и применена к фиду");
       } catch (error) {
         alert(error.message || "Не удалось загрузить планировку.");
       } finally {
@@ -4668,9 +4818,96 @@
       if (node) node.textContent = message;
     }
 
+    function layoutGroupsFromFeed() {
+      const groups = new Map();
+      objects.forEach(item => {
+        const url = String(item.layoutPhoto || "").trim();
+        if (!url) return;
+        if (!groups.has(url)) {
+          groups.set(url, {
+            url,
+            count: 0,
+            ids: [],
+            rooms: new Set(),
+            areas: new Set(),
+            complexNames: new Set()
+          });
+        }
+        const group = groups.get(url);
+        group.count += 1;
+        if (group.ids.length < 6) group.ids.push(item.externalId || "без ID");
+        if (item.rooms) group.rooms.add(String(item.rooms));
+        if (item.totalArea) group.areas.add(String(item.totalArea));
+        if (item.complexName) group.complexNames.add(String(item.complexName));
+      });
+      return [...groups.values()];
+    }
+
+    function renderBrandLayoutPicker() {
+      const picker = document.querySelector("#brandLayoutPicker");
+      const summary = document.querySelector("#brandLayoutSummary");
+      if (!picker || !summary) return;
+      const groups = layoutGroupsFromFeed();
+      const existingUrls = new Set(groups.map(group => group.url));
+      selectedBrandLayoutUrls = new Set([...selectedBrandLayoutUrls].filter(url => existingUrls.has(url)));
+      const selectedObjectsWithLayouts = objects.filter(item => checkedIds.has(item.externalId) && item.layoutPhoto).length;
+
+      if (!groups.length) {
+        picker.innerHTML = `<div class="layout-empty">В текущем фиде нет ссылок на планировки. Загрузите фид или заполните поле «Планировка» в объектах.</div>`;
+        summary.textContent = "Планировки не найдены.";
+        brandStatus("В текущем фиде нет объектов со ссылкой на планировку.");
+        return;
+      }
+
+      if (!selectedBrandLayoutUrls.size && !brandSelectionTouched) selectedBrandLayoutUrls = new Set(groups.slice(0, 6).map(group => group.url));
+      const selectedObjects = objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto)).length;
+      summary.textContent = `Найдено ${groups.length} уникальных планировок. Выбрано ${selectedBrandLayoutUrls.size}, объектов для плашки: ${selectedObjects}. В рабочей области отмечено объектов с планировками: ${selectedObjectsWithLayouts}.`;
+      picker.innerHTML = groups.map((group, index) => {
+        const roomText = [...group.rooms].slice(0, 3).join(", ");
+        const areaText = [...group.areas].slice(0, 3).join(", ");
+        const projectText = [...group.complexNames].slice(0, 2).join(", ");
+        return `
+          <label class="brand-layout-option">
+            <input type="checkbox" data-brand-layout-url="${escapeXml(group.url)}" ${selectedBrandLayoutUrls.has(group.url) ? "checked" : ""}>
+            <span>
+              <strong>Планировка ${index + 1} · ${group.count} объект${group.count === 1 ? "" : "ов"}</strong>
+              <span>${escapeXml([projectText, roomText && `${roomText} комн.`, areaText && `${areaText} м²`].filter(Boolean).join(" · ") || "Без параметров")}</span>
+              <span>ID: ${escapeXml(group.ids.join(", "))}${group.count > group.ids.length ? "..." : ""}</span>
+            </span>
+          </label>
+        `;
+      }).join("");
+    }
+
+    function updateBrandLayoutSelection(url, checked) {
+      brandSelectionTouched = true;
+      if (checked) selectedBrandLayoutUrls.add(url);
+      else selectedBrandLayoutUrls.delete(url);
+      renderBrandLayoutPicker();
+      renderBrandPreview();
+    }
+
+    function selectAllBrandLayouts() {
+      brandSelectionTouched = true;
+      selectedBrandLayoutUrls = new Set(layoutGroupsFromFeed().map(group => group.url));
+      renderBrandLayoutPicker();
+      renderBrandPreview();
+    }
+
+    function clearBrandLayouts() {
+      brandSelectionTouched = true;
+      selectedBrandLayoutUrls = new Set();
+      renderBrandLayoutPicker();
+      renderBrandPreview();
+    }
+
     function brandTargets() {
       const scope = document.querySelector("#brandScope")?.value || "checked";
-      const source = scope === "all" ? objects : objects.filter(item => checkedIds.has(item.externalId));
+      const source = scope === "all"
+        ? objects
+        : scope === "checked"
+          ? objects.filter(item => checkedIds.has(item.externalId))
+          : objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
       return source.filter(item => String(item.layoutPhoto || "").trim());
     }
 
@@ -4727,7 +4964,13 @@
         brandStatus("Выберите плашку. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
         return;
       }
-      const target = brandTargets()[0] || objects.find(item => item.layoutPhoto);
+      const scope = document.querySelector("#brandScope")?.value || "selected-layouts";
+      const scopedTargets = brandTargets();
+      if (scope === "selected-layouts" && !scopedTargets.length) {
+        brandStatus("Выберите одну или несколько планировок из списка ниже, чтобы увидеть предпросмотр.");
+        return;
+      }
+      const target = scopedTargets[0] || objects.find(item => item.layoutPhoto);
       if (!target) {
         brandStatus("В текущем фиде нет объектов со ссылкой на планировку.");
         return;
@@ -4781,9 +5024,11 @@
       const targets = brandTargets();
       const scope = document.querySelector("#brandScope")?.value || "checked";
       if (!targets.length) {
-        alert(scope === "checked"
-          ? "Отметьте объекты с планировками в рабочей области или выберите применение ко всем."
-          : "В текущем фиде нет объектов со ссылкой на планировку.");
+        alert(scope === "selected-layouts"
+          ? "Выберите одну или несколько планировок в списке ниже."
+          : scope === "checked"
+            ? "Отметьте объекты с планировками в рабочей области или выберите применение ко всем."
+            : "В текущем фиде нет объектов со ссылкой на планировку.");
         return;
       }
 
@@ -5203,6 +5448,8 @@
       objects = structuredClone(originalObjects);
       selectedId = "";
       checkedIds = new Set();
+      selectedBrandLayoutUrls = new Set();
+      brandSelectionTouched = false;
       validated = false;
       invalidateGeneratedLink();
       save();
@@ -5415,6 +5662,7 @@ ${photos}
       renderDetectedSource();
       renderResetControl();
       renderLayoutsList();
+      renderBrandLayoutPicker();
       renderPage();
     }
 
@@ -5551,6 +5799,8 @@ ${photos}
         originalObjects = structuredClone(parsed.objects);
         selectedId = "";
         checkedIds = new Set();
+        selectedBrandLayoutUrls = new Set();
+        brandSelectionTouched = false;
         appState.feedUrl = url;
         appState.feedName = defaultFeedName(url);
         appState.generatedLink = "";
@@ -5896,9 +6146,21 @@ ${photos}
       renderBrandPreview();
     });
     ["#brandPosition", "#brandSize", "#brandMargin", "#brandScope"].forEach(selector => {
-      document.querySelector(selector).addEventListener("input", renderBrandPreview);
-      document.querySelector(selector).addEventListener("change", renderBrandPreview);
+      document.querySelector(selector).addEventListener("input", () => {
+        renderBrandLayoutPicker();
+        renderBrandPreview();
+      });
+      document.querySelector(selector).addEventListener("change", () => {
+        renderBrandLayoutPicker();
+        renderBrandPreview();
+      });
     });
+    document.querySelector("#brandLayoutPicker").addEventListener("change", event => {
+      const checkbox = event.target.closest("[data-brand-layout-url]");
+      if (checkbox) updateBrandLayoutSelection(checkbox.dataset.brandLayoutUrl, checkbox.checked);
+    });
+    document.querySelector("#selectAllBrandLayoutsBtn").addEventListener("click", selectAllBrandLayouts);
+    document.querySelector("#clearBrandLayoutsBtn").addEventListener("click", clearBrandLayouts);
     document.querySelector("#applyBrandBtn").addEventListener("click", applyBrandBadgeToLayouts);
     document.querySelector("#layoutsList").addEventListener("click", event => {
       const copyButton = event.target.closest("[data-copy-layout]");
@@ -5933,7 +6195,7 @@ ${photos}
         if (event.target.checked) checkedIds.add(item.externalId);
         else checkedIds.delete(item.externalId);
       });
-      renderRows();
+      renderAll();
     });
     document.querySelector("#bulkSection").addEventListener("change", renderBulkControls);
     document.querySelector("#bulkField").addEventListener("change", () => {
@@ -5990,6 +6252,8 @@ ${photos}
         originalObjects = structuredClone(next);
         selectedId = "";
         checkedIds = new Set();
+        selectedBrandLayoutUrls = new Set();
+        brandSelectionTouched = false;
         appState.feedUrl = file.name;
         appState.feedName = defaultFeedName(file.name);
         appState.generatedLink = "";
