@@ -1658,7 +1658,7 @@
 
     .feed-row {
       display: grid;
-      grid-template-columns: minmax(210px, 1fr) 110px 128px 128px auto;
+      grid-template-columns: minmax(210px, 1fr) 110px 128px 128px 148px auto;
       gap: 10px;
       align-items: center;
       border: 1px solid var(--line-strong);
@@ -1739,6 +1739,30 @@
       gap: 6px;
       justify-content: flex-end;
       flex-wrap: wrap;
+    }
+
+    .telegram-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #4f4f57;
+      font-size: 12px;
+      font-weight: 780;
+      user-select: none;
+    }
+
+    .telegram-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: #111116;
+      cursor: pointer;
+    }
+
+    .feed-telegram-note {
+      grid-column: 1 / -1;
+      color: #777780;
+      font-size: 11px;
+      line-height: 1.35;
     }
 
     .feed-empty {
@@ -3070,6 +3094,67 @@
       text-overflow: ellipsis;
     }
 
+    .layout-branding {
+      display: grid;
+      grid-template-columns: minmax(220px, .7fr) minmax(360px, 1.3fr);
+      gap: 16px;
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .layout-branding h3 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 650;
+    }
+
+    .layout-branding p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .brand-controls {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .brand-controls .layout-file-control { grid-column: span 12; }
+    .brand-controls .field { grid-column: span 3; }
+    #applyBrandBtn { grid-column: span 3; width: 100%; }
+
+    .brand-preview {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(220px, 420px) 1fr;
+      gap: 14px;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .brand-preview canvas {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      border-radius: 18px;
+      background: var(--site-gray);
+      border: 1px solid var(--line);
+      object-fit: contain;
+    }
+
+    #brandStatus {
+      color: #625d67;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
     .layout-toolbar {
       display: grid;
       grid-template-columns: minmax(220px, 1fr) auto;
@@ -3219,6 +3304,10 @@
       .layout-upload .field:nth-child(3),
       .layout-upload .field:nth-child(4),
       .layout-upload .field:nth-child(5) { grid-column: span 2; }
+      .layout-branding,
+      .brand-preview { grid-template-columns: 1fr; }
+      .brand-controls .field,
+      #applyBrandBtn { grid-column: span 6; }
       .detected-card,
       .detected-card.primary { padding: 8px 0; border-right: 0; border-bottom: 1px solid var(--line); }
     }
@@ -3250,7 +3339,9 @@
       .layout-upload,
       .layout-toolbar { grid-template-columns: 1fr; }
       .layout-upload .field:nth-child(n),
-      .layout-file-control { grid-column: 1; }
+      .layout-file-control,
+      .brand-controls .field,
+      #applyBrandBtn { grid-column: 1; }
       #uploadLayoutBtn { grid-column: 1; }
       .layout-actions { grid-template-columns: 1fr; }
       .bulk-panel .bulk-value-field,
@@ -3355,7 +3446,7 @@
           <button id="checkFeedsBtn" type="button">Проверить сейчас</button>
         </div>
         <div class="feeds-list" id="feedsList"></div>
-        <div class="monitor-note">Проверки по расписанию, уведомления и подписочные ограничения готовы к подключению к серверу хранения фидов.</div>
+        <div class="monitor-note">Telegram-уведомления включаются отдельно у каждого фида. Если заданы TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID, сервис отправит сообщение при новой ошибке проверки. Проверки по расписанию подключаются следующим шагом через серверный мониторинг.</div>
       </section>
 
       <section class="layouts-panel page-hidden" id="layoutsPanel" data-page="layouts">
@@ -3392,6 +3483,50 @@
             <span id="layoutPickedFile">Файл не выбран</span>
           </div>
           <button id="uploadLayoutBtn" type="button" class="primary">Загрузить планировку</button>
+        </div>
+        <div class="layout-branding">
+          <div>
+            <h3>Брендированная плашка</h3>
+            <p>Загрузите PNG, JPG, WebP или SVG-плашку, выберите позицию и примените её к планировкам из текущего фида. Файлы AI сначала экспортируйте в PNG или SVG.</p>
+          </div>
+          <div class="brand-controls">
+            <div class="layout-file-control">
+              <input id="brandBadgeFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml">
+              <button id="pickBrandBadgeBtn" type="button">Выбрать плашку</button>
+              <span id="brandBadgePickedFile">Плашка не выбрана</span>
+            </div>
+            <div class="field compact">
+              <label for="brandPosition">Позиция</label>
+              <select id="brandPosition">
+                <option value="top-left">Сверху слева</option>
+                <option value="top-center">Сверху по центру</option>
+                <option value="top-right">Сверху справа</option>
+                <option value="bottom-left">Снизу слева</option>
+                <option value="bottom-center">Снизу по центру</option>
+                <option value="bottom-right">Снизу справа</option>
+              </select>
+            </div>
+            <div class="field compact">
+              <label for="brandSize">Ширина, %</label>
+              <input id="brandSize" type="number" min="8" max="70" value="28">
+            </div>
+            <div class="field compact">
+              <label for="brandMargin">Отступ, %</label>
+              <input id="brandMargin" type="number" min="0" max="20" value="4">
+            </div>
+            <div class="field compact">
+              <label for="brandScope">Применить</label>
+              <select id="brandScope">
+                <option value="checked">К выбранным</option>
+                <option value="all">Ко всем с планировкой</option>
+              </select>
+            </div>
+            <button id="applyBrandBtn" type="button" class="primary">Наложить плашку</button>
+          </div>
+          <div class="brand-preview">
+            <canvas id="brandPreviewCanvas" width="960" height="640"></canvas>
+            <div id="brandStatus">Выберите плашку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+          </div>
         </div>
         <div class="layout-toolbar">
           <div class="field">
@@ -3841,6 +3976,8 @@
     let validated = false;
     let layoutsCache = [];
     let layoutsLoaded = false;
+    let brandBadgeDataUrl = "";
+    let brandBadgeFileName = "";
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -4205,6 +4342,7 @@
           ? "Библиотека макетов с публичными ссылками для XML-фидов"
           : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
       if (isLayoutsPage && !layoutsLoaded) loadLayouts();
+      if (isLayoutsPage) renderBrandPreview();
     }
 
     function switchPage(page) {
@@ -4335,10 +4473,15 @@
           <div class="feed-platform">${escapeXml(platformProfiles[feed.platform]?.name || "Не определено")}</div>
           <span class="feed-status ${escapeXml(feed.status || "pending")}">${escapeXml(monitorStatus(feed))}</span>
           <div class="feed-meta">Проверка: ${escapeXml(formatCheckDate(feed.lastChecked))}</div>
+          <label class="telegram-toggle" title="Отправить сообщение в Telegram при новой ошибке этого фида">
+            <input type="checkbox" data-telegram-feed="${escapeXml(feed.id)}" ${feed.telegramEnabled !== false ? "checked" : ""}>
+            <span>Telegram</span>
+          </label>
           <div class="feed-monitor-actions">
             <button type="button" data-check-feed="${escapeXml(feed.id)}">Проверить</button>
             <button type="button" class="danger" data-delete-feed="${escapeXml(feed.id)}">Удалить</button>
           </div>
+          ${feed.telegramEnabled !== false && feed.telegramNotifiedAt ? `<div class="feed-telegram-note">Последнее уведомление: ${escapeXml(formatCheckDate(feed.telegramNotifiedAt))}</div>` : ""}
           ${feed.error ? `<div class="feed-error">Сообщение ошибки: ${escapeXml(feed.error)}</div>` : ""}
         </div>
       `).join("");
@@ -4448,6 +4591,24 @@
       });
     }
 
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+        reader.onerror = () => reject(new Error("Не удалось подготовить изображение."));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Не удалось прочитать файл плашки."));
+        reader.readAsDataURL(file);
+      });
+    }
+
     function clearLayoutUploadForm() {
       ["#layoutName", "#layoutProject", "#layoutBuilding", "#layoutRooms", "#layoutArea", "#layoutTags"].forEach(selector => {
         const input = document.querySelector(selector);
@@ -4499,6 +4660,168 @@
         button.disabled = false;
         button.classList.remove("loading");
         button.textContent = "Загрузить планировку";
+      }
+    }
+
+    function brandStatus(message) {
+      const node = document.querySelector("#brandStatus");
+      if (node) node.textContent = message;
+    }
+
+    function brandTargets() {
+      const scope = document.querySelector("#brandScope")?.value || "checked";
+      const source = scope === "all" ? objects : objects.filter(item => checkedIds.has(item.externalId));
+      return source.filter(item => String(item.layoutPhoto || "").trim());
+    }
+
+    function proxyImageUrl(url) {
+      const value = String(url || "").trim();
+      if (!value || value.startsWith("data:")) return value;
+      return `/api/layout-image-proxy?url=${encodeURIComponent(value)}`;
+    }
+
+    function loadCanvasImage(src) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("Не удалось открыть изображение планировки или плашки."));
+        image.src = src;
+      });
+    }
+
+    function brandConfig() {
+      return {
+        position: document.querySelector("#brandPosition")?.value || "top-left",
+        widthPercent: Math.min(70, Math.max(8, Number(document.querySelector("#brandSize")?.value || 28))),
+        marginPercent: Math.min(20, Math.max(0, Number(document.querySelector("#brandMargin")?.value || 4)))
+      };
+    }
+
+    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig()) {
+      const context = canvas.getContext("2d");
+      const width = baseImage.naturalWidth || baseImage.width;
+      const height = baseImage.naturalHeight || baseImage.height;
+      canvas.width = width;
+      canvas.height = height;
+      context.clearRect(0, 0, width, height);
+      context.drawImage(baseImage, 0, 0, width, height);
+
+      const badgeWidth = Math.round(width * (config.widthPercent / 100));
+      const ratio = (badgeImage.naturalHeight || badgeImage.height) / Math.max(1, (badgeImage.naturalWidth || badgeImage.width));
+      const badgeHeight = Math.round(badgeWidth * ratio);
+      const margin = Math.round(width * (config.marginPercent / 100));
+      const horizontal = config.position.split("-")[1] || "left";
+      const vertical = config.position.split("-")[0] || "top";
+      const x = horizontal === "right" ? width - badgeWidth - margin : horizontal === "center" ? Math.round((width - badgeWidth) / 2) : margin;
+      const y = vertical === "bottom" ? height - badgeHeight - margin : margin;
+      context.drawImage(badgeImage, x, y, badgeWidth, badgeHeight);
+      return canvas;
+    }
+
+    async function renderBrandPreview() {
+      const canvas = document.querySelector("#brandPreviewCanvas");
+      if (!canvas) return;
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      if (!brandBadgeDataUrl) {
+        brandStatus("Выберите плашку. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
+        return;
+      }
+      const target = brandTargets()[0] || objects.find(item => item.layoutPhoto);
+      if (!target) {
+        brandStatus("В текущем фиде нет объектов со ссылкой на планировку.");
+        return;
+      }
+      try {
+        brandStatus("Готовлю предпросмотр...");
+        const [baseImage, badgeImage] = await Promise.all([
+          loadCanvasImage(proxyImageUrl(target.layoutPhoto)),
+          loadCanvasImage(brandBadgeDataUrl)
+        ]);
+        drawBrandedLayout(baseImage, badgeImage, canvas);
+        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}. После применения сервис создаст новые ссылки на брендированные планировки.`);
+      } catch (error) {
+        brandStatus(`${error.message} Проверьте, что ссылка ведет на PNG, JPG, WebP или SVG.`);
+      }
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось сохранить брендированную планировку.")), "image/png");
+      });
+    }
+
+    async function uploadBrandedLayout({ item, sourceUrl, blob }) {
+      const fileBase64 = await blobToBase64(blob);
+      const response = await fetch("/api/layouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `Брендированная планировка ${item.externalId || ""}`.trim(),
+          project: item.complexName || "",
+          building: item.buildingName || item.sectionNumber || "",
+          rooms: item.rooms || "",
+          area: item.totalArea || "",
+          tags: `brand, ${sourceUrl}`.slice(0, 220),
+          fileName: `branded-${item.externalId || Date.now()}.png`,
+          contentType: "image/png",
+          fileBase64
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+      return result;
+    }
+
+    async function applyBrandBadgeToLayouts() {
+      if (!brandBadgeDataUrl) {
+        alert("Сначала выберите файл брендированной плашки.");
+        return;
+      }
+      const targets = brandTargets();
+      const scope = document.querySelector("#brandScope")?.value || "checked";
+      if (!targets.length) {
+        alert(scope === "checked"
+          ? "Отметьте объекты с планировками в рабочей области или выберите применение ко всем."
+          : "В текущем фиде нет объектов со ссылкой на планировку.");
+        return;
+      }
+
+      const button = document.querySelector("#applyBrandBtn");
+      const canvas = document.createElement("canvas");
+      const badgeImage = await loadCanvasImage(brandBadgeDataUrl);
+      const urlMap = new Map();
+      button.disabled = true;
+      button.classList.add("loading");
+
+      try {
+        const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
+        for (let index = 0; index < uniqueUrls.length; index += 1) {
+          const sourceUrl = uniqueUrls[index];
+          const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
+          button.textContent = `Плашка ${index + 1}/${uniqueUrls.length}`;
+          brandStatus(`Создаю брендированную планировку ${index + 1} из ${uniqueUrls.length}...`);
+          const baseImage = await loadCanvasImage(proxyImageUrl(sourceUrl));
+          drawBrandedLayout(baseImage, badgeImage, canvas);
+          const blob = await canvasToBlob(canvas);
+          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, blob });
+          urlMap.set(sourceUrl, record.url);
+        }
+
+        objects = objects.map(item => urlMap.has(item.layoutPhoto) ? { ...item, layoutPhoto: urlMap.get(item.layoutPhoto) } : item);
+        invalidateGeneratedLink();
+        save();
+        await loadLayouts({ silent: true });
+        renderAll();
+        showToast(`Плашка добавлена к ${targets.length} объектам`);
+        brandStatus(`Готово: обновлено объектов ${targets.length}, создано файлов ${urlMap.size}. Сгенерируйте новую ссылку в финальной выгрузке.`);
+      } catch (error) {
+        brandStatus(`Не удалось наложить плашку: ${error.message}`);
+        alert(error.message || "Не удалось наложить плашку.");
+      } finally {
+        button.disabled = false;
+        button.classList.remove("loading");
+        button.textContent = "Наложить плашку";
       }
     }
 
@@ -4590,7 +4913,9 @@
         lastChecked: "",
         error: error || "Автоматическая проверка по расписанию будет работать после подключения серверного мониторинга.",
         objectCount: objectCount || 0,
-        createdAt: existingIndex >= 0 ? feeds[existingIndex].createdAt : new Date().toISOString()
+        createdAt: existingIndex >= 0 ? feeds[existingIndex].createdAt : new Date().toISOString(),
+        telegramEnabled: existingIndex >= 0 ? feeds[existingIndex].telegramEnabled !== false : true,
+        telegramNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].telegramNotifiedAt || "" : ""
       };
       if (existingIndex >= 0) feeds[existingIndex] = { ...feeds[existingIndex], ...feed };
       else feeds.unshift(feed);
@@ -4657,6 +4982,29 @@
       }
     }
 
+    async function sendMonitorTelegramAlert(feed) {
+      try {
+        const response = await fetch("/api/monitor-alert", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: feed.name,
+            platform: platformProfiles[feed.platform]?.name || feed.platform || "Не определено",
+            url: feed.url,
+            error: feed.error
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+        return true;
+      } catch (error) {
+        console.warn("Telegram alert failed:", error);
+        showToast(`Telegram не отправлен: ${error.message}`);
+        return false;
+      }
+    }
+
     async function checkSavedFeeds(onlyId = "") {
       const feeds = readMonitoredFeeds();
       saveMonitoredFeeds(feeds.map(feed => (onlyId ? feed.id === onlyId : true)
@@ -4669,7 +5017,13 @@
           next.push(feed);
           continue;
         }
-        next.push(await checkMonitoredFeed({ ...feed, status: "checking" }));
+        const checked = await checkMonitoredFeed({ ...feed, status: "checking" });
+        const isNewBreakage = checked.status === "bad" && (feed.status !== "bad" || feed.error !== checked.error);
+        if (isNewBreakage && feed.telegramEnabled !== false) {
+          const sent = await sendMonitorTelegramAlert(checked);
+          checked.telegramNotifiedAt = sent ? new Date().toISOString() : checked.telegramNotifiedAt || "";
+        }
+        next.push(checked);
       }
       saveMonitoredFeeds(next);
       renderFeedsList();
@@ -4679,6 +5033,14 @@
     function deleteMonitoredFeed(id) {
       saveMonitoredFeeds(readMonitoredFeeds().filter(feed => feed.id !== id));
       renderFeedsList();
+    }
+
+    function toggleFeedTelegram(id, enabled) {
+      saveMonitoredFeeds(readMonitoredFeeds().map(feed => feed.id === id
+        ? { ...feed, telegramEnabled: enabled }
+        : feed));
+      renderFeedsList();
+      showToast(enabled ? "Telegram-уведомления включены" : "Telegram-уведомления выключены");
     }
 
     function renderGeneratedLink() {
@@ -5513,6 +5875,31 @@ ${photos}
     });
     document.querySelector("#uploadLayoutBtn").addEventListener("click", uploadLayout);
     document.querySelector("#refreshLayoutsBtn").addEventListener("click", () => loadLayouts());
+    document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
+    document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) {
+        brandBadgeDataUrl = "";
+        brandBadgeFileName = "";
+        document.querySelector("#brandBadgePickedFile").textContent = "Плашка не выбрана";
+        renderBrandPreview();
+        return;
+      }
+      if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type) && !/\.(png|jpe?g|webp|svg)$/i.test(file.name)) {
+        event.target.value = "";
+        alert("Загрузите плашку в формате PNG, JPG, WebP или SVG. Файл AI нужно сначала экспортировать.");
+        return;
+      }
+      brandBadgeDataUrl = await fileToDataUrl(file);
+      brandBadgeFileName = file.name;
+      document.querySelector("#brandBadgePickedFile").textContent = file.name;
+      renderBrandPreview();
+    });
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandScope"].forEach(selector => {
+      document.querySelector(selector).addEventListener("input", renderBrandPreview);
+      document.querySelector(selector).addEventListener("change", renderBrandPreview);
+    });
+    document.querySelector("#applyBrandBtn").addEventListener("click", applyBrandBadgeToLayouts);
     document.querySelector("#layoutsList").addEventListener("click", event => {
       const copyButton = event.target.closest("[data-copy-layout]");
       const applyButton = event.target.closest("[data-apply-layout]");
@@ -5531,6 +5918,10 @@ ${photos}
       const deleteButton = event.target.closest("[data-delete-feed]");
       if (checkButton) checkSavedFeeds(checkButton.dataset.checkFeed);
       if (deleteButton) deleteMonitoredFeed(deleteButton.dataset.deleteFeed);
+    });
+    document.querySelector("#feedsList").addEventListener("change", event => {
+      const telegramToggle = event.target.closest("[data-telegram-feed]");
+      if (telegramToggle) toggleFeedTelegram(telegramToggle.dataset.telegramFeed, telegramToggle.checked);
     });
     document.querySelector(".sidebar").addEventListener("click", event => {
       const item = event.target.closest("[data-nav]");

@@ -19,6 +19,8 @@ const AUTH_PASSWORD = String(process.env.AUTH_PASSWORD || "");
 const AUTH_SECRET = String(process.env.AUTH_SECRET || AUTH_PASSWORD);
 const AUTH_COOKIE = "feeddev_session";
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
+const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "");
+const TELEGRAM_CHAT_ID = String(process.env.TELEGRAM_CHAT_ID || "");
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -52,6 +54,10 @@ function canUseLocalStorage() {
 function requireWritableStorage() {
   if (usesBlobStorage() || canUseLocalStorage()) return;
   throw new Error("Vercel Blob не подключен. Добавьте BLOB_READ_WRITE_TOKEN в Environment Variables для Production и сделайте Redeploy.");
+}
+
+function telegramAlertsEnabled() {
+  return Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
 }
 
 function readLocalIndex() {
@@ -446,6 +452,39 @@ async function saveLayout(req, payload) {
   return record;
 }
 
+function telegramMessage(payload = {}) {
+  const lines = [
+    "FeedDev: ошибка фида",
+    `Фид: ${String(payload.name || "без названия").slice(0, 160)}`,
+    `Площадка: ${String(payload.platform || "не определена").slice(0, 80)}`,
+    `Ссылка: ${String(payload.url || "-").slice(0, 500)}`,
+    `Ошибка: ${String(payload.error || "неизвестная ошибка").slice(0, 700)}`,
+    `Проверка: ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}`
+  ];
+  return lines.join("\n");
+}
+
+async function sendTelegramAlert(payload) {
+  if (!telegramAlertsEnabled()) {
+    throw new Error("Telegram-уведомления не настроены. Добавьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в Vercel Environment Variables.");
+  }
+
+  const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: telegramMessage(payload),
+      disable_web_page_preview: true
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false) {
+    throw new Error(result.description || `Telegram вернул HTTP ${response.status}`);
+  }
+  return result;
+}
+
 function serveStatic(req, res, pathname) {
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
@@ -465,7 +504,8 @@ async function handleApi(req, res, url) {
     return send(res, 200, {
       ok: true,
       storage: usesBlobStorage() ? "vercel-blob" : "local",
-      feedPublishingReady: usesBlobStorage() || !process.env.VERCEL
+      feedPublishingReady: usesBlobStorage() || !process.env.VERCEL,
+      telegramAlertsReady: telegramAlertsEnabled()
     });
   }
 
@@ -511,8 +551,18 @@ async function handleApi(req, res, url) {
     return send(res, 200, { feeds: await readFeeds() });
   }
 
+  if (req.method === "POST" && url.pathname === "/api/monitor-alert") {
+    const payload = await parseBody(req);
+    await sendTelegramAlert(payload);
+    return send(res, 200, { sent: true });
+  }
+
   if (req.method === "GET" && url.pathname === "/api/layouts") {
     return send(res, 200, { layouts: await readLayouts() });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/layout-image-proxy") {
+    return serveImageProxy(res, String(url.searchParams.get("url") || ""));
   }
 
   if (req.method === "POST" && url.pathname === "/api/layouts") {
@@ -604,6 +654,37 @@ async function servePublicLayout(req, res, fileName) {
     "Cache-Control": "public, max-age=31536000"
   });
   return fs.createReadStream(filePath).pipe(res);
+}
+
+async function serveImageProxy(res, sourceUrl) {
+  let parsed;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return sendError(res, 400, "Некорректная ссылка на изображение.");
+  }
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    return sendError(res, 400, "Поддерживаются только http и https ссылки.");
+  }
+
+  const response = await fetch(parsed.href, {
+    cache: "no-store",
+    headers: { "User-Agent": "FeedDev/0.1" }
+  });
+  if (!response.ok) return sendError(res, 502, `Источник изображения вернул HTTP ${response.status}`);
+
+  const contentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (!contentType.startsWith("image/")) return sendError(res, 400, "Ссылка должна вести на изображение планировки.");
+
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length > MAX_LAYOUT_BYTES) return sendError(res, 413, "Изображение слишком большое. Максимум 12 МБ.");
+
+  res.writeHead(200, {
+    "Content-Type": contentType,
+    "Cache-Control": "no-store",
+    "Access-Control-Allow-Origin": "*"
+  });
+  return res.end(bytes);
 }
 
 async function handleRequest(req, res) {
