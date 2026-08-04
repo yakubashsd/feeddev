@@ -3858,33 +3858,6 @@
           </div>
           <div class="layout-filter-note">Фильтр задает контекст для библиотеки, списка планировок из фида и подложки. Для каждого проекта можно использовать свой готовый макет.</div>
         </div>
-        <div class="layout-upload">
-          <div class="field">
-            <label for="layoutName">Название планировки</label>
-            <input id="layoutName" placeholder="Например: 2-комн 58 м²">
-          </div>
-          <div class="technical-fields" aria-hidden="true">
-            <input id="layoutProject">
-            <input id="layoutBuilding">
-            <input id="layoutRooms">
-            <input id="layoutArea">
-            <input id="layoutTags">
-          </div>
-          <div class="layout-file-control">
-            <input id="layoutFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf">
-            <button id="pickLayoutFileBtn" type="button">Выбрать планировку</button>
-            <span id="layoutPickedFile">Файл не выбран</span>
-          </div>
-          <div class="field compact layout-upload-target">
-            <label for="layoutApplyTarget">После загрузки</label>
-            <select id="layoutApplyTarget">
-              <option value="library">Только в библиотеку</option>
-              <option value="checked">В выбранные объекты</option>
-              <option value="open">В открытую карточку</option>
-            </select>
-          </div>
-          <button id="uploadLayoutBtn" type="button" class="primary">Загрузить планировку</button>
-        </div>
         <div class="layout-branding">
           <div class="brand-intro">
             <h3>Подложка проекта</h3>
@@ -5463,7 +5436,7 @@
 
     function canvasToBlob(canvas, type = "image/webp", quality = .88) {
       return new Promise((resolve, reject) => {
-        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось сохранить брендированную планировку.")), type, quality);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось сохранить готовую планировку.")), type, quality);
       });
     }
 
@@ -5529,41 +5502,62 @@
       }
 
       const button = document.querySelector("#applyBrandBtn");
-      const canvas = document.createElement("canvas");
-      const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
       const urlMap = new Map();
+      const skipped = [];
       button.disabled = true;
       button.classList.add("loading");
 
       try {
+        const canvas = document.createElement("canvas");
+        const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
         const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
         for (let index = 0; index < uniqueUrls.length; index += 1) {
           const sourceUrl = uniqueUrls[index];
           const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
-          button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
-          brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
-          const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
-          drawBrandedLayout(baseImage, badgeImage, canvas);
-          const output = await brandedLayoutBlob(canvas);
-          brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
-          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
-          urlMap.set(sourceUrl, record.url);
+          try {
+            button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
+            brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
+            const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
+            drawBrandedLayout(baseImage, badgeImage, canvas);
+            const output = await brandedLayoutBlob(canvas);
+            brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
+            const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
+            urlMap.set(sourceUrl, record.url);
+          } catch (error) {
+            skipped.push({
+              url: sourceUrl,
+              ids: targets.filter(item => item.layoutPhoto === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
+              message: error.message || "ссылка недоступна"
+            });
+          }
+        }
+
+        if (!urlMap.size) {
+          const first = skipped[0];
+          const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
+          brandStatus(`Не удалось обработать выбранные планировки: все ссылки недоступны или не ведут на изображение.${details}`);
+          showToast("Планировки не обработаны");
+          return;
         }
 
         objects = objects.map(item => urlMap.has(item.layoutPhoto) ? { ...item, layoutPhoto: urlMap.get(item.layoutPhoto) } : item);
+        const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
         invalidateGeneratedLink();
         save();
         await loadLayouts({ silent: true });
         renderAll();
-        showToast(`Подложка применена к ${targets.length} объектам`);
-        brandStatus(`Готово: обновлено объектов ${targets.length}, создано файлов ${urlMap.size}. Сгенерируйте новую ссылку в финальной выгрузке.`);
+        showToast(`Подложка применена к ${updatedCount} объектам`);
+        const skippedText = skipped.length
+          ? ` Пропущено ссылок: ${skipped.length}. Проверьте недоступные URL планировок в исходном фиде.`
+          : "";
+        brandStatus(`Готово: обновлено объектов ${updatedCount}, создано файлов ${urlMap.size}.${skippedText} Сгенерируйте новую ссылку в финальной выгрузке.`);
       } catch (error) {
         const message = error.message || "Не удалось наложить планировку на подложку.";
         const hint = /too large|слишком больш|413|body/i.test(message)
           ? " Итоговое изображение превышает лимит загрузки. Уменьшите исходную планировку или подложку и попробуйте снова."
           : " Проверьте, что планировка открывается по ссылке, а подложка загружена в PNG, JPG, WebP или SVG.";
         brandStatus(`Не удалось наложить на подложку: ${message}.${hint}`);
-        alert(`${message}.${hint}`);
+        showToast("Не удалось наложить на подложку");
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
@@ -6623,15 +6617,24 @@ ${photos}
       renderBrandLayoutPicker();
       renderBrandPreview();
     });
-    document.querySelector("#pickLayoutFileBtn").addEventListener("click", () => document.querySelector("#layoutFileInput").click());
-    document.querySelector("#layoutFileInput").addEventListener("change", event => {
-      const file = event.target.files[0];
-      document.querySelector("#layoutPickedFile").textContent = file ? file.name : "Файл не выбран";
-      if (file && !document.querySelector("#layoutName").value.trim()) {
-        document.querySelector("#layoutName").value = file.name.replace(/\.(png|jpe?g|webp|pdf)$/i, "");
-      }
-    });
-    document.querySelector("#uploadLayoutBtn").addEventListener("click", uploadLayout);
+    const pickLayoutFileBtn = document.querySelector("#pickLayoutFileBtn");
+    const layoutFileInput = document.querySelector("#layoutFileInput");
+    const uploadLayoutBtn = document.querySelector("#uploadLayoutBtn");
+    if (pickLayoutFileBtn && layoutFileInput) {
+      pickLayoutFileBtn.addEventListener("click", () => layoutFileInput.click());
+    }
+    if (layoutFileInput) {
+      layoutFileInput.addEventListener("change", event => {
+        const file = event.target.files[0];
+        const pickedFile = document.querySelector("#layoutPickedFile");
+        const nameInput = document.querySelector("#layoutName");
+        if (pickedFile) pickedFile.textContent = file ? file.name : "Файл не выбран";
+        if (file && nameInput && !nameInput.value.trim()) {
+          nameInput.value = file.name.replace(/\.(png|jpe?g|webp|pdf)$/i, "");
+        }
+      });
+    }
+    if (uploadLayoutBtn) uploadLayoutBtn.addEventListener("click", uploadLayout);
     document.querySelector("#refreshLayoutsBtn").addEventListener("click", () => loadLayouts());
     document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
     document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
