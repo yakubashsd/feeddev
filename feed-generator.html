@@ -3126,7 +3126,7 @@
 
     .brand-controls {
       display: grid;
-      grid-template-columns: minmax(190px, 1.2fr) repeat(4, minmax(92px, .5fr)) minmax(190px, .8fr) auto;
+      grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(110px, .55fr)) minmax(220px, .9fr) auto auto;
       gap: 10px;
       align-items: end;
       padding: 14px;
@@ -3137,6 +3137,10 @@
     .brand-controls .layout-file-control { grid-column: 1 / -1; }
     .brand-controls .field { grid-column: auto; }
     #applyBrandBtn { width: 100%; min-width: 170px; }
+
+    .technical-fields {
+      display: none;
+    }
 
     .brand-source-panel {
       grid-column: 1 / -1;
@@ -3681,6 +3685,46 @@
       line-height: 1.45;
     }
 
+    .layout-upload {
+      grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.15fr) minmax(220px, .85fr) minmax(220px, .85fr);
+      align-items: end;
+      padding: 12px;
+      gap: 10px;
+    }
+
+    .layout-upload .field:nth-child(1),
+    .layout-upload .layout-file-control,
+    .layout-upload-target,
+    #uploadLayoutBtn {
+      grid-column: auto;
+    }
+
+    .brand-controls {
+      grid-template-columns: minmax(260px, 1.35fr) repeat(3, minmax(110px, .55fr)) minmax(240px, .9fr) auto minmax(210px, .75fr);
+    }
+
+    .brand-controls .layout-file-control {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 1280px) {
+      .layout-upload,
+      .brand-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .brand-controls .layout-file-control,
+      #applyBrandBtn {
+        grid-column: 1 / -1;
+      }
+
+      .layout-upload .layout-file-control,
+      .layout-upload-target,
+      #uploadLayoutBtn {
+        grid-column: auto;
+      }
+    }
+
     .table-wrap {
       border-color: #77707f;
     }
@@ -3804,44 +3848,31 @@
 
       <section class="layouts-panel page-hidden" id="layoutsPanel" data-page="layouts">
         <h2 class="panel-title">Планировки</h2>
-        <div class="panel-caption">Загружайте макеты планировок один раз, фильтруйте их по проекту и накладывайте проектную брендированную плашку перед выгрузкой в фид.</div>
+        <div class="panel-caption">Выберите проект, загрузите планировки в библиотеку и наложите их на заранее подготовленную подложку проекта.</div>
         <div class="layout-filter-strip">
           <div class="field">
-            <label for="layoutProjectFilter">Проект для планировок и плашки</label>
+            <label for="layoutProjectFilter">Проект</label>
             <select id="layoutProjectFilter">
               <option value="all">Все проекты</option>
             </select>
           </div>
-          <div class="layout-filter-note">Выберите проект перед загрузкой плашки: у разных проектов могут быть разные брендированные шаблоны. Фильтр применяется к библиотеке, списку планировок из текущего фида и массовому наложению.</div>
+          <div class="layout-filter-note">Фильтр задает контекст для библиотеки, списка планировок из фида и подложки. Для каждого проекта можно использовать свой готовый макет.</div>
         </div>
         <div class="layout-upload">
           <div class="field">
-            <label for="layoutName">Название</label>
-            <input id="layoutName" placeholder="Например: 2-комн 58 м² ГП-8.1">
+            <label for="layoutName">Название планировки</label>
+            <input id="layoutName" placeholder="Например: 2-комн 58 м²">
           </div>
-          <div class="field">
-            <label for="layoutProject">ЖК</label>
-            <input id="layoutProject" placeholder="Символ">
-          </div>
-          <div class="field compact">
-            <label for="layoutBuilding">Корпус</label>
-            <input id="layoutBuilding" placeholder="ГП-8.1">
-          </div>
-          <div class="field compact">
-            <label for="layoutRooms">Комнат</label>
-            <input id="layoutRooms" placeholder="2">
-          </div>
-          <div class="field compact">
-            <label for="layoutArea">Площадь</label>
-            <input id="layoutArea" placeholder="58.5">
-          </div>
-          <div class="field">
-            <label for="layoutTags">Метки</label>
-            <input id="layoutTags" placeholder="евро, угловая, видовая">
+          <div class="technical-fields" aria-hidden="true">
+            <input id="layoutProject">
+            <input id="layoutBuilding">
+            <input id="layoutRooms">
+            <input id="layoutArea">
+            <input id="layoutTags">
           </div>
           <div class="layout-file-control">
             <input id="layoutFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf">
-            <button id="pickLayoutFileBtn" type="button">Выбрать файл</button>
+            <button id="pickLayoutFileBtn" type="button">Выбрать планировку</button>
             <span id="layoutPickedFile">Файл не выбран</span>
           </div>
           <div class="field compact layout-upload-target">
@@ -3856,33 +3887,22 @@
         </div>
         <div class="layout-branding">
           <div class="brand-intro">
-            <h3>Брендированная плашка</h3>
-            <p>Загрузите PNG, JPG, WebP или SVG-плашку выбранного проекта. Плашка будет нижним слоем, а планировку можно вручную сдвинуть поверх неё на предпросмотре. Файлы AI сначала экспортируйте в PNG или SVG.</p>
+            <h3>Подложка проекта</h3>
+            <p>Загрузите готовый PNG, JPG, WebP или SVG-макет проекта. Подложка будет нижним слоем, а планировку можно перемещать поверх нее на предпросмотре. Файлы AI сначала экспортируйте в PNG или SVG.</p>
           </div>
           <div class="brand-controls">
             <div class="layout-file-control">
               <input id="brandBadgeFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml">
-              <button id="pickBrandBadgeBtn" type="button">Выбрать плашку</button>
-              <span id="brandBadgePickedFile">Плашка не выбрана</span>
+              <button id="pickBrandBadgeBtn" type="button">Выбрать подложку</button>
+              <span id="brandBadgePickedFile">Подложка не выбрана</span>
             </div>
+            <select id="brandPosition" class="technical-fields" aria-hidden="true">
+              <option value="top-center" selected>По центру</option>
+            </select>
+            <input id="brandMargin" class="technical-fields" type="hidden" value="0">
             <div class="field compact">
-              <label for="brandPosition">Позиция</label>
-              <select id="brandPosition">
-                <option value="top-left">Сверху слева</option>
-                <option value="top-center">Сверху по центру</option>
-                <option value="top-right">Сверху справа</option>
-                <option value="bottom-left">Снизу слева</option>
-                <option value="bottom-center">Снизу по центру</option>
-                <option value="bottom-right">Снизу справа</option>
-              </select>
-            </div>
-            <div class="field compact">
-              <label for="brandSize">Ширина планировки, %</label>
+              <label for="brandSize">Масштаб, %</label>
               <input id="brandSize" type="number" min="20" max="95" value="78">
-            </div>
-            <div class="field compact">
-              <label for="brandMargin">Отступ планировки, %</label>
-              <input id="brandMargin" type="number" min="0" max="20" value="4">
             </div>
             <div class="field compact">
               <label for="brandOffsetX">Сдвиг X, %</label>
@@ -3901,7 +3921,7 @@
               </select>
             </div>
             <button id="centerBrandLayoutBtn" type="button">По центру</button>
-            <button id="applyBrandBtn" type="button" class="primary">Наложить плашку</button>
+            <button id="applyBrandBtn" type="button" class="primary">Наложить на подложку</button>
           </div>
           <div class="brand-source-panel">
             <div class="brand-source-head">
@@ -3920,8 +3940,8 @@
             <canvas id="brandPreviewCanvas" width="960" height="640"></canvas>
             <div class="brand-preview-help">
               <strong>Предпросмотр наложения</strong>
-              <div id="brandStatus">Выберите плашку и объект с планировкой, чтобы увидеть предпросмотр.</div>
-              <div>Плашка остается нижним слоем. Планировку можно двигать мышкой по предпросмотру или задавать точный сдвиг в полях X/Y.</div>
+              <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+              <div>Подложка остается нижним слоем. Планировку можно двигать мышкой по предпросмотру или задавать точный сдвиг в полях X/Y.</div>
             </div>
           </div>
         </div>
@@ -5045,7 +5065,7 @@
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("Не удалось прочитать файл плашки."));
+        reader.onerror = () => reject(new Error("Не удалось прочитать файл подложки."));
         reader.readAsDataURL(file);
       });
     }
@@ -5188,7 +5208,7 @@
 
       if (!selectedBrandLayoutUrls.size && !brandSelectionTouched) selectedBrandLayoutUrls = new Set(groups.slice(0, 6).map(group => group.url));
       const selectedObjects = objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto)).length;
-      summary.textContent = `Проект: ${projectLabel}. Найдено ${groups.length} из ${allGroups.length} уникальных планировок. Выбрано ${selectedBrandLayoutUrls.size}, объектов для плашки: ${selectedObjects}. В рабочей области отмечено объектов с планировками: ${selectedObjectsWithLayouts}.`;
+      summary.textContent = `Проект: ${projectLabel}. Найдено ${groups.length} из ${allGroups.length} уникальных планировок. Выбрано ${selectedBrandLayoutUrls.size}, объектов для подложки: ${selectedObjects}. В рабочей области отмечено объектов с планировками: ${selectedObjectsWithLayouts}.`;
       picker.innerHTML = groups.map((group, index) => {
         const roomText = [...group.rooms].slice(0, 3).join(", ");
         const areaText = [...group.areas].slice(0, 3).join(", ");
@@ -5250,7 +5270,7 @@
       return new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error("Не удалось открыть изображение планировки или плашки."));
+        image.onerror = () => reject(new Error("Не удалось открыть изображение планировки или подложки."));
         image.src = src;
       });
     }
@@ -5375,7 +5395,7 @@
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, canvas.width, canvas.height);
       if (!brandBadgeDataUrl) {
-        brandStatus("Выберите плашку. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
+        brandStatus("Выберите подложку. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
         return;
       }
       const scope = document.querySelector("#brandScope")?.value || "selected-layouts";
@@ -5396,7 +5416,7 @@
           loadImageForCanvas(brandBadgeDataUrl)
         ]);
         drawBrandedLayout(baseImage, badgeImage, canvas);
-        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх плашки. После применения сервис создаст новые ссылки на брендированные планировки.`);
+        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст новые ссылки на готовые макеты.`);
       } catch (error) {
         brandStatus(`${error.message} Проверьте, что ссылка ведет на PNG, JPG, WebP или SVG.`);
       }
@@ -5458,7 +5478,7 @@
         const blob = await canvasToBlob(canvas, contentType, quality);
         if (blob.size <= 9 * 1024 * 1024) return { blob, contentType, ext };
       }
-      throw new Error("Итоговая планировка слишком большая. Попробуйте уменьшить исходную картинку или плашку.");
+      throw new Error("Итоговая планировка слишком большая. Попробуйте уменьшить исходную картинку или подложку.");
     }
 
     async function uploadBrandedLayout({ item, sourceUrl, blob, contentType, ext }) {
@@ -5467,7 +5487,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `Брендированная планировка ${item.externalId || ""}`.trim(),
+          name: `Планировка на подложке ${item.externalId || ""}`.trim(),
           project: item.complexName || "",
           building: item.buildingName || item.sectionNumber || "",
           rooms: item.rooms || "",
@@ -5494,7 +5514,7 @@
 
     async function applyBrandBadgeToLayouts() {
       if (!brandBadgeDataUrl) {
-        alert("Сначала выберите файл брендированной плашки.");
+        alert("Сначала выберите файл подложки.");
         return;
       }
       const targets = brandTargets();
@@ -5520,12 +5540,12 @@
         for (let index = 0; index < uniqueUrls.length; index += 1) {
           const sourceUrl = uniqueUrls[index];
           const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
-          button.textContent = `Плашка ${index + 1}/${uniqueUrls.length}`;
-          brandStatus(`Создаю брендированную планировку ${index + 1} из ${uniqueUrls.length}...`);
+          button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
+          brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
           const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
           drawBrandedLayout(baseImage, badgeImage, canvas);
           const output = await brandedLayoutBlob(canvas);
-          brandStatus(`Загружаю брендированную планировку ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
+          brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
           const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
           urlMap.set(sourceUrl, record.url);
         }
@@ -5535,19 +5555,19 @@
         save();
         await loadLayouts({ silent: true });
         renderAll();
-        showToast(`Плашка добавлена к ${targets.length} объектам`);
+        showToast(`Подложка применена к ${targets.length} объектам`);
         brandStatus(`Готово: обновлено объектов ${targets.length}, создано файлов ${urlMap.size}. Сгенерируйте новую ссылку в финальной выгрузке.`);
       } catch (error) {
-        const message = error.message || "Не удалось наложить плашку.";
+        const message = error.message || "Не удалось наложить планировку на подложку.";
         const hint = /too large|слишком больш|413|body/i.test(message)
-          ? " Итоговое изображение превышает лимит загрузки. Уменьшите исходную планировку или плашку и попробуйте снова."
-          : " Проверьте, что планировка открывается по ссылке, а плашка загружена в PNG, JPG, WebP или SVG.";
-        brandStatus(`Не удалось наложить плашку: ${message}.${hint}`);
+          ? " Итоговое изображение превышает лимит загрузки. Уменьшите исходную планировку или подложку и попробуйте снова."
+          : " Проверьте, что планировка открывается по ссылке, а подложка загружена в PNG, JPG, WebP или SVG.";
+        brandStatus(`Не удалось наложить на подложку: ${message}.${hint}`);
         alert(`${message}.${hint}`);
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
-        button.textContent = "Наложить плашку";
+        button.textContent = "Наложить на подложку";
       }
     }
 
@@ -6619,13 +6639,13 @@ ${photos}
       if (!file) {
         brandBadgeDataUrl = "";
         brandBadgeFileName = "";
-        document.querySelector("#brandBadgePickedFile").textContent = "Плашка не выбрана";
+        document.querySelector("#brandBadgePickedFile").textContent = "Подложка не выбрана";
         renderBrandPreview();
         return;
       }
       if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type) && !/\.(png|jpe?g|webp|svg)$/i.test(file.name)) {
         event.target.value = "";
-        alert("Загрузите плашку в формате PNG, JPG, WebP или SVG. Файл AI нужно сначала экспортировать.");
+        alert("Загрузите подложку в формате PNG, JPG, WebP или SVG. Файл AI нужно сначала экспортировать.");
         return;
       }
       brandBadgeDataUrl = await fileToDataUrl(file);
