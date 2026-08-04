@@ -5824,14 +5824,21 @@
       if (shouldOpenPreview) openBrandPreviewDialog();
     }
 
-    function openBrandPreviewDialog() {
+    async function openBrandPreviewDialog() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       const dialog = document.querySelector("#brandPreviewDialog");
       const image = document.querySelector("#brandPreviewDialogImage");
       if (!canvas || !dialog || !image || !brandPreviewImages) return;
-      image.onload = resetBrandDialogView;
-      image.src = canvas.toDataURL("image/png");
       if (!dialog.open) dialog.showModal();
+      image.style.visibility = "hidden";
+      image.onload = () => requestAnimationFrame(() => resetBrandDialogView());
+      image.src = canvas.toDataURL("image/png");
+      try {
+        await image.decode();
+      } catch {
+        // onload below remains a fallback for browsers with partial decode support.
+      }
+      requestAnimationFrame(() => requestAnimationFrame(() => resetBrandDialogView()));
     }
 
     function applyBrandDialogTransform() {
@@ -5840,10 +5847,14 @@
       image.style.transform = `translate3d(${brandDialogView.x}px, ${brandDialogView.y}px, 0) scale(${brandDialogView.scale})`;
     }
 
-    function resetBrandDialogView() {
+    function resetBrandDialogView(retry = 0) {
       const stage = document.querySelector("#brandPreviewDialogStage");
       const image = document.querySelector("#brandPreviewDialogImage");
       if (!stage || !image?.naturalWidth) return;
+      if ((stage.clientWidth < 40 || stage.clientHeight < 40) && retry < 6) {
+        requestAnimationFrame(() => resetBrandDialogView(retry + 1));
+        return;
+      }
       const fitScale = Math.min(
         Math.max(1, stage.clientWidth - 24) / image.naturalWidth,
         Math.max(1, stage.clientHeight - 24) / image.naturalHeight,
@@ -5851,6 +5862,7 @@
       );
       brandDialogView = { scale: fitScale, fitScale, x: 0, y: 0, pointerId: null };
       applyBrandDialogTransform();
+      image.style.visibility = "visible";
     }
 
     function zoomBrandDialog(multiplier) {
