@@ -6,6 +6,14 @@
   <title>Генератор фидов недвижимости</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2340394a'/%3E%3Cpath d='M20 17h28v9H30v8h15v9H30v15H20z' fill='white'/%3E%3C/svg%3E">
   <style>
+    @font-face {
+      font-family: "Diatype Cyrillic";
+      src: url("/assets/ABCDiatypeCyrillic-Regular.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
     :root {
       --bg: #f5f7f8;
       --surface: #ffffff;
@@ -3138,6 +3146,63 @@
     .brand-controls .field { grid-column: auto; }
     #applyBrandBtn { width: 100%; min-width: 170px; }
 
+    .brand-drag-settings {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .brand-drag-mode {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      min-width: 290px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--site-gray);
+    }
+
+    .brand-drag-mode button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .brand-drag-mode button.active {
+      background: var(--brand-dark);
+      color: #fff;
+    }
+
+    .brand-drag-settings .field {
+      width: 130px;
+    }
+
+    .brand-color-field {
+      width: 92px !important;
+    }
+
+    .brand-color-field input[type="color"] {
+      width: 100%;
+      height: 42px;
+      padding: 4px;
+      cursor: pointer;
+    }
+
+    .brand-drag-hint {
+      flex: 1 1 260px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     .technical-fields {
       display: none;
     }
@@ -3259,7 +3324,8 @@
     .brand-preview-dialog {
       width: min(94vw, 1280px);
       max-width: none;
-      max-height: 92vh;
+      height: min(92vh, 900px);
+      max-height: none;
       padding: 48px 18px 18px;
       border: 1px solid var(--brand-dark);
       border-radius: 18px;
@@ -3272,12 +3338,30 @@
       backdrop-filter: blur(5px);
     }
 
+    .brand-preview-dialog-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: var(--site-gray);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .brand-preview-dialog-stage.dragging {
+      cursor: grabbing;
+    }
+
     .brand-preview-dialog img {
       display: block;
-      width: 100%;
-      max-height: calc(92vh - 68px);
-      object-fit: contain;
-      background: var(--site-gray);
+      max-width: none;
+      max-height: none;
+      transform-origin: center;
+      user-select: none;
+      -webkit-user-drag: none;
+      will-change: transform;
     }
 
     .brand-preview-dialog-close {
@@ -3290,6 +3374,30 @@
       border-radius: 50%;
       font-size: 24px;
       line-height: 1;
+    }
+
+    .brand-preview-dialog-tools {
+      position: absolute;
+      top: 10px;
+      left: 18px;
+      z-index: 2;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .brand-preview-dialog-tools button {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 18px;
+    }
+
+    .brand-preview-dialog-tools span {
+      margin-left: 6px;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     #brandStatus {
@@ -3905,6 +4013,25 @@
               <button id="pickBrandBadgeBtn" type="button">Выбрать подложку</button>
               <span id="brandBadgePickedFile">Подложка не выбрана</span>
             </div>
+            <div class="brand-drag-settings">
+              <div id="brandDragMode" class="brand-drag-mode" aria-label="Что перемещать на предпросмотре">
+                <button type="button" class="active" data-brand-drag-mode="layout">Планировка</button>
+                <button type="button" data-brand-drag-mode="text">Подпись</button>
+              </div>
+              <div class="field compact">
+                <label for="brandTextX">Подпись X, %</label>
+                <input id="brandTextX" type="number" min="-20" max="100" step="1" value="6">
+              </div>
+              <div class="field compact">
+                <label for="brandTextY">Подпись Y, %</label>
+                <input id="brandTextY" type="number" min="-20" max="100" step="1" value="10">
+              </div>
+              <div class="field compact brand-color-field">
+                <label for="brandTextColor">Цвет подписи</label>
+                <input id="brandTextColor" type="color" value="#111111" aria-label="Выбрать цвет подписи">
+              </div>
+              <div id="brandDragHint" class="brand-drag-hint">Сейчас перемещается планировка. Выберите «Подпись», чтобы зафиксировать комнатность и площадь в нужной точке проекта.</div>
+            </div>
             <select id="brandPosition" class="technical-fields" aria-hidden="true">
               <option value="top-center" selected>По центру</option>
             </select>
@@ -3929,7 +4056,7 @@
                 <option value="all">Ко всем с планировкой</option>
               </select>
             </div>
-            <button id="centerBrandLayoutBtn" type="button">По центру</button>
+            <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
             <button id="applyBrandBtn" type="button" class="primary">Наложить на подложку</button>
           </div>
           <div class="brand-source-panel">
@@ -4257,8 +4384,16 @@
   </div>
 
   <dialog id="brandPreviewDialog" class="brand-preview-dialog" aria-label="Предпросмотр готовой планировки">
+    <div class="brand-preview-dialog-tools" aria-label="Масштаб изображения">
+      <button id="brandPreviewZoomOut" type="button" aria-label="Уменьшить" title="Уменьшить">−</button>
+      <button id="brandPreviewZoomIn" type="button" aria-label="Увеличить" title="Увеличить">+</button>
+      <button id="brandPreviewZoomReset" type="button" aria-label="Вписать в окно" title="Вписать в окно">↺</button>
+      <span>Перетаскивайте изображение мышкой</span>
+    </div>
     <button id="brandPreviewDialogClose" class="brand-preview-dialog-close" type="button" aria-label="Закрыть предпросмотр" title="Закрыть">×</button>
-    <img id="brandPreviewDialogImage" alt="Готовая планировка на подложке">
+    <div id="brandPreviewDialogStage" class="brand-preview-dialog-stage">
+      <img id="brandPreviewDialogImage" alt="Готовая планировка на подложке" draggable="false">
+    </div>
   </dialog>
 
   <script>
@@ -4415,6 +4550,8 @@
     let brandDragState = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
+    let brandDragModeValue = "layout";
+    let brandDialogView = { scale: 1, fitScale: 1, x: 0, y: 0, pointerId: null };
     let activeBrandProjectKey = "all";
     let brandProfileHydrating = false;
     let brandProfiles = loadBrandProfiles();
@@ -5377,7 +5514,12 @@
         widthPercent: clamp(document.querySelector("#brandSize")?.value, 20, 95, 78),
         marginPercent: clamp(document.querySelector("#brandMargin")?.value, 0, 20, 4),
         offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, -60, 60, 0),
-        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0)
+        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0),
+        textXPercent: clamp(document.querySelector("#brandTextX")?.value, -20, 100, 6),
+        textYPercent: clamp(document.querySelector("#brandTextY")?.value, -20, 100, 10),
+        textColor: /^#[0-9a-f]{6}$/i.test(document.querySelector("#brandTextColor")?.value || "")
+          ? document.querySelector("#brandTextColor").value
+          : "#111111"
       };
     }
 
@@ -5387,6 +5529,25 @@
       const clamp = (value) => Math.min(60, Math.max(-60, Math.round(value)));
       if (xInput) xInput.value = clamp(x);
       if (yInput) yInput.value = clamp(y);
+    }
+
+    function setBrandTextOffsets(x, y) {
+      const xInput = document.querySelector("#brandTextX");
+      const yInput = document.querySelector("#brandTextY");
+      const clamp = (value) => Math.min(100, Math.max(-20, Math.round(value)));
+      if (xInput) xInput.value = clamp(x);
+      if (yInput) yInput.value = clamp(y);
+    }
+
+    function setBrandDragMode(mode) {
+      brandDragModeValue = mode === "text" ? "text" : "layout";
+      document.querySelectorAll("[data-brand-drag-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.brandDragMode === brandDragModeValue);
+      });
+      const hint = document.querySelector("#brandDragHint");
+      if (hint) hint.textContent = brandDragModeValue === "text"
+        ? "Сейчас перемещается подпись. Ее координаты и цвет сохранятся для всех макетов выбранного проекта."
+        : "Сейчас перемещается планировка. Выберите «Подпись», чтобы зафиксировать комнатность и площадь в нужной точке проекта.";
     }
 
     function brandProjectLabel(projectKey = activeBrandProjectKey) {
@@ -5403,7 +5564,10 @@
         widthPercent: config.widthPercent,
         marginPercent: config.marginPercent,
         offsetXPercent: config.offsetXPercent,
-        offsetYPercent: config.offsetYPercent
+        offsetYPercent: config.offsetYPercent,
+        textXPercent: config.textXPercent,
+        textYPercent: config.textYPercent,
+        textColor: config.textColor
       };
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
@@ -5425,6 +5589,9 @@
       setValue("#brandMargin", profile.marginPercent, 0);
       setValue("#brandOffsetX", profile.offsetXPercent, 0);
       setValue("#brandOffsetY", profile.offsetYPercent, 0);
+      setValue("#brandTextX", profile.textXPercent, 6);
+      setValue("#brandTextY", profile.textYPercent, 10);
+      setValue("#brandTextColor", profile.textColor, "#111111");
       document.querySelector("#brandBadgeFileInput").value = "";
 
       if (activeBrandProjectKey === "all") {
@@ -5488,7 +5655,54 @@
       return { sx, sy, sw: Math.max(1, ex - sx), sh: Math.max(1, ey - sy) };
     }
 
-    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig()) {
+    function layoutTextMeta(item = {}) {
+      const rawRooms = String(item.rooms ?? "").trim().toLowerCase();
+      const roomsNumber = Number(rawRooms.replace(",", "."));
+      const rooms = rawRooms === "studio" || rawRooms === "студия" || roomsNumber === 0
+        ? "Студия"
+        : Number.isFinite(roomsNumber) && roomsNumber > 0
+          ? `${roomsNumber}-комнатная`
+          : rawRooms;
+      const rawArea = String(item.totalArea ?? item.area ?? "").trim().replace(",", ".");
+      const areaNumber = Number(rawArea);
+      const area = Number.isFinite(areaNumber) && areaNumber > 0
+        ? `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(areaNumber)} м²`
+        : rawArea ? `${rawArea.replace(".", ",")} м²` : "";
+      return { rooms, area };
+    }
+
+    function brandedLayoutKey(item = {}) {
+      const meta = layoutTextMeta(item);
+      return JSON.stringify([String(item.layoutPhoto || ""), meta.rooms, meta.area]);
+    }
+
+    function drawLayoutText(context, width, height, item, config = brandConfig()) {
+      const { rooms, area } = layoutTextMeta(item);
+      if (!rooms && !area) return;
+      const left = Math.round(width * (config.textXPercent / 100));
+      const top = Math.round(height * (config.textYPercent / 100));
+      const primarySize = Math.max(28, Math.round(width * .044));
+      const secondarySize = Math.max(22, Math.round(width * .028));
+      context.save();
+      context.fillStyle = config.textColor;
+      context.textAlign = "left";
+      context.textBaseline = "top";
+      if (rooms) {
+        context.font = `400 ${primarySize}px "Diatype Cyrillic", Arial, sans-serif`;
+        context.fillText(rooms, left, top);
+      }
+      if (area) {
+        context.font = `400 ${secondarySize}px "Diatype Cyrillic", Arial, sans-serif`;
+        context.fillText(area, left, top + Math.round(primarySize * 1.25));
+      }
+      context.restore();
+    }
+
+    async function ensureLayoutFont() {
+      if (document.fonts?.load) await document.fonts.load('400 48px "Diatype Cyrillic"');
+    }
+
+    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig(), item = {}) {
       const context = canvas.getContext("2d");
       const width = badgeImage.naturalWidth || badgeImage.width;
       const height = badgeImage.naturalHeight || badgeImage.height;
@@ -5509,13 +5723,14 @@
       const x = baseX + Math.round(width * ((config.offsetXPercent || 0) / 100));
       const y = baseY + Math.round(height * ((config.offsetYPercent || 0) / 100));
       context.drawImage(baseImage, source.sx, source.sy, source.sw, source.sh, x, y, layoutWidth, layoutHeight);
+      drawLayoutText(context, width, height, item, config);
       return canvas;
     }
 
     function drawBrandPreviewFrame() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas || !brandPreviewImages) return false;
-      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas);
+      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas, brandConfig(), brandPreviewImages.target);
       return true;
     }
 
@@ -5549,10 +5764,11 @@
         brandStatus("Готовлю предпросмотр...");
         const [baseImage, badgeImage] = await Promise.all([
           loadImageForCanvas(proxyImageUrl(target.layoutPhoto)),
-          loadImageForCanvas(brandBadgeDataUrl)
+          loadImageForCanvas(brandBadgeDataUrl),
+          ensureLayoutFont()
         ]);
         if (requestId !== brandPreviewRequestId) return;
-        brandPreviewImages = { baseImage, badgeImage, targetId: target.externalId || "" };
+        brandPreviewImages = { baseImage, badgeImage, target, targetId: target.externalId || "" };
         drawBrandPreviewFrame();
         brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст новые ссылки на готовые макеты.`);
       } catch (error) {
@@ -5568,10 +5784,11 @@
       const config = brandConfig();
       brandDragState = {
         pointerId: event.pointerId,
+        mode: brandDragModeValue,
         clientX: event.clientX,
         clientY: event.clientY,
-        offsetX: config.offsetXPercent,
-        offsetY: config.offsetYPercent,
+        offsetX: brandDragModeValue === "text" ? config.textXPercent : config.offsetXPercent,
+        offsetY: brandDragModeValue === "text" ? config.textYPercent : config.offsetYPercent,
         moved: false
       };
       canvas.classList.add("dragging");
@@ -5586,17 +5803,24 @@
       if (distance > 4) brandDragState.moved = true;
       const dxPercent = ((event.clientX - brandDragState.clientX) / Math.max(1, rect.width)) * 100;
       const dyPercent = ((event.clientY - brandDragState.clientY) / Math.max(1, rect.height)) * 100;
-      setBrandOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
+      if (brandDragState.mode === "text") {
+        setBrandTextOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
+      } else {
+        setBrandOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
+      }
       drawBrandPreviewFrame();
     }
 
     async function endBrandPreviewDrag(event) {
       if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
       const shouldOpenPreview = event.type === "pointerup" && !brandDragState.moved;
+      const movedMode = brandDragState.mode;
       document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging");
       brandDragState = null;
       await persistActiveBrandProfile();
-      brandStatus(`Позиция для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем планировкам проекта.`);
+      brandStatus(movedMode === "text"
+        ? `Позиция подписи для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandTextX")?.value || 0}%, Y ${document.querySelector("#brandTextY")?.value || 0}%. Она будет применена ко всем макетам проекта.`
+        : `Позиция планировки для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам проекта.`);
       if (shouldOpenPreview) openBrandPreviewDialog();
     }
 
@@ -5605,21 +5829,82 @@
       const dialog = document.querySelector("#brandPreviewDialog");
       const image = document.querySelector("#brandPreviewDialogImage");
       if (!canvas || !dialog || !image || !brandPreviewImages) return;
+      image.onload = resetBrandDialogView;
       image.src = canvas.toDataURL("image/png");
       if (!dialog.open) dialog.showModal();
+    }
+
+    function applyBrandDialogTransform() {
+      const image = document.querySelector("#brandPreviewDialogImage");
+      if (!image) return;
+      image.style.transform = `translate3d(${brandDialogView.x}px, ${brandDialogView.y}px, 0) scale(${brandDialogView.scale})`;
+    }
+
+    function resetBrandDialogView() {
+      const stage = document.querySelector("#brandPreviewDialogStage");
+      const image = document.querySelector("#brandPreviewDialogImage");
+      if (!stage || !image?.naturalWidth) return;
+      const fitScale = Math.min(
+        Math.max(1, stage.clientWidth - 24) / image.naturalWidth,
+        Math.max(1, stage.clientHeight - 24) / image.naturalHeight,
+        1
+      );
+      brandDialogView = { scale: fitScale, fitScale, x: 0, y: 0, pointerId: null };
+      applyBrandDialogTransform();
+    }
+
+    function zoomBrandDialog(multiplier) {
+      const minimum = Math.max(.08, brandDialogView.fitScale * .6);
+      brandDialogView.scale = Math.min(4, Math.max(minimum, brandDialogView.scale * multiplier));
+      applyBrandDialogTransform();
+    }
+
+    function startBrandDialogPan(event) {
+      const stage = document.querySelector("#brandPreviewDialogStage");
+      if (!stage || !document.querySelector("#brandPreviewDialogImage")?.src) return;
+      event.preventDefault();
+      brandDialogView.pointerId = event.pointerId;
+      brandDialogView.startClientX = event.clientX;
+      brandDialogView.startClientY = event.clientY;
+      brandDialogView.startX = brandDialogView.x;
+      brandDialogView.startY = brandDialogView.y;
+      stage.classList.add("dragging");
+      stage.setPointerCapture?.(event.pointerId);
+    }
+
+    function moveBrandDialogPan(event) {
+      if (brandDialogView.pointerId !== event.pointerId) return;
+      brandDialogView.x = brandDialogView.startX + event.clientX - brandDialogView.startClientX;
+      brandDialogView.y = brandDialogView.startY + event.clientY - brandDialogView.startClientY;
+      applyBrandDialogTransform();
+    }
+
+    function endBrandDialogPan(event) {
+      if (brandDialogView.pointerId !== event.pointerId) return;
+      brandDialogView.pointerId = null;
+      document.querySelector("#brandPreviewDialogStage")?.classList.remove("dragging");
     }
 
     function closeBrandPreviewDialog() {
       const dialog = document.querySelector("#brandPreviewDialog");
       const image = document.querySelector("#brandPreviewDialogImage");
       if (dialog?.open) dialog.close();
-      if (image) image.removeAttribute("src");
+      if (image) {
+        image.onload = null;
+        image.removeAttribute("src");
+        image.removeAttribute("style");
+      }
+      brandDialogView = { scale: 1, fitScale: 1, x: 0, y: 0, pointerId: null };
     }
 
     async function centerBrandLayout() {
-      const position = document.querySelector("#brandPosition");
-      if (position) position.value = "top-center";
-      setBrandOffsets(0, 0);
+      if (brandDragModeValue === "text") {
+        setBrandTextOffsets(6, 10);
+      } else {
+        const position = document.querySelector("#brandPosition");
+        if (position) position.value = "top-center";
+        setBrandOffsets(0, 0);
+      }
       drawBrandPreviewFrame() || renderBrandPreview();
       await persistActiveBrandProfile();
     }
@@ -5696,37 +5981,45 @@
       }
 
       const button = document.querySelector("#applyBrandBtn");
-      const urlMap = new Map();
+      const outputMap = new Map();
       const skipped = [];
       button.disabled = true;
       button.classList.add("loading");
 
       try {
         const canvas = document.createElement("canvas");
-        const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
-        const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
-        for (let index = 0; index < uniqueUrls.length; index += 1) {
-          const sourceUrl = uniqueUrls[index];
-          const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
+        const [badgeImage] = await Promise.all([
+          loadImageForCanvas(brandBadgeDataUrl),
+          ensureLayoutFont()
+        ]);
+        const jobs = [...targets.reduce((map, item) => {
+          const key = brandedLayoutKey(item);
+          if (!map.has(key)) map.set(key, { key, sourceUrl: item.layoutPhoto, item, ids: [] });
+          map.get(key).ids.push(item.externalId);
+          return map;
+        }, new Map()).values()];
+        for (let index = 0; index < jobs.length; index += 1) {
+          const job = jobs[index];
+          const { sourceUrl, item: firstItem } = job;
           try {
-            button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
-            brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
+            button.textContent = `Подложка ${index + 1}/${jobs.length}`;
+            brandStatus(`Создаю планировку на подложке ${index + 1} из ${jobs.length}...`);
             const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
-            drawBrandedLayout(baseImage, badgeImage, canvas);
+            drawBrandedLayout(baseImage, badgeImage, canvas, brandConfig(), firstItem);
             const output = await brandedLayoutBlob(canvas);
-            brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
+            brandStatus(`Загружаю планировку на подложке ${index + 1} из ${jobs.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
             const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
-            urlMap.set(sourceUrl, record.url);
+            outputMap.set(job.key, record.url);
           } catch (error) {
             skipped.push({
               url: sourceUrl,
-              ids: targets.filter(item => item.layoutPhoto === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
+              ids: job.ids.filter(Boolean).slice(0, 6),
               message: error.message || "ссылка недоступна"
             });
           }
         }
 
-        if (!urlMap.size) {
+        if (!outputMap.size) {
           const first = skipped[0];
           const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
           brandStatus(`Не удалось обработать выбранные планировки: все ссылки недоступны или не ведут на изображение.${details}`);
@@ -5734,8 +6027,12 @@
           return;
         }
 
-        objects = objects.map(item => urlMap.has(item.layoutPhoto) ? { ...item, layoutPhoto: urlMap.get(item.layoutPhoto) } : item);
-        const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
+        const targetIds = new Set(targets.map(item => item.externalId));
+        objects = objects.map(item => {
+          const outputUrl = targetIds.has(item.externalId) ? outputMap.get(brandedLayoutKey(item)) : "";
+          return outputUrl ? { ...item, layoutPhoto: outputUrl } : item;
+        });
+        const updatedCount = targets.filter(item => outputMap.has(brandedLayoutKey(item))).length;
         invalidateGeneratedLink();
         save();
         await loadLayouts({ silent: true });
@@ -5744,7 +6041,7 @@
         const skippedText = skipped.length
           ? ` Пропущено ссылок: ${skipped.length}. Проверьте недоступные URL планировок в исходном фиде.`
           : "";
-        brandStatus(`Готово: обновлено объектов ${updatedCount}, создано файлов ${urlMap.size}.${skippedText} Сгенерируйте новую ссылку в финальной выгрузке.`);
+        brandStatus(`Готово: обновлено объектов ${updatedCount}, создано файлов ${outputMap.size}.${skippedText} Сгенерируйте новую ссылку в финальной выгрузке.`);
       } catch (error) {
         const message = error.message || "Не удалось наложить планировку на подложку.";
         const hint = /too large|слишком больш|413|body/i.test(message)
@@ -6862,7 +7159,7 @@ ${photos}
       }
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandTextX", "#brandTextY", "#brandTextColor"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
         drawBrandPreviewFrame() || renderBrandPreview();
       });
@@ -6870,6 +7167,10 @@ ${photos}
         drawBrandPreviewFrame() || renderBrandPreview();
         persistActiveBrandProfile();
       });
+    });
+    document.querySelector("#brandDragMode").addEventListener("click", event => {
+      const button = event.target.closest("[data-brand-drag-mode]");
+      if (button) setBrandDragMode(button.dataset.brandDragMode);
     });
     document.querySelector("#brandScope").addEventListener("change", () => {
       renderBrandLayoutPicker();
@@ -6888,6 +7189,18 @@ ${photos}
       }
     });
     document.querySelector("#brandPreviewDialogClose").addEventListener("click", closeBrandPreviewDialog);
+    document.querySelector("#brandPreviewZoomOut").addEventListener("click", () => zoomBrandDialog(1 / 1.2));
+    document.querySelector("#brandPreviewZoomIn").addEventListener("click", () => zoomBrandDialog(1.2));
+    document.querySelector("#brandPreviewZoomReset").addEventListener("click", resetBrandDialogView);
+    const brandPreviewDialogStage = document.querySelector("#brandPreviewDialogStage");
+    brandPreviewDialogStage.addEventListener("pointerdown", startBrandDialogPan);
+    brandPreviewDialogStage.addEventListener("pointermove", moveBrandDialogPan);
+    brandPreviewDialogStage.addEventListener("pointerup", endBrandDialogPan);
+    brandPreviewDialogStage.addEventListener("pointercancel", endBrandDialogPan);
+    brandPreviewDialogStage.addEventListener("wheel", event => {
+      event.preventDefault();
+      zoomBrandDialog(event.deltaY < 0 ? 1.12 : 1 / 1.12);
+    }, { passive: false });
     document.querySelector("#brandPreviewDialog").addEventListener("click", event => {
       if (event.target === event.currentTarget) closeBrandPreviewDialog();
     });
