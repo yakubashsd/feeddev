@@ -3256,6 +3256,42 @@
       box-shadow: 0 0 0 3px rgba(44,37,53,.16), inset 0 0 0 1px rgba(0,0,0,.16);
     }
 
+    .brand-preview-dialog {
+      width: min(94vw, 1280px);
+      max-width: none;
+      max-height: 92vh;
+      padding: 48px 18px 18px;
+      border: 1px solid var(--brand-dark);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(22,18,27,.28);
+    }
+
+    .brand-preview-dialog::backdrop {
+      background: rgba(20,18,22,.72);
+      backdrop-filter: blur(5px);
+    }
+
+    .brand-preview-dialog img {
+      display: block;
+      width: 100%;
+      max-height: calc(92vh - 68px);
+      object-fit: contain;
+      background: var(--site-gray);
+    }
+
+    .brand-preview-dialog-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 24px;
+      line-height: 1;
+    }
+
     #brandStatus {
       color: #625d67;
       font-size: 12px;
@@ -3856,7 +3892,7 @@
               <option value="all">Все проекты</option>
             </select>
           </div>
-          <div class="layout-filter-note">Фильтр задает контекст для библиотеки, списка планировок из фида и подложки. Для каждого проекта можно использовать свой готовый макет.</div>
+          <div class="layout-filter-note">Выберите конкретный проект перед настройкой. Сервис запомнит его подложку, масштаб и положение планировки и применит их ко всем макетам этого ЖК.</div>
         </div>
         <div class="layout-branding">
           <div class="brand-intro">
@@ -3910,11 +3946,11 @@
             <div id="brandLayoutPicker" class="brand-layout-picker"></div>
           </div>
           <div class="brand-preview">
-            <canvas id="brandPreviewCanvas" width="960" height="640"></canvas>
+            <canvas id="brandPreviewCanvas" width="960" height="640" tabindex="0" role="img" aria-label="Предпросмотр готовой планировки. Перетащите изображение или нажмите, чтобы открыть крупнее."></canvas>
             <div class="brand-preview-help">
               <strong>Предпросмотр наложения</strong>
               <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
-              <div>Подложка остается нижним слоем. Планировку можно двигать мышкой по предпросмотру или задавать точный сдвиг в полях X/Y.</div>
+              <div>Подложка остается нижним слоем. Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
         </div>
@@ -4220,10 +4256,16 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </div>
 
+  <dialog id="brandPreviewDialog" class="brand-preview-dialog" aria-label="Предпросмотр готовой планировки">
+    <button id="brandPreviewDialogClose" class="brand-preview-dialog-close" type="button" aria-label="Закрыть предпросмотр" title="Закрыть">×</button>
+    <img id="brandPreviewDialogImage" alt="Готовая планировка на подложке">
+  </dialog>
+
   <script>
     const storageKey = "feed-generator-cian-v2";
     const legacyStorageKey = "feed-generator-cian-v1";
     const publishedStorageKey = "feed-generator-published-v1";
+    const brandProfilesStorageKey = "feed-generator-brand-profiles-v1";
     const monitoredStorageKey = "feed-generator-monitor-v1";
     const bulkSections = {
       main: {
@@ -4371,6 +4413,11 @@
     let selectedBrandLayoutUrls = new Set();
     let brandSelectionTouched = false;
     let brandDragState = null;
+    let brandPreviewImages = null;
+    let brandPreviewRequestId = 0;
+    let activeBrandProjectKey = "all";
+    let brandProfileHydrating = false;
+    let brandProfiles = loadBrandProfiles();
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -4477,6 +4524,48 @@
       appState.serverBaseUrl = document.querySelector("#serverBaseUrl")?.value || appState.serverBaseUrl || "";
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+    }
+
+    function loadBrandProfiles() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(brandProfilesStorageKey));
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveBrandProfiles() {
+      localStorage.setItem(brandProfilesStorageKey, JSON.stringify(brandProfiles));
+    }
+
+    function openBrandAssetsDb() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("feed-generator-brand-assets", 1);
+        request.onupgradeneeded = () => request.result.createObjectStore("underlays");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Не удалось открыть хранилище подложек."));
+      });
+    }
+
+    async function readBrandAsset(projectKey) {
+      if (!projectKey || projectKey === "all") return "";
+      const db = await openBrandAssetsDb();
+      return new Promise((resolve, reject) => {
+        const request = db.transaction("underlays", "readonly").objectStore("underlays").get(projectKey);
+        request.onsuccess = () => resolve(String(request.result || ""));
+        request.onerror = () => reject(request.error || new Error("Не удалось загрузить подложку проекта."));
+      }).finally(() => db.close());
+    }
+
+    async function writeBrandAsset(projectKey, dataUrl) {
+      if (!projectKey || projectKey === "all") return;
+      const db = await openBrandAssetsDb();
+      return new Promise((resolve, reject) => {
+        const request = db.transaction("underlays", "readwrite").objectStore("underlays").put(dataUrl, projectKey);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error || new Error("Не удалось сохранить подложку проекта."));
+      }).finally(() => db.close());
     }
 
     function escapeXml(value = "") {
@@ -5300,6 +5389,67 @@
       if (yInput) yInput.value = clamp(y);
     }
 
+    function brandProjectLabel(projectKey = activeBrandProjectKey) {
+      const option = [...(document.querySelector("#layoutProjectFilter")?.options || [])].find(item => item.value === projectKey);
+      return option?.textContent || projectKey || "проект";
+    }
+
+    async function persistActiveBrandProfile({ includeAsset = false } = {}) {
+      if (brandProfileHydrating || !activeBrandProjectKey || activeBrandProjectKey === "all") return;
+      const config = brandConfig();
+      brandProfiles[activeBrandProjectKey] = {
+        fileName: brandBadgeFileName,
+        position: config.position,
+        widthPercent: config.widthPercent,
+        marginPercent: config.marginPercent,
+        offsetXPercent: config.offsetXPercent,
+        offsetYPercent: config.offsetYPercent
+      };
+      saveBrandProfiles();
+      if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
+    }
+
+    async function restoreBrandProfile(projectKey) {
+      activeBrandProjectKey = projectKey || "all";
+      brandProfileHydrating = true;
+      brandPreviewImages = null;
+      brandBadgeDataUrl = "";
+      brandBadgeFileName = "";
+      const profile = brandProfiles[activeBrandProjectKey] || {};
+      const setValue = (selector, value, fallback) => {
+        const input = document.querySelector(selector);
+        if (input) input.value = value ?? fallback;
+      };
+      setValue("#brandPosition", profile.position, "top-center");
+      setValue("#brandSize", profile.widthPercent, 78);
+      setValue("#brandMargin", profile.marginPercent, 0);
+      setValue("#brandOffsetX", profile.offsetXPercent, 0);
+      setValue("#brandOffsetY", profile.offsetYPercent, 0);
+      document.querySelector("#brandBadgeFileInput").value = "";
+
+      if (activeBrandProjectKey === "all") {
+        document.querySelector("#brandBadgePickedFile").textContent = "Сначала выберите проект";
+        brandStatus("Выберите конкретный проект. Для каждого ЖК сохраняются отдельная подложка, масштаб и положение планировки.");
+        brandProfileHydrating = false;
+        renderBrandPreview();
+        return;
+      }
+
+      try {
+        brandBadgeDataUrl = await readBrandAsset(activeBrandProjectKey);
+        brandBadgeFileName = profile.fileName || "";
+        document.querySelector("#brandBadgePickedFile").textContent = brandBadgeDataUrl
+          ? `${brandBadgeFileName || "Подложка проекта"} · сохранено для ${brandProjectLabel()}`
+          : `Подложка для ${brandProjectLabel()} не выбрана`;
+      } catch (error) {
+        document.querySelector("#brandBadgePickedFile").textContent = "Не удалось загрузить сохраненную подложку";
+        brandStatus(error.message);
+      } finally {
+        brandProfileHydrating = false;
+      }
+      renderBrandPreview();
+    }
+
     function visibleImageBounds(image) {
       const width = image.naturalWidth || image.width;
       const height = image.naturalHeight || image.height;
@@ -5362,13 +5512,26 @@
       return canvas;
     }
 
+    function drawBrandPreviewFrame() {
+      const canvas = document.querySelector("#brandPreviewCanvas");
+      if (!canvas || !brandPreviewImages) return false;
+      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas);
+      return true;
+    }
+
     async function renderBrandPreview() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas) return;
+      const requestId = ++brandPreviewRequestId;
+      brandPreviewImages = null;
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, canvas.width, canvas.height);
+      if (currentLayoutProjectFilter() === "all") {
+        brandStatus("Выберите конкретный проект. Его подложка и положение планировки будут сохранены отдельно от других ЖК.");
+        return;
+      }
       if (!brandBadgeDataUrl) {
-        brandStatus("Выберите подложку. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
+        brandStatus(`Выберите подложку для ${brandProjectLabel()}. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.`);
         return;
       }
       const scope = document.querySelector("#brandScope")?.value || "selected-layouts";
@@ -5388,9 +5551,12 @@
           loadImageForCanvas(proxyImageUrl(target.layoutPhoto)),
           loadImageForCanvas(brandBadgeDataUrl)
         ]);
-        drawBrandedLayout(baseImage, badgeImage, canvas);
+        if (requestId !== brandPreviewRequestId) return;
+        brandPreviewImages = { baseImage, badgeImage, targetId: target.externalId || "" };
+        drawBrandPreviewFrame();
         brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст новые ссылки на готовые макеты.`);
       } catch (error) {
+        if (requestId !== brandPreviewRequestId) return;
         brandStatus(`${error.message} Проверьте, что ссылка ведет на PNG, JPG, WebP или SVG.`);
       }
     }
@@ -5405,7 +5571,8 @@
         clientX: event.clientX,
         clientY: event.clientY,
         offsetX: config.offsetXPercent,
-        offsetY: config.offsetYPercent
+        offsetY: config.offsetYPercent,
+        moved: false
       };
       canvas.classList.add("dragging");
       canvas.setPointerCapture?.(event.pointerId);
@@ -5415,23 +5582,46 @@
       if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
       const canvas = document.querySelector("#brandPreviewCanvas");
       const rect = canvas.getBoundingClientRect();
+      const distance = Math.hypot(event.clientX - brandDragState.clientX, event.clientY - brandDragState.clientY);
+      if (distance > 4) brandDragState.moved = true;
       const dxPercent = ((event.clientX - brandDragState.clientX) / Math.max(1, rect.width)) * 100;
       const dyPercent = ((event.clientY - brandDragState.clientY) / Math.max(1, rect.height)) * 100;
       setBrandOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
-      renderBrandPreview();
+      drawBrandPreviewFrame();
     }
 
-    function endBrandPreviewDrag(event) {
+    async function endBrandPreviewDrag(event) {
       if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
+      const shouldOpenPreview = event.type === "pointerup" && !brandDragState.moved;
       document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging");
       brandDragState = null;
+      await persistActiveBrandProfile();
+      brandStatus(`Позиция для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем планировкам проекта.`);
+      if (shouldOpenPreview) openBrandPreviewDialog();
     }
 
-    function centerBrandLayout() {
+    function openBrandPreviewDialog() {
+      const canvas = document.querySelector("#brandPreviewCanvas");
+      const dialog = document.querySelector("#brandPreviewDialog");
+      const image = document.querySelector("#brandPreviewDialogImage");
+      if (!canvas || !dialog || !image || !brandPreviewImages) return;
+      image.src = canvas.toDataURL("image/png");
+      if (!dialog.open) dialog.showModal();
+    }
+
+    function closeBrandPreviewDialog() {
+      const dialog = document.querySelector("#brandPreviewDialog");
+      const image = document.querySelector("#brandPreviewDialogImage");
+      if (dialog?.open) dialog.close();
+      if (image) image.removeAttribute("src");
+    }
+
+    async function centerBrandLayout() {
       const position = document.querySelector("#brandPosition");
       if (position) position.value = "top-center";
       setBrandOffsets(0, 0);
-      renderBrandPreview();
+      drawBrandPreviewFrame() || renderBrandPreview();
+      await persistActiveBrandProfile();
     }
 
     function canvasToBlob(canvas, type = "image/webp", quality = .88) {
@@ -5486,6 +5676,10 @@
     }
 
     async function applyBrandBadgeToLayouts() {
+      if (currentLayoutProjectFilter() === "all") {
+        alert("Выберите конкретный проект. Одна подложка и положение применяются только к планировкам одного ЖК.");
+        return;
+      }
       if (!brandBadgeDataUrl) {
         alert("Сначала выберите файл подложки.");
         return;
@@ -6610,12 +6804,13 @@ ${photos}
     });
     document.querySelector("#layoutSearch").addEventListener("input", renderLayoutsList);
     document.querySelector("#layoutSearch").addEventListener("change", renderLayoutsList);
-    document.querySelector("#layoutProjectFilter").addEventListener("change", () => {
-      brandSelectionTouched = true;
+    document.querySelector("#layoutProjectFilter").addEventListener("change", async event => {
+      await persistActiveBrandProfile();
+      brandSelectionTouched = false;
       selectedBrandLayoutUrls = new Set();
+      await restoreBrandProfile(event.target.value);
       renderLayoutsList();
       renderBrandLayoutPicker();
-      renderBrandPreview();
     });
     const pickLayoutFileBtn = document.querySelector("#pickLayoutFileBtn");
     const layoutFileInput = document.querySelector("#layoutFileInput");
@@ -6638,6 +6833,11 @@ ${photos}
     document.querySelector("#refreshLayoutsBtn").addEventListener("click", () => loadLayouts());
     document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
     document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
+      if (currentLayoutProjectFilter() === "all") {
+        event.target.value = "";
+        alert("Сначала выберите конкретный проект. Подложка сохраняется отдельно для каждого ЖК.");
+        return;
+      }
       const file = event.target.files[0];
       if (!file) {
         brandBadgeDataUrl = "";
@@ -6653,18 +6853,27 @@ ${photos}
       }
       brandBadgeDataUrl = await fileToDataUrl(file);
       brandBadgeFileName = file.name;
-      document.querySelector("#brandBadgePickedFile").textContent = file.name;
+      document.querySelector("#brandBadgePickedFile").textContent = `${file.name} · ${brandProjectLabel()}`;
+      try {
+        await persistActiveBrandProfile({ includeAsset: true });
+        showToast(`Подложка сохранена для ${brandProjectLabel()}`);
+      } catch (error) {
+        brandStatus(`Подложка загружена, но не сохранена в браузере: ${error.message}`);
+      }
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandScope"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
-        renderBrandLayoutPicker();
-        renderBrandPreview();
+        drawBrandPreviewFrame() || renderBrandPreview();
       });
       document.querySelector(selector).addEventListener("change", () => {
-        renderBrandLayoutPicker();
-        renderBrandPreview();
+        drawBrandPreviewFrame() || renderBrandPreview();
+        persistActiveBrandProfile();
       });
+    });
+    document.querySelector("#brandScope").addEventListener("change", () => {
+      renderBrandLayoutPicker();
+      renderBrandPreview();
     });
     document.querySelector("#centerBrandLayoutBtn").addEventListener("click", centerBrandLayout);
     const brandPreviewCanvas = document.querySelector("#brandPreviewCanvas");
@@ -6672,6 +6881,16 @@ ${photos}
     brandPreviewCanvas.addEventListener("pointermove", moveBrandPreviewDrag);
     brandPreviewCanvas.addEventListener("pointerup", endBrandPreviewDrag);
     brandPreviewCanvas.addEventListener("pointercancel", endBrandPreviewDrag);
+    brandPreviewCanvas.addEventListener("keydown", event => {
+      if (["Enter", " "].includes(event.key)) {
+        event.preventDefault();
+        openBrandPreviewDialog();
+      }
+    });
+    document.querySelector("#brandPreviewDialogClose").addEventListener("click", closeBrandPreviewDialog);
+    document.querySelector("#brandPreviewDialog").addEventListener("click", event => {
+      if (event.target === event.currentTarget) closeBrandPreviewDialog();
+    });
     document.querySelector("#brandLayoutPicker").addEventListener("change", event => {
       const checkbox = event.target.closest("[data-brand-layout-url]");
       if (checkbox) updateBrandLayoutSelection(checkbox.dataset.brandLayoutUrl, checkbox.checked);
