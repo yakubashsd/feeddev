@@ -3126,7 +3126,7 @@
 
     .brand-controls {
       display: grid;
-      grid-template-columns: minmax(190px, 1.2fr) minmax(96px, .55fr) minmax(96px, .55fr) minmax(210px, 1fr) auto;
+      grid-template-columns: minmax(190px, 1.2fr) repeat(4, minmax(92px, .5fr)) minmax(190px, .8fr) auto;
       gap: 10px;
       align-items: end;
       padding: 14px;
@@ -3241,12 +3241,38 @@
       background: var(--site-gray);
       border: 1px solid var(--line);
       object-fit: contain;
+      touch-action: none;
+      cursor: grab;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .brand-preview canvas.dragging {
+      cursor: grabbing;
+      border-color: var(--brand-dark);
+      box-shadow: 0 0 0 3px rgba(44,37,53,.16), inset 0 0 0 1px rgba(0,0,0,.16);
     }
 
     #brandStatus {
       color: #625d67;
       font-size: 12px;
       line-height: 1.45;
+    }
+
+    .brand-preview-help {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .brand-preview-help strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .brand-preview-help button {
+      justify-self: start;
     }
 
     .layout-toolbar {
@@ -3259,25 +3285,27 @@
 
     .layouts-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
 
     .layout-card {
       display: grid;
-      gap: 12px;
-      padding: 14px;
+      grid-template-rows: auto auto auto auto;
+      gap: 10px;
+      padding: 12px;
       border-radius: 20px;
       background: var(--site-gray);
       min-width: 0;
+      overflow: hidden;
       animation: rowIn .18s ease both;
     }
 
     .layout-preview {
       display: grid;
       place-items: center;
-      aspect-ratio: 4 / 3;
+      height: 184px;
       overflow: hidden;
       border-radius: 16px;
       background: #fff;
@@ -3298,6 +3326,10 @@
       color: var(--text);
       font-weight: 700;
       line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .layout-meta,
@@ -3310,7 +3342,18 @@
       text-overflow: ellipsis;
     }
 
-    .layout-url { white-space: nowrap; }
+    .layout-meta {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .layout-url {
+      white-space: nowrap;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.72);
+    }
 
     .layout-actions {
       display: grid;
@@ -3323,6 +3366,9 @@
       width: 100%;
       white-space: normal;
       line-height: 1.2;
+      min-height: 38px;
+      padding-inline: 10px;
+      font-size: 12px;
     }
 
     .layout-empty {
@@ -3451,6 +3497,211 @@
       .editor { padding: 18px 14px; }
     }
 
+    /* Contrast pass for low-quality displays */
+    :root {
+      --bg: #e4e4e7;
+      --surface: #ffffff;
+      --surface-2: #d7d5dc;
+      --text: #0b0a0d;
+      --muted: #4f4956;
+      --line: #bdb8c4;
+      --line-strong: #8f879a;
+      --brand: #2c2535;
+      --brand-dark: #1d1725;
+      --brand-soft: #ddd9e4;
+      --site-gray: #e1e0e5;
+      --shadow: 0 18px 44px rgba(20, 16, 27, .13);
+    }
+
+    body {
+      color: var(--text);
+      background: #e4e4e7;
+    }
+
+    .sidebar,
+    .topbar,
+    .editor {
+      background: #fff;
+    }
+
+    .main {
+      background: #eeeeF1;
+    }
+
+    .subtitle,
+    .panel-caption,
+    .layout-meta,
+    .layout-url,
+    .field label,
+    .editor-status,
+    .muted,
+    .layout-file-control span,
+    .brand-source-head span,
+    .brand-intro p,
+    #brandStatus {
+      color: var(--muted);
+    }
+
+    .panel-title,
+    .quality-title,
+    .layout-name,
+    .brand-source-head strong,
+    .brand-intro h3 {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .source-panel,
+    .layouts-panel,
+    .feeds-panel,
+    .quality-panel,
+    .publish-panel,
+    .bulk-panel,
+    .table-wrap,
+    .layout-branding {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(20, 16, 27, .11);
+    }
+
+    .layout-upload,
+    .brand-controls,
+    .brand-source-panel,
+    .monitor-add,
+    .object-filter-panel {
+      border: 1px solid var(--line);
+      background: var(--site-gray);
+    }
+
+    input,
+    textarea,
+    select {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--text);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #77717f;
+      opacity: 1;
+    }
+
+    button {
+      border-color: var(--line-strong);
+      background: #fff;
+      color: var(--text);
+      font-weight: 750;
+    }
+
+    button.primary {
+      background: linear-gradient(180deg, #3a3245, var(--brand-dark));
+      border-color: var(--brand-dark);
+      color: #fff;
+    }
+
+    .nav-item {
+      color: #25212b;
+    }
+
+    .nav-item.active {
+      background: var(--brand-soft);
+      color: #18131f;
+      box-shadow: inset 0 0 0 1px var(--line-strong);
+    }
+
+    .layout-card,
+    .brand-layout-option,
+    .monitor-card,
+    .feed-row,
+    .issue-card {
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .brand-layout-option:hover,
+    .brand-layout-option:has(input:checked) {
+      border-color: #776f82;
+      background: #ebe8ef;
+      box-shadow: inset 0 0 0 1px #aca6b5;
+    }
+
+    .brand-layout-option input,
+    .row-check,
+    #selectVisible {
+      accent-color: var(--brand);
+    }
+
+    .layout-preview {
+      border-color: var(--line-strong);
+      background: #f8f8f9;
+    }
+
+    .layout-empty,
+    .feed-empty,
+    .editor-empty,
+    .monitor-note,
+    .generated-link {
+      border: 1px solid var(--line);
+      background: #efedf2;
+      color: #4b4552;
+    }
+
+    th {
+      background: #e1e0e4;
+      color: #403b47;
+    }
+
+    td {
+      color: var(--text);
+      border-color: var(--line);
+    }
+
+    tbody tr:hover td,
+    tbody tr.selected td {
+      background: #ece9f0;
+    }
+
+    .layout-filter-strip {
+      display: grid;
+      grid-template-columns: minmax(240px, 380px) 1fr;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--line-strong);
+      border-radius: 18px;
+      background: #f8f7f9;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+    }
+
+    .layout-filter-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      border-color: #77707f;
+    }
+
+    thead th {
+      border-bottom: 1px solid #7d7586;
+    }
+
+    .badge.warn,
+    .feed-status.bad {
+      border-color: #7b2d25;
+      background: #ffe1db;
+      color: #7b2d25;
+    }
+
+    @media (max-width: 720px) {
+      .layout-filter-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3553,7 +3804,16 @@
 
       <section class="layouts-panel page-hidden" id="layoutsPanel" data-page="layouts">
         <h2 class="panel-title">Планировки</h2>
-        <div class="panel-caption">Загружайте макеты планировок один раз, а затем вставляйте их в фид ссылкой или выбором из библиотеки.</div>
+        <div class="panel-caption">Загружайте макеты планировок один раз, фильтруйте их по проекту и накладывайте проектную брендированную плашку перед выгрузкой в фид.</div>
+        <div class="layout-filter-strip">
+          <div class="field">
+            <label for="layoutProjectFilter">Проект для планировок и плашки</label>
+            <select id="layoutProjectFilter">
+              <option value="all">Все проекты</option>
+            </select>
+          </div>
+          <div class="layout-filter-note">Выберите проект перед загрузкой плашки: у разных проектов могут быть разные брендированные шаблоны. Фильтр применяется к библиотеке, списку планировок из текущего фида и массовому наложению.</div>
+        </div>
         <div class="layout-upload">
           <div class="field">
             <label for="layoutName">Название</label>
@@ -3597,7 +3857,7 @@
         <div class="layout-branding">
           <div class="brand-intro">
             <h3>Брендированная плашка</h3>
-            <p>Загрузите PNG, JPG, WebP или SVG-плашку, выберите позицию и примените её к планировкам из текущего фида. Файлы AI сначала экспортируйте в PNG или SVG.</p>
+            <p>Загрузите PNG, JPG, WebP или SVG-плашку выбранного проекта. Плашка будет нижним слоем, а планировку можно вручную сдвинуть поверх неё на предпросмотре. Файлы AI сначала экспортируйте в PNG или SVG.</p>
           </div>
           <div class="brand-controls">
             <div class="layout-file-control">
@@ -3617,12 +3877,20 @@
               </select>
             </div>
             <div class="field compact">
-              <label for="brandSize">Ширина, %</label>
-              <input id="brandSize" type="number" min="8" max="70" value="28">
+              <label for="brandSize">Ширина планировки, %</label>
+              <input id="brandSize" type="number" min="20" max="95" value="78">
             </div>
             <div class="field compact">
-              <label for="brandMargin">Отступ, %</label>
+              <label for="brandMargin">Отступ планировки, %</label>
               <input id="brandMargin" type="number" min="0" max="20" value="4">
+            </div>
+            <div class="field compact">
+              <label for="brandOffsetX">Сдвиг X, %</label>
+              <input id="brandOffsetX" type="number" min="-60" max="60" step="1" value="0">
+            </div>
+            <div class="field compact">
+              <label for="brandOffsetY">Сдвиг Y, %</label>
+              <input id="brandOffsetY" type="number" min="-60" max="60" step="1" value="0">
             </div>
             <div class="field compact">
               <label for="brandScope">Применить</label>
@@ -3632,6 +3900,7 @@
                 <option value="all">Ко всем с планировкой</option>
               </select>
             </div>
+            <button id="centerBrandLayoutBtn" type="button">По центру</button>
             <button id="applyBrandBtn" type="button" class="primary">Наложить плашку</button>
           </div>
           <div class="brand-source-panel">
@@ -3649,7 +3918,11 @@
           </div>
           <div class="brand-preview">
             <canvas id="brandPreviewCanvas" width="960" height="640"></canvas>
-            <div id="brandStatus">Выберите плашку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+            <div class="brand-preview-help">
+              <strong>Предпросмотр наложения</strong>
+              <div id="brandStatus">Выберите плашку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+              <div>Плашка остается нижним слоем. Планировку можно двигать мышкой по предпросмотру или задавать точный сдвиг в полях X/Y.</div>
+            </div>
           </div>
         </div>
         <div class="layout-toolbar">
@@ -4104,6 +4377,7 @@
     let brandBadgeFileName = "";
     let selectedBrandLayoutUrls = new Set();
     let brandSelectionTouched = false;
+    let brandDragState = null;
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -4621,6 +4895,42 @@
       return String(layout.contentType || "").includes("pdf") ? "PDF" : "Изображение";
     }
 
+    function normalizeProjectName(value = "") {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function currentLayoutProjectFilter() {
+      return document.querySelector("#layoutProjectFilter")?.value || "all";
+    }
+
+    function layoutProjectMatches(value = "") {
+      const project = currentLayoutProjectFilter();
+      return project === "all" || normalizeProjectName(value) === project;
+    }
+
+    function layoutProjectOptions() {
+      const projects = new Map();
+      [...layoutsCache.map(layout => layout.project), ...objects.map(item => item.complexName)]
+        .map(value => String(value || "").trim())
+        .filter(Boolean)
+        .forEach(value => {
+          const key = normalizeProjectName(value);
+          if (!projects.has(key)) projects.set(key, value);
+        });
+      return [...projects.entries()].sort((a, b) => a[1].localeCompare(b[1], "ru"));
+    }
+
+    function renderLayoutProjectFilter() {
+      const select = document.querySelector("#layoutProjectFilter");
+      if (!select) return;
+      const previous = select.value || "all";
+      const options = layoutProjectOptions();
+      select.innerHTML = `<option value="all">Все проекты</option>` + options.map(([key, label]) =>
+        `<option value="${escapeXml(key)}">${escapeXml(label)}</option>`
+      ).join("");
+      select.value = previous === "all" || options.some(([key]) => key === previous) ? previous : "all";
+    }
+
     function layoutSearchMatches(layout, term) {
       if (!term) return true;
       const joined = [layout.name, layout.project, layout.building, layout.rooms, layout.area, layout.tags, layout.url].join(" ").toLowerCase();
@@ -4630,16 +4940,18 @@
     function renderLayoutsList() {
       const list = document.querySelector("#layoutsList");
       if (!list) return;
+      renderLayoutProjectFilter();
       const term = (document.querySelector("#layoutSearch")?.value || "").trim().toLowerCase();
-      const layouts = layoutsCache.filter(layout => layoutSearchMatches(layout, term));
+      const layouts = layoutsCache.filter(layout => layoutSearchMatches(layout, term) && layoutProjectMatches(layout.project));
       if (!layoutsLoaded) {
         list.innerHTML = `<div class="layout-empty">Загружаю библиотеку планировок...</div>`;
         return;
       }
       if (!layouts.length) {
+        const projectLabel = document.querySelector("#layoutProjectFilter")?.selectedOptions?.[0]?.textContent || "выбранному проекту";
         list.innerHTML = `
           <div class="layout-empty">
-            Планировок пока нет. Загрузите PNG, JPG, WebP или PDF, чтобы сервис выдал публичную ссылку для фида.
+            Планировок по фильтру «${escapeXml(projectLabel)}» пока нет. Загрузите PNG, JPG, WebP или PDF, чтобы сервис выдал публичную ссылку для фида.
           </div>
         `;
         return;
@@ -4757,6 +5069,11 @@
       if (!nameInput.value.trim()) {
         nameInput.value = file.name.replace(/\.(png|jpe?g|webp|pdf)$/i, "");
       }
+      const projectInput = document.querySelector("#layoutProject");
+      const projectFilter = document.querySelector("#layoutProjectFilter");
+      if (projectInput && projectFilter && !projectInput.value.trim() && projectFilter.value !== "all") {
+        projectInput.value = projectFilter.selectedOptions?.[0]?.textContent || "";
+      }
       const target = document.querySelector("#layoutApplyTarget")?.value || "library";
       if (target === "checked" && !checkedIds.size) {
         alert("Сначала отметьте объекты в рабочей области или выберите «Только в библиотеку».");
@@ -4847,21 +5164,31 @@
       const picker = document.querySelector("#brandLayoutPicker");
       const summary = document.querySelector("#brandLayoutSummary");
       if (!picker || !summary) return;
-      const groups = layoutGroupsFromFeed();
-      const existingUrls = new Set(groups.map(group => group.url));
+      renderLayoutProjectFilter();
+      const allGroups = layoutGroupsFromFeed();
+      const groups = allGroups.filter(group => layoutProjectMatches([...group.complexNames][0] || ""));
+      const existingUrls = new Set(allGroups.map(group => group.url));
       selectedBrandLayoutUrls = new Set([...selectedBrandLayoutUrls].filter(url => existingUrls.has(url)));
       const selectedObjectsWithLayouts = objects.filter(item => checkedIds.has(item.externalId) && item.layoutPhoto).length;
+      const projectLabel = document.querySelector("#layoutProjectFilter")?.selectedOptions?.[0]?.textContent || "выбранному проекту";
 
-      if (!groups.length) {
+      if (!allGroups.length) {
         picker.innerHTML = `<div class="layout-empty">В текущем фиде нет ссылок на планировки. Загрузите фид или заполните поле «Планировка» в объектах.</div>`;
         summary.textContent = "Планировки не найдены.";
         brandStatus("В текущем фиде нет объектов со ссылкой на планировку.");
         return;
       }
 
+      if (!groups.length) {
+        picker.innerHTML = `<div class="layout-empty">В текущем фиде нет планировок по фильтру «${escapeXml(projectLabel)}».</div>`;
+        summary.textContent = `По проекту «${projectLabel}» планировки не найдены. Всего в фиде: ${allGroups.length}.`;
+        brandStatus(`Для проекта «${projectLabel}» нет объектов со ссылкой на планировку.`);
+        return;
+      }
+
       if (!selectedBrandLayoutUrls.size && !brandSelectionTouched) selectedBrandLayoutUrls = new Set(groups.slice(0, 6).map(group => group.url));
       const selectedObjects = objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto)).length;
-      summary.textContent = `Найдено ${groups.length} уникальных планировок. Выбрано ${selectedBrandLayoutUrls.size}, объектов для плашки: ${selectedObjects}. В рабочей области отмечено объектов с планировками: ${selectedObjectsWithLayouts}.`;
+      summary.textContent = `Проект: ${projectLabel}. Найдено ${groups.length} из ${allGroups.length} уникальных планировок. Выбрано ${selectedBrandLayoutUrls.size}, объектов для плашки: ${selectedObjects}. В рабочей области отмечено объектов с планировками: ${selectedObjectsWithLayouts}.`;
       picker.innerHTML = groups.map((group, index) => {
         const roomText = [...group.rooms].slice(0, 3).join(", ");
         const areaText = [...group.areas].slice(0, 3).join(", ");
@@ -4889,7 +5216,9 @@
 
     function selectAllBrandLayouts() {
       brandSelectionTouched = true;
-      selectedBrandLayoutUrls = new Set(layoutGroupsFromFeed().map(group => group.url));
+      selectedBrandLayoutUrls = new Set(layoutGroupsFromFeed()
+        .filter(group => layoutProjectMatches([...group.complexNames][0] || ""))
+        .map(group => group.url));
       renderBrandLayoutPicker();
       renderBrandPreview();
     }
@@ -4908,7 +5237,7 @@
         : scope === "checked"
           ? objects.filter(item => checkedIds.has(item.externalId))
           : objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
-      return source.filter(item => String(item.layoutPhoto || "").trim());
+      return source.filter(item => String(item.layoutPhoto || "").trim() && layoutProjectMatches(item.complexName));
     }
 
     function proxyImageUrl(url) {
@@ -4956,31 +5285,87 @@
     }
 
     function brandConfig() {
+      const clamp = (value, min, max, fallback) => {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return fallback;
+        return Math.min(max, Math.max(min, number));
+      };
       return {
         position: document.querySelector("#brandPosition")?.value || "top-left",
-        widthPercent: Math.min(70, Math.max(8, Number(document.querySelector("#brandSize")?.value || 28))),
-        marginPercent: Math.min(20, Math.max(0, Number(document.querySelector("#brandMargin")?.value || 4)))
+        widthPercent: clamp(document.querySelector("#brandSize")?.value, 20, 95, 78),
+        marginPercent: clamp(document.querySelector("#brandMargin")?.value, 0, 20, 4),
+        offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, -60, 60, 0),
+        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0)
       };
+    }
+
+    function setBrandOffsets(x, y) {
+      const xInput = document.querySelector("#brandOffsetX");
+      const yInput = document.querySelector("#brandOffsetY");
+      const clamp = (value) => Math.min(60, Math.max(-60, Math.round(value)));
+      if (xInput) xInput.value = clamp(x);
+      if (yInput) yInput.value = clamp(y);
+    }
+
+    function visibleImageBounds(image) {
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      const trimCanvas = document.createElement("canvas");
+      trimCanvas.width = width;
+      trimCanvas.height = height;
+      const trimContext = trimCanvas.getContext("2d", { willReadFrequently: true });
+      trimContext.drawImage(image, 0, 0, width, height);
+      let data;
+      try {
+        data = trimContext.getImageData(0, 0, width, height).data;
+      } catch {
+        return { sx: 0, sy: 0, sw: width, sh: height };
+      }
+      let minX = width;
+      let minY = height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const alpha = data[(y * width + x) * 4 + 3];
+          if (alpha > 12) {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+      if (maxX < 0 || maxY < 0) return { sx: 0, sy: 0, sw: width, sh: height };
+      const padding = 4;
+      const sx = Math.max(0, minX - padding);
+      const sy = Math.max(0, minY - padding);
+      const ex = Math.min(width, maxX + padding);
+      const ey = Math.min(height, maxY + padding);
+      return { sx, sy, sw: Math.max(1, ex - sx), sh: Math.max(1, ey - sy) };
     }
 
     function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig()) {
       const context = canvas.getContext("2d");
-      const width = baseImage.naturalWidth || baseImage.width;
-      const height = baseImage.naturalHeight || baseImage.height;
+      const width = badgeImage.naturalWidth || badgeImage.width;
+      const height = badgeImage.naturalHeight || badgeImage.height;
       canvas.width = width;
       canvas.height = height;
       context.clearRect(0, 0, width, height);
-      context.drawImage(baseImage, 0, 0, width, height);
+      context.drawImage(badgeImage, 0, 0, width, height);
 
-      const badgeWidth = Math.round(width * (config.widthPercent / 100));
-      const ratio = (badgeImage.naturalHeight || badgeImage.height) / Math.max(1, (badgeImage.naturalWidth || badgeImage.width));
-      const badgeHeight = Math.round(badgeWidth * ratio);
+      const source = visibleImageBounds(baseImage);
+      const layoutWidth = Math.round(width * (config.widthPercent / 100));
+      const ratio = source.sh / Math.max(1, source.sw);
+      const layoutHeight = Math.round(layoutWidth * ratio);
       const margin = Math.round(width * (config.marginPercent / 100));
       const horizontal = config.position.split("-")[1] || "left";
       const vertical = config.position.split("-")[0] || "top";
-      const x = horizontal === "right" ? width - badgeWidth - margin : horizontal === "center" ? Math.round((width - badgeWidth) / 2) : margin;
-      const y = vertical === "bottom" ? height - badgeHeight - margin : margin;
-      context.drawImage(badgeImage, x, y, badgeWidth, badgeHeight);
+      const baseX = horizontal === "right" ? width - layoutWidth - margin : horizontal === "center" ? Math.round((width - layoutWidth) / 2) : margin;
+      const baseY = vertical === "bottom" ? height - layoutHeight - margin : margin;
+      const x = baseX + Math.round(width * ((config.offsetXPercent || 0) / 100));
+      const y = baseY + Math.round(height * ((config.offsetYPercent || 0) / 100));
+      context.drawImage(baseImage, source.sx, source.sy, source.sw, source.sh, x, y, layoutWidth, layoutHeight);
       return canvas;
     }
 
@@ -5011,10 +5396,49 @@
           loadImageForCanvas(brandBadgeDataUrl)
         ]);
         drawBrandedLayout(baseImage, badgeImage, canvas);
-        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}. После применения сервис создаст новые ссылки на брендированные планировки.`);
+        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх плашки. После применения сервис создаст новые ссылки на брендированные планировки.`);
       } catch (error) {
         brandStatus(`${error.message} Проверьте, что ссылка ведет на PNG, JPG, WebP или SVG.`);
       }
+    }
+
+    function startBrandPreviewDrag(event) {
+      const canvas = document.querySelector("#brandPreviewCanvas");
+      if (!canvas || !brandBadgeDataUrl) return;
+      event.preventDefault();
+      const config = brandConfig();
+      brandDragState = {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        offsetX: config.offsetXPercent,
+        offsetY: config.offsetYPercent
+      };
+      canvas.classList.add("dragging");
+      canvas.setPointerCapture?.(event.pointerId);
+    }
+
+    function moveBrandPreviewDrag(event) {
+      if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
+      const canvas = document.querySelector("#brandPreviewCanvas");
+      const rect = canvas.getBoundingClientRect();
+      const dxPercent = ((event.clientX - brandDragState.clientX) / Math.max(1, rect.width)) * 100;
+      const dyPercent = ((event.clientY - brandDragState.clientY) / Math.max(1, rect.height)) * 100;
+      setBrandOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
+      renderBrandPreview();
+    }
+
+    function endBrandPreviewDrag(event) {
+      if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
+      document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging");
+      brandDragState = null;
+    }
+
+    function centerBrandLayout() {
+      const position = document.querySelector("#brandPosition");
+      if (position) position.value = "top-center";
+      setBrandOffsets(0, 0);
+      renderBrandPreview();
     }
 
     function canvasToBlob(canvas, type = "image/webp", quality = .88) {
@@ -6172,6 +6596,13 @@ ${photos}
     });
     document.querySelector("#layoutSearch").addEventListener("input", renderLayoutsList);
     document.querySelector("#layoutSearch").addEventListener("change", renderLayoutsList);
+    document.querySelector("#layoutProjectFilter").addEventListener("change", () => {
+      brandSelectionTouched = true;
+      selectedBrandLayoutUrls = new Set();
+      renderLayoutsList();
+      renderBrandLayoutPicker();
+      renderBrandPreview();
+    });
     document.querySelector("#pickLayoutFileBtn").addEventListener("click", () => document.querySelector("#layoutFileInput").click());
     document.querySelector("#layoutFileInput").addEventListener("change", event => {
       const file = event.target.files[0];
@@ -6202,7 +6633,7 @@ ${photos}
       document.querySelector("#brandBadgePickedFile").textContent = file.name;
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandScope"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandScope"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
         renderBrandLayoutPicker();
         renderBrandPreview();
@@ -6212,6 +6643,12 @@ ${photos}
         renderBrandPreview();
       });
     });
+    document.querySelector("#centerBrandLayoutBtn").addEventListener("click", centerBrandLayout);
+    const brandPreviewCanvas = document.querySelector("#brandPreviewCanvas");
+    brandPreviewCanvas.addEventListener("pointerdown", startBrandPreviewDrag);
+    brandPreviewCanvas.addEventListener("pointermove", moveBrandPreviewDrag);
+    brandPreviewCanvas.addEventListener("pointerup", endBrandPreviewDrag);
+    brandPreviewCanvas.addEventListener("pointercancel", endBrandPreviewDrag);
     document.querySelector("#brandLayoutPicker").addEventListener("change", event => {
       const checkbox = event.target.closest("[data-brand-layout-url]");
       if (checkbox) updateBrandLayoutSelection(checkbox.dataset.brandLayoutUrl, checkbox.checked);
