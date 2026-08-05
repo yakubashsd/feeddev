@@ -3967,9 +3967,9 @@
             <div class="field compact">
               <label for="brandScope">Применить</label>
               <select id="brandScope">
+                <option value="all" selected>Ко всем планировкам проекта</option>
                 <option value="selected-layouts">К выбранным планировкам</option>
                 <option value="checked">К объектам из рабочей области</option>
-                <option value="all">Ко всем с планировкой</option>
               </select>
             </div>
             <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
@@ -3978,12 +3978,8 @@
           <div class="brand-source-panel">
             <div class="brand-source-head">
               <div>
-                <strong>Планировки из текущего фида</strong>
+                <strong>Образец для настройки</strong>
                 <span id="brandLayoutSummary">Загрузите фид, чтобы выбрать планировки.</span>
-              </div>
-              <div class="brand-source-actions">
-                <button id="selectAllBrandLayoutsBtn" type="button">Выбрать все</button>
-                <button id="clearBrandLayoutsBtn" type="button">Очистить</button>
               </div>
             </div>
             <div id="brandLayoutPicker" class="brand-layout-picker"></div>
@@ -5303,7 +5299,6 @@
       const groups = allGroups.filter(group => layoutProjectMatches([...group.complexNames][0] || ""));
       const existingUrls = new Set(allGroups.map(group => group.url));
       selectedBrandLayoutUrls = new Set([...selectedBrandLayoutUrls].filter(url => existingUrls.has(url)));
-      const selectedObjectsWithLayouts = objects.filter(item => checkedIds.has(item.externalId) && item.layoutPhoto).length;
       const projectLabel = document.querySelector("#layoutProjectFilter")?.selectedOptions?.[0]?.textContent || "выбранному проекту";
 
       if (!allGroups.length) {
@@ -5320,16 +5315,16 @@
         return;
       }
 
-      if (!selectedBrandLayoutUrls.size && !brandSelectionTouched) selectedBrandLayoutUrls = new Set(groups.slice(0, 6).map(group => group.url));
-      const selectedObjects = objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto)).length;
-      summary.textContent = `Проект: ${projectLabel}. Найдено ${groups.length} из ${allGroups.length} уникальных планировок. Выбрано ${selectedBrandLayoutUrls.size}, объектов для подложки: ${selectedObjects}. В рабочей области отмечено объектов с планировками: ${selectedObjectsWithLayouts}.`;
+      if (!selectedBrandLayoutUrls.size && !brandSelectionTouched) selectedBrandLayoutUrls = new Set([groups[0].url]);
+      if (selectedBrandLayoutUrls.size > 1) selectedBrandLayoutUrls = new Set([[...selectedBrandLayoutUrls][0]]);
+      summary.textContent = `Проект: ${projectLabel}. Выберите одну планировку как образец, выставьте ее размер и положение. Эти настройки применятся ко всем планировкам проекта. Найдено: ${groups.length}.`;
       picker.innerHTML = groups.map((group, index) => {
         const roomText = [...group.rooms].slice(0, 3).join(", ");
         const areaText = [...group.areas].slice(0, 3).join(", ");
         const projectText = [...group.complexNames].slice(0, 2).join(", ");
         return `
           <label class="brand-layout-option">
-            <input type="checkbox" data-brand-layout-url="${escapeXml(group.url)}" ${selectedBrandLayoutUrls.has(group.url) ? "checked" : ""}>
+            <input type="radio" name="brand-layout-reference" data-brand-layout-url="${escapeXml(group.url)}" ${selectedBrandLayoutUrls.has(group.url) ? "checked" : ""}>
             <span>
               <strong>Планировка ${index + 1} · ${group.count} объект${group.count === 1 ? "" : "ов"}</strong>
               <span>${escapeXml([projectText, roomText && `${roomText} комн.`, areaText && `${areaText} м²`].filter(Boolean).join(" · ") || "Без параметров")}</span>
@@ -5342,36 +5337,25 @@
 
     function updateBrandLayoutSelection(url, checked) {
       brandSelectionTouched = true;
-      if (checked) selectedBrandLayoutUrls.add(url);
-      else selectedBrandLayoutUrls.delete(url);
-      renderBrandLayoutPicker();
-      renderBrandPreview();
-    }
-
-    function selectAllBrandLayouts() {
-      brandSelectionTouched = true;
-      selectedBrandLayoutUrls = new Set(layoutGroupsFromFeed()
-        .filter(group => layoutProjectMatches([...group.complexNames][0] || ""))
-        .map(group => group.url));
-      renderBrandLayoutPicker();
-      renderBrandPreview();
-    }
-
-    function clearBrandLayouts() {
-      brandSelectionTouched = true;
-      selectedBrandLayoutUrls = new Set();
+      if (checked) selectedBrandLayoutUrls = new Set([url]);
       renderBrandLayoutPicker();
       renderBrandPreview();
     }
 
     function brandTargets() {
-      const scope = document.querySelector("#brandScope")?.value || "checked";
+      const scope = document.querySelector("#brandScope")?.value || "all";
       const source = scope === "all"
         ? objects
         : scope === "checked"
           ? objects.filter(item => checkedIds.has(item.externalId))
           : objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
       return source.filter(item => String(item.layoutPhoto || "").trim() && layoutProjectMatches(item.complexName));
+    }
+
+    function brandPreviewTarget() {
+      const selectedUrl = [...selectedBrandLayoutUrls][0];
+      return objects.find(item => item.layoutPhoto === selectedUrl && layoutProjectMatches(item.complexName))
+        || objects.find(item => item.layoutPhoto && layoutProjectMatches(item.complexName));
     }
 
     function proxyImageUrl(url) {
@@ -5586,13 +5570,7 @@
         brandStatus(`Выберите подложку для ${brandProjectLabel()}. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.`);
         return;
       }
-      const scope = document.querySelector("#brandScope")?.value || "selected-layouts";
-      const scopedTargets = brandTargets();
-      if (scope === "selected-layouts" && !scopedTargets.length) {
-        brandStatus("Выберите одну или несколько планировок из списка ниже, чтобы увидеть предпросмотр.");
-        return;
-      }
-      const target = scopedTargets[0] || objects.find(item => item.layoutPhoto);
+      const target = brandPreviewTarget();
       if (!target) {
         brandStatus("В текущем фиде нет объектов со ссылкой на планировку.");
         return;
@@ -5816,7 +5794,7 @@
         return;
       }
       const targets = brandTargets();
-      const scope = document.querySelector("#brandScope")?.value || "checked";
+      const scope = document.querySelector("#brandScope")?.value || "all";
       if (!targets.length) {
         alert(scope === "selected-layouts"
           ? "Выберите одну или несколько планировок в списке ниже."
@@ -5835,6 +5813,8 @@
       try {
         const canvas = document.createElement("canvas");
         const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
+        const projectConfig = { ...brandConfig() };
+        await persistActiveBrandProfile();
         const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
         for (let index = 0; index < uniqueUrls.length; index += 1) {
           const sourceUrl = uniqueUrls[index];
@@ -5843,7 +5823,7 @@
             button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
             brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
             const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
-            drawBrandedLayout(baseImage, badgeImage, canvas);
+            drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig);
             const output = await brandedLayoutBlob(canvas);
             brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
             const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
@@ -7041,8 +7021,6 @@ ${photos}
       const checkbox = event.target.closest("[data-brand-layout-url]");
       if (checkbox) updateBrandLayoutSelection(checkbox.dataset.brandLayoutUrl, checkbox.checked);
     });
-    document.querySelector("#selectAllBrandLayoutsBtn").addEventListener("click", selectAllBrandLayouts);
-    document.querySelector("#clearBrandLayoutsBtn").addEventListener("click", clearBrandLayouts);
     document.querySelector("#applyBrandBtn").addEventListener("click", applyBrandBadgeToLayouts);
     document.querySelector("#layoutsList").addEventListener("click", event => {
       const copyButton = event.target.closest("[data-copy-layout]");
