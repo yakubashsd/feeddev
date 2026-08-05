@@ -5658,15 +5658,20 @@
       const image = document.querySelector("#brandPreviewDialogImage");
       if (!canvas || !dialog || !image || !brandPreviewImages) return;
       if (!dialog.open) dialog.showModal();
-      image.style.visibility = "hidden";
-      image.onload = () => requestAnimationFrame(() => resetBrandDialogView());
-      image.src = canvas.toDataURL("image/png");
+      image.style.visibility = "visible";
+      image.onload = () => requestAnimationFrame(() => resetBrandDialogView(0));
+      image.onerror = () => {
+        image.style.visibility = "visible";
+        brandStatus("Не удалось открыть полноразмерный предпросмотр. Закройте окно и сформируйте предпросмотр еще раз.");
+      };
+      const previewUrl = canvas.toDataURL("image/png");
+      image.src = previewUrl;
       try {
         await image.decode();
       } catch {
         // onload below remains a fallback for browsers with partial decode support.
       }
-      requestAnimationFrame(() => requestAnimationFrame(() => resetBrandDialogView()));
+      resetBrandDialogView(0);
     }
 
     function applyBrandDialogTransform() {
@@ -5678,9 +5683,13 @@
     function resetBrandDialogView(retry = 0) {
       const stage = document.querySelector("#brandPreviewDialogStage");
       const image = document.querySelector("#brandPreviewDialogImage");
-      if (!stage || !image?.naturalWidth) return;
-      if ((stage.clientWidth < 40 || stage.clientHeight < 40) && retry < 6) {
+      if (!stage || !image) return;
+      if ((!image.naturalWidth || stage.clientWidth < 40 || stage.clientHeight < 40) && retry < 12) {
         requestAnimationFrame(() => resetBrandDialogView(retry + 1));
+        return;
+      }
+      if (!image.naturalWidth) {
+        image.style.visibility = "visible";
         return;
       }
       const fitScale = Math.min(
@@ -5731,6 +5740,7 @@
       if (dialog?.open) dialog.close();
       if (image) {
         image.onload = null;
+        image.onerror = null;
         image.removeAttribute("src");
         image.removeAttribute("style");
       }
