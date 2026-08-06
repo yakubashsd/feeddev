@@ -3953,7 +3953,7 @@
             </select>
             <input id="brandMargin" class="technical-fields" type="hidden" value="0">
             <div class="field compact">
-              <label for="brandSize">Масштаб, %</label>
+              <label for="brandSize">Размер рамки, %</label>
               <input id="brandSize" type="number" min="20" max="95" value="78">
             </div>
             <div class="field compact">
@@ -4462,6 +4462,7 @@
     let brandDragState = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
+    let brandDialogObjectUrl = "";
     let brandDialogView = { scale: 1, fitScale: 1, x: 0, y: 0, pointerId: null };
     let activeBrandProjectKey = "all";
     let brandProfileHydrating = false;
@@ -5550,6 +5551,31 @@
       return { sx, sy, sw: Math.max(1, ex - sx), sh: Math.max(1, ey - sy) };
     }
 
+    function brandedLayoutPlacement(baseImage, badgeImage, config = brandConfig()) {
+      const width = badgeImage.naturalWidth || badgeImage.width;
+      const height = badgeImage.naturalHeight || badgeImage.height;
+      const source = visibleImageBounds(baseImage);
+      const frameWidth = Math.round(width * (config.widthPercent / 100));
+      const frameHeight = Math.round(height * (config.widthPercent / 100));
+      const ratio = Math.min(frameWidth / Math.max(1, source.sw), frameHeight / Math.max(1, source.sh));
+      const layoutWidth = Math.round(source.sw * ratio);
+      const layoutHeight = Math.round(source.sh * ratio);
+      const margin = Math.round(width * (config.marginPercent / 100));
+      const horizontal = config.position.split("-")[1] || "left";
+      const vertical = config.position.split("-")[0] || "top";
+      const baseX = horizontal === "right" ? width - frameWidth - margin : horizontal === "center" ? Math.round((width - frameWidth) / 2) : margin;
+      const baseY = vertical === "bottom" ? height - frameHeight - margin : margin;
+      const frameX = baseX + Math.round(width * ((config.offsetXPercent || 0) / 100));
+      const frameY = baseY + Math.round(height * ((config.offsetYPercent || 0) / 100));
+      return {
+        source,
+        x: frameX + Math.round((frameWidth - layoutWidth) / 2),
+        y: frameY + Math.round((frameHeight - layoutHeight) / 2),
+        width: layoutWidth,
+        height: layoutHeight
+      };
+    }
+
     function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig()) {
       const context = canvas.getContext("2d");
       const width = badgeImage.naturalWidth || badgeImage.width;
@@ -5559,18 +5585,8 @@
       context.clearRect(0, 0, width, height);
       context.drawImage(badgeImage, 0, 0, width, height);
 
-      const source = visibleImageBounds(baseImage);
-      const layoutWidth = Math.round(width * (config.widthPercent / 100));
-      const ratio = source.sh / Math.max(1, source.sw);
-      const layoutHeight = Math.round(layoutWidth * ratio);
-      const margin = Math.round(width * (config.marginPercent / 100));
-      const horizontal = config.position.split("-")[1] || "left";
-      const vertical = config.position.split("-")[0] || "top";
-      const baseX = horizontal === "right" ? width - layoutWidth - margin : horizontal === "center" ? Math.round((width - layoutWidth) / 2) : margin;
-      const baseY = vertical === "bottom" ? height - layoutHeight - margin : margin;
-      const x = baseX + Math.round(width * ((config.offsetXPercent || 0) / 100));
-      const y = baseY + Math.round(height * ((config.offsetYPercent || 0) / 100));
-      context.drawImage(baseImage, source.sx, source.sy, source.sw, source.sh, x, y, layoutWidth, layoutHeight);
+      const placement = brandedLayoutPlacement(baseImage, badgeImage, config);
+      context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
       return canvas;
     }
 
@@ -5661,15 +5677,18 @@
       const dialog = document.querySelector("#brandPreviewDialog");
       const image = document.querySelector("#brandPreviewDialogImage");
       if (!canvas || !dialog || !image || !brandPreviewImages) return;
+      drawBrandPreviewFrame();
       if (!dialog.open) dialog.showModal();
-      image.style.visibility = "visible";
+      image.style.visibility = "hidden";
       image.onload = () => requestAnimationFrame(() => resetBrandDialogView(0));
       image.onerror = () => {
         image.style.visibility = "visible";
         brandStatus("Не удалось открыть полноразмерный предпросмотр. Закройте окно и сформируйте предпросмотр еще раз.");
       };
-      const previewUrl = canvas.toDataURL("image/png");
-      image.src = previewUrl;
+      if (brandDialogObjectUrl) URL.revokeObjectURL(brandDialogObjectUrl);
+      const blob = await canvasToBlob(canvas, "image/png");
+      brandDialogObjectUrl = URL.createObjectURL(blob);
+      image.src = brandDialogObjectUrl;
       try {
         await image.decode();
       } catch {
@@ -5748,6 +5767,8 @@
         image.removeAttribute("src");
         image.removeAttribute("style");
       }
+      if (brandDialogObjectUrl) URL.revokeObjectURL(brandDialogObjectUrl);
+      brandDialogObjectUrl = "";
       brandDialogView = { scale: 1, fitScale: 1, x: 0, y: 0, pointerId: null };
     }
 
