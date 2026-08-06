@@ -3257,11 +3257,11 @@
     }
 
     .brand-preview-dialog {
-      width: min(94vw, 1280px);
+      width: min(88vw, 1040px);
       max-width: none;
-      height: min(92vh, 900px);
+      height: min(78vh, 740px);
       max-height: none;
-      padding: 48px 18px 18px;
+      padding: 48px 16px 16px;
       border: 1px solid var(--brand-dark);
       border-radius: 18px;
       background: #fff;
@@ -3291,8 +3291,10 @@
 
     .brand-preview-dialog canvas {
       display: block;
-      width: 100%;
-      height: 100%;
+      width: min(100%, 960px);
+      height: auto;
+      max-height: 100%;
+      aspect-ratio: 3 / 2;
       object-fit: contain;
       user-select: none;
       touch-action: none;
