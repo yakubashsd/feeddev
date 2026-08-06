@@ -3289,14 +3289,13 @@
       cursor: grabbing;
     }
 
-    .brand-preview-dialog img {
+    .brand-preview-dialog canvas {
       display: block;
-      max-width: none;
-      max-height: none;
-      transform-origin: center;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
       user-select: none;
-      -webkit-user-drag: none;
-      will-change: transform;
+      touch-action: none;
     }
 
     .brand-preview-dialog-close {
@@ -3321,16 +3320,7 @@
       align-items: center;
     }
 
-    .brand-preview-dialog-tools button {
-      width: 34px;
-      height: 34px;
-      padding: 0;
-      border-radius: 50%;
-      font-size: 18px;
-    }
-
     .brand-preview-dialog-tools span {
-      margin-left: 6px;
       color: var(--muted);
       font-size: 12px;
     }
@@ -4296,15 +4286,12 @@
   </div>
 
   <dialog id="brandPreviewDialog" class="brand-preview-dialog" aria-label="Предпросмотр готовой планировки">
-    <div class="brand-preview-dialog-tools" aria-label="Масштаб изображения">
-      <button id="brandPreviewZoomOut" type="button" aria-label="Уменьшить" title="Уменьшить">−</button>
-      <button id="brandPreviewZoomIn" type="button" aria-label="Увеличить" title="Увеличить">+</button>
-      <button id="brandPreviewZoomReset" type="button" aria-label="Вписать в окно" title="Вписать в окно">↺</button>
-      <span>Перетаскивайте изображение мышкой</span>
+    <div class="brand-preview-dialog-tools">
+      <span>Перетащите планировку мышкой. Позиция сохранится для проекта.</span>
     </div>
     <button id="brandPreviewDialogClose" class="brand-preview-dialog-close" type="button" aria-label="Закрыть предпросмотр" title="Закрыть">×</button>
     <div id="brandPreviewDialogStage" class="brand-preview-dialog-stage">
-      <img id="brandPreviewDialogImage" alt="Готовая планировка на подложке" draggable="false">
+      <canvas id="brandPreviewDialogCanvas" width="960" height="640" aria-label="Готовая планировка на подложке"></canvas>
     </div>
   </dialog>
 
@@ -4462,8 +4449,7 @@
     let brandDragState = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
-    let brandDialogObjectUrl = "";
-    let brandDialogView = { scale: 1, fitScale: 1, x: 0, y: 0, pointerId: null };
+    let brandDialogDragState = null;
     let activeBrandProjectKey = "all";
     let brandProfileHydrating = false;
     let brandProfiles = loadBrandProfiles();
@@ -5673,103 +5659,56 @@
     }
 
     async function openBrandPreviewDialog() {
-      const canvas = document.querySelector("#brandPreviewCanvas");
       const dialog = document.querySelector("#brandPreviewDialog");
-      const image = document.querySelector("#brandPreviewDialogImage");
-      if (!canvas || !dialog || !image || !brandPreviewImages) return;
-      drawBrandPreviewFrame();
+      const dialogCanvas = document.querySelector("#brandPreviewDialogCanvas");
+      if (!dialog || !dialogCanvas || !brandPreviewImages) return;
       if (!dialog.open) dialog.showModal();
-      image.style.visibility = "hidden";
-      image.onload = () => requestAnimationFrame(() => resetBrandDialogView(0));
-      image.onerror = () => {
-        image.style.visibility = "visible";
-        brandStatus("Не удалось открыть полноразмерный предпросмотр. Закройте окно и сформируйте предпросмотр еще раз.");
-      };
-      if (brandDialogObjectUrl) URL.revokeObjectURL(brandDialogObjectUrl);
-      const blob = await canvasToBlob(canvas, "image/png");
-      brandDialogObjectUrl = URL.createObjectURL(blob);
-      image.src = brandDialogObjectUrl;
-      try {
-        await image.decode();
-      } catch {
-        // onload below remains a fallback for browsers with partial decode support.
-      }
-      resetBrandDialogView(0);
-    }
-
-    function applyBrandDialogTransform() {
-      const image = document.querySelector("#brandPreviewDialogImage");
-      if (!image) return;
-      image.style.transform = `translate3d(${brandDialogView.x}px, ${brandDialogView.y}px, 0) scale(${brandDialogView.scale})`;
-    }
-
-    function resetBrandDialogView(retry = 0) {
-      const stage = document.querySelector("#brandPreviewDialogStage");
-      const image = document.querySelector("#brandPreviewDialogImage");
-      if (!stage || !image) return;
-      if ((!image.naturalWidth || stage.clientWidth < 40 || stage.clientHeight < 40) && retry < 12) {
-        requestAnimationFrame(() => resetBrandDialogView(retry + 1));
-        return;
-      }
-      if (!image.naturalWidth) {
-        image.style.visibility = "visible";
-        return;
-      }
-      const fitScale = Math.min(
-        Math.max(1, stage.clientWidth - 24) / image.naturalWidth,
-        Math.max(1, stage.clientHeight - 24) / image.naturalHeight,
-        1
-      );
-      brandDialogView = { scale: fitScale, fitScale, x: 0, y: 0, pointerId: null };
-      applyBrandDialogTransform();
-      image.style.visibility = "visible";
-    }
-
-    function zoomBrandDialog(multiplier) {
-      const minimum = Math.max(.08, brandDialogView.fitScale * .6);
-      brandDialogView.scale = Math.min(4, Math.max(minimum, brandDialogView.scale * multiplier));
-      applyBrandDialogTransform();
+      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, dialogCanvas, brandConfig());
+      brandStatus("Открыт крупный предпросмотр. Перетащите планировку, чтобы сохранить позицию для проекта.");
     }
 
     function startBrandDialogPan(event) {
       const stage = document.querySelector("#brandPreviewDialogStage");
-      if (!stage || !document.querySelector("#brandPreviewDialogImage")?.src) return;
+      const canvas = document.querySelector("#brandPreviewDialogCanvas");
+      if (!stage || !canvas || !brandPreviewImages) return;
       event.preventDefault();
-      brandDialogView.pointerId = event.pointerId;
-      brandDialogView.startClientX = event.clientX;
-      brandDialogView.startClientY = event.clientY;
-      brandDialogView.startX = brandDialogView.x;
-      brandDialogView.startY = brandDialogView.y;
+      const config = brandConfig();
+      brandDialogDragState = {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        offsetX: config.offsetXPercent,
+        offsetY: config.offsetYPercent
+      };
       stage.classList.add("dragging");
       stage.setPointerCapture?.(event.pointerId);
     }
 
     function moveBrandDialogPan(event) {
-      if (brandDialogView.pointerId !== event.pointerId) return;
-      brandDialogView.x = brandDialogView.startX + event.clientX - brandDialogView.startClientX;
-      brandDialogView.y = brandDialogView.startY + event.clientY - brandDialogView.startClientY;
-      applyBrandDialogTransform();
+      if (!brandDialogDragState || brandDialogDragState.pointerId !== event.pointerId) return;
+      const canvas = document.querySelector("#brandPreviewDialogCanvas");
+      if (!canvas || !brandPreviewImages) return;
+      const rect = canvas.getBoundingClientRect();
+      const dxPercent = ((event.clientX - brandDialogDragState.clientX) / Math.max(1, rect.width)) * 100;
+      const dyPercent = ((event.clientY - brandDialogDragState.clientY) / Math.max(1, rect.height)) * 100;
+      setBrandOffsets(brandDialogDragState.offsetX + dxPercent, brandDialogDragState.offsetY + dyPercent);
+      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas, brandConfig());
+      drawBrandPreviewFrame();
     }
 
-    function endBrandDialogPan(event) {
-      if (brandDialogView.pointerId !== event.pointerId) return;
-      brandDialogView.pointerId = null;
+    async function endBrandDialogPan(event) {
+      if (!brandDialogDragState || brandDialogDragState.pointerId !== event.pointerId) return;
+      brandDialogDragState = null;
       document.querySelector("#brandPreviewDialogStage")?.classList.remove("dragging");
+      await persistActiveBrandProfile();
+      brandStatus(`Позиция планировки для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%.`);
     }
 
     function closeBrandPreviewDialog() {
       const dialog = document.querySelector("#brandPreviewDialog");
-      const image = document.querySelector("#brandPreviewDialogImage");
       if (dialog?.open) dialog.close();
-      if (image) {
-        image.onload = null;
-        image.onerror = null;
-        image.removeAttribute("src");
-        image.removeAttribute("style");
-      }
-      if (brandDialogObjectUrl) URL.revokeObjectURL(brandDialogObjectUrl);
-      brandDialogObjectUrl = "";
-      brandDialogView = { scale: 1, fitScale: 1, x: 0, y: 0, pointerId: null };
+      brandDialogDragState = null;
+      document.querySelector("#brandPreviewDialogStage")?.classList.remove("dragging");
     }
 
     async function centerBrandLayout() {
@@ -7049,18 +6988,11 @@ ${photos}
       }
     });
     document.querySelector("#brandPreviewDialogClose").addEventListener("click", closeBrandPreviewDialog);
-    document.querySelector("#brandPreviewZoomOut").addEventListener("click", () => zoomBrandDialog(1 / 1.2));
-    document.querySelector("#brandPreviewZoomIn").addEventListener("click", () => zoomBrandDialog(1.2));
-    document.querySelector("#brandPreviewZoomReset").addEventListener("click", resetBrandDialogView);
     const brandPreviewDialogStage = document.querySelector("#brandPreviewDialogStage");
     brandPreviewDialogStage.addEventListener("pointerdown", startBrandDialogPan);
     brandPreviewDialogStage.addEventListener("pointermove", moveBrandDialogPan);
     brandPreviewDialogStage.addEventListener("pointerup", endBrandDialogPan);
     brandPreviewDialogStage.addEventListener("pointercancel", endBrandDialogPan);
-    brandPreviewDialogStage.addEventListener("wheel", event => {
-      event.preventDefault();
-      zoomBrandDialog(event.deltaY < 0 ? 1.12 : 1 / 1.12);
-    }, { passive: false });
     document.querySelector("#brandPreviewDialog").addEventListener("click", event => {
       if (event.target === event.currentTarget) closeBrandPreviewDialog();
     });
