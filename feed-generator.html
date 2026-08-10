@@ -4052,7 +4052,7 @@
         <div class="layout-branding">
           <div class="brand-intro">
             <h3>Первое изображение фида</h3>
-            <p>Сервис берет планировки из загруженного фида, кладет их на выбранную подложку и добавляет готовый макет первым фото. Исходная планировка остается следующей.</p>
+            <p>Сервис берет планировки из загруженного фида, кладет их на выбранную подложку и добавляет готовый JPG-макет первым фото. Исходная планировка остается следующей.</p>
           </div>
           <div class="brand-controls">
             <div class="layout-file-control">
@@ -5594,7 +5594,7 @@
         if (requestId !== brandPreviewRequestId) return;
         brandPreviewImages = { baseImage, badgeImage, target, targetId: target.externalId || "" };
         drawBrandPreviewFrame();
-        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст новые ссылки на готовые макеты.`);
+        brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст JPG-ссылки на готовые макеты.`);
       } catch (error) {
         if (requestId !== brandPreviewRequestId) return;
         brandStatus(`${error.message} Проверьте, что ссылка ведет на PNG, JPG, WebP или SVG.`);
@@ -5701,7 +5701,7 @@
       await persistActiveBrandProfile();
     }
 
-    function canvasToBlob(canvas, type = "image/webp", quality = .88) {
+    function canvasToBlob(canvas, type = "image/jpeg", quality = .86) {
       return new Promise((resolve, reject) => {
         canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Не удалось сохранить готовую планировку.")), type, quality);
       });
@@ -5709,10 +5709,9 @@
 
     async function brandedLayoutBlob(canvas) {
       const variants = [
-        ["image/webp", .88, "webp"],
-        ["image/webp", .74, "webp"],
-        ["image/jpeg", .82, "jpg"],
-        ["image/jpeg", .68, "jpg"]
+        ["image/jpeg", .86, "jpg"],
+        ["image/jpeg", .74, "jpg"],
+        ["image/jpeg", .62, "jpg"]
       ];
       for (const [contentType, quality, ext] of variants) {
         const blob = await canvasToBlob(canvas, contentType, quality);
@@ -5842,7 +5841,7 @@
         await loadLayouts({ silent: true });
         renderAll();
         showToast(`Первое фото добавлено к ${updatedCount} объектам`);
-        brandStatus(`Готово: готовые планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
+        brandStatus(`Готово: JPG-планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
       } catch (error) {
         const message = error.message || "Не удалось добавить первое фото.";
         const hint = /too large|слишком больш|413|body/i.test(message)
