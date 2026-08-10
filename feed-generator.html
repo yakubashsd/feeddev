@@ -3861,7 +3861,6 @@
         <small>управление фидами</small>
       </div>
       <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
-      <div class="nav-item" data-nav="layouts">▧ <span class="nav-text">Планировки</span></div>
       <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Мониторинг</span></div>
       <div class="sidebar-spacer"></div>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
@@ -3929,75 +3928,6 @@
         </div>
         <div class="feeds-list" id="feedsList"></div>
         <div class="monitor-note">Telegram-уведомления включаются отдельно у каждого фида. Если заданы TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID, сервис отправит сообщение при новой ошибке проверки. Проверки по расписанию подключаются следующим шагом через серверный мониторинг.</div>
-      </section>
-
-      <section class="layouts-panel page-hidden" id="layoutsPanel" data-page="layouts">
-        <h2 class="panel-title">Планировки</h2>
-        <div class="panel-caption">Работайте с планировками из фида, который загружен в рабочей области. Сервис подготовит брендированное первое изображение для выгрузки.</div>
-        <div class="layout-branding">
-          <div class="brand-intro">
-            <h3>Первое изображение фида</h3>
-            <p>Загрузите подложку для текущего фида, выставьте планировку на предпросмотре и добавьте готовый макет первым изображением в фид. Исходная планировка останется следующей.</p>
-          </div>
-          <div class="brand-controls">
-            <div class="layout-file-control">
-              <input id="brandBadgeFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml">
-              <button id="pickBrandBadgeBtn" type="button">Выбрать подложку</button>
-              <span id="brandBadgePickedFile">Подложка не выбрана</span>
-            </div>
-            <select id="brandPosition" class="technical-fields" aria-hidden="true">
-              <option value="top-center" selected>По центру</option>
-            </select>
-            <input id="brandMargin" class="technical-fields" type="hidden" value="0">
-            <div class="field compact">
-              <label for="brandSize">Размер рамки, %</label>
-              <input id="brandSize" type="number" min="20" max="95" value="78">
-            </div>
-            <div class="field compact">
-              <label for="brandOffsetX">Сдвиг X, %</label>
-              <input id="brandOffsetX" type="number" min="-60" max="60" step="1" value="0">
-            </div>
-            <div class="field compact">
-              <label for="brandOffsetY">Сдвиг Y, %</label>
-              <input id="brandOffsetY" type="number" min="-60" max="60" step="1" value="0">
-            </div>
-            <div class="field compact">
-              <label for="brandScope">Применить</label>
-              <select id="brandScope">
-                <option value="all" selected>Ко всем планировкам фида</option>
-                <option value="selected-layouts">К выбранным планировкам</option>
-                <option value="checked">К объектам из рабочей области</option>
-              </select>
-            </div>
-            <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
-            <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
-          </div>
-          <div class="brand-source-panel">
-            <div class="brand-source-head">
-              <div>
-                <strong>Образец для настройки</strong>
-                <span id="brandLayoutSummary">Загрузите фид, чтобы выбрать планировки.</span>
-              </div>
-            </div>
-            <div id="brandLayoutPicker" class="brand-layout-picker"></div>
-          </div>
-          <div class="brand-preview">
-            <canvas id="brandPreviewCanvas" width="960" height="640" tabindex="0" role="img" aria-label="Предпросмотр готовой планировки. Перетащите изображение или нажмите, чтобы открыть крупнее."></canvas>
-            <div class="brand-preview-help">
-              <strong>Предпросмотр первого изображения</strong>
-              <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
-              <div>Именно этот макет будет первым изображением в фиде. Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
-            </div>
-          </div>
-        </div>
-        <div class="layout-toolbar">
-          <div class="field">
-            <label for="layoutSearch">Поиск по библиотеке</label>
-            <input id="layoutSearch" type="search" placeholder="Название, ЖК, корпус, комнатность">
-          </div>
-          <button id="refreshLayoutsBtn" type="button">Обновить список</button>
-        </div>
-        <div class="layouts-list" id="layoutsList"></div>
       </section>
 
       <section class="table-wrap" data-page="objects">
@@ -4114,6 +4044,67 @@
           <div class="bulk-status" id="bulkStatus">Сначала отметьте объекты галочками в таблице.</div>
         </div>
         <button id="applyBulkBtn" class="primary">Применить к выбранным</button>
+      </section>
+
+      <section class="layouts-panel brand-workflow-panel" id="layoutsPanel" data-page="objects">
+        <h2 class="panel-title">Брендированные планировки</h2>
+        <div class="panel-caption">Загрузите подложку для текущего фида, выставьте одну планировку как образец и добавьте готовые макеты первым изображением у объектов.</div>
+        <div class="layout-branding">
+          <div class="brand-intro">
+            <h3>Первое изображение фида</h3>
+            <p>Сервис берет планировки из загруженного фида, кладет их на выбранную подложку и добавляет готовый макет первым фото. Исходная планировка остается следующей.</p>
+          </div>
+          <div class="brand-controls">
+            <div class="layout-file-control">
+              <input id="brandBadgeFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml">
+              <button id="pickBrandBadgeBtn" type="button">Выбрать подложку</button>
+              <span id="brandBadgePickedFile">Подложка не выбрана</span>
+            </div>
+            <select id="brandPosition" class="technical-fields" aria-hidden="true">
+              <option value="top-center" selected>По центру</option>
+            </select>
+            <input id="brandMargin" class="technical-fields" type="hidden" value="0">
+            <div class="field compact">
+              <label for="brandSize">Размер рамки, %</label>
+              <input id="brandSize" type="number" min="20" max="95" value="78">
+            </div>
+            <div class="field compact">
+              <label for="brandOffsetX">Сдвиг X, %</label>
+              <input id="brandOffsetX" type="number" min="-60" max="60" step="1" value="0">
+            </div>
+            <div class="field compact">
+              <label for="brandOffsetY">Сдвиг Y, %</label>
+              <input id="brandOffsetY" type="number" min="-60" max="60" step="1" value="0">
+            </div>
+            <div class="field compact">
+              <label for="brandScope">Применить</label>
+              <select id="brandScope">
+                <option value="all" selected>Ко всем планировкам фида</option>
+                <option value="selected-layouts">К выбранным планировкам</option>
+                <option value="checked">К отмеченным объектам</option>
+              </select>
+            </div>
+            <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
+            <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
+          </div>
+          <div class="brand-source-panel">
+            <div class="brand-source-head">
+              <div>
+                <strong>Образец для настройки</strong>
+                <span id="brandLayoutSummary">Загрузите фид, чтобы выбрать планировки.</span>
+              </div>
+            </div>
+            <div id="brandLayoutPicker" class="brand-layout-picker"></div>
+          </div>
+          <div class="brand-preview">
+            <canvas id="brandPreviewCanvas" width="960" height="640" tabindex="0" role="img" aria-label="Предпросмотр готовой планировки. Перетащите изображение или нажмите, чтобы открыть крупнее."></canvas>
+            <div class="brand-preview-help">
+              <strong>Предпросмотр первого изображения</strong>
+              <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+              <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="quality-panel" data-page="objects">
@@ -4849,9 +4840,9 @@
 
     function renderPage() {
       const isFeedsPage = activePage === "feeds";
-      const isLayoutsPage = activePage === "layouts";
+      const isLayoutsPage = false;
       document.querySelector("#appShell").classList.toggle("feeds-mode", isFeedsPage);
-      document.querySelector("#appShell").classList.toggle("layouts-mode", isLayoutsPage);
+      document.querySelector("#appShell").classList.toggle("layouts-mode", false);
       document.querySelectorAll("[data-page]").forEach(section => {
         section.classList.toggle("page-hidden", section.dataset.page !== activePage);
       });
@@ -4859,18 +4850,10 @@
         item.classList.toggle("active", item.dataset.nav === activePage);
       });
       const profile = platformProfiles[activePlatform];
-      document.querySelector(".topbar h1").textContent = isFeedsPage ? "Мониторинг" : isLayoutsPage ? "Планировки" : "Фиды недвижимости";
+      document.querySelector(".topbar h1").textContent = isFeedsPage ? "Мониторинг" : "Фиды недвижимости";
       document.querySelector(".subtitle").textContent = isFeedsPage
         ? "Контроль рабочих ссылок, статусов проверки и ошибок по сохраненным фидам"
-        : isLayoutsPage
-          ? "Подготовка брендированного первого изображения для текущего XML-фида"
-          : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
-      if (isLayoutsPage && !layoutsLoaded) loadLayouts();
-      if (isLayoutsPage) {
-        syncBrandProfileWithCurrentFeed();
-        renderBrandLayoutPicker();
-        renderBrandPreview();
-      }
+        : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
     }
 
     function switchPage(page) {
@@ -5125,9 +5108,12 @@
         renderLayoutsList();
       } catch (error) {
         layoutsLoaded = true;
-        document.querySelector("#layoutsList").innerHTML = `
-          <div class="layout-empty">Не удалось загрузить планировки: ${escapeXml(error.message)}.</div>
-        `;
+        const list = document.querySelector("#layoutsList");
+        if (list) {
+          list.innerHTML = `
+            <div class="layout-empty">Не удалось загрузить планировки: ${escapeXml(error.message)}.</div>
+          `;
+        }
       }
     }
 
@@ -6466,7 +6452,9 @@ ${photos}
       renderDetectedSource();
       renderResetControl();
       renderLayoutsList();
+      syncBrandProfileWithCurrentFeed();
       renderBrandLayoutPicker();
+      renderBrandPreview();
       renderPage();
     }
 
@@ -6917,8 +6905,11 @@ ${photos}
       document.querySelector(selector).addEventListener("input", renderFeedsList);
       document.querySelector(selector).addEventListener("change", renderFeedsList);
     });
-    document.querySelector("#layoutSearch").addEventListener("input", renderLayoutsList);
-    document.querySelector("#layoutSearch").addEventListener("change", renderLayoutsList);
+    const layoutSearchInput = document.querySelector("#layoutSearch");
+    if (layoutSearchInput) {
+      layoutSearchInput.addEventListener("input", renderLayoutsList);
+      layoutSearchInput.addEventListener("change", renderLayoutsList);
+    }
     const pickLayoutFileBtn = document.querySelector("#pickLayoutFileBtn");
     const layoutFileInput = document.querySelector("#layoutFileInput");
     const uploadLayoutBtn = document.querySelector("#uploadLayoutBtn");
@@ -6937,7 +6928,7 @@ ${photos}
       });
     }
     if (uploadLayoutBtn) uploadLayoutBtn.addEventListener("click", uploadLayout);
-    document.querySelector("#refreshLayoutsBtn").addEventListener("click", () => loadLayouts());
+    document.querySelector("#refreshLayoutsBtn")?.addEventListener("click", () => loadLayouts());
     document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
     document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
       if (!layoutGroupsFromFeed().length) {
@@ -7009,7 +7000,7 @@ ${photos}
       const checkbox = event.target.closest("[data-brand-layout-url]");
       if (checkbox) updateBrandLayoutSelection(checkbox.dataset.brandLayoutUrl, checkbox.checked);
     });
-    document.querySelector("#layoutsList").addEventListener("click", event => {
+    document.querySelector("#layoutsList")?.addEventListener("click", event => {
       const copyButton = event.target.closest("[data-copy-layout]");
       const applyButton = event.target.closest("[data-apply-layout]");
       const objectButton = event.target.closest("[data-object-layout]");
