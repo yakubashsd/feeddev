@@ -5308,6 +5308,16 @@
       renderBrandPreview();
     }
 
+    function selectBrandLayoutFromObject(item) {
+      if (!item) return;
+      const layoutUrl = String(item.layoutPhoto || "").trim();
+      brandSelectionTouched = true;
+      selectedBrandLayoutUrls = layoutUrl ? new Set([layoutUrl]) : new Set();
+      if (!layoutUrl) {
+        brandStatus(`У объекта ${item.externalId || "без ID"} нет ссылки на планировку. Заполните поле «Планировка» в карточке объекта.`);
+      }
+    }
+
     function brandTargets() {
       const scope = document.querySelector("#brandScope")?.value || "all";
       const source = scope === "all"
@@ -6848,12 +6858,14 @@ ${photos}
         if (checkbox.checked) checkedIds.add(id);
         else checkedIds.delete(id);
         selectedId = id;
+        selectBrandLayoutFromObject(selectedItem());
         renderAll();
         return;
       }
       const row = event.target.closest("tr");
       if (!row) return;
       selectedId = row.dataset.id;
+      selectBrandLayoutFromObject(selectedItem());
       renderAll();
     });
 
@@ -7033,6 +7045,13 @@ ${photos}
         if (event.target.checked) checkedIds.add(item.externalId);
         else checkedIds.delete(item.externalId);
       });
+      if (event.target.checked) {
+        const firstWithLayout = filteredObjects().find(item => String(item.layoutPhoto || "").trim());
+        if (firstWithLayout) {
+          selectedId = firstWithLayout.externalId;
+          selectBrandLayoutFromObject(firstWithLayout);
+        }
+      }
       renderAll();
     });
     document.querySelector("#bulkSection").addEventListener("change", renderBulkControls);
