@@ -3126,7 +3126,7 @@
 
     .brand-controls {
       display: grid;
-      grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(110px, .55fr)) minmax(220px, .9fr) auto auto;
+      grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(110px, .55fr)) minmax(220px, .9fr) auto minmax(230px, auto);
       gap: 10px;
       align-items: end;
       padding: 14px;
@@ -3136,7 +3136,7 @@
 
     .brand-controls .layout-file-control { grid-column: 1 / -1; }
     .brand-controls .field { grid-column: auto; }
-    #applyBrandBtn { width: 100%; min-width: 170px; }
+    #insertBrandPhotoBtn { width: 100%; min-width: 230px; }
 
     .technical-fields {
       display: none;
@@ -3360,9 +3360,12 @@
 
     .layouts-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+      gap: 14px;
+      align-items: start;
       margin-top: 16px;
+      width: 100%;
+      min-width: 0;
     }
 
     .layout-card {
@@ -3373,6 +3376,7 @@
       border-radius: 20px;
       background: var(--site-gray);
       min-width: 0;
+      max-width: 100%;
       overflow: hidden;
       animation: rowIn .18s ease both;
     }
@@ -3424,7 +3428,11 @@
     }
 
     .layout-url {
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      white-space: normal;
+      overflow-wrap: anywhere;
       padding: 8px 10px;
       border-radius: 12px;
       background: rgba(255,255,255,.72);
@@ -3439,7 +3447,9 @@
     .layout-actions button {
       min-width: 0;
       width: 100%;
-      white-space: normal;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       line-height: 1.2;
       min-height: 38px;
       padding-inline: 10px;
@@ -3524,7 +3534,7 @@
       .brand-preview { grid-template-columns: 1fr; }
       .brand-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .brand-controls .layout-file-control,
-      #applyBrandBtn { grid-column: 1 / -1; }
+      #insertBrandPhotoBtn { grid-column: 1 / -1; }
       .detected-card,
       .detected-card.primary { padding: 8px 0; border-right: 0; border-bottom: 1px solid var(--line); }
     }
@@ -3559,7 +3569,7 @@
       .layout-file-control,
       .layout-upload-target,
       .brand-controls .field,
-      #applyBrandBtn { grid-column: 1; }
+      #insertBrandPhotoBtn { grid-column: 1; }
       .brand-controls { grid-template-columns: 1fr; }
       .brand-controls .layout-file-control { grid-column: 1; }
       .brand-source-head { flex-direction: column; }
@@ -3784,8 +3794,12 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .layouts-list {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+      }
+
       .brand-controls .layout-file-control,
-      #applyBrandBtn {
+      #insertBrandPhotoBtn {
         grid-column: 1 / -1;
       }
 
@@ -3919,20 +3933,11 @@
 
       <section class="layouts-panel page-hidden" id="layoutsPanel" data-page="layouts">
         <h2 class="panel-title">Планировки</h2>
-        <div class="panel-caption">Выберите проект, загрузите планировки в библиотеку и наложите их на заранее подготовленную подложку проекта.</div>
-        <div class="layout-filter-strip">
-          <div class="field">
-            <label for="layoutProjectFilter">Проект</label>
-            <select id="layoutProjectFilter">
-              <option value="all">Все проекты</option>
-            </select>
-          </div>
-          <div class="layout-filter-note">Выберите конкретный проект перед настройкой. Сервис запомнит его подложку, масштаб и положение планировки и применит их ко всем макетам этого ЖК.</div>
-        </div>
+        <div class="panel-caption">Работайте с планировками из фида, который загружен в рабочей области. Сервис подготовит брендированное первое изображение для выгрузки.</div>
         <div class="layout-branding">
           <div class="brand-intro">
-            <h3>Подложка проекта</h3>
-            <p>Загрузите готовый PNG, JPG, WebP или SVG-макет проекта. Подложка будет нижним слоем, а планировку можно перемещать поверх нее на предпросмотре. Файлы AI сначала экспортируйте в PNG или SVG.</p>
+            <h3>Первое изображение фида</h3>
+            <p>Загрузите подложку для текущего фида, выставьте планировку на предпросмотре и добавьте готовый макет первым изображением в фид. Исходная планировка останется следующей.</p>
           </div>
           <div class="brand-controls">
             <div class="layout-file-control">
@@ -3959,13 +3964,13 @@
             <div class="field compact">
               <label for="brandScope">Применить</label>
               <select id="brandScope">
-                <option value="all" selected>Ко всем планировкам проекта</option>
+                <option value="all" selected>Ко всем планировкам фида</option>
                 <option value="selected-layouts">К выбранным планировкам</option>
                 <option value="checked">К объектам из рабочей области</option>
               </select>
             </div>
             <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
-            <button id="applyBrandBtn" type="button" class="primary">Наложить на подложку</button>
+            <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
           </div>
           <div class="brand-source-panel">
             <div class="brand-source-head">
@@ -3979,9 +3984,9 @@
           <div class="brand-preview">
             <canvas id="brandPreviewCanvas" width="960" height="640" tabindex="0" role="img" aria-label="Предпросмотр готовой планировки. Перетащите изображение или нажмите, чтобы открыть крупнее."></canvas>
             <div class="brand-preview-help">
-              <strong>Предпросмотр наложения</strong>
+              <strong>Предпросмотр первого изображения</strong>
               <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
-              <div>Подложка остается нижним слоем. Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
+              <div>Именно этот макет будет первым изображением в фиде. Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
         </div>
@@ -4289,7 +4294,7 @@
 
   <dialog id="brandPreviewDialog" class="brand-preview-dialog" aria-label="Предпросмотр готовой планировки">
     <div class="brand-preview-dialog-tools">
-      <span>Перетащите планировку мышкой. Позиция сохранится для проекта.</span>
+      <span>Перетащите планировку мышкой. Позиция сохранится для текущего фида.</span>
     </div>
     <button id="brandPreviewDialogClose" class="brand-preview-dialog-close" type="button" aria-label="Закрыть предпросмотр" title="Закрыть">×</button>
     <div id="brandPreviewDialogStage" class="brand-preview-dialog-stage">
@@ -4591,7 +4596,7 @@
       return new Promise((resolve, reject) => {
         const request = db.transaction("underlays", "readonly").objectStore("underlays").get(projectKey);
         request.onsuccess = () => resolve(String(request.result || ""));
-        request.onerror = () => reject(request.error || new Error("Не удалось загрузить подложку проекта."));
+        request.onerror = () => reject(request.error || new Error("Не удалось загрузить подложку текущего фида."));
       }).finally(() => db.close());
     }
 
@@ -4601,7 +4606,7 @@
       return new Promise((resolve, reject) => {
         const request = db.transaction("underlays", "readwrite").objectStore("underlays").put(dataUrl, projectKey);
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error || new Error("Не удалось сохранить подложку проекта."));
+        request.onerror = () => reject(request.error || new Error("Не удалось сохранить подложку текущего фида."));
       }).finally(() => db.close());
     }
 
@@ -4858,10 +4863,11 @@
       document.querySelector(".subtitle").textContent = isFeedsPage
         ? "Контроль рабочих ссылок, статусов проверки и ошибок по сохраненным фидам"
         : isLayoutsPage
-          ? "Библиотека макетов с публичными ссылками для XML-фидов"
+          ? "Подготовка брендированного первого изображения для текущего XML-фида"
           : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
       if (isLayoutsPage && !layoutsLoaded) loadLayouts();
       if (isLayoutsPage) {
+        syncBrandProfileWithCurrentFeed();
         renderBrandLayoutPicker();
         renderBrandPreview();
       }
@@ -5018,13 +5024,20 @@
       return String(value || "").trim().toLowerCase();
     }
 
+    function currentFeedProjectKey() {
+      return normalizeProjectName(appState.feedUrl || appState.feedName || "current-feed");
+    }
+
+    function currentFeedProjectLabel() {
+      return appState.feedName || appState.feedUrl || "текущий фид";
+    }
+
     function currentLayoutProjectFilter() {
-      return document.querySelector("#layoutProjectFilter")?.value || "all";
+      return currentFeedProjectKey();
     }
 
     function layoutProjectMatches(value = "") {
-      const project = currentLayoutProjectFilter();
-      return project === "all" || normalizeProjectName(value) === project;
+      return true;
     }
 
     function layoutProjectOptions() {
@@ -5039,16 +5052,7 @@
       return [...projects.entries()].sort((a, b) => a[1].localeCompare(b[1], "ru"));
     }
 
-    function renderLayoutProjectFilter() {
-      const select = document.querySelector("#layoutProjectFilter");
-      if (!select) return;
-      const previous = select.value || "all";
-      const options = layoutProjectOptions();
-      select.innerHTML = `<option value="all">Все проекты</option>` + options.map(([key, label]) =>
-        `<option value="${escapeXml(key)}">${escapeXml(label)}</option>`
-      ).join("");
-      select.value = previous === "all" || options.some(([key]) => key === previous) ? previous : "all";
-    }
+    function renderLayoutProjectFilter() {}
 
     function layoutSearchMatches(layout, term) {
       if (!term) return true;
@@ -5061,16 +5065,15 @@
       if (!list) return;
       renderLayoutProjectFilter();
       const term = (document.querySelector("#layoutSearch")?.value || "").trim().toLowerCase();
-      const layouts = layoutsCache.filter(layout => layoutSearchMatches(layout, term) && layoutProjectMatches(layout.project));
+      const layouts = layoutsCache.filter(layout => layoutSearchMatches(layout, term));
       if (!layoutsLoaded) {
         list.innerHTML = `<div class="layout-empty">Загружаю библиотеку планировок...</div>`;
         return;
       }
       if (!layouts.length) {
-        const projectLabel = document.querySelector("#layoutProjectFilter")?.selectedOptions?.[0]?.textContent || "выбранному проекту";
         list.innerHTML = `
           <div class="layout-empty">
-            Планировок по фильтру «${escapeXml(projectLabel)}» пока нет. Загрузите PNG, JPG, WebP или PDF, чтобы сервис выдал публичную ссылку для фида.
+            Планировок в библиотеке пока нет. Загрузите PNG, JPG, WebP или PDF, чтобы сервис выдал публичную ссылку для фида.
           </div>
         `;
         return;
@@ -5188,11 +5191,6 @@
       if (!nameInput.value.trim()) {
         nameInput.value = file.name.replace(/\.(png|jpe?g|webp|pdf)$/i, "");
       }
-      const projectInput = document.querySelector("#layoutProject");
-      const projectFilter = document.querySelector("#layoutProjectFilter");
-      if (projectInput && projectFilter && !projectInput.value.trim() && projectFilter.value !== "all") {
-        projectInput.value = projectFilter.selectedOptions?.[0]?.textContent || "";
-      }
       const target = document.querySelector("#layoutApplyTarget")?.value || "library";
       if (target === "checked" && !checkedIds.size) {
         alert("Сначала отметьте объекты в рабочей области или выберите «Только в библиотеку».");
@@ -5213,11 +5211,11 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: nameInput.value.trim(),
-            project: document.querySelector("#layoutProject").value.trim(),
-            building: document.querySelector("#layoutBuilding").value.trim(),
-            rooms: document.querySelector("#layoutRooms").value.trim(),
-            area: document.querySelector("#layoutArea").value.trim(),
-            tags: document.querySelector("#layoutTags").value.trim(),
+            project: document.querySelector("#layoutProject")?.value.trim() || "",
+            building: document.querySelector("#layoutBuilding")?.value.trim() || "",
+            rooms: document.querySelector("#layoutRooms")?.value.trim() || "",
+            area: document.querySelector("#layoutArea")?.value.trim() || "",
+            tags: document.querySelector("#layoutTags")?.value.trim() || "",
             fileName: file.name,
             contentType: inferLayoutContentType(file),
             fileBase64
@@ -5285,10 +5283,10 @@
       if (!picker || !summary) return;
       renderLayoutProjectFilter();
       const allGroups = layoutGroupsFromFeed();
-      const groups = allGroups.filter(group => layoutProjectMatches([...group.complexNames][0] || ""));
+      const groups = allGroups;
       const existingUrls = new Set(allGroups.map(group => group.url));
       selectedBrandLayoutUrls = new Set([...selectedBrandLayoutUrls].filter(url => existingUrls.has(url)));
-      const projectLabel = document.querySelector("#layoutProjectFilter")?.selectedOptions?.[0]?.textContent || "выбранному проекту";
+      const feedLabel = brandProjectLabel();
 
       if (!allGroups.length) {
         picker.innerHTML = `<div class="layout-empty">В текущем фиде нет ссылок на планировки. Загрузите фид или заполните поле «Планировка» в объектах.</div>`;
@@ -5297,16 +5295,9 @@
         return;
       }
 
-      if (!groups.length) {
-        picker.innerHTML = `<div class="layout-empty">В текущем фиде нет планировок по фильтру «${escapeXml(projectLabel)}».</div>`;
-        summary.textContent = `По проекту «${projectLabel}» планировки не найдены. Всего в фиде: ${allGroups.length}.`;
-        brandStatus(`Для проекта «${projectLabel}» нет объектов со ссылкой на планировку.`);
-        return;
-      }
-
       if (!selectedBrandLayoutUrls.size && !brandSelectionTouched) selectedBrandLayoutUrls = new Set([groups[0].url]);
       if (selectedBrandLayoutUrls.size > 1) selectedBrandLayoutUrls = new Set([[...selectedBrandLayoutUrls][0]]);
-      summary.textContent = `Проект: ${projectLabel}. Выберите одну планировку как образец, выставьте ее размер и положение. Эти настройки применятся ко всем планировкам проекта. Найдено: ${groups.length}.`;
+      summary.textContent = `Фид: ${feedLabel}. Выберите одну планировку как образец, выставьте ее размер и положение. Эти настройки применятся ко всем планировкам текущего фида. Найдено: ${groups.length}.`;
       picker.innerHTML = groups.map((group, index) => {
         const roomText = [...group.rooms].slice(0, 3).join(", ");
         const areaText = [...group.areas].slice(0, 3).join(", ");
@@ -5338,13 +5329,13 @@
         : scope === "checked"
           ? objects.filter(item => checkedIds.has(item.externalId))
           : objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
-      return source.filter(item => String(item.layoutPhoto || "").trim() && layoutProjectMatches(item.complexName));
+      return source.filter(item => String(item.layoutPhoto || "").trim());
     }
 
     function brandPreviewTarget() {
       const selectedUrl = [...selectedBrandLayoutUrls][0];
-      return objects.find(item => item.layoutPhoto === selectedUrl && layoutProjectMatches(item.complexName))
-        || objects.find(item => item.layoutPhoto && layoutProjectMatches(item.complexName));
+      return objects.find(item => item.layoutPhoto === selectedUrl)
+        || objects.find(item => item.layoutPhoto);
     }
 
     function proxyImageUrl(url) {
@@ -5415,12 +5406,11 @@
     }
 
     function brandProjectLabel(projectKey = activeBrandProjectKey) {
-      const option = [...(document.querySelector("#layoutProjectFilter")?.options || [])].find(item => item.value === projectKey);
-      return option?.textContent || projectKey || "проект";
+      return currentFeedProjectLabel();
     }
 
     async function persistActiveBrandProfile({ includeAsset = false } = {}) {
-      if (brandProfileHydrating || !activeBrandProjectKey || activeBrandProjectKey === "all") return;
+      if (brandProfileHydrating || !activeBrandProjectKey) return;
       const config = brandConfig();
       brandProfiles[activeBrandProjectKey] = {
         fileName: brandBadgeFileName,
@@ -5435,7 +5425,7 @@
     }
 
     async function restoreBrandProfile(projectKey) {
-      activeBrandProjectKey = projectKey || "all";
+      activeBrandProjectKey = projectKey || currentFeedProjectKey();
       brandProfileHydrating = true;
       brandPreviewImages = null;
       brandBadgeDataUrl = "";
@@ -5452,20 +5442,12 @@
       setValue("#brandOffsetY", profile.offsetYPercent, 0);
       document.querySelector("#brandBadgeFileInput").value = "";
 
-      if (activeBrandProjectKey === "all") {
-        document.querySelector("#brandBadgePickedFile").textContent = "Сначала выберите проект";
-        brandStatus("Выберите конкретный проект. Для каждого ЖК сохраняются отдельная подложка, масштаб и положение планировки.");
-        brandProfileHydrating = false;
-        renderBrandPreview();
-        return;
-      }
-
       try {
         brandBadgeDataUrl = await readBrandAsset(activeBrandProjectKey);
         brandBadgeFileName = profile.fileName || "";
         document.querySelector("#brandBadgePickedFile").textContent = brandBadgeDataUrl
-          ? `${brandBadgeFileName || "Подложка проекта"} · сохранено для ${brandProjectLabel()}`
-          : `Подложка для ${brandProjectLabel()} не выбрана`;
+          ? `${brandBadgeFileName || "Подложка фида"} · сохранено для текущего фида`
+          : "Подложка для текущего фида не выбрана";
       } catch (error) {
         document.querySelector("#brandBadgePickedFile").textContent = "Не удалось загрузить сохраненную подложку";
         brandStatus(error.message);
@@ -5473,6 +5455,12 @@
         brandProfileHydrating = false;
       }
       renderBrandPreview();
+    }
+
+    function syncBrandProfileWithCurrentFeed() {
+      const key = currentFeedProjectKey();
+      if (brandProfileHydrating || activeBrandProjectKey === key) return;
+      restoreBrandProfile(key);
     }
 
     function visibleImageBounds(image) {
@@ -5592,12 +5580,8 @@
       brandPreviewImages = null;
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, canvas.width, canvas.height);
-      if (currentLayoutProjectFilter() === "all") {
-        brandStatus("Выберите конкретный проект. Его подложка и положение планировки будут сохранены отдельно от других ЖК.");
-        return;
-      }
       if (!brandBadgeDataUrl) {
-        brandStatus(`Выберите подложку для ${brandProjectLabel()}. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.`);
+        brandStatus("Выберите подложку для текущего фида. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
         return;
       }
       const target = brandPreviewTarget();
@@ -5656,7 +5640,7 @@
       document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging");
       brandDragState = null;
       await persistActiveBrandProfile();
-      brandStatus(`Позиция планировки для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам проекта.`);
+      brandStatus(`Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам текущего фида.`);
       if (shouldOpenPreview) openBrandPreviewDialog();
     }
 
@@ -5666,7 +5650,7 @@
       if (!dialog || !dialogCanvas || !brandPreviewImages) return;
       if (!dialog.open) dialog.showModal();
       drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, dialogCanvas, brandConfig());
-      brandStatus("Открыт крупный предпросмотр. Перетащите планировку, чтобы сохранить позицию для проекта.");
+      brandStatus("Открыт крупный предпросмотр. Перетащите планировку, чтобы сохранить позицию для текущего фида.");
     }
 
     function startBrandDialogPan(event) {
@@ -5703,7 +5687,7 @@
       brandDialogDragState = null;
       document.querySelector("#brandPreviewDialogStage")?.classList.remove("dragging");
       await persistActiveBrandProfile();
-      brandStatus(`Позиция планировки для ${brandProjectLabel()} сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%.`);
+      brandStatus(`Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%.`);
     }
 
     function closeBrandPreviewDialog() {
@@ -5772,14 +5756,41 @@
       return result;
     }
 
-    async function applyBrandBadgeToLayouts() {
-      if (currentLayoutProjectFilter() === "all") {
-        alert("Выберите конкретный проект. Одна подложка и положение применяются только к планировкам одного ЖК.");
-        return;
+    async function createBrandedLayoutUrlMap(button, targets) {
+      const urlMap = new Map();
+      const skipped = [];
+      const canvas = document.createElement("canvas");
+      const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
+      const projectConfig = { ...brandConfig() };
+      await persistActiveBrandProfile();
+      const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
+      for (let index = 0; index < uniqueUrls.length; index += 1) {
+        const sourceUrl = uniqueUrls[index];
+        const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
+        try {
+          button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
+          brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
+          const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
+          drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig);
+          const output = await brandedLayoutBlob(canvas);
+          brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
+          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
+          urlMap.set(sourceUrl, record.url);
+        } catch (error) {
+          skipped.push({
+            url: sourceUrl,
+            ids: targets.filter(item => item.layoutPhoto === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
+            message: error.message || "ссылка недоступна"
+          });
+        }
       }
+      return { urlMap, skipped };
+    }
+
+    function assertBrandTargetsReady() {
       if (!brandBadgeDataUrl) {
         alert("Сначала выберите файл подложки.");
-        return;
+        return null;
       }
       const targets = brandTargets();
       const scope = document.querySelector("#brandScope")?.value || "all";
@@ -5789,75 +5800,64 @@
           : scope === "checked"
             ? "Отметьте объекты с планировками в рабочей области или выберите применение ко всем."
             : "В текущем фиде нет объектов со ссылкой на планировку.");
-        return;
+        return null;
       }
+      return { targets, scope };
+    }
 
-      const button = document.querySelector("#applyBrandBtn");
-      const urlMap = new Map();
-      const skipped = [];
+    function skippedBrandMessage(skipped) {
+      return skipped.length
+        ? ` Пропущено ссылок: ${skipped.length}. Проверьте недоступные URL планировок в исходном фиде.`
+        : "";
+    }
+
+    function prependPhotoUrl(item, url) {
+      const current = photoList(item).filter(photoUrl => photoUrl !== url);
+      return [url, ...current].join("\n");
+    }
+
+    async function insertBrandedLayoutsAsFirstPhotos() {
+      const ready = assertBrandTargetsReady();
+      if (!ready) return;
+      const { targets } = ready;
+
+      const button = document.querySelector("#insertBrandPhotoBtn");
       button.disabled = true;
       button.classList.add("loading");
 
       try {
-        const canvas = document.createElement("canvas");
-        const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
-        const projectConfig = { ...brandConfig() };
-        await persistActiveBrandProfile();
-        const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
-        for (let index = 0; index < uniqueUrls.length; index += 1) {
-          const sourceUrl = uniqueUrls[index];
-          const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
-          try {
-            button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
-            brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
-            const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
-            drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig);
-            const output = await brandedLayoutBlob(canvas);
-            brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
-            const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
-            urlMap.set(sourceUrl, record.url);
-          } catch (error) {
-            skipped.push({
-              url: sourceUrl,
-              ids: targets.filter(item => item.layoutPhoto === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
-              message: error.message || "ссылка недоступна"
-            });
-          }
-        }
-
+        const { urlMap, skipped } = await createBrandedLayoutUrlMap(button, targets);
         if (!urlMap.size) {
           const first = skipped[0];
           const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
-          brandStatus(`Не удалось обработать выбранные планировки: все ссылки недоступны или не ведут на изображение.${details}`);
-          showToast("Планировки не обработаны");
+          brandStatus(`Не удалось добавить первое фото: все ссылки недоступны или не ведут на изображение.${details}`);
+          showToast("Первое фото не добавлено");
           return;
         }
 
         const targetIds = new Set(targets.map(item => item.externalId));
-        objects = objects.map(item => targetIds.has(item.externalId) && urlMap.has(item.layoutPhoto)
-          ? { ...item, layoutPhoto: urlMap.get(item.layoutPhoto) }
-          : item);
+        objects = objects.map(item => {
+          if (!targetIds.has(item.externalId) || !urlMap.has(item.layoutPhoto)) return item;
+          return { ...item, photos: prependPhotoUrl(item, urlMap.get(item.layoutPhoto)) };
+        });
         const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
         invalidateGeneratedLink();
         save();
         await loadLayouts({ silent: true });
         renderAll();
-        showToast(`Подложка применена к ${updatedCount} объектам`);
-        const skippedText = skipped.length
-          ? ` Пропущено ссылок: ${skipped.length}. Проверьте недоступные URL планировок в исходном фиде.`
-          : "";
-        brandStatus(`Готово: обновлено объектов ${updatedCount}, создано файлов ${urlMap.size}.${skippedText} Сгенерируйте новую ссылку в финальной выгрузке.`);
+        showToast(`Первое фото добавлено к ${updatedCount} объектам`);
+        brandStatus(`Готово: готовые планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
       } catch (error) {
-        const message = error.message || "Не удалось наложить планировку на подложку.";
+        const message = error.message || "Не удалось добавить первое фото.";
         const hint = /too large|слишком больш|413|body/i.test(message)
           ? " Итоговое изображение превышает лимит загрузки. Уменьшите исходную планировку или подложку и попробуйте снова."
           : " Проверьте, что планировка открывается по ссылке, а подложка загружена в PNG, JPG, WebP или SVG.";
-        brandStatus(`Не удалось наложить на подложку: ${message}.${hint}`);
-        showToast("Не удалось наложить на подложку");
+        brandStatus(`Не удалось добавить первое фото: ${message}.${hint}`);
+        showToast("Не удалось добавить первое фото");
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
-        button.textContent = "Наложить на подложку";
+        button.textContent = "Сделать первым изображением";
       }
     }
 
@@ -6291,6 +6291,19 @@
       return String(item.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean);
     }
 
+    function isBrandedLayoutUrl(url = "") {
+      return /\/layouts\/branded-|branded-/i.test(String(url));
+    }
+
+    function feedImageList(item) {
+      const layout = String(item.layoutPhoto || "").trim();
+      const photos = photoList(item);
+      const branded = photos.filter(isBrandedLayoutUrl);
+      const otherPhotos = photos.filter(url => !isBrandedLayoutUrl(url));
+      if (branded.length) return [...branded, layout, ...otherPhotos].filter(Boolean);
+      return [layout, ...photos].filter(Boolean);
+    }
+
     function buildCianXml(items = objects) {
       const body = items.map(item => {
         const photos = photoList(item);
@@ -6356,7 +6369,7 @@ ${photoXml}
 
     function buildYandexXml(items = objects) {
       const body = items.map(item => {
-        const images = [item.layoutPhoto, ...photoList(item)].filter(Boolean).map(url => `    <image>${escapeXml(url)}</image>`).join("\n");
+        const images = feedImageList(item).map(url => `    <image>${escapeXml(url)}</image>`).join("\n");
         return `  <offer internal-id="${escapeXml(item.externalId || "")}">
     <type>продажа</type>
     <property-type>жилая</property-type>
@@ -6396,7 +6409,7 @@ ${images}
 
     function buildAvitoXml(items = objects) {
       const body = items.map(item => {
-        const images = [item.layoutPhoto, ...photoList(item)].filter(Boolean).map(url => `      <Image url="${escapeXml(url)}"/>`).join("\n");
+        const images = feedImageList(item).map(url => `      <Image url="${escapeXml(url)}"/>`).join("\n");
         return `  <Ad>
     <Id>${escapeXml(item.externalId || "")}</Id>
     <Category>Квартиры</Category>
@@ -6419,7 +6432,7 @@ ${images}
 
     function buildDomclickXml(items = objects) {
       const body = items.map(item => {
-        const photos = [item.layoutPhoto, ...photoList(item)].filter(Boolean).map(url => `      <Photo>${escapeXml(url)}</Photo>`).join("\n");
+        const photos = feedImageList(item).map(url => `      <Photo>${escapeXml(url)}</Photo>`).join("\n");
         return `  <Offer>
     <ExternalId>${escapeXml(item.externalId || "")}</ExternalId>
     <ComplexName>${escapeXml(item.complexName || "")}</ComplexName>
@@ -6906,14 +6919,6 @@ ${photos}
     });
     document.querySelector("#layoutSearch").addEventListener("input", renderLayoutsList);
     document.querySelector("#layoutSearch").addEventListener("change", renderLayoutsList);
-    document.querySelector("#layoutProjectFilter").addEventListener("change", async event => {
-      await persistActiveBrandProfile();
-      brandSelectionTouched = false;
-      selectedBrandLayoutUrls = new Set();
-      await restoreBrandProfile(event.target.value);
-      renderLayoutsList();
-      renderBrandLayoutPicker();
-    });
     const pickLayoutFileBtn = document.querySelector("#pickLayoutFileBtn");
     const layoutFileInput = document.querySelector("#layoutFileInput");
     const uploadLayoutBtn = document.querySelector("#uploadLayoutBtn");
@@ -6935,9 +6940,9 @@ ${photos}
     document.querySelector("#refreshLayoutsBtn").addEventListener("click", () => loadLayouts());
     document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
     document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
-      if (currentLayoutProjectFilter() === "all") {
+      if (!layoutGroupsFromFeed().length) {
         event.target.value = "";
-        alert("Сначала выберите конкретный проект. Подложка сохраняется отдельно для каждого ЖК.");
+        alert("Сначала загрузите фид с планировками в рабочей области.");
         return;
       }
       const file = event.target.files[0];
@@ -6955,10 +6960,11 @@ ${photos}
       }
       brandBadgeDataUrl = await fileToDataUrl(file);
       brandBadgeFileName = file.name;
-      document.querySelector("#brandBadgePickedFile").textContent = `${file.name} · ${brandProjectLabel()}`;
+      activeBrandProjectKey = currentFeedProjectKey();
+      document.querySelector("#brandBadgePickedFile").textContent = `${file.name} · текущий фид`;
       try {
         await persistActiveBrandProfile({ includeAsset: true });
-        showToast(`Подложка сохранена для ${brandProjectLabel()}`);
+        showToast("Подложка сохранена для текущего фида");
       } catch (error) {
         brandStatus(`Подложка загружена, но не сохранена в браузере: ${error.message}`);
       }
@@ -6978,6 +6984,7 @@ ${photos}
       renderBrandPreview();
     });
     document.querySelector("#centerBrandLayoutBtn").addEventListener("click", centerBrandLayout);
+    document.querySelector("#insertBrandPhotoBtn").addEventListener("click", insertBrandedLayoutsAsFirstPhotos);
     const brandPreviewCanvas = document.querySelector("#brandPreviewCanvas");
     brandPreviewCanvas.addEventListener("pointerdown", startBrandPreviewDrag);
     brandPreviewCanvas.addEventListener("pointermove", moveBrandPreviewDrag);
@@ -7002,7 +7009,6 @@ ${photos}
       const checkbox = event.target.closest("[data-brand-layout-url]");
       if (checkbox) updateBrandLayoutSelection(checkbox.dataset.brandLayoutUrl, checkbox.checked);
     });
-    document.querySelector("#applyBrandBtn").addEventListener("click", applyBrandBadgeToLayouts);
     document.querySelector("#layoutsList").addEventListener("click", event => {
       const copyButton = event.target.closest("[data-copy-layout]");
       const applyButton = event.target.closest("[data-apply-layout]");
