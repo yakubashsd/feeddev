@@ -2858,7 +2858,7 @@
     }
 
     .object-filter-panel {
-      grid-template-columns: minmax(210px, 2fr) minmax(115px, 1fr) minmax(95px, .8fr) repeat(4, minmax(88px, .7fr)) minmax(120px, 1fr);
+      grid-template-columns: minmax(210px, 1.8fr) minmax(112px, .75fr) minmax(92px, .65fr) minmax(250px, 1.25fr) minmax(230px, 1.1fr) minmax(120px, .8fr);
       gap: 9px;
       padding: 14px 20px 18px;
       border: 0;
@@ -2868,6 +2868,59 @@
 
     .object-filter-panel input,
     .object-filter-panel select { min-height: 40px; border-radius: 14px; }
+
+    .range-filter {
+      min-width: 0;
+      padding: 0;
+    }
+
+    .range-filter > label {
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    .range-filter-controls {
+      display: grid;
+      gap: 6px;
+    }
+
+    .range-filter-row {
+      display: grid;
+      grid-template-columns: 20px minmax(70px, 1fr) 86px;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .range-filter-row > span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .object-filter-panel .range-filter-row input[type="range"] {
+      width: 100%;
+      min-height: 18px;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      accent-color: #211b27;
+      cursor: grab;
+    }
+
+    .object-filter-panel .range-filter-row input[type="range"]:active {
+      cursor: grabbing;
+    }
+
+    .object-filter-panel .range-filter-row input[type="number"] {
+      min-height: 32px;
+      height: 32px;
+      padding: 6px 8px;
+      border-radius: 9px;
+      font-size: 11px;
+    }
 
     .table-scroll {
       min-height: 300px;
@@ -3700,6 +3753,7 @@
       .bulk-panel { padding: 17px; border-radius: 20px; }
       .object-filter-panel { grid-template-columns: 1fr 1fr; padding-inline: 14px; }
       .object-filter-panel .field:first-child { grid-column: 1 / -1; }
+      .object-filter-panel .range-filter { grid-column: 1 / -1; }
       .table-headline { padding-inline: 14px; }
       .table-wrap .panel-caption { padding-inline: 14px; }
       .bulk-panel { grid-template-columns: 1fr; }
@@ -4102,21 +4156,35 @@
               <option value="4">4+</option>
             </select>
           </div>
-          <div class="field compact">
-            <label for="priceFrom">Цена от</label>
-            <input id="priceFrom" type="number" min="0" placeholder="₽">
+          <div class="field range-filter">
+            <label>Цена, ₽</label>
+            <div class="range-filter-controls">
+              <div class="range-filter-row">
+                <span>от</span>
+                <input id="priceFromRange" type="range" aria-label="Минимальная цена">
+                <input id="priceFrom" type="number" min="0" placeholder="мин.">
+              </div>
+              <div class="range-filter-row">
+                <span>до</span>
+                <input id="priceToRange" type="range" aria-label="Максимальная цена">
+                <input id="priceTo" type="number" min="0" placeholder="макс.">
+              </div>
+            </div>
           </div>
-          <div class="field compact">
-            <label for="priceTo">Цена до</label>
-            <input id="priceTo" type="number" min="0" placeholder="₽">
-          </div>
-          <div class="field compact">
-            <label for="areaFrom">Площадь от</label>
-            <input id="areaFrom" type="number" min="0" step="0.1" placeholder="м²">
-          </div>
-          <div class="field compact">
-            <label for="areaTo">Площадь до</label>
-            <input id="areaTo" type="number" min="0" step="0.1" placeholder="м²">
+          <div class="field range-filter">
+            <label>Площадь, м²</label>
+            <div class="range-filter-controls">
+              <div class="range-filter-row">
+                <span>от</span>
+                <input id="areaFromRange" type="range" step="0.1" aria-label="Минимальная площадь">
+                <input id="areaFrom" type="number" min="0" step="0.1" placeholder="мин.">
+              </div>
+              <div class="range-filter-row">
+                <span>до</span>
+                <input id="areaToRange" type="range" step="0.1" aria-label="Максимальная площадь">
+                <input id="areaTo" type="number" min="0" step="0.1" placeholder="макс.">
+              </div>
+            </div>
           </div>
           <div class="field compact">
             <label for="issueFilter">Ошибка</label>
@@ -4142,7 +4210,7 @@
           <table>
             <thead>
               <tr>
-                <th><input id="selectVisible" type="checkbox" title="Выбрать видимые"></th>
+                <th><input id="selectVisible" type="checkbox" title="Выбрать все объекты фида" aria-label="Выбрать все объекты фида"></th>
                 <th><button class="sort-btn" type="button" data-sort="externalId">ID</button></th>
                 <th>Квартира</th>
                 <th>Дом и секция</th>
@@ -4962,6 +5030,64 @@
       return issues.length ? { type: "warn", label: `${issues.length} ошибок`, issues } : { type: "ok", label: "Готово", issues: [] };
     }
 
+    function filterBounds(field, step) {
+      const values = objects.map(item => numberValue(item[field])).filter(value => value > 0);
+      if (!values.length) return { min: 0, max: step };
+      return {
+        min: Math.floor(Math.min(...values) / step) * step,
+        max: Math.ceil(Math.max(...values) / step) * step
+      };
+    }
+
+    function syncFilterRanges() {
+      const configs = [
+        { field: "price", step: 100000, from: "priceFrom", to: "priceTo", fromRange: "priceFromRange", toRange: "priceToRange" },
+        { field: "totalArea", step: 0.1, from: "areaFrom", to: "areaTo", fromRange: "areaFromRange", toRange: "areaToRange" }
+      ];
+      configs.forEach(config => {
+        const bounds = filterBounds(config.field, config.step);
+        const fromInput = document.querySelector(`#${config.from}`);
+        const toInput = document.querySelector(`#${config.to}`);
+        const fromRange = document.querySelector(`#${config.fromRange}`);
+        const toRange = document.querySelector(`#${config.toRange}`);
+        [fromRange, toRange].forEach(range => {
+          range.min = String(bounds.min);
+          range.max = String(bounds.max);
+          range.step = String(config.step);
+        });
+        fromRange.value = fromInput.value || String(bounds.min);
+        toRange.value = toInput.value || String(bounds.max);
+      });
+    }
+
+    function applyRangeFilter(kind, edge) {
+      const isPrice = kind === "price";
+      const fromInput = document.querySelector(isPrice ? "#priceFrom" : "#areaFrom");
+      const toInput = document.querySelector(isPrice ? "#priceTo" : "#areaTo");
+      const fromRange = document.querySelector(isPrice ? "#priceFromRange" : "#areaFromRange");
+      const toRange = document.querySelector(isPrice ? "#priceToRange" : "#areaToRange");
+      if (edge === "from") {
+        if (numberValue(fromRange.value) > numberValue(toRange.value)) toRange.value = fromRange.value;
+      } else if (numberValue(toRange.value) < numberValue(fromRange.value)) {
+        fromRange.value = toRange.value;
+      }
+      fromInput.value = fromRange.value === fromRange.min ? "" : fromRange.value;
+      toInput.value = toRange.value === toRange.max ? "" : toRange.value;
+      renderRows();
+    }
+
+    function syncRangeFromNumber(kind, edge) {
+      const isPrice = kind === "price";
+      const input = document.querySelector(edge === "from"
+        ? (isPrice ? "#priceFrom" : "#areaFrom")
+        : (isPrice ? "#priceTo" : "#areaTo"));
+      const range = document.querySelector(edge === "from"
+        ? (isPrice ? "#priceFromRange" : "#areaFromRange")
+        : (isPrice ? "#priceToRange" : "#areaToRange"));
+      range.value = input.value || (edge === "from" ? range.min : range.max);
+      renderRows();
+    }
+
     function filteredObjects() {
       const term = document.querySelector("#search").value.trim().toLowerCase();
       const status = document.querySelector("#statusFilter").value;
@@ -5040,6 +5166,19 @@
       renderRows();
     }
 
+    function renderSelectAllState() {
+      const control = document.querySelector("#selectVisible");
+      if (!control) return;
+      const selectedCount = objects.reduce((count, item) => count + (checkedIds.has(item.externalId) ? 1 : 0), 0);
+      control.checked = objects.length > 0 && selectedCount === objects.length;
+      control.indeterminate = selectedCount > 0 && selectedCount < objects.length;
+      control.title = control.checked
+        ? `Снять выбор со всех ${objects.length} объектов`
+        : selectedCount
+          ? `Выбрано ${selectedCount} из ${objects.length}. Нажмите, чтобы выбрать все`
+          : `Выбрать все ${objects.length} объектов фида`;
+    }
+
     function renderRows() {
       const visible = filteredObjects();
       if (!visible.length) {
@@ -5048,7 +5187,7 @@
             <td class="empty-row" colspan="7">По текущим фильтрам объектов нет. Измените поиск, статус или параметры фильтрации.</td>
           </tr>
         `;
-        document.querySelector("#selectVisible").checked = false;
+        renderSelectAllState();
         renderSortButtons();
         renderBulkStatus();
         return;
@@ -5068,7 +5207,7 @@
           </tr>
         `;
       }).join("");
-      document.querySelector("#selectVisible").checked = visible.length > 0 && visible.every(item => checkedIds.has(item.externalId));
+      renderSelectAllState();
       renderSortButtons();
       renderBulkStatus();
     }
@@ -6524,7 +6663,11 @@
       const applyButton = document.querySelector("#applyBulkBtn");
       const bulkInputs = ["#bulkSection", "#bulkField", "#bulkMode", "#bulkValue"].map(selector => document.querySelector(selector)).filter(Boolean);
       if (selection) {
-        selection.textContent = checkedIds.size ? `Выбрано ${checkedIds.size}` : "Выберите объекты";
+        selection.textContent = checkedIds.size
+          ? checkedIds.size === objects.length
+            ? `Выбран весь фид · ${objects.length}`
+            : `Выбрано ${checkedIds.size} из ${objects.length}`
+          : "Выберите объекты";
       }
       if (applyButton) applyButton.disabled = !checkedIds.size;
       bulkInputs.forEach(input => {
@@ -6834,6 +6977,7 @@ ${photos}
       renderFeedMonitorTabs();
       renderFeedsList();
       renderBulkControls();
+      syncFilterRanges();
       renderRows();
       fillForm();
       if (!document.querySelector("#feedUrl").value) document.querySelector("#feedUrl").value = appState.feedUrl || "";
@@ -7302,9 +7446,17 @@ ${photos}
       renderAll();
     });
 
-    ["#search", "#statusFilter", "#roomsFilter", "#priceFrom", "#priceTo", "#areaFrom", "#areaTo", "#issueFilter"].forEach(selector => {
+    ["#search", "#statusFilter", "#roomsFilter", "#issueFilter"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", renderRows);
       document.querySelector(selector).addEventListener("change", renderRows);
+    });
+    [["price", "from"], ["price", "to"], ["area", "from"], ["area", "to"]].forEach(([kind, edge]) => {
+      const prefix = kind === "price" ? "price" : "area";
+      const suffix = edge === "from" ? "From" : "To";
+      document.querySelector(`#${prefix}${suffix}Range`).addEventListener("input", () => applyRangeFilter(kind, edge));
+      const numberInput = document.querySelector(`#${prefix}${suffix}`);
+      numberInput.addEventListener("input", () => syncRangeFromNumber(kind, edge));
+      numberInput.addEventListener("change", () => syncRangeFromNumber(kind, edge));
     });
     document.querySelector(".table-wrap thead").addEventListener("click", event => {
       const button = event.target.closest("[data-sort]");
@@ -7438,16 +7590,15 @@ ${photos}
       switchPage(item.dataset.nav);
     });
     document.querySelector("#selectVisible").addEventListener("change", event => {
-      filteredObjects().forEach(item => {
-        if (event.target.checked) checkedIds.add(item.externalId);
-        else checkedIds.delete(item.externalId);
-      });
       if (event.target.checked) {
-        const firstWithLayout = filteredObjects().find(item => String(item.layoutPhoto || "").trim());
-        if (firstWithLayout) {
-          selectedId = firstWithLayout.externalId;
-          selectBrandLayoutFromObject(firstWithLayout);
-        }
+        checkedIds = new Set(objects.map(item => item.externalId));
+        const firstObject = objects[0] || null;
+        selectedId = firstObject?.externalId || "";
+        const firstWithLayout = objects.find(item => String(item.layoutPhoto || "").trim());
+        if (firstWithLayout) selectBrandLayoutFromObject(firstWithLayout);
+      } else {
+        checkedIds = new Set();
+        selectedId = "";
       }
       renderAll();
     });
