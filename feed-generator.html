@@ -1975,7 +1975,8 @@
       grid-column: 1 / 4;
     }
 
-    .bulk-panel #bulkValue {
+    .bulk-panel #bulkValue,
+    .bulk-panel #bulkValueSelect {
       width: 100%;
     }
 
@@ -3124,6 +3125,144 @@
       line-height: 1.45;
     }
 
+    .before-after-panel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(260px, .9fr);
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--site-gray);
+    }
+
+    .comparison-card {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .comparison-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .comparison-image {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 170px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f3f3f5;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .comparison-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .photo-order-list {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .photo-order-list li {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+      color: var(--muted-strong);
+      font-size: 12px;
+    }
+
+    .photo-order-list b {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #111116;
+      color: #fff;
+      font-size: 11px;
+    }
+
+    .photo-order-list span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .change-log-panel {
+      margin-bottom: 22px;
+      padding: 18px;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      box-shadow: 9px 9px 0 rgba(17, 17, 22, .08);
+    }
+
+    .change-log-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .change-log-head .panel-title { margin: 0; }
+    .change-log-head .panel-caption { margin: 4px 0 0; }
+
+    .change-log-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .change-log-item {
+      display: grid;
+      grid-template-columns: minmax(170px, .7fr) minmax(260px, 1.5fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      background: var(--site-gray);
+    }
+
+    .change-log-item strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .change-log-item span,
+    .change-log-empty {
+      color: var(--muted-strong);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .change-log-item time {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .change-log-empty {
+      padding: 16px;
+      border: 1px dashed var(--line-strong);
+      text-align: center;
+    }
+
     .brand-controls {
       display: grid;
       grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(110px, .55fr)) minmax(220px, .9fr) auto minmax(230px, auto);
@@ -3532,6 +3671,7 @@
       .layout-upload .field:nth-child(5) { grid-column: span 2; }
       .layout-branding,
       .brand-preview { grid-template-columns: 1fr; }
+      .before-after-panel { grid-template-columns: 1fr; }
       .brand-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .brand-controls .layout-file-control,
       #insertBrandPhotoBtn { grid-column: 1 / -1; }
@@ -3563,6 +3703,8 @@
       .table-headline { padding-inline: 14px; }
       .table-wrap .panel-caption { padding-inline: 14px; }
       .bulk-panel { grid-template-columns: 1fr; }
+      .change-log-item { grid-template-columns: 1fr; gap: 5px; }
+      .change-log-head { align-items: stretch; }
       .layout-upload,
       .layout-toolbar { grid-template-columns: 1fr; }
       .layout-upload .field:nth-child(n),
@@ -4041,6 +4183,7 @@
         <div class="field bulk-value-field">
           <label for="bulkValue">Значение</label>
           <input id="bulkValue" placeholder="Например: новый текст, ссылка или 5 для цены +5%">
+          <select id="bulkValueSelect" hidden></select>
           <div class="bulk-status" id="bulkStatus">Сначала отметьте объекты галочками в таблице.</div>
         </div>
         <button id="applyBulkBtn" class="primary">Применить к выбранным</button>
@@ -4104,7 +4247,19 @@
               <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
+          <div class="before-after-panel" id="beforeAfterPreview" aria-live="polite"></div>
         </div>
+      </section>
+
+      <section class="change-log-panel" data-page="objects">
+        <div class="change-log-head">
+          <div>
+            <h2 class="panel-title">Что изменено</h2>
+            <div class="panel-caption">Краткая история правок текущего фида перед проверкой и выгрузкой.</div>
+          </div>
+          <button id="clearChangeLogBtn" type="button">Очистить историю</button>
+        </div>
+        <div class="change-log-list" id="changeLogList" aria-live="polite"></div>
       </section>
 
       <section class="quality-panel" data-page="objects">
@@ -4299,6 +4454,7 @@
     const publishedStorageKey = "feed-generator-published-v1";
     const brandProfilesStorageKey = "feed-generator-brand-profiles-v1";
     const monitoredStorageKey = "feed-generator-monitor-v1";
+    const changeLogStorageKey = "feed-generator-change-log-v1";
     const bulkSections = {
       main: {
         label: "Основное",
@@ -4345,6 +4501,23 @@
           ["photos", "Фото"]
         ]
       }
+    };
+    const fieldValueOptions = {
+      decoration: [
+        ["preFine", "Предчистовая"],
+        ["fine", "Чистовая"],
+        ["without", "Без отделки"]
+      ],
+      isApartments: [
+        ["false", "Нет"],
+        ["true", "Да"]
+      ],
+      quarter: [
+        ["first", "1 квартал"],
+        ["second", "2 квартал"],
+        ["third", "3 квартал"],
+        ["fourth", "4 квартал"]
+      ]
     };
     const platformProfiles = {
       cian: {
@@ -4444,6 +4617,7 @@
     let brandBadgeFileName = "";
     let selectedBrandLayoutUrls = new Set();
     let brandSelectionTouched = false;
+    let groupEditorSnapshot = null;
     let brandDragState = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
@@ -4451,6 +4625,8 @@
     let activeBrandProjectKey = "all";
     let brandProfileHydrating = false;
     let brandProfiles = loadBrandProfiles();
+    let changeLog = loadChangeLog();
+    let pendingSingleEdit = null;
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -4557,6 +4733,65 @@
       appState.serverBaseUrl = document.querySelector("#serverBaseUrl")?.value || appState.serverBaseUrl || "";
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+    }
+
+    function loadChangeLog() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(changeLogStorageKey));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveChangeLog() {
+      localStorage.setItem(changeLogStorageKey, JSON.stringify(changeLog.slice(0, 30)));
+    }
+
+    function addChangeLog(title, details) {
+      changeLog.unshift({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        title,
+        details,
+        createdAt: new Date().toISOString()
+      });
+      changeLog = changeLog.slice(0, 30);
+      saveChangeLog();
+      renderChangeLog();
+    }
+
+    function clearChangeLog() {
+      changeLog = [];
+      pendingSingleEdit = null;
+      saveChangeLog();
+      renderChangeLog();
+    }
+
+    function formatChangeTime(value) {
+      return new Date(value).toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function renderChangeLog() {
+      const list = document.querySelector("#changeLogList");
+      const clearButton = document.querySelector("#clearChangeLogBtn");
+      if (!list) return;
+      if (clearButton) clearButton.disabled = !changeLog.length;
+      if (!changeLog.length) {
+        list.innerHTML = `<div class="change-log-empty">Правок пока нет. Здесь появятся массовые изменения, редактирование карточек и добавление брендированных планировок.</div>`;
+        return;
+      }
+      list.innerHTML = changeLog.slice(0, 8).map(entry => `
+        <div class="change-log-item">
+          <strong>${escapeXml(entry.title)}</strong>
+          <span>${escapeXml(entry.details)}</span>
+          <time datetime="${escapeXml(entry.createdAt)}">${escapeXml(formatChangeTime(entry.createdAt))}</time>
+        </div>
+      `).join("");
     }
 
     function loadBrandProfiles() {
@@ -5838,6 +6073,7 @@
         const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
         invalidateGeneratedLink();
         save();
+        addChangeLog("Брендированные планировки", `Готовые JPG-макеты добавлены первым изображением у ${updatedCount} объектов.`);
         await loadLayouts({ silent: true });
         renderAll();
         showToast(`Первое фото добавлено к ${updatedCount} объектам`);
@@ -6125,16 +6361,60 @@
       updateBulkMode();
     }
 
+    function fieldLabel(field) {
+      for (const section of Object.values(bulkSections)) {
+        const match = section.fields.find(([id]) => id === field);
+        if (match) return match[1];
+      }
+      return field;
+    }
+
     function selectedItem() {
       if (!selectedId) return null;
       return objects.find(item => item.externalId === selectedId) || null;
     }
 
+    function checkedObjects() {
+      return objects.filter(item => checkedIds.has(item.externalId));
+    }
+
+    function commonValue(items, field) {
+      const values = [...new Set(items.map(item => String(item[field] ?? "")))];
+      return values.length === 1 ? values[0] : "";
+    }
+
+    function ensureSelectMixedOption(select) {
+      if (!select.querySelector('option[value=""]')) {
+        select.insertAdjacentHTML("afterbegin", `<option value="">Разные значения</option>`);
+      }
+    }
+
     function fillForm() {
+      const checked = checkedObjects();
+      if (checked.length > 1) {
+        groupEditorSnapshot = {};
+        document.querySelector(".editor").classList.add("has-selection");
+        Array.from(form.elements).forEach(el => {
+          if (!el.name) return;
+          const value = el.name === "externalId" ? "" : commonValue(checked, el.name);
+          if (el.tagName === "SELECT" && value === "") ensureSelectMixedOption(el);
+          el.value = value;
+          el.disabled = el.name === "externalId";
+          if (el.placeholder !== undefined && value === "") el.placeholder = "Разные значения";
+          groupEditorSnapshot[el.name] = value;
+        });
+        document.querySelector("#selectedHint").textContent = `Редактируется ${checked.length} выбранных объектов`;
+        document.querySelector("#editorStatus").textContent = "Измените справа только поля, которые нужно применить ко всем выбранным";
+        validation.innerHTML = "";
+        preview.textContent = buildXml(checked.slice(0, 3), activePlatform);
+        return;
+      }
+      groupEditorSnapshot = null;
       const item = selectedItem();
       if (!item) {
         Array.from(form.elements).forEach(el => {
           if (el.name) el.value = "";
+          el.disabled = false;
         });
         document.querySelector(".editor").classList.remove("has-selection");
         document.querySelector("#selectedHint").textContent = objects.length ? "Выберите объект в таблице" : "Объекты не найдены";
@@ -6146,7 +6426,9 @@
       document.querySelector(".editor").classList.add("has-selection");
       selectedId = item.externalId;
       Array.from(form.elements).forEach(el => {
-        if (el.name) el.value = item[el.name] ?? "";
+        if (!el.name) return;
+        el.disabled = false;
+        el.value = item[el.name] ?? "";
       });
       document.querySelector("#selectedHint").textContent = `Редактируется ID ${item.externalId}`;
       document.querySelector("#editorStatus").textContent = "Автосохранение включено";
@@ -6166,16 +6448,27 @@
       window.clearTimeout(scheduleSave.timer);
       scheduleSave.timer = window.setTimeout(() => {
         save();
+        if (pendingSingleEdit?.fields?.size) {
+          const labels = [...pendingSingleEdit.fields].map(fieldLabel).join(", ");
+          addChangeLog(`Карточка ${pendingSingleEdit.id}`, `Изменены поля: ${labels}.`);
+          pendingSingleEdit = null;
+        }
         setEditorStatus("Сохранено локально");
       }, 220);
     }
 
     function updateSelectedFromForm() {
+      if (checkedIds.size > 1) return updateCheckedFromForm();
       const existingIndex = objects.findIndex(item => item.externalId === selectedId);
       if (existingIndex < 0) return collectForm();
       const previousId = selectedId;
       const draft = collectForm();
       if (!String(draft.externalId || "").trim()) draft.externalId = previousId;
+      const changedFields = Object.keys(draft).filter(field => String(draft[field] ?? "") !== String(objects[existingIndex][field] ?? ""));
+      if (changedFields.length) {
+        if (!pendingSingleEdit || pendingSingleEdit.id !== previousId) pendingSingleEdit = { id: previousId, fields: new Set() };
+        changedFields.forEach(field => pendingSingleEdit.fields.add(field));
+      }
       objects[existingIndex] = draft;
       selectedId = draft.externalId;
       if (checkedIds.has(previousId)) {
@@ -6187,6 +6480,32 @@
       setEditorStatus("Сохраняю...");
       scheduleSave();
       return draft;
+    }
+
+    function updateCheckedFromForm() {
+      const snapshot = groupEditorSnapshot || {};
+      const entries = Object.entries(collectForm()).filter(([field, value]) => {
+        if (field === "externalId") return false;
+        return String(value || "").trim() && String(value) !== String(snapshot[field] ?? "");
+      });
+      if (!entries.length) {
+        setEditorStatus("Нет изменений для выбранных объектов");
+        return { __groupEdit: true, message: "Нет изменений для выбранных объектов" };
+      }
+      const changedFields = entries.map(([field]) => field);
+      objects = objects.map(item => {
+        if (!checkedIds.has(item.externalId)) return item;
+        return entries.reduce((next, [field, value]) => ({ ...next, [field]: value }), { ...item });
+      });
+      invalidateGeneratedLink();
+      renderResetControl();
+      save();
+      const labels = changedFields.map(fieldLabel).join(", ");
+      addChangeLog("Групповая правка", `${labels}: обновлено ${checkedIds.size} выбранных объектов.`);
+      setEditorStatus(`Изменено: ${labels} у ${checkedIds.size} объектов`);
+      showToast(`Обновлено ${checkedIds.size} объектов: ${labels}`);
+      groupEditorSnapshot = null;
+      return { __groupEdit: true, message: `Изменено: ${labels} у ${checkedIds.size} объектов` };
     }
 
     function renderValidation(item = selectedItem()) {
@@ -6220,9 +6539,17 @@
       const field = document.querySelector("#bulkField").value;
       const mode = document.querySelector("#bulkMode");
       const value = document.querySelector("#bulkValue");
+      const valueSelect = document.querySelector("#bulkValueSelect");
       const isPricePercent = field === "pricePercent";
+      const options = fieldValueOptions[field];
       mode.disabled = isPricePercent;
-      value.placeholder = isPricePercent ? "Например: 5 для +5% или -3 для скидки 3%" : "Новый текст, ссылка или значение";
+      value.hidden = Boolean(options);
+      valueSelect.hidden = !options;
+      if (options) {
+        valueSelect.innerHTML = options.map(([id, label]) => `<option value="${escapeXml(id)}">${escapeXml(label)}</option>`).join("");
+      } else {
+        value.placeholder = isPricePercent ? "Например: 5 для +5% или -3 для скидки 3%" : "Новый текст, ссылка или значение";
+      }
     }
 
     function resetChanges() {
@@ -6237,6 +6564,7 @@
       selectedBrandLayoutUrls = new Set();
       brandSelectionTouched = false;
       validated = false;
+      clearChangeLog();
       invalidateGeneratedLink();
       save();
       renderAll();
@@ -6246,7 +6574,9 @@
     function applyBulkChange() {
       const field = document.querySelector("#bulkField").value;
       const mode = document.querySelector("#bulkMode").value;
-      const value = document.querySelector("#bulkValue").value;
+      const valueInput = document.querySelector("#bulkValue");
+      const valueSelect = document.querySelector("#bulkValueSelect");
+      const value = valueSelect.hidden ? valueInput.value : valueSelect.value;
       if (!checkedIds.size) {
         alert("Сначала выберите объекты галочками.");
         return;
@@ -6255,24 +6585,34 @@
         alert("Введите значение для массового изменения.");
         return;
       }
+      let changedCount = 0;
       objects = objects.map(item => {
         if (!checkedIds.has(item.externalId)) return item;
         const next = { ...item };
         if (field === "pricePercent") {
+          const before = String(next.price ?? "");
           const percent = Number(value.replace(",", "."));
           if (!Number.isFinite(percent)) return next;
           next.price = String(Math.round(numberValue(next.price) * (1 + percent / 100)));
+          if (String(next.price) !== before) changedCount += 1;
           return next;
         }
+        const before = String(next[field] ?? "");
         if (mode === "append") next[field] = `${next[field] || ""}${next[field] ? "\n" : ""}${value}`;
         else if (mode === "prepend") next[field] = `${value}${next[field] ? "\n" : ""}${next[field] || ""}`;
         else next[field] = value;
+        if (String(next[field] ?? "") !== before) changedCount += 1;
         return next;
       });
       invalidateGeneratedLink();
       save();
       renderAll();
-      showToast(`Массовая правка применена к ${checkedIds.size} объектам`);
+      const label = field === "pricePercent" ? "Цена" : fieldLabel(field);
+      addChangeLog("Массовая правка", `Поле «${label}» изменено у ${changedCount} из ${checkedIds.size} выбранных объектов.`);
+      const status = document.querySelector("#bulkStatus");
+      if (status) status.textContent = `Готово: поле «${label}» изменено у ${changedCount} из ${checkedIds.size} выбранных объектов.`;
+      setEditorStatus(`Массовая правка: ${label}, изменено ${changedCount}`);
+      showToast(`Изменено ${changedCount} объектов: ${label}`);
     }
 
     function buildXml(items = objects, platform = activePlatform) {
@@ -6297,6 +6637,48 @@
       const otherPhotos = photos.filter(url => !isBrandedLayoutUrl(url));
       if (branded.length) return [...branded, layout, ...otherPhotos].filter(Boolean);
       return [layout, ...photos].filter(Boolean);
+    }
+
+    function renderBeforeAfterPreview() {
+      const panel = document.querySelector("#beforeAfterPreview");
+      if (!panel) return;
+      const item = selectedItem() || brandPreviewTarget();
+      if (!item) {
+        panel.innerHTML = `<div class="change-log-empty">Выберите объект с планировкой, чтобы сравнить исходное и итоговое изображения.</div>`;
+        return;
+      }
+      const original = originalObjects.find(source => source.externalId === item.externalId) || item;
+      const sourceUrl = String(original.layoutPhoto || item.layoutPhoto || "").trim();
+      const brandedUrl = photoList(item).find(isBrandedLayoutUrl) || "";
+      const imageOrder = feedImageList(item).slice(0, 4);
+      const imageCard = (title, url, emptyText) => `
+        <div class="comparison-card">
+          <strong>${escapeXml(title)}</strong>
+          <div class="comparison-image">
+            ${url
+              ? `<img src="${escapeXml(proxyImageUrl(url))}" alt="${escapeXml(title)}" loading="lazy">`
+              : escapeXml(emptyText)}
+          </div>
+        </div>
+      `;
+      const orderItems = imageOrder.length
+        ? imageOrder.map((url, index) => {
+            const label = isBrandedLayoutUrl(url)
+              ? "Брендированная планировка"
+              : url === item.layoutPhoto
+                ? "Исходная планировка"
+                : "Фото объекта";
+            return `<li title="${escapeXml(url)}"><b>${index + 1}</b><span>${escapeXml(label)}</span></li>`;
+          }).join("")
+        : `<li><span>Изображений пока нет</span></li>`;
+      panel.innerHTML = `
+        ${imageCard("До: исходная планировка", sourceUrl, "У объекта нет исходной планировки")}
+        ${imageCard("После: первое фото", brandedUrl, "Нажмите «Сделать первым изображением», чтобы создать макет")}
+        <div class="comparison-card">
+          <strong>Порядок изображений в фиде</strong>
+          <ol class="photo-order-list">${orderItems}</ol>
+        </div>
+      `;
     }
 
     function buildCianXml(items = objects) {
@@ -6464,6 +6846,8 @@ ${photos}
       syncBrandProfileWithCurrentFeed();
       renderBrandLayoutPicker();
       renderBrandPreview();
+      renderBeforeAfterPreview();
+      renderChangeLog();
       renderPage();
     }
 
@@ -6606,6 +6990,7 @@ ${photos}
         appState.feedName = defaultFeedName(url);
         appState.generatedLink = "";
         appState.generatedFeedId = "";
+        clearChangeLog();
         document.querySelector("#feedName").value = appState.feedName;
         save();
         renderAll();
@@ -6871,14 +7256,20 @@ ${photos}
     form.addEventListener("submit", event => {
       event.preventDefault();
       if (!selectedItem()) return;
+      const groupCount = checkedIds.size > 1 ? checkedIds.size : 0;
       const current = updateSelectedFromForm();
       save();
       renderAll();
-      showToast(`Карточка ${current.externalId} сохранена`);
+      if (groupCount) setEditorStatus(current.message);
+      else showToast(`Карточка ${current.externalId} сохранена`);
     });
 
     form.addEventListener("input", () => {
       if (!selectedItem()) return;
+      if (checkedIds.size > 1) {
+        setEditorStatus("Есть несохраненные групповые изменения");
+        return;
+      }
       const draft = updateSelectedFromForm();
       preview.textContent = buildXml([draft], activePlatform);
       renderValidation(draft);
@@ -6886,20 +7277,27 @@ ${photos}
       renderQualitySummary();
     });
 
+    form.addEventListener("change", () => {
+      if (checkedIds.size > 1) setEditorStatus("Есть несохраненные групповые изменения");
+    });
+
     document.querySelector("#duplicateBtn").addEventListener("click", () => {
       if (!selectedItem()) return;
       const copy = { ...collectForm(), externalId: `${collectForm().externalId}-copy` };
       objects.unshift(copy);
       selectedId = copy.externalId;
+      addChangeLog("Объект создан", `Создана копия объекта с ID ${copy.externalId}.`);
       save();
       renderAll();
     });
 
     document.querySelector("#deleteBtn").addEventListener("click", () => {
       if (!selectedItem() || !confirm("Удалить выбранный объект?")) return;
+      const deletedId = selectedId;
       objects = objects.filter(item => item.externalId !== selectedId);
       checkedIds.delete(selectedId);
       selectedId = "";
+      addChangeLog("Объект удален", `Из фида удален объект с ID ${deletedId}.`);
       save();
       renderAll();
     });
@@ -7069,6 +7467,7 @@ ${photos}
     });
     document.querySelector("#downloadBtn").addEventListener("click", downloadXml);
     document.querySelector("#resetChangesBtn").addEventListener("click", resetChanges);
+    document.querySelector("#clearChangeLogBtn").addEventListener("click", clearChangeLog);
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
     document.querySelector("#loadUrlBtn").addEventListener("click", loadFeedFromUrl);
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
@@ -7114,6 +7513,7 @@ ${photos}
         appState.feedName = defaultFeedName(file.name);
         appState.generatedLink = "";
         appState.generatedFeedId = "";
+        clearChangeLog();
         document.querySelector("#feedName").value = appState.feedName;
         save();
         renderAll();
