@@ -4597,6 +4597,9 @@
             <option value="preFine">Предчистовая</option>
             <option value="fine">Чистовая</option>
             <option value="without">Без отделки</option>
+            <option value="repair">Ремонт</option>
+            <option value="repairBeige">Ремонт бежевый</option>
+            <option value="repairGray">Ремонт серый</option>
           </select>
         </div>
         <div class="field">
@@ -4604,6 +4607,24 @@
           <select id="isApartments" name="isApartments">
             <option value="false">Нет</option>
             <option value="true">Да</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="balconyOrLoggia">Балкон или лоджия для Авито</label>
+          <select id="balconyOrLoggia" name="balconyOrLoggia">
+            <option value="">Не указано</option>
+            <option value="Балкон">Балкон</option>
+            <option value="Лоджия">Лоджия</option>
+            <option value="Балкон, Лоджия">Балкон и лоджия</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bathroomType">Санузел для Авито</label>
+          <select id="bathroomType" name="bathroomType">
+            <option value="">Не указано</option>
+            <option value="Совмещенный">Совмещенный</option>
+            <option value="Раздельный">Раздельный</option>
+            <option value="Совмещенный, Раздельный">Совмещенный и раздельный</option>
           </select>
         </div>
 
@@ -4736,7 +4757,9 @@
           ["totalArea", "Общая площадь"],
           ["livingArea", "Жилая площадь"],
           ["decoration", "Отделка"],
-          ["isApartments", "Апартаменты"]
+          ["isApartments", "Апартаменты"],
+          ["balconyOrLoggia", "Балкон или лоджия для Авито"],
+          ["bathroomType", "Санузел для Авито"]
         ]
       },
       building: {
@@ -4770,11 +4793,26 @@
         ["rough", "Черновая"],
         ["preFine", "Предчистовая"],
         ["fine", "Чистовая"],
-        ["without", "Без отделки"]
+        ["without", "Без отделки"],
+        ["repair", "Ремонт"],
+        ["repairBeige", "Ремонт бежевый"],
+        ["repairGray", "Ремонт серый"]
       ],
       isApartments: [
         ["false", "Нет"],
         ["true", "Да"]
+      ],
+      balconyOrLoggia: [
+        ["", "Не указано"],
+        ["Балкон", "Балкон"],
+        ["Лоджия", "Лоджия"],
+        ["Балкон, Лоджия", "Балкон и лоджия"]
+      ],
+      bathroomType: [
+        ["", "Не указано"],
+        ["Совмещенный", "Совмещенный"],
+        ["Раздельный", "Раздельный"],
+        ["Совмещенный, Раздельный", "Совмещенный и раздельный"]
       ],
       quarter: [
         ["first", "1 квартал"],
@@ -5232,6 +5270,16 @@
         label: "Корпус Avito",
         log: "Не заполнен DevelopmentsBuildingName и не найдено резервное название корпуса.",
         fix: "Укажите корпус точно так, как он записан в справочнике новостройки Avito."
+      },
+      balconyOrLoggia: {
+        label: "Балкон или лоджия Avito",
+        log: "BalconyOrLoggiaMulti содержит значение вне списка, используемого генератором.",
+        fix: "Выберите «Балкон», «Лоджия» или вариант с обоими значениями."
+      },
+      bathroomType: {
+        label: "Санузел Avito",
+        log: "BathroomMulti содержит неподдерживаемый вариант санузла.",
+        fix: "Выберите «Совмещенный», «Раздельный» или вариант с обоими значениями."
       }
     };
 
@@ -5253,6 +5301,7 @@
       ];
       if (activePlatform === "avito") {
         rules.push(
+          ["address", "адрес"],
           ["description", "Описание"],
           ["floorsCount", "этажность дома"],
           ["houseType", "Тип дома Avito"],
@@ -5265,11 +5314,15 @@
       if (activePlatform === "yandex") rules.push(["buildingName", "корпус или дом"]);
       const missing = rules.filter(([key]) => !String(item[key] || "").trim()).map(([, label]) => label);
       if (activePlatform === "avito") {
-        const allowedHouseTypes = ["Монолитный", "Монолитно-кирпичный", "Кирпичный", "Панельный", "Блочный", "Деревянный"];
-        const allowedDecorations = ["rough", "preFine", "fine", "without", "Черновая", "Предчистовая", "Чистовая", "Без отделки"];
-        if (item.houseType && !allowedHouseTypes.includes(item.houseType)) missing.push("Тип дома Avito");
+        const allowedHouseTypes = ["монолитный", "монолитно-кирпичный", "кирпичный", "панельный", "блочный", "деревянный"];
+        const allowedDecorations = [
+          "rough", "preFine", "fine", "without", "repair", "repairBeige", "repairGray",
+          "Черновая", "Предчистовая", "Чистовая", "Без отделки", "Ремонт", "Ремонт бежевый", "Ремонт серый"
+        ];
+        if (item.houseType && !allowedHouseTypes.includes(String(item.houseType).toLowerCase())) missing.push("Тип дома Avito");
         if (item.decoration && !allowedDecorations.includes(item.decoration)) missing.push("Отделка Avito");
-        if (!String(item.avitoBuildingName || item.buildingName || "").trim()) missing.push("Корпус Avito");
+        if (item.balconyOrLoggia && !["Балкон", "Лоджия", "Балкон, Лоджия"].includes(item.balconyOrLoggia)) missing.push("Балкон или лоджия Avito");
+        if (item.bathroomType && !["Совмещенный", "Раздельный", "Совмещенный, Раздельный"].includes(item.bathroomType)) missing.push("Санузел Avito");
         const phoneDigits = String(item.phone || "").replace(/\D/g, "");
         if (item.phone && !(/^7\d{10}$/.test(phoneDigits) || /^8\d{10}$/.test(phoneDigits) || /^\d{10}$/.test(phoneDigits))) missing.push("телефон");
       }
@@ -7209,21 +7262,31 @@ ${images}
       const body = items.map(item => {
         const images = feedImageList(item).map(url => `      <Image url="${escapeXml(url)}"/>`).join("\n");
         const status = String(item.isApartments) === "true" ? "Апартаменты" : "Квартира";
-        const decoration = { rough: "Черновая", preFine: "Предчистовая", fine: "Чистовая", without: "Без отделки" }[item.decoration] || item.decoration || "";
+        const decoration = {
+          rough: "Черновая", preFine: "Предчистовая", fine: "Чистовая", without: "Без отделки",
+          repair: "Ремонт", repairBeige: "Ремонт бежевый", repairGray: "Ремонт серый"
+        }[item.decoration] || item.decoration || "";
         const contactPhone = String(item.phone || "").replace(/[^\d]/g, "").replace(/^8/, "7").replace(/^([^7])/, "7$1");
+        const multiOptions = (tag, value) => {
+          const options = String(value || "").split(",").map(option => option.trim()).filter(Boolean);
+          return options.length ? `    <${tag}>\n${options.map(option => `      <Option>${escapeXml(option)}</Option>`).join("\n")}\n    </${tag}>` : "";
+        };
         return `  <Ad>
     <Description><![CDATA[${cdata(item.description || "")}]]></Description>
     <Images>
 ${images}
     </Images>
-    <Category>Квартиры</Category>
     <Id>${escapeXml(item.externalId || "")}</Id>
+    <ContactMethod>По телефону</ContactMethod>
+    <ManagerName>Отдел продаж</ManagerName>
     <ContactPhone>+${escapeXml(contactPhone)}</ContactPhone>
-    <ContactMethod>По телефону и в сообщениях</ContactMethod>
+    <Category>Квартиры</Category>
+    <Address>${escapeXml(item.address || "")}</Address>
     <Price>${escapeXml(item.price || "")}</Price>
     <OperationType>Продам</OperationType>
+${multiOptions("BalconyOrLoggiaMulti", item.balconyOrLoggia)}
     <MarketType>Новостройка</MarketType>
-    <HouseType>${escapeXml(item.houseType || "")}</HouseType>
+    <HouseType>${escapeXml(String(item.houseType || "").toLowerCase())}</HouseType>
     <Floor>${escapeXml(item.floor || "")}</Floor>
     <Floors>${escapeXml(item.floorsCount || "")}</Floors>
     <Rooms>${escapeXml(item.rooms || "")}</Rooms>
@@ -7231,11 +7294,13 @@ ${images}
     ${item.livingArea ? `<LivingSpace>${escapeXml(item.livingArea)}</LivingSpace>` : ""}
     ${item.flatNumber ? `<ApartmentNumber>${escapeXml(item.flatNumber)}</ApartmentNumber>` : ""}
     <Status>${status}</Status>
+${multiOptions("BathroomMulti", item.bathroomType)}
     ${item.ceilingHeight ? `<CeilingHeight>${escapeXml(item.ceilingHeight)}</CeilingHeight>` : ""}
     <NewDevelopmentId>${escapeXml(item.avitoNewDevelopmentId || "")}</NewDevelopmentId>
-    <DevelopmentsBuildingName>${escapeXml(item.avitoBuildingName || item.buildingName || "")}</DevelopmentsBuildingName>
+    ${item.avitoBuildingName ? `<DevelopmentsBuildingName>${escapeXml(item.avitoBuildingName)}</DevelopmentsBuildingName>` : ""}
     <PropertyRights>Застройщик</PropertyRights>
     <Decoration>${escapeXml(decoration)}</Decoration>
+    <AdStatus>Free</AdStatus>
   </Ad>`;
       }).join("\n");
       return `<?xml version="1.0" encoding="UTF-8"?>\n<Ads formatVersion="3" target="Avito.ru">\n${body}\n</Ads>\n`;
@@ -7281,7 +7346,7 @@ ${photos}
 
       const required = platform === "avito"
         ? [
-            ["externalId", "Id"], ["description", "Description"],
+            ["externalId", "Id"], ["address", "Address"], ["description", "Description"],
             ["price", "Price"], ["rooms", "Rooms"], ["totalArea", "Square"],
             ["floor", "Floor"], ["floorsCount", "Floors"], ["phone", "ContactPhone"],
             ["houseType", "HouseType"], ["decoration", "Decoration"],
@@ -7304,17 +7369,23 @@ ${photos}
         const ads = [...parsed.querySelectorAll("Ads > Ad")];
         const allowed = {
           MarketType: ["Новостройка"],
-          HouseType: ["Монолитный", "Монолитно-кирпичный", "Кирпичный", "Панельный", "Блочный", "Деревянный"],
+          HouseType: ["монолитный", "монолитно-кирпичный", "кирпичный", "панельный", "блочный", "деревянный"],
           Status: ["Квартира", "Апартаменты"],
-          Decoration: ["Черновая", "Предчистовая", "Чистовая", "Без отделки"]
+          Decoration: ["Черновая", "Предчистовая", "Чистовая", "Без отделки", "Ремонт", "Ремонт бежевый", "Ремонт серый"]
         };
         Object.entries(allowed).forEach(([tag, values]) => {
           const badIds = ads.filter(ad => !values.includes(ad.querySelector(tag)?.textContent?.trim() || ""))
             .map(ad => ad.querySelector("Id")?.textContent || "без ID");
           if (badIds.length) add("error", `Авито: неверный ${tag}`, `Допустимые значения: ${values.join(", ")}.`, badIds);
         });
-        const noBuilding = objects.filter(item => !String(item.avitoBuildingName || item.buildingName || "").trim());
-        if (noBuilding.length) add("error", "Не заполнено поле DevelopmentsBuildingName", "Укажите название корпуса так, как оно заведено в справочнике новостройки Авито.", noBuilding.map(item => item.externalId || "без ID"));
+        const optionalLists = {
+          balconyOrLoggia: ["Балкон", "Лоджия", "Балкон, Лоджия"],
+          bathroomType: ["Совмещенный", "Раздельный", "Совмещенный, Раздельный"]
+        };
+        Object.entries(optionalLists).forEach(([field, values]) => {
+          const invalid = objects.filter(item => item[field] && !values.includes(item[field]));
+          if (invalid.length) add("error", `Авито: неверный ${field === "balconyOrLoggia" ? "BalconyOrLoggiaMulti" : "BathroomMulti"}`, `Допустимые значения: ${values.join(", ")}.`, invalid.map(item => item.externalId || "без ID"));
+        });
         const badPhones = objects.filter(item => {
           const digits = String(item.phone || "").replace(/\D/g, "");
           return !(/^7\d{10}$/.test(digits) || /^8\d{10}$/.test(digits) || /^\d{10}$/.test(digits));
@@ -7716,6 +7787,29 @@ ${photos}
       return "cian";
     }
 
+    function inferBalconyOrLoggia(node) {
+      const explicit = Array.from(node.querySelectorAll("BalconyOrLoggiaMulti > Option")).map(option => option.textContent.trim()).filter(Boolean);
+      if (explicit.length) return explicit.join(", ");
+      const values = [];
+      if (numberValue(textOf(node, ["BalconiesCount", "BalconyCount"])) > 0) values.push("Балкон");
+      if (numberValue(textOf(node, ["LoggiasCount", "LoggiaCount"])) > 0) values.push("Лоджия");
+      return values.join(", ");
+    }
+
+    function inferBathroomType(node) {
+      const explicit = Array.from(node.querySelectorAll("BathroomMulti > Option")).map(option => option.textContent.trim()).filter(Boolean);
+      if (explicit.length) return explicit.join(", ");
+      const values = [];
+      if (numberValue(textOf(node, ["CombinedWcsCount", "CombinedBathroomsCount"])) > 0) values.push("Совмещенный");
+      if (numberValue(textOf(node, ["SeparateWcsCount", "SeparateBathroomsCount"])) > 0) values.push("Раздельный");
+      return values.join(", ");
+    }
+
+    function normalizeHouseTypeForEditor(value = "") {
+      const normalized = String(value).trim().toLowerCase();
+      return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "";
+    }
+
     function parseXmlFile(text, sourceUrl = "") {
       const doc = new DOMParser().parseFromString(text, "application/xml");
       const parseError = doc.querySelector("parsererror");
@@ -7734,6 +7828,8 @@ ${photos}
         photos: Array.from(node.querySelectorAll("Photos PhotoSchema FullUrl, Images Image, image, Photo")).map(el => el.getAttribute("url") || el.textContent.trim()).filter(Boolean).join("\n"),
         rooms: textOf(node, ["FlatRoomsCount", "Rooms", "rooms"]),
         isApartments: node.querySelector("IsApartments")?.textContent || "false",
+        balconyOrLoggia: inferBalconyOrLoggia(node),
+        bathroomType: inferBathroomType(node),
         floor: textOf(node, ["FloorNumber", "Floor", "floor"]),
         complexId: textOf(node, ["JKSchema > Id"]),
         complexName: textOf(node, ["JKSchema > Name", "ComplexName", "building-name"]),
@@ -7741,9 +7837,12 @@ ${photos}
         flatNumber: textOf(node, ["FlatNumber"]),
         sectionNumber: textOf(node, ["SectionNumber", "building-section"]),
         developer: textOf(node, ["Developer", "PropertyRights", "sales-agent organization"]),
-        decoration: ({ "Черновая": "rough", "Предчистовая": "preFine", "Чистовая": "fine", "Без отделки": "without" }[node.querySelector("Decoration")?.textContent?.trim()] || node.querySelector("Decoration")?.textContent?.trim() || "preFine"),
+        decoration: ({
+          "Черновая": "rough", "Предчистовая": "preFine", "Чистовая": "fine", "Без отделки": "without",
+          "Ремонт": "repair", "Ремонт бежевый": "repairBeige", "Ремонт серый": "repairGray"
+        }[node.querySelector("Decoration")?.textContent?.trim()] || node.querySelector("Decoration")?.textContent?.trim() || "preFine"),
         buildingName: textOf(node, ["Building > Name", "building-name", "ComplexName"]),
-        houseType: textOf(node, ["HouseType", "building-type"]),
+        houseType: normalizeHouseTypeForEditor(textOf(node, ["HouseType", "building-type"])),
         avitoNewDevelopmentId: textOf(node, ["NewDevelopmentId"]),
         avitoBuildingName: textOf(node, ["DevelopmentsBuildingName"]),
         floorsCount: textOf(node, ["FloorsCount", "Floors", "floors-total", "FloorsTotal"]),
