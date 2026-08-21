@@ -1346,20 +1346,23 @@
     }
 
     .app.feeds-mode,
-    .app.layouts-mode {
+    .app.layouts-mode,
+    .app.validator-mode {
       grid-template-columns: 188px minmax(0, 1fr);
     }
 
     .app.feeds-mode .main,
-    .app.layouts-mode .main {
+    .app.layouts-mode .main,
+    .app.validator-mode .main {
       grid-column: 2 / -1;
       border-right: 0;
     }
 
     .app.feeds-mode .editor,
     .app.layouts-mode .editor,
+    .app.validator-mode .editor,
     .page-hidden {
-      display: none;
+      display: none !important;
     }
 
     .resolved-hidden {
@@ -1488,6 +1491,109 @@
       align-items: end;
       margin-bottom: 14px;
       flex: 1 1 620px;
+    }
+
+    .validator-panel {
+      display: grid;
+      gap: 18px;
+      padding: 22px;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(20, 16, 27, .11);
+    }
+
+    .validator-toolbar {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: var(--site-gray);
+    }
+
+    .validator-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .validator-stat {
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .validator-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 760;
+      text-transform: uppercase;
+    }
+
+    .validator-stat strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .validator-results {
+      display: grid;
+      gap: 10px;
+    }
+
+    .validator-result {
+      display: grid;
+      grid-template-columns: minmax(150px, 220px) 1fr;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .validator-result.error { border-left: 5px solid #bd342b; }
+    .validator-result.warning { border-left: 5px solid #e2ad3e; }
+    .validator-result.ok { border-left: 5px solid #2d9a68; }
+    .validator-result strong { display: block; margin-bottom: 4px; }
+    .validator-result p { margin: 0; color: var(--muted-strong); line-height: 1.45; }
+
+    .official-validators {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .official-validator-card {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 8px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: var(--site-gray);
+    }
+
+    .official-validator-card p {
+      flex: 1;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .official-validator-card a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 9px 12px;
+      border: 1px solid var(--line-strong);
+      color: var(--text);
+      font-weight: 750;
+      text-decoration: none;
+      text-align: center;
     }
 
     .source-grid {
@@ -2858,13 +2964,20 @@
     }
 
     .object-filter-panel {
-      grid-template-columns: minmax(210px, 1.8fr) minmax(112px, .75fr) minmax(92px, .65fr) minmax(250px, 1.25fr) minmax(230px, 1.1fr) minmax(120px, .8fr);
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-auto-flow: row dense;
       gap: 9px;
       padding: 14px 20px 18px;
       border: 0;
       border-bottom: 1px solid var(--line);
       background: #fff;
     }
+
+    .object-filter-panel .field:nth-child(1) { grid-column: span 4; }
+    .object-filter-panel .field:nth-child(2),
+    .object-filter-panel .field:nth-child(3) { grid-column: span 2; }
+    .object-filter-panel .range-filter { grid-column: span 6; }
+    .object-filter-panel .field:nth-child(6) { grid-column: span 4; }
 
     .object-filter-panel input,
     .object-filter-panel select { min-height: 40px; border-radius: 14px; }
@@ -3318,17 +3431,19 @@
 
     .brand-controls {
       display: grid;
-      grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(110px, .55fr)) minmax(220px, .9fr) auto minmax(230px, auto);
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
       gap: 10px;
       align-items: end;
       padding: 14px;
       border-radius: 18px;
       background: var(--site-gray);
+      min-width: 0;
     }
 
     .brand-controls .layout-file-control { grid-column: 1 / -1; }
-    .brand-controls .field { grid-column: auto; }
-    #insertBrandPhotoBtn { width: 100%; min-width: 230px; }
+    .brand-controls .field,
+    .brand-controls button { min-width: 0; }
+    #insertBrandPhotoBtn { width: 100%; }
 
     .technical-fields {
       display: none;
@@ -3339,6 +3454,8 @@
       padding: 14px;
       border-radius: 18px;
       background: var(--site-gray);
+      min-width: 0;
+      overflow: hidden;
     }
 
     .brand-source-head {
@@ -3373,11 +3490,13 @@
 
     .brand-layout-picker {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
       gap: 10px;
       max-height: 300px;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       padding-right: 4px;
+      min-width: 0;
     }
 
     .brand-layout-option {
@@ -3390,6 +3509,8 @@
       border-radius: 16px;
       background: #fff;
       cursor: pointer;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .brand-layout-option:hover,
@@ -3410,6 +3531,7 @@
       color: var(--text);
       font-size: 13px;
       line-height: 1.25;
+      overflow-wrap: anywhere;
     }
 
     .brand-layout-option span {
@@ -3418,6 +3540,7 @@
       color: var(--muted);
       font-size: 11px;
       line-height: 1.35;
+      overflow-wrap: anywhere;
     }
 
     .brand-preview {
@@ -3686,6 +3809,10 @@
       .brand { font-size: 24px; }
       .object-filter-panel { grid-template-columns: repeat(4, minmax(110px, 1fr)); }
       .object-filter-panel .field:first-child { grid-column: span 2; }
+      .object-filter-panel .field:nth-child(2),
+      .object-filter-panel .field:nth-child(3) { grid-column: span 1; }
+      .object-filter-panel .range-filter { grid-column: span 2; }
+      .object-filter-panel .field:nth-child(6) { grid-column: 1 / -1; }
     }
 
     @media (max-width: 1120px) {
@@ -3712,6 +3839,7 @@
       .detected-source,
       .quality-panel,
       .publish-row { grid-template-columns: 1fr; }
+      .official-validators { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .layout-upload { grid-template-columns: repeat(6, minmax(0, 1fr)); }
       .layout-upload .field:nth-child(1),
       .layout-upload .field:nth-child(2),
@@ -3735,6 +3863,10 @@
     @media (max-width: 720px) {
       .auth-card { padding: 30px 24px; border-radius: 24px; }
       .auth-card h1 { font-size: 29px; }
+      .validator-toolbar,
+      .validator-summary,
+      .validator-result,
+      .official-validators { grid-template-columns: 1fr; }
       .app { border-top-width: 6px; }
       .sidebar { align-items: stretch; flex-wrap: wrap; }
       .brand { width: 100%; min-height: 44px; }
@@ -3754,6 +3886,7 @@
       .object-filter-panel { grid-template-columns: 1fr 1fr; padding-inline: 14px; }
       .object-filter-panel .field:first-child { grid-column: 1 / -1; }
       .object-filter-panel .range-filter { grid-column: 1 / -1; }
+      .object-filter-panel .field:nth-child(6) { grid-column: 1 / -1; }
       .table-headline { padding-inline: 14px; }
       .table-wrap .panel-caption { padding-inline: 14px; }
       .bulk-panel { grid-template-columns: 1fr; }
@@ -3977,7 +4110,7 @@
     }
 
     .brand-controls {
-      grid-template-columns: minmax(260px, 1.35fr) repeat(3, minmax(110px, .55fr)) minmax(240px, .9fr) auto minmax(210px, .75fr);
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
     }
 
     .brand-controls .layout-file-control {
@@ -4057,6 +4190,7 @@
         <small>управление фидами</small>
       </div>
       <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
+      <div class="nav-item" data-nav="validator">✓ <span class="nav-text">Валидатор фидов</span></div>
       <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Мониторинг</span></div>
       <div class="sidebar-spacer"></div>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
@@ -4124,6 +4258,48 @@
         </div>
         <div class="feeds-list" id="feedsList"></div>
         <div class="monitor-note">Telegram-уведомления включаются отдельно у каждого фида. Если заданы TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID, сервис отправит сообщение при новой ошибке проверки. Проверки по расписанию подключаются следующим шагом через серверный мониторинг.</div>
+      </section>
+
+      <section class="validator-panel page-hidden" id="validatorPanel" data-page="validator">
+        <div>
+          <h2 class="panel-title">Валидатор фидов</h2>
+          <div class="panel-caption">Проверьте текущий XML до отправки агрегатору. Сервис проверяет структуру, обязательные поля и допустимые значения, а затем подсказывает, что исправить.</div>
+        </div>
+        <div class="validator-toolbar">
+          <div class="field compact">
+            <label>Определённый формат</label>
+            <input id="validatorPlatform" readonly value="ЦИАН">
+          </div>
+          <button id="runValidatorBtn" type="button" class="primary">Проверить текущий фид</button>
+        </div>
+        <div class="validator-summary" id="validatorSummary"></div>
+        <div class="validator-results" id="validatorResults"></div>
+        <div>
+          <h3>Официальная проверка</h3>
+          <div class="official-validators">
+            <article class="official-validator-card">
+              <strong>Авито</strong>
+              <p>Внутренняя схема сверена с официальным XML-шаблоном «Продам · Новостройка» от 21.08.2026. После проверки сервиса выполните финальный тест Авито.</p>
+              <a href="https://autoload.avito.ru/format/xmlcheck/" target="_blank" rel="noopener">Открыть валидатор Авито</a>
+              <a href="https://www.avito.ru/autoload/documentation/templates/67066?fileFormat=xml" target="_blank" rel="noopener">Открыть шаблон Авито</a>
+            </article>
+            <article class="official-validator-card">
+              <strong>Яндекс Недвижимость</strong>
+              <p>Проверка YRL по схеме Realty. Обязательные бизнес-поля дополнительно проверяются внутри сервиса.</p>
+              <a href="https://webmaster.yandex.ru/tools/xml-validator/" target="_blank" rel="noopener">Открыть валидатор Яндекса</a>
+            </article>
+            <article class="official-validator-card">
+              <strong>ЦИАН</strong>
+              <p>Итоговые ошибки импорта доступны в кабинете партнёра после загрузки фида.</p>
+              <a href="https://www.cian.ru/partners/" target="_blank" rel="noopener">Открыть кабинет ЦИАН</a>
+            </article>
+            <article class="official-validator-card">
+              <strong>Домклик</strong>
+              <p>Проверка выполняется в партнёрском кабинете по подключённому профилю выгрузки.</p>
+              <a href="https://pro.domclick.ru/" target="_blank" rel="noopener">Открыть Домклик PRO</a>
+            </article>
+          </div>
+        </div>
       </section>
 
       <section class="table-wrap" data-page="objects">
@@ -4422,6 +4598,7 @@
         <div class="field">
           <label for="decoration">Отделка</label>
           <select id="decoration" name="decoration">
+            <option value="rough">Черновая</option>
             <option value="preFine">Предчистовая</option>
             <option value="fine">Чистовая</option>
             <option value="without">Без отделки</option>
@@ -4459,6 +4636,26 @@
         <div class="field">
           <label for="sectionNumber">Секция</label>
           <input id="sectionNumber" name="sectionNumber">
+        </div>
+        <div class="field">
+          <label for="houseType">Тип дома для Авито</label>
+          <select id="houseType" name="houseType">
+            <option value="">Не указан</option>
+            <option value="Монолитный">Монолитный</option>
+            <option value="Монолитно-кирпичный">Монолитно-кирпичный</option>
+            <option value="Кирпичный">Кирпичный</option>
+            <option value="Панельный">Панельный</option>
+            <option value="Блочный">Блочный</option>
+            <option value="Деревянный">Деревянный</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="avitoNewDevelopmentId">ID новостройки в Авито</label>
+          <input id="avitoNewDevelopmentId" name="avitoNewDevelopmentId" inputmode="numeric" placeholder="Из кабинета Авито">
+        </div>
+        <div class="field">
+          <label for="avitoBuildingName">Корпус в Авито</label>
+          <input id="avitoBuildingName" name="avitoBuildingName" placeholder="Как в справочнике Авито">
         </div>
         <div class="field">
           <label for="floorsCount">Этажей в доме</label>
@@ -4556,6 +4753,9 @@
           ["houseId", "ID дома в ЦИАН"],
           ["buildingName", "Корпус"],
           ["sectionNumber", "Секция"],
+          ["houseType", "Тип дома для Авито"],
+          ["avitoNewDevelopmentId", "ID новостройки в Авито"],
+          ["avitoBuildingName", "Корпус в Авито"],
           ["floorsCount", "Этажей в доме"],
           ["ceilingHeight", "Высота потолка"],
           ["quarter", "Квартал сдачи"],
@@ -4572,6 +4772,7 @@
     };
     const fieldValueOptions = {
       decoration: [
+        ["rough", "Черновая"],
         ["preFine", "Предчистовая"],
         ["fine", "Чистовая"],
         ["without", "Без отделки"]
@@ -4585,6 +4786,15 @@
         ["second", "2 квартал"],
         ["third", "3 квартал"],
         ["fourth", "4 квартал"]
+      ],
+      houseType: [
+        ["", "Не указан"],
+        ["Монолитный", "Монолитный"],
+        ["Монолитно-кирпичный", "Монолитно-кирпичный"],
+        ["Кирпичный", "Кирпичный"],
+        ["Панельный", "Панельный"],
+        ["Блочный", "Блочный"],
+        ["Деревянный", "Деревянный"]
       ]
     };
     const platformProfiles = {
@@ -4598,7 +4808,7 @@
         name: "Авито",
         format: "Avito XML",
         downloadPrefix: "avito-feed",
-        note: "Авито ведет документацию автозагрузки в новом разделе шаблонов. В прототипе выгрузка собирается в типовой формат <Ads>/<Ad>; перед боевой загрузкой нужно сверить обязательные поля с шаблоном вашего кабинета."
+        note: "Выгрузка формируется в структуре <Ads>/<Ad> и проходит внутреннюю проверку обязательных полей и справочных значений Авито перед скачиванием или публикацией."
       },
       yandex: {
         name: "Яндекс Недвижимость",
@@ -4632,6 +4842,7 @@
         houseId: "10218740",
         flatNumber: "1",
         sectionNumber: "ГП-8.1",
+        houseType: "Монолитный",
         developer: "ГК Создатели",
         decoration: "preFine",
         buildingName: "Символ",
@@ -4658,6 +4869,7 @@
         houseId: "10218740",
         flatNumber: "4",
         sectionNumber: "ГП-8.1",
+        houseType: "Монолитный",
         developer: "ГК Создатели",
         decoration: "preFine",
         buildingName: "Символ",
@@ -5214,9 +5426,11 @@
 
     function renderPage() {
       const isFeedsPage = activePage === "feeds";
+      const isValidatorPage = activePage === "validator";
       const isLayoutsPage = false;
       document.querySelector("#appShell").classList.toggle("feeds-mode", isFeedsPage);
       document.querySelector("#appShell").classList.toggle("layouts-mode", false);
+      document.querySelector("#appShell").classList.toggle("validator-mode", isValidatorPage);
       document.querySelectorAll("[data-page]").forEach(section => {
         section.classList.toggle("page-hidden", section.dataset.page !== activePage);
       });
@@ -5224,10 +5438,12 @@
         item.classList.toggle("active", item.dataset.nav === activePage);
       });
       const profile = platformProfiles[activePlatform];
-      document.querySelector(".topbar h1").textContent = isFeedsPage ? "Мониторинг" : "Фиды недвижимости";
+      document.querySelector(".topbar h1").textContent = isFeedsPage ? "Мониторинг" : isValidatorPage ? "Валидатор фидов" : "Фиды недвижимости";
       document.querySelector(".subtitle").textContent = isFeedsPage
         ? "Контроль рабочих ссылок, статусов проверки и ошибок по сохраненным фидам"
-        : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
+        : isValidatorPage
+          ? `Проверка текущего фида по требованиям ${profile.name}`
+          : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
     }
 
     function switchPage(page) {
@@ -6930,21 +7146,34 @@ ${images}
     function buildAvitoXml(items = objects) {
       const body = items.map(item => {
         const images = feedImageList(item).map(url => `      <Image url="${escapeXml(url)}"/>`).join("\n");
+        const status = String(item.isApartments) === "true" ? "Апартаменты" : "Квартира";
+        const decoration = { rough: "Черновая", preFine: "Предчистовая", fine: "Чистовая", without: "Без отделки" }[item.decoration] || item.decoration || "";
+        const contactPhone = String(item.phone || "").replace(/[^\d]/g, "").replace(/^8/, "7").replace(/^([^7])/, "7$1");
         return `  <Ad>
-    <Id>${escapeXml(item.externalId || "")}</Id>
-    <Category>Квартиры</Category>
-    <OperationType>Продам</OperationType>
-    <Address>${escapeXml(item.address || "")}</Address>
     <Description><![CDATA[${cdata(item.description || "")}]]></Description>
-    <Price>${escapeXml(item.price || "")}</Price>
-    <Rooms>${escapeXml(item.rooms || "")}</Rooms>
-    <Square>${escapeXml(item.totalArea || "")}</Square>
-    <Floor>${escapeXml(item.floor || "")}</Floor>
-    <Floors>${escapeXml(item.floorsCount || "")}</Floors>
-    <PropertyRights>Застройщик</PropertyRights>
     <Images>
 ${images}
     </Images>
+    <Category>Квартиры</Category>
+    <Id>${escapeXml(item.externalId || "")}</Id>
+    <ContactPhone>+${escapeXml(contactPhone)}</ContactPhone>
+    <ContactMethod>По телефону и в сообщениях</ContactMethod>
+    <Price>${escapeXml(item.price || "")}</Price>
+    <OperationType>Продам</OperationType>
+    <MarketType>Новостройка</MarketType>
+    <HouseType>${escapeXml(item.houseType || "")}</HouseType>
+    <Floor>${escapeXml(item.floor || "")}</Floor>
+    <Floors>${escapeXml(item.floorsCount || "")}</Floors>
+    <Rooms>${escapeXml(item.rooms || "")}</Rooms>
+    <Square>${escapeXml(item.totalArea || "")}</Square>
+    ${item.livingArea ? `<LivingSpace>${escapeXml(item.livingArea)}</LivingSpace>` : ""}
+    ${item.flatNumber ? `<ApartmentNumber>${escapeXml(item.flatNumber)}</ApartmentNumber>` : ""}
+    <Status>${status}</Status>
+    ${item.ceilingHeight ? `<CeilingHeight>${escapeXml(item.ceilingHeight)}</CeilingHeight>` : ""}
+    <NewDevelopmentId>${escapeXml(item.avitoNewDevelopmentId || "")}</NewDevelopmentId>
+    <DevelopmentsBuildingName>${escapeXml(item.avitoBuildingName || item.buildingName || "")}</DevelopmentsBuildingName>
+    <PropertyRights>Застройщик</PropertyRights>
+    <Decoration>${escapeXml(decoration)}</Decoration>
   </Ad>`;
       }).join("\n");
       return `<?xml version="1.0" encoding="UTF-8"?>\n<Ads formatVersion="3" target="Avito.ru">\n${body}\n</Ads>\n`;
@@ -6973,6 +7202,90 @@ ${photos}
       return `<?xml version="1.0" encoding="UTF-8"?>\n<DomclickFeed>\n  <GeneratedAt>${new Date().toISOString()}</GeneratedAt>\n${body}\n</DomclickFeed>\n`;
     }
 
+    function validateFeedForPlatform(platform = activePlatform) {
+      const findings = [];
+      const add = (severity, title, message, ids = []) => findings.push({ severity, title, message, ids });
+      if (!objects.length) {
+        add("warning", "Фид не загружен", "Сначала загрузите ссылку или XML-файл в рабочей области.");
+        return findings;
+      }
+
+      const xmlText = buildXml(objects, platform);
+      const parsed = new DOMParser().parseFromString(xmlText, "application/xml");
+      if (parsed.querySelector("parsererror")) {
+        add("error", "XML содержит синтаксическую ошибку", "Исправьте структуру XML перед передачей агрегатору.");
+        return findings;
+      }
+
+      const required = platform === "avito"
+        ? [
+            ["externalId", "Id"], ["description", "Description"],
+            ["price", "Price"], ["rooms", "Rooms"], ["totalArea", "Square"],
+            ["floor", "Floor"], ["floorsCount", "Floors"], ["phone", "ContactPhone"],
+            ["houseType", "HouseType"], ["decoration", "Decoration"],
+            ["avitoNewDevelopmentId", "NewDevelopmentId"]
+          ]
+        : [
+            ["externalId", "ID"], ["address", "Адрес"], ["description", "Описание"],
+            ["price", "Цена"], ["totalArea", "Площадь"]
+          ];
+
+      required.forEach(([key, label]) => {
+        const ids = objects.filter(item => !String(item[key] ?? "").trim()).map(item => item.externalId || "без ID");
+        if (ids.length) add("error", `Не заполнено поле ${label}`, `Заполните обязательный параметр у ${ids.length} объектов.`, ids);
+      });
+
+      const imageIds = objects.filter(item => !feedImageList(item).length).map(item => item.externalId || "без ID");
+      if (imageIds.length) add("error", "Нет изображений", `Добавьте хотя бы одно доступное изображение у ${imageIds.length} объектов.`, imageIds);
+
+      if (platform === "avito") {
+        const ads = [...parsed.querySelectorAll("Ads > Ad")];
+        const allowed = {
+          MarketType: ["Новостройка"],
+          HouseType: ["Монолитный", "Монолитно-кирпичный", "Кирпичный", "Панельный", "Блочный", "Деревянный"],
+          Status: ["Квартира", "Апартаменты"],
+          Decoration: ["Черновая", "Предчистовая", "Чистовая", "Без отделки"]
+        };
+        Object.entries(allowed).forEach(([tag, values]) => {
+          const badIds = ads.filter(ad => !values.includes(ad.querySelector(tag)?.textContent?.trim() || ""))
+            .map(ad => ad.querySelector("Id")?.textContent || "без ID");
+          if (badIds.length) add("error", `Авито: неверный ${tag}`, `Допустимые значения: ${values.join(", ")}.`, badIds);
+        });
+        const noBuilding = objects.filter(item => !String(item.avitoBuildingName || item.buildingName || "").trim());
+        if (noBuilding.length) add("error", "Не заполнено поле DevelopmentsBuildingName", "Укажите название корпуса так, как оно заведено в справочнике новостройки Авито.", noBuilding.map(item => item.externalId || "без ID"));
+        const badPhones = objects.filter(item => {
+          const digits = String(item.phone || "").replace(/\D/g, "");
+          return !(/^7\d{10}$/.test(digits) || /^8\d{10}$/.test(digits) || /^\d{10}$/.test(digits));
+        });
+        if (badPhones.length) add("error", "Авито: неверный ContactPhone", "Укажите российский номер в формате +7XXXXXXXXXX.", badPhones.map(item => item.externalId || "без ID"));
+      }
+
+      if (!findings.some(item => item.severity === "error")) {
+        add("ok", "Внутренняя проверка пройдена", `XML сформирован корректно. Выполните финальную проверку в официальном валидаторе ${platformProfiles[platform].name}.`);
+      }
+      return findings;
+    }
+
+    function renderFeedValidator() {
+      const platformInput = document.querySelector("#validatorPlatform");
+      const summary = document.querySelector("#validatorSummary");
+      const results = document.querySelector("#validatorResults");
+      if (!platformInput || !summary || !results) return;
+      platformInput.value = platformProfiles[activePlatform]?.name || "Не определён";
+      const findings = validateFeedForPlatform(activePlatform);
+      const errors = findings.filter(item => item.severity === "error").length;
+      const warnings = findings.filter(item => item.severity === "warning").length;
+      summary.innerHTML = `
+        <div class="validator-stat"><span>Объекты</span><strong>${objects.length}</strong></div>
+        <div class="validator-stat"><span>Критические ошибки</span><strong>${errors}</strong></div>
+        <div class="validator-stat"><span>Предупреждения</span><strong>${warnings}</strong></div>`;
+      results.innerHTML = findings.map(item => `
+        <article class="validator-result ${item.severity}">
+          <div><strong>${escapeXml(item.title)}</strong><span class="muted">${item.severity === "error" ? "Нужно исправить" : item.severity === "warning" ? "Проверьте" : "Готово"}</span></div>
+          <p>${escapeXml(item.message)}${item.ids?.length ? `<br><b>Объекты:</b> ${escapeXml(item.ids.slice(0, 12).join(", "))}${item.ids.length > 12 ? "…" : ""}` : ""}</p>
+        </article>`).join("");
+    }
+
     function renderAll() {
       renderFeedMonitorTabs();
       renderFeedsList();
@@ -6992,6 +7305,7 @@ ${photos}
       renderBrandPreview();
       renderBeforeAfterPreview();
       renderChangeLog();
+      renderFeedValidator();
       renderPage();
     }
 
@@ -7152,6 +7466,13 @@ ${photos}
     function downloadXml() {
       validated = true;
       renderValidation();
+      const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
+      if (platformErrors.length) {
+        switchPage("validator");
+        renderFeedValidator();
+        showToast(`Исправьте ошибки валидатора: ${platformErrors.length}`);
+        return;
+      }
       const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Скачать все равно?`)) return;
       const blob = new Blob([buildXml(objects, activePlatform)], { type: "application/xml;charset=utf-8" });
@@ -7249,6 +7570,13 @@ ${photos}
     async function generateFeedLink() {
       validated = true;
       renderValidation();
+      const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
+      if (platformErrors.length) {
+        switchPage("validator");
+        renderFeedValidator();
+        showToast(`Исправьте ошибки валидатора: ${platformErrors.length}`);
+        return;
+      }
       const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Сгенерировать ссылку все равно?`)) return;
       const feedName = currentFeedName();
@@ -7344,7 +7672,7 @@ ${photos}
         externalId: textOf(node, ["ExternalId", "Id"], node.getAttribute("internal-id") || `object-${index + 1}`),
         description: textOf(node, ["Description", "description"]),
         address: textOf(node, ["Address", "address", "location address"]),
-        phone: textOf(node, ["PhoneSchema Number", "Phone", "phone", "sales-agent phone"]).replace(/^\+7/, ""),
+        phone: textOf(node, ["PhoneSchema Number", "ContactPhone", "Phone", "phone", "sales-agent phone"]).replace(/^\+7/, ""),
         totalArea: textOf(node, ["TotalArea", "Square", "area value", "total-area value"]),
         livingArea: textOf(node, ["LivingArea", "living-space value"]),
         layoutPhoto: textOf(node, ["LayoutPhoto FullUrl", "Images Image", "image", "Photo"]),
@@ -7358,8 +7686,11 @@ ${photos}
         flatNumber: textOf(node, ["FlatNumber"]),
         sectionNumber: textOf(node, ["SectionNumber", "building-section"]),
         developer: textOf(node, ["Developer", "PropertyRights", "sales-agent organization"]),
-        decoration: node.querySelector("Decoration")?.textContent || "preFine",
+        decoration: ({ "Черновая": "rough", "Предчистовая": "preFine", "Чистовая": "fine", "Без отделки": "without" }[node.querySelector("Decoration")?.textContent?.trim()] || node.querySelector("Decoration")?.textContent?.trim() || "preFine"),
         buildingName: textOf(node, ["Building > Name", "building-name", "ComplexName"]),
+        houseType: textOf(node, ["HouseType", "building-type"]),
+        avitoNewDevelopmentId: textOf(node, ["NewDevelopmentId"]),
+        avitoBuildingName: textOf(node, ["DevelopmentsBuildingName"]),
         floorsCount: textOf(node, ["FloorsCount", "Floors", "floors-total", "FloorsTotal"]),
         ceilingHeight: textOf(node, ["CeilingHeight"]),
         quarter: node.querySelector("Quarter")?.textContent || "first",
@@ -7588,6 +7919,10 @@ ${photos}
       const item = event.target.closest("[data-nav]");
       if (!item) return;
       switchPage(item.dataset.nav);
+    });
+    document.querySelector("#runValidatorBtn")?.addEventListener("click", () => {
+      renderFeedValidator();
+      showToast("Проверка фида завершена");
     });
     document.querySelector("#selectVisible").addEventListener("change", event => {
       if (event.target.checked) {
