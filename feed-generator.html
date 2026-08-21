@@ -1720,6 +1720,14 @@
       line-height: 1.45;
     }
 
+    .issue-filter-btn {
+      grid-column: 1 / -1;
+      justify-self: start;
+      min-height: 36px;
+      padding: 7px 12px;
+      background: #fff;
+    }
+
     .issue-empty {
       padding: 12px;
       border: 1px solid var(--line-soft);
@@ -4365,20 +4373,7 @@
           <div class="field compact">
             <label for="issueFilter">Ошибка</label>
             <select id="issueFilter">
-              <option value="all">Все</option>
-              <option value="externalId">ID объекта</option>
-              <option value="layoutPhoto">Планировка</option>
-              <option value="photos">Фото</option>
-              <option value="price">Цена</option>
-              <option value="address">Адрес</option>
-              <option value="phone">Телефон</option>
-              <option value="totalArea">Площадь</option>
-              <option value="rooms">Комнаты</option>
-              <option value="floor">Этаж</option>
-              <option value="complexName">ЖК</option>
-              <option value="developer">Застройщик</option>
-              <option value="floorsCount">Этажность</option>
-              <option value="buildingName">Корпус</option>
+              <option value="all">Все объекты</option>
             </select>
           </div>
         </div>
@@ -5138,6 +5133,15 @@
       return new Intl.NumberFormat("ru-RU").format(numberValue(value)) + " ₽";
     }
 
+    function pluralRu(count, one, few, many) {
+      const mod100 = Math.abs(count) % 100;
+      const mod10 = mod100 % 10;
+      if (mod100 > 10 && mod100 < 20) return many;
+      if (mod10 === 1) return one;
+      if (mod10 > 1 && mod10 < 5) return few;
+      return many;
+    }
+
     const issueGuides = {
       externalId: {
         label: "ID объекта",
@@ -5203,6 +5207,31 @@
         label: "Корпус или дом",
         log: "Для выбранной площадки требуется корпус или название дома.",
         fix: "Заполните поле «Дом/корпус» в карточке либо примените массовую правку по выбранной секции."
+      },
+      description: {
+        label: "Описание",
+        log: "Описание отсутствует. Объявление не пройдет полноценную модерацию площадки.",
+        fix: "Добавьте описание в карточке или примените общий текст массовой правкой."
+      },
+      houseType: {
+        label: "Тип дома Avito",
+        log: "HouseType не заполнен или содержит значение вне справочника Avito.",
+        fix: "Выберите корректный тип дома в карточке либо массово для объектов одного корпуса."
+      },
+      decoration: {
+        label: "Отделка Avito",
+        log: "Decoration не заполнена или содержит неподдерживаемое значение.",
+        fix: "Выберите вариант отделки из списка Avito и примените его к нужным объектам."
+      },
+      avitoNewDevelopmentId: {
+        label: "ID новостройки Avito",
+        log: "Не указан NewDevelopmentId, связывающий квартиру с карточкой новостройки Avito.",
+        fix: "Возьмите ID новостройки из кабинета Avito и заполните его массово для всего ЖК."
+      },
+      avitoBuildingName: {
+        label: "Корпус Avito",
+        log: "Не заполнен DevelopmentsBuildingName и не найдено резервное название корпуса.",
+        fix: "Укажите корпус точно так, как он записан в справочнике новостройки Avito."
       }
     };
 
@@ -5215,31 +5244,63 @@
     function requiredIssues(item) {
       const rules = [
         ["externalId", "ID объекта"],
-        ["address", "адрес"],
         ["phone", "телефон"],
         ["totalArea", "общая площадь"],
         ["rooms", "количество комнат"],
         ["floor", "этаж"],
-        ["complexName", "название ЖК"],
-        ["developer", "застройщик"],
         ["price", "цена"],
         ["layoutPhoto", "планировка"]
       ];
-      if (activePlatform === "avito") rules.push(["floorsCount", "этажность дома"]);
+      if (activePlatform === "avito") {
+        rules.push(
+          ["description", "Описание"],
+          ["floorsCount", "этажность дома"],
+          ["houseType", "Тип дома Avito"],
+          ["decoration", "Отделка Avito"],
+          ["avitoNewDevelopmentId", "ID новостройки Avito"]
+        );
+      } else {
+        rules.push(["address", "адрес"], ["complexName", "название ЖК"], ["developer", "застройщик"]);
+      }
       if (activePlatform === "yandex") rules.push(["buildingName", "корпус или дом"]);
       const missing = rules.filter(([key]) => !String(item[key] || "").trim()).map(([, label]) => label);
+      if (activePlatform === "avito") {
+        const allowedHouseTypes = ["Монолитный", "Монолитно-кирпичный", "Кирпичный", "Панельный", "Блочный", "Деревянный"];
+        const allowedDecorations = ["rough", "preFine", "fine", "without", "Черновая", "Предчистовая", "Чистовая", "Без отделки"];
+        if (item.houseType && !allowedHouseTypes.includes(item.houseType)) missing.push("Тип дома Avito");
+        if (item.decoration && !allowedDecorations.includes(item.decoration)) missing.push("Отделка Avito");
+        if (!String(item.avitoBuildingName || item.buildingName || "").trim()) missing.push("Корпус Avito");
+        const phoneDigits = String(item.phone || "").replace(/\D/g, "");
+        if (item.phone && !(/^7\d{10}$/.test(phoneDigits) || /^8\d{10}$/.test(phoneDigits) || /^\d{10}$/.test(phoneDigits))) missing.push("телефон");
+      }
       const photos = String(item.photos || "").split(/\n+/).filter(Boolean);
       if (!photos.length) missing.push("хотя бы одно фото");
-      return missing;
+      return [...new Set(missing)];
     }
 
     function issueKeys(item) {
       return requiredIssues(item).map(issueKeyFromLabel);
     }
 
+    function renderIssueFilter() {
+      const select = document.querySelector("#issueFilter");
+      if (!select) return;
+      const current = select.value || "all";
+      const groups = issueGroups();
+      const errorObjects = objects.filter(item => issueKeys(item).length).length;
+      select.innerHTML = [
+        `<option value="all">Все объекты · ${objects.length}</option>`,
+        ...(errorObjects ? [`<option value="__errors__">Все с ошибками · ${errorObjects}</option>`] : []),
+        ...groups.map(group => `<option value="${escapeXml(group.key)}">${escapeXml(group.guide.label)} · ${group.count}</option>`)
+      ].join("");
+      select.value = [...select.options].some(option => option.value === current) ? current : "all";
+    }
+
     function itemStatus(item) {
       const issues = requiredIssues(item);
-      return issues.length ? { type: "warn", label: `${issues.length} ошибок`, issues } : { type: "ok", label: "Готово", issues: [] };
+      return issues.length
+        ? { type: "warn", label: `${issues.length} ${pluralRu(issues.length, "ошибка", "ошибки", "ошибок")}`, issues }
+        : { type: "ok", label: "Готово", issues: [] };
     }
 
     function filterBounds(field, step) {
@@ -5323,7 +5384,8 @@
         const itemArea = numberValue(item.totalArea);
         const matchesPrice = (!priceFrom || itemPrice >= priceFrom) && (!priceTo || itemPrice <= priceTo);
         const matchesArea = (!areaFrom || itemArea >= areaFrom) && (!areaTo || itemArea <= areaTo);
-        const matchesIssue = issue === "all" || issueKeys(item).includes(issue);
+        const keys = issueKeys(item);
+        const matchesIssue = issue === "all" || (issue === "__errors__" ? keys.length > 0 : keys.includes(issue));
         return matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
       });
       return sortObjects(filtered);
@@ -7291,6 +7353,7 @@ ${photos}
       renderFeedsList();
       renderBulkControls();
       syncFilterRanges();
+      renderIssueFilter();
       renderRows();
       fillForm();
       if (!document.querySelector("#feedUrl").value) document.querySelector("#feedUrl").value = appState.feedUrl || "";
@@ -7368,6 +7431,7 @@ ${photos}
             <b>Лог:</b> ${escapeXml(group.guide.log)}<br>
             <b>Как исправить:</b> ${escapeXml(group.guide.fix)}
           </div>
+          <button class="issue-filter-btn" type="button" data-filter-issue="${escapeXml(group.key)}">Показать ${group.count} ${pluralRu(group.count, "объект", "объекта", "объектов")}</button>
         </div>
       `).join("");
     }
@@ -7467,21 +7531,16 @@ ${photos}
       validated = true;
       renderValidation();
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      if (platformErrors.length) {
-        switchPage("validator");
-        renderFeedValidator();
-        showToast(`Исправьте ошибки валидатора: ${platformErrors.length}`);
-        return;
-      }
       const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
-      if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Скачать все равно?`)) return;
       const blob = new Blob([buildXml(objects, activePlatform)], { type: "application/xml;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `${platformProfiles[activePlatform].downloadPrefix}-${new Date().toISOString().slice(0, 10)}.xml`;
       link.click();
       URL.revokeObjectURL(link.href);
-      showToast("XML скачан");
+      showToast(platformErrors.length || bad.length
+        ? `XML скачан с предупреждениями: ${platformErrors.length + bad.length}`
+        : "XML скачан");
     }
 
     function normalizeBaseUrl(value) {
@@ -7571,14 +7630,7 @@ ${photos}
       validated = true;
       renderValidation();
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      if (platformErrors.length) {
-        switchPage("validator");
-        renderFeedValidator();
-        showToast(`Исправьте ошибки валидатора: ${platformErrors.length}`);
-        return;
-      }
       const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
-      if (bad.length && !confirm(`В фиде есть незаполненные поля: ${bad.length}. Сгенерировать ссылку все равно?`)) return;
       const feedName = currentFeedName();
       if (!feedName) {
         const input = document.querySelector("#feedName");
@@ -7614,7 +7666,10 @@ ${photos}
         save();
         renderQualitySummary();
         renderDetectedSource();
-        showToast(hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
+        const warningCount = platformErrors.length + bad.length;
+        showToast(warningCount
+          ? `${hadPublishedId ? "Ссылка обновлена" : "Фид опубликован"} с предупреждениями: ${warningCount}`
+          : hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
         return;
       } catch (error) {
         console.warn("Server publish failed:", error);
@@ -7748,6 +7803,7 @@ ${photos}
       const draft = updateSelectedFromForm();
       preview.textContent = buildXml([draft], activePlatform);
       renderValidation(draft);
+      renderIssueFilter();
       renderRows();
       renderQualitySummary();
     });
@@ -7780,6 +7836,15 @@ ${photos}
     ["#search", "#statusFilter", "#roomsFilter", "#issueFilter"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", renderRows);
       document.querySelector(selector).addEventListener("change", renderRows);
+    });
+    document.querySelector("#issueDiagnostics").addEventListener("click", event => {
+      const button = event.target.closest("[data-filter-issue]");
+      if (!button) return;
+      const select = document.querySelector("#issueFilter");
+      select.value = button.dataset.filterIssue;
+      renderRows();
+      document.querySelector(".table-wrap").scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast(`Показаны объекты: ${button.textContent.replace(/^Показать\s+/, "")}`);
     });
     [["price", "from"], ["price", "to"], ["area", "from"], ["area", "to"]].forEach(([kind, edge]) => {
       const prefix = kind === "price" ? "price" : "area";
