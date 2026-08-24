@@ -6803,16 +6803,14 @@
 
     function invalidateGeneratedLink() {
       if (!appState.generatedLink && !appState.generatedFeedId) return;
-      appState.generatedLink = "";
-      appState.generatedFeedId = "";
       const box = document.querySelector("#generatedLink");
       if (box) {
-        box.dataset.url = "";
-        box.classList.remove("ready");
-        box.textContent = "Фид изменен. Сгенерируйте новую ссылку в финальной выгрузке, чтобы получить актуальную версию.";
+        box.dataset.url = appState.generatedLink;
+        box.classList.add("ready");
+        box.textContent = `${appState.generatedLink} — в фиде есть несохраненные изменения. Нажмите «Сгенерировать ссылку», чтобы обновить XML по этому же адресу.`;
       }
       const input = document.querySelector("#generatedLinkInput");
-      if (input) input.value = "";
+      if (input) input.value = appState.generatedLink;
     }
 
     function renderBulkControls() {
@@ -7987,11 +7985,6 @@ ${photos}
     document.querySelector("#refreshLayoutsBtn")?.addEventListener("click", () => loadLayouts());
     document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
     document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
-      if (!layoutGroupsFromFeed().length) {
-        event.target.value = "";
-        alert("Сначала загрузите фид с планировками в рабочей области.");
-        return;
-      }
       const file = event.target.files[0];
       if (!file) {
         brandBadgeDataUrl = "";
