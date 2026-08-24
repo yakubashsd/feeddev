@@ -6274,6 +6274,18 @@
       return true;
     }
 
+    function drawBrandBadgePreview(badgeImage, canvas = document.querySelector("#brandPreviewCanvas")) {
+      if (!canvas || !badgeImage) return false;
+      const width = badgeImage.naturalWidth || badgeImage.width;
+      const height = badgeImage.naturalHeight || badgeImage.height;
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, width, height);
+      context.drawImage(badgeImage, 0, 0, width, height);
+      return true;
+    }
+
     async function renderBrandPreview() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas) return;
@@ -6287,7 +6299,15 @@
       }
       const target = brandPreviewTarget();
       if (!target) {
-        brandStatus("В текущем фиде нет объектов со ссылкой на планировку.");
+        try {
+          const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
+          if (requestId !== brandPreviewRequestId) return;
+          drawBrandBadgePreview(badgeImage, canvas);
+          brandStatus("Подложка загружена. Добавьте ссылку на планировку в объект, чтобы увидеть итоговое наложение.");
+        } catch (error) {
+          if (requestId !== brandPreviewRequestId) return;
+          brandStatus(`${error.message} Проверьте формат файла подложки.`);
+        }
         return;
       }
       try {
