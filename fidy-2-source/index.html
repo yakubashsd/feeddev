@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Фиды 2.0 — сервис управления фидами</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <div class="product-frame">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">F2</span>
+          <div>
+            <strong>Фиды 2.0</strong>
+            <small>XML feed SaaS</small>
+          </div>
+        </div>
+
+        <div class="workspace-switcher">
+          <span>Компания</span>
+          <strong>Создатели</strong>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active" data-page="workspace">Рабочая область</button>
+          <button class="nav-item" data-page="feeds">Фиды</button>
+          <button class="nav-item" data-page="monitoring">Мониторинг</button>
+          <button class="nav-item" data-page="layouts">Планировки</button>
+          <button class="nav-item" data-page="billing">Подписки</button>
+          <button class="nav-item" data-page="admin">Админка</button>
+        </nav>
+
+        <div class="plan-card">
+          <span>Тариф</span>
+          <strong>Business</strong>
+          <div class="meter"><i style="width: 68%"></i></div>
+          <small>68% лимита фидов использовано</small>
+          <button data-page="billing">Управление подпиской</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="pageTitle">Рабочая область</h1>
+            <p id="pageSubtitle">Создание, настройка и публикация фидов для агрегаторов недвижимости.</p>
+          </div>
+          <div class="top-actions">
+            <button class="ghost">Документация</button>
+            <button class="primary">Новый фид</button>
+            <div class="avatar">С</div>
+          </div>
+        </header>
+
+        <section class="view active" id="workspace">
+          <div class="hero-panel">
+            <div>
+              <h2>От ссылки на шахматку до готового XML</h2>
+              <p>Загрузите ссылку или XML-файл, проверьте ошибки, внесите массовые правки и выпустите постоянную ссылку для ЦИАН, Авито, Яндекса или Домклик.</p>
+            </div>
+            <button class="primary large">Подтянуть фид</button>
+          </div>
+
+          <div class="workflow">
+            <article>
+              <span>1</span>
+              <strong>Источник</strong>
+              <p>Profitbase, API шахматки или XML-файл клиента.</p>
+            </article>
+            <article>
+              <span>2</span>
+              <strong>Правки</strong>
+              <p>Точечное редактирование и массовая замена полей.</p>
+            </article>
+            <article>
+              <span>3</span>
+              <strong>Проверка</strong>
+              <p>Ошибки, предупреждения и инструкции по исправлению.</p>
+            </article>
+            <article>
+              <span>4</span>
+              <strong>Выгрузка</strong>
+              <p>Скачать XML или получить постоянную ссылку.</p>
+            </article>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Активный фид</h3>
+                  <p>simvol-cian-agent.php</p>
+                </div>
+                <span class="status ok">Готов</span>
+              </div>
+              <div class="metrics">
+                <div><strong>604</strong><span>объекта</span></div>
+                <div><strong>8</strong><span>ошибок</span></div>
+                <div><strong>97%</strong><span>валидность</span></div>
+              </div>
+              <div class="upload-zone">
+                <span>Перетащите XML или вставьте ссылку фида</span>
+                <button>Выбрать источник</button>
+              </div>
+            </section>
+
+            <section class="panel final-panel">
+              <h3>Финальная выгрузка</h3>
+              <label>Название фида</label>
+              <input value="Символ — ЦИАН">
+              <label>Итоговая ссылка</label>
+              <div class="copy-field">https://feeds2.ru/f/simvol-cian.php</div>
+              <div class="button-row">
+                <button class="primary">Сгенерировать ссылку</button>
+                <button>Скачать XML</button>
+              </div>
+            </section>
+          </div>
+
+          <section class="panel table-panel">
+            <div class="panel-head">
+              <div>
+                <h3>Объекты в фиде</h3>
+                <p>Клик по строке открывает карточку объекта. Заголовки сортируют таблицу.</p>
+              </div>
+              <button>Фильтры</button>
+            </div>
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Квартира</th><th>Площадь</th><th>Цена</th><th>Площадка</th><th>Статус</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>16665323</td><td>2-комн., кв. 1</td><td>59.2 м²</td><td>8 640 000 ₽</td><td>ЦИАН</td><td><span class="status ok">Готов</span></td></tr>
+                <tr><td>16665336</td><td>1-комн., кв. 2</td><td>38.26 м²</td><td>6 090 000 ₽</td><td>Авито</td><td><span class="status warn">Правка</span></td></tr>
+                <tr><td>16730226</td><td>3-комн., кв. ?</td><td>103.35 м²</td><td>11 890 000 ₽</td><td>Яндекс</td><td><span class="status bad">Ошибка</span></td></tr>
+              </tbody>
+            </table>
+          </section>
+        </section>
+
+        <section class="view" id="feeds">
+          <div class="section-head">
+            <h2>Фиды</h2>
+            <button class="primary">Добавить фид</button>
+          </div>
+          <div class="feed-cards">
+            <article class="feed-card"><strong>ЦИАН — Символ</strong><span>604 объекта</span><p>Последняя генерация сегодня, 11:42</p><button>Открыть</button></article>
+            <article class="feed-card"><strong>Авито — Кедровый берег</strong><span>245 объектов</span><p>Есть предупреждения по фото</p><button>Открыть</button></article>
+            <article class="feed-card"><strong>Домклик — ГП 8.1</strong><span>118 объектов</span><p>Ожидает проверки</p><button>Открыть</button></article>
+          </div>
+        </section>
+
+        <section class="view" id="monitoring">
+          <div class="section-head">
+            <h2>Мониторинг</h2>
+            <button class="primary">Проверить сейчас</button>
+          </div>
+          <div class="monitor-list">
+            <article><span class="dot ok"></span><strong>ЦИАН</strong><p>Работает · 200 OK · 604 объекта</p><button>Логи</button></article>
+            <article><span class="dot bad"></span><strong>Авито</strong><p>Ошибка: источник вернул HTTP 403</p><button>Исправить</button></article>
+            <article><span class="dot warn"></span><strong>Яндекс</strong><p>Предупреждение: 12 объектов без планировки</p><button>Открыть</button></article>
+          </div>
+        </section>
+
+        <section class="view" id="layouts">
+          <div class="section-head">
+            <h2>Планировки</h2>
+            <button class="primary">Загрузить макеты</button>
+          </div>
+          <div class="grid two">
+            <section class="panel">
+              <h3>Брендированная плашка</h3>
+              <p>Накладывайте фирменный слой на выбранные планировки перед выгрузкой в агрегаторы.</p>
+              <div class="layout-preview">
+                <div class="plan-lines"></div>
+                <span>создатели</span>
+              </div>
+              <div class="button-row"><button>Выбрать плашку</button><button class="primary">Наложить</button></div>
+            </section>
+            <section class="panel">
+              <h3>Библиотека</h3>
+              <div class="mini-list">
+                <div><strong>2-комн 59.2 м²</strong><span>используется в 14 объектах</span></div>
+                <div><strong>1-комн 38.26 м²</strong><span>используется в 22 объектах</span></div>
+                <div><strong>Студия 29.5 м²</strong><span>ожидает брендирования</span></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="billing">
+          <div class="section-head">
+            <h2>Подписки</h2>
+            <button class="primary">Изменить тариф</button>
+          </div>
+          <div class="pricing">
+            <article><span>Start</span><strong>4 900 ₽</strong><p>до 5 фидов, ручная проверка</p><button>Выбрать</button></article>
+            <article class="featured"><span>Business</span><strong>14 900 ₽</strong><p>до 50 фидов, мониторинг, Telegram</p><button>Текущий тариф</button></article>
+            <article><span>Agency</span><strong>39 900 ₽</strong><p>команды, white label, API</p><button>Обсудить</button></article>
+          </div>
+        </section>
+
+        <section class="view" id="admin">
+          <div class="section-head">
+            <h2>Админка</h2>
+            <button class="primary">Добавить клиента</button>
+          </div>
+          <div class="admin-grid">
+            <article><span>MRR</span><strong>184 300 ₽</strong><p>+18% к апрелю</p></article>
+            <article><span>Пользователи</span><strong>356</strong><p>23 новых за месяц</p></article>
+            <article><span>Активные подписки</span><strong>142</strong><p>9 новых за месяц</p></article>
+            <article><span>Использование фидов</span><strong>78%</strong><p>1 248 из 1 600</p></article>
+          </div>
+          <div class="grid two">
+            <section class="panel">
+              <h3>Клиенты</h3>
+              <table>
+                <tbody>
+                  <tr><td>Greenpeak Realty</td><td>Business</td><td><span class="status ok">Оплачен</span></td></tr>
+                  <tr><td>Estatek</td><td>Start</td><td><span class="status warn">Лимит</span></td></tr>
+                  <tr><td>CityHome</td><td>Agency</td><td><span class="status ok">Оплачен</span></td></tr>
+                </tbody>
+              </table>
+            </section>
+            <section class="panel">
+              <h3>Системные события</h3>
+              <div class="mini-list">
+                <div><strong>Превышен лимит фидов</strong><span>Greenpeak Realty · 12:05</span></div>
+                <div><strong>Ошибка генерации XML</strong><span>Estatek · 09:48</span></div>
+                <div><strong>Платёж получен</strong><span>CityHome · 09:12</span></div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
