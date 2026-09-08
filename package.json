@@ -5,12 +5,14 @@
   "description": "Real estate feed editor and feed link generator",
   "scripts": {
     "start": "node server.js",
+    "start:local": "node --env-file=.env.local-login server.js",
     "check": "node --check server.js"
   },
   "engines": {
     "node": "20.x"
   },
   "dependencies": {
-    "@vercel/blob": "^2.6.1"
+    "@vercel/blob": "^2.6.1",
+    "fast-xml-parser": "^5.11.1"
   }
 }

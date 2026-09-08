@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
   <title>Генератор фидов недвижимости</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2340394a'/%3E%3Cpath d='M20 17h28v9H30v8h15v9H30v15H20z' fill='white'/%3E%3C/svg%3E">
   <style>
@@ -4168,6 +4170,143 @@
       }
     }
 
+    /* Client workspace: monochrome interface, original feed engine. */
+    :root {
+      --bg: #f6f6f6; --surface: #fff; --surface-2: #f0f0f0;
+      --text: #171717; --muted: #666; --line: #e1e1e1; --line-strong: #bcbcbc;
+      --brand: #171717; --brand-dark: #000; --brand-soft: #f1f1f1;
+      --site-gray: #eee; --green: #171717; --green-2: #eee;
+      --amber: #444; --amber-2: #eee; --red: #171717; --red-2: #eee;
+      --shadow: 0 4px 20px rgba(0,0,0,.04);
+    }
+    body { background: var(--bg); }
+    .main { background: var(--bg); }
+    .sidebar { background: #fff; border-right: 1px solid var(--line); }
+    .brand-logo, .auth-mark { filter: grayscale(1); }
+    .workspace-switcher { margin: 8px 0 25px; padding: 15px; border: 1px solid var(--line); border-radius: 10px; }
+    .workspace-switcher span { display: block; font-size: 11px; color: #737373; margin-bottom: 5px; }
+    .workspace-switcher strong { font-size: 14px; font-weight: 600; }
+    .nav-label { padding: 0 14px; margin: 0 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: #737373; }
+    .nav-item { border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; }
+    .nav-item.active { background: #171717; color: #fff; }
+    .nav-item:hover:not(.active) { background: #f1f1f1; color: #171717; }
+    .workspace-note { padding: 20px 14px; font-size: 11px; line-height: 1.7; color: #737373; border-top: 1px solid var(--line); }
+    .topbar { background: #fff; min-height: 92px; box-shadow: none; }
+    .topbar h1 { font-size: 26px; font-weight: 650; letter-spacing: -.7px; }
+    .subtitle { line-height: 1.6; }
+    .top-status::before { background: #171717; }
+    .workflow-nav { display: flex; gap: 6px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .workflow-nav button { flex: 1; white-space: nowrap; border: 0; background: transparent; padding: 10px 8px; font-size: 12px; color: #444; box-shadow: none; }
+    .workflow-nav button:hover { background: #e9e9e9; }
+    .workflow-nav span { display: inline-block; margin-right: 7px; color: #858585; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .source-panel, .feeds-panel, .layouts-panel, .validator-panel, .bulk-panel,
+    .publish-panel, .quality-panel, .change-log-panel, .table-wrap {
+      border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: none;
+      scroll-margin-top: 20px;
+    }
+    .panel-title { font-size: 18px; font-weight: 650; letter-spacing: -.3px; }
+    .panel-caption { font-size: 12px; line-height: 1.65; }
+    button, input, select, textarea { border-radius: 7px; }
+    button { box-shadow: none; font-size: 12px; }
+    button.primary, #loadUrlBtn, #generateLinkBtn, #applyBulkBtn { background: #171717; border-color: #171717; color: #fff; box-shadow: none; }
+    button.primary:hover { background: #333; }
+    input, textarea, select { background: #fff; color: #171717; border-color: #d4d4d4; box-shadow: none; accent-color: #171717; }
+    :is(button,input,select,textarea,a):focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
+    .detected-card, .detected-card.primary, .platform-guidance, .source-status,
+    .object-filter-panel, .brand-intro, .brand-preview-help, .editor-empty { background: #f5f5f5; color: #444; border-color: var(--line); box-shadow: none; }
+    .detected-card strong { color: #171717; }
+    .detected-card { border-radius: 8px; }
+    .editor { background: #fff; box-shadow: none; border-left: 1px solid var(--line); }
+    .editor-head { background: #fff; border-color: var(--line); }
+    .editor-status::before { background: #171717; }
+    .badge, .badge.ok, .badge.warn, .badge.bad, .validation, .validation.ok, .validation.warn,
+    .feed-status, .source-status.error, .source-status.success { background: #f0f0f0; color: #333; border-color: #d4d4d4; }
+    tbody tr.selected, tbody tr.checked { background: #ededed; }
+    th { background: #f7f7f7; color: #666; }
+    td { border-color: #eee; }
+    a { color: #222; }
+    .validator-result.ok, .validator-result.warning, .validator-result.error {
+      background: #f1f1f1; color: #333; border-left: 4px solid #555; border-radius: 8px;
+    }
+    .validator-result strong, .validator-result p { color: #444; }
+    .change-log-item, .official-validator-card { box-shadow: none; border-color: var(--line); border-radius: 8px; }
+    @media (max-width:1120px) {
+      .workspace-switcher, .nav-label, .workspace-note { display: none; }
+      .sidebar { flex-wrap: wrap; gap: 5px; }
+      .nav-item { min-height: 40px; }
+    }
+    @media (max-width:720px) {
+      .topbar { min-height: 100px; }
+      .topbar h1 { font-size: 23px; }
+      .workflow-nav button { flex: 0 0 auto; }
+      .top-status { display: none; }
+      .nav-item { font-size: 12px; padding: 10px; }
+      .source-panel, .publish-panel, .bulk-panel { padding: 16px; }
+    }
+    .projects-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:16px 0 24px; }
+    .projects-heading h2 { font-size:28px; margin:0 0 8px; letter-spacing:-.7px; }
+    .projects-heading p, .project-empty p { color:#666; line-height:1.6; }
+    #projectSearch { margin:24px 0; width:min(100%,360px); }
+    .project-entry { display:grid; grid-template-columns:minmax(0,1fr) 130px 110px 90px; align-items:center; gap:20px; padding:24px 16px; border-bottom:1px solid #ddd; text-decoration:none; font-size:13px; }
+    .project-entry:hover { background:#eee; }
+    .project-entry strong { display:block; font-size:17px; margin-bottom:8px; }
+    .project-entry small { display:block; color:#666; overflow-wrap:anywhere; }
+    .project-empty { border:1px dashed #bbb; border-radius:12px; padding:48px 24px; text-align:center; background:white; }
+    #projectDialog { width:min(460px,calc(100% - 32px)); border:1px solid #ddd; border-radius:14px; padding:28px; }
+    #projectDialog::backdrop { background:rgba(0,0,0,.35); }
+    #projectDialog p { line-height:1.6; color:#666; }
+    #projectDialog input { width:100%; margin:10px 0 24px; }
+    #projectDialog label { display:block; margin-top:24px; }
+    @media(max-width:720px) { .projects-heading { align-items:flex-start; flex-direction:column; } .project-entry { grid-template-columns:1fr 1fr; } .project-entry>div { grid-column:1/-1; } }
+    .sidebar .nav-item { white-space:normal; line-height:1.5; height:auto; }
+    .sidebar .nav-text { display:inline; }
+    .generated-link { background:#f1f1f1; color:#444; }
+    .workflow-nav button[aria-current="step"] { background:#e5e5e5; color:#111; }
+    .complexes-panel { padding:22px; }
+    .catalog-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
+    .catalog-head #complexSearch { width:min(320px,100%); }
+    .catalog-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:24px 0; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .catalog-summary div { padding:18px; border-right:1px solid var(--line); }
+    .catalog-summary div:last-child { border-right:0; }
+    .catalog-summary strong { display:block; margin-bottom:4px; font-size:24px; }
+    .catalog-summary span { color:var(--muted); font-size:11px; }
+    .complex-list { border-top:1px solid var(--line); }
+    .complex-row { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(160px,1fr) 130px auto auto; gap:14px; align-items:center; padding:18px 4px; border-bottom:1px solid var(--line); }
+    .complex-row strong, .complex-row small { display:block; }
+    .complex-row small { margin-top:5px; color:var(--muted); }
+    .complex-houses { display:flex; flex-wrap:wrap; gap:5px; }
+    .complex-houses span { padding:4px 7px; border:1px solid var(--line); border-radius:5px; font-size:10px; }
+    .catalog-state { color:#555; font-size:11px; }
+    .editor-section-nav { position:sticky; top:0; z-index:3; display:flex; gap:4px; padding:10px 0 14px; background:#fff; border-bottom:1px solid var(--line); overflow-x:auto; }
+    .editor-section-nav button { min-height:32px; padding:0 9px; border:0; background:transparent; white-space:nowrap; }
+    .editor-section-nav button:hover { background:#eee; }
+    .form-grid .section-title { scroll-margin-top:70px; }
+    .project-source-list { display:grid; gap:8px; margin-top:18px; }
+    .source-record { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) 110px 120px auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record strong, .source-record small { display:block; }
+    .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .source-record .source-health { font-size:11px; color:#444; }
+    .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
+    .source-empty { padding:24px; border:1px dashed var(--line-strong); border-radius:9px; color:var(--muted); text-align:center; }
+    .source-schedule-note { margin-top:10px; color:var(--muted); font-size:10px; line-height:1.5; }
+    .template-layer-editor { display:grid; gap:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:#fafafa; }
+    .layer-editor-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+    .layer-editor-head h3, .layer-editor-head p { margin:0; }
+    .layer-editor-head p { margin-top:6px; color:var(--muted); font-size:11px; line-height:1.6; }
+    .layer-editor-head code { padding:2px 5px; border-radius:4px; background:#e7e7e7; color:#222; }
+    .layer-editor-head>span { color:var(--muted); font-size:10px; white-space:nowrap; }
+    .layer-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; }
+    .layer-list>div { display:flex; gap:10px; align-items:center; padding:12px; border-right:1px solid var(--line); }
+    .layer-list>div:last-child { border-right:0; }
+    .layer-list b { display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:#171717; color:#fff; font-size:10px; }
+    .layer-list strong, .layer-list small { display:block; }
+    .layer-list small { margin-top:3px; color:var(--muted); font-size:9px; }
+    .template-text-controls { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .template-text-controls .span-2 { grid-column:span 2; }
+    .template-text-controls input[type="color"] { min-height:42px; padding:5px; }
+    @media(max-width:780px) { .layer-list, .template-text-controls { grid-template-columns:1fr; } .layer-list>div { border-right:0; border-bottom:1px solid var(--line); } .template-text-controls .span-2 { grid-column:auto; } }
+    @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } }
+    @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } }
   </style>
 </head>
 <body>
@@ -4197,10 +4336,18 @@
         <img class="brand-logo" src="assets/sozdateli-logo.png" alt="Создатели">
         <small>управление фидами</small>
       </div>
-      <div class="nav-item active" data-nav="objects">▦ <span class="nav-text">Рабочая область</span></div>
-      <div class="nav-item" data-nav="validator">✓ <span class="nav-text">Валидатор фидов</span></div>
-      <div class="nav-item" data-nav="feeds">☰ <span class="nav-text">Мониторинг</span></div>
+      <div class="workspace-switcher"><span>Рабочая область</span><strong>Создатели</strong></div>
+      <div class="nav-label">Управление</div>
+      <a class="nav-item" href="/">Все проекты</a>
+      <button type="button" class="nav-item" data-nav="source">Источники</button>
+      <button type="button" class="nav-item" data-nav="complexes"><span class="nav-text">ЖК и дома</span></button>
+      <button type="button" class="nav-item active" data-nav="apartments"><span class="nav-text">Квартиры</span></button>
+      <button type="button" class="nav-item" data-nav="branding">Шаблон планировок</button>
+      <button type="button" class="nav-item" data-nav="validator"><span class="nav-text">Валидатор фидов</span></button>
+      <button type="button" class="nav-item" data-nav="results">Результаты и ссылки</button>
+      <button type="button" class="nav-item" data-nav="feeds"><span class="nav-text">Мониторинг</span></button>
       <div class="sidebar-spacer"></div>
+      <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.</div>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
     </aside>
 
@@ -4213,14 +4360,43 @@
         <div class="top-status">Сервис работает</div>
       </div>
 
-      <section class="source-panel" data-page="objects">
-        <h2 class="panel-title">Источник фида</h2>
+      <nav class="workflow-nav" data-page="objects" aria-label="Этапы работы с фидом">
+        <button type="button" data-step=".source-panel"><span>01</span> Источник</button>
+        <button type="button" data-step=".complexes-panel"><span>02</span> ЖК и дома</button>
+        <button type="button" data-step=".table-wrap"><span>03</span> Квартиры</button>
+        <button type="button" data-step=".brand-workflow-panel"><span>04</span> Планировки</button>
+        <button type="button" data-step=".quality-panel"><span>05</span> Проверка</button>
+        <button type="button" data-step=".publish-panel"><span>06</span> Результаты</button>
+      </nav>
+
+      <section class="projects-page" data-page="projects">
+        <div class="projects-heading"><div><h2>Проекты фидов</h2><p>Источники, помещения, планировки и готовые ссылки каждого проекта.</p></div><button class="primary" id="newProjectBtn">Создать проект</button></div>
+        <p class="panel-caption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
+        <input id="projectSearch" type="search" placeholder="Найти проект" aria-label="Найти проект">
+        <div id="projectList"></div>
+      </section>
+      <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>Объедините источник, настройки и результат в одном пространстве.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
+      <section class="source-panel" data-page="source">
+        <h2 class="panel-title">Подключённые источники</h2>
+        <div class="panel-caption">Добавляйте XML разных площадок. Каждый источник обновляется независимо, а квартиры собираются в общий каталог проекта.</div>
         <div class="source-grid">
+          <div class="field">
+            <label for="sourceName">Название</label>
+            <input id="sourceName" placeholder="Например, ЦИАН — основной">
+          </div>
           <div class="field">
             <label for="feedUrl">Ссылка на исходный фид</label>
             <input id="feedUrl" type="url" placeholder="https://site.ru/feed.xml">
           </div>
-          <button id="loadUrlBtn" type="button" class="primary">Подтянуть фид</button>
+          <div class="field compact">
+            <label for="sourcePlatform">Тип фида</label>
+            <select id="sourcePlatform"><option value="auto">Определить автоматически</option><option value="cian">ЦИАН</option><option value="avito">Авито</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик</option></select>
+          </div>
+          <div class="field compact">
+            <label for="sourceInterval">Обновление</label>
+            <select id="sourceInterval"><option value="manual">Вручную</option><option value="60">Каждый час</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720">Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
+          </div>
+          <button id="loadUrlBtn" type="button" class="primary">Добавить источник</button>
           <button id="importBtn">Загрузить XML</button>
           <input id="fileInput" class="file-input" type="file" accept=".json,.xml,.csv,text/xml,application/xml,application/json,text/csv">
         </div>
@@ -4230,6 +4406,8 @@
           <div class="detected-card"><span>Источник</span><strong id="detectedProvider">-</strong></div>
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
+        <div class="project-source-list" id="projectSourceList"></div>
+        <div class="source-schedule-note">Автообновление по интервалу работает, пока сервис открыт в браузере. Для автономного серверного расписания будет добавлена очередь фоновых задач.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
         </div>
@@ -4310,12 +4488,21 @@
         </div>
       </section>
 
-      <section class="table-wrap" data-page="objects">
+      <section class="complexes-panel" data-page="complexes">
+        <div class="catalog-head">
+          <div><h2 class="panel-title">ЖК и дома</h2><div class="panel-caption">Проверьте группировку домов, количество квартир и готовность каждого жилого комплекса.</div></div>
+          <input id="complexSearch" type="search" placeholder="Найти ЖК или дом" aria-label="Найти ЖК или дом">
+        </div>
+        <div class="catalog-summary" id="complexSummary"></div>
+        <div class="complex-list" id="complexList"></div>
+      </section>
+
+      <section class="table-wrap" data-page="apartments">
         <div class="table-headline">
-          <h2 class="panel-title">Объекты в фиде</h2>
+          <h2 class="panel-title">Квартиры</h2>
           <button id="resetChangesBtn" type="button" class="reset-inline" hidden>Сбросить правки</button>
         </div>
-        <div class="panel-caption">Найдите объекты, отметьте галочками нужные строки и редактируйте их точечно справа или массово в блоке ниже.</div>
+        <div class="panel-caption">Найдите квартиру, откройте объявление для точечного редактирования или отметьте несколько строк для массовой правки.</div>
         <div class="object-filter-panel">
           <div class="field">
             <label for="search">Поиск</label>
@@ -4395,7 +4582,7 @@
         </div>
       </section>
 
-      <section class="bulk-panel" data-page="objects">
+      <section class="bulk-panel" data-page="apartments">
         <div class="bulk-head">
           <div>
             <h2 class="panel-title">Массовые правки</h2>
@@ -4428,7 +4615,7 @@
         <button id="applyBulkBtn" class="primary">Применить к выбранным</button>
       </section>
 
-      <section class="layouts-panel brand-workflow-panel" id="layoutsPanel" data-page="objects">
+      <section class="layouts-panel brand-workflow-panel" id="layoutsPanel" data-page="branding">
         <h2 class="panel-title">Брендированные планировки</h2>
         <div class="panel-caption">Загрузите подложку для текущего фида, выставьте одну планировку как образец и добавьте готовые макеты первым изображением у объектов.</div>
         <div class="layout-branding">
@@ -4469,6 +4656,22 @@
             <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
             <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
           </div>
+          <div class="template-layer-editor">
+            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Добавьте текст из объявления поверх подложки. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
+            <div class="layer-list" aria-label="Слои шаблона">
+              <div><b>1</b><span><strong>Подложка</strong><small>Фоновое изображение</small></span></div>
+              <div><b>2</b><span><strong>Планировка</strong><small>Изображение из фида</small></span></div>
+              <div><b>3</b><span><strong>Текст объявления</strong><small>Динамические поля</small></span></div>
+            </div>
+            <div class="template-text-controls">
+              <div class="field span-2"><label for="templateHeadline">Заголовок</label><input id="templateHeadline" placeholder="{{rooms}}-комн. · {{area}} м²"></div>
+              <div class="field span-2"><label for="templateSubline">Подпись</label><input id="templateSubline" placeholder="{{price}} · {{complex}}"></div>
+              <div class="field compact"><label for="templateTextColor">Цвет текста</label><input id="templateTextColor" type="color" value="#111111"></div>
+              <div class="field compact"><label for="templateTextSize">Размер</label><input id="templateTextSize" type="number" min="16" max="120" value="42"></div>
+              <div class="field compact"><label for="templateTextX">Позиция X, %</label><input id="templateTextX" type="number" min="0" max="100" value="7"></div>
+              <div class="field compact"><label for="templateTextY">Позиция Y, %</label><input id="templateTextY" type="number" min="0" max="100" value="10"></div>
+            </div>
+          </div>
           <div class="brand-source-panel">
             <div class="brand-source-head">
               <div>
@@ -4486,11 +4689,10 @@
               <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
-          <div class="before-after-panel" id="beforeAfterPreview" aria-live="polite"></div>
         </div>
       </section>
 
-      <section class="change-log-panel" data-page="objects">
+      <section class="change-log-panel" data-page="apartments">
         <div class="change-log-head">
           <div>
             <h2 class="panel-title">Что изменено</h2>
@@ -4509,7 +4711,7 @@
         <div class="issue-list" id="issueDiagnostics"></div>
       </section>
 
-      <section class="publish-panel" data-page="objects">
+      <section class="publish-panel" data-page="results">
         <h2 class="panel-title">Финальная выгрузка</h2>
         <div class="panel-caption">Последний шаг после проверки: назовите фид и выберите, что нужно сейчас — постоянная ссылка или обычный XML-файл.</div>
         <div class="publish-row">
@@ -4541,9 +4743,16 @@
 
       <div id="validation" class="validation"></div>
 
+      <nav class="editor-section-nav" aria-label="Разделы объявления">
+        <button type="button" data-editor-anchor="Основное">Основное</button>
+        <button type="button" data-editor-anchor="Параметры квартиры">Квартира</button>
+        <button type="button" data-editor-anchor="ЖК и дом">ЖК и дом</button>
+        <button type="button" data-editor-anchor="Точечная кастомизация">Медиа</button>
+      </nav>
+
       <div class="editor-empty" id="editorEmpty">
-        <strong>Объект не выбран</strong>
-        Выберите строку в таблице «Объекты в фиде», чтобы открыть карточку и редактировать параметры. До выбора объекта данные справа не показываются.
+        <strong>Объявление не выбрано</strong>
+        Выберите квартиру в таблице, чтобы проверить и отредактировать её объявление.
       </div>
 
       <form id="editorForm" class="form-grid">
@@ -4730,12 +4939,23 @@
   </dialog>
 
   <script>
-    const storageKey = "feed-generator-cian-v2";
+    const projectIndexKey = "feeddev-projects-v1";
+    let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
+    if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
+      projects = [{ id: "legacy", name: "Мой первый проект", createdAt: new Date().toISOString() }];
+      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+    }
+    const requestedProject = new URLSearchParams(location.search).get("project");
+    const currentProject = projects.find(project => project.id === requestedProject);
+    const projectSuffix = currentProject && currentProject.id !== "legacy" ? "-" + currentProject.id : "";
+    const storageKey = "feed-generator-cian-v2" + projectSuffix;
     const legacyStorageKey = "feed-generator-cian-v1";
-    const publishedStorageKey = "feed-generator-published-v1";
-    const brandProfilesStorageKey = "feed-generator-brand-profiles-v1";
-    const monitoredStorageKey = "feed-generator-monitor-v1";
-    const changeLogStorageKey = "feed-generator-change-log-v1";
+    const publishedStorageKey = "feed-generator-published-v1" + projectSuffix;
+    const brandProfilesStorageKey = "feed-generator-brand-profiles-v1" + projectSuffix;
+    const monitoredStorageKey = "feed-generator-monitor-v1" + projectSuffix;
+    const changeLogStorageKey = "feed-generator-change-log-v1" + projectSuffix;
+    const complexStatusStorageKey = "feed-generator-complex-status-v1" + projectSuffix;
+    const projectSourcesStorageKey = "feed-generator-sources-v1" + projectSuffix;
     const bulkSections = {
       main: {
         label: "Основное",
@@ -4919,7 +5139,7 @@
     let originalObjects = appState.originalObjects;
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
-    let activePage = "objects";
+    let activePage = currentProject ? "source" : "projects";
     let sortState = { key: "", direction: "asc" };
     let selectedId = "";
     let checkedIds = new Set();
@@ -4940,6 +5160,14 @@
     let brandProfiles = loadBrandProfiles();
     let changeLog = loadChangeLog();
     let pendingSingleEdit = null;
+    let publishedComplexes = new Set(JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]"));
+    let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
+    if (!projectSources.length && appState.feedUrl) {
+      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "manual", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "" }];
+      localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
+      objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
+      originalObjects = structuredClone(objects);
+    }
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -5022,7 +5250,7 @@
     function load() {
       try {
         const saved = JSON.parse(localStorage.getItem(storageKey));
-        if (saved?.objects?.length) return {
+        if (Array.isArray(saved?.objects)) return {
           objects: saved.objects,
           originalObjects: saved.originalObjects?.length ? saved.originalObjects : structuredClone(saved.objects),
           activePlatform: saved.activePlatform || "cian",
@@ -5032,6 +5260,7 @@
           generatedLink: saved.generatedLink || "",
           generatedFeedId: saved.generatedFeedId || ""
         };
+        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
         const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
         if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
         return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
@@ -5539,39 +5768,125 @@
       renderBulkStatus();
     }
 
+    function complexGroups() {
+      const groups = new Map();
+      objects.forEach(item => {
+        const name = String(item.complexName || item.buildingName || "Без названия").trim();
+        const key = normalizeProjectName(name);
+        if (!groups.has(key)) groups.set(key, { key, name, items: [], houses: new Set() });
+        const group = groups.get(key);
+        group.items.push(item);
+        group.houses.add(String(item.buildingName || item.houseId || "Дом не указан"));
+      });
+      return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+    }
+
+    function renderComplexes() {
+      const query = document.querySelector("#complexSearch")?.value.trim().toLowerCase() || "";
+      const groups = complexGroups();
+      const visible = groups.filter(group => [group.name, ...group.houses].join(" ").toLowerCase().includes(query));
+      const ready = groups.filter(group => !group.items.some(item => requiredIssues(item).length)).length;
+      document.querySelector("#complexSummary").innerHTML = `<div><strong>${groups.length}</strong><span>жилых комплексов</span></div><div><strong>${objects.length}</strong><span>квартир</span></div><div><strong>${ready}</strong><span>готовы к выгрузке</span></div>`;
+      document.querySelector("#complexList").innerHTML = visible.map(group => {
+        const issues = group.items.reduce((sum, item) => sum + requiredIssues(item).length, 0);
+        const isPublished = publishedComplexes.has(group.key);
+        return `<article class="complex-row">
+          <div><strong>${escapeXml(group.name)}</strong><small>${group.houses.size} ${group.houses.size === 1 ? "дом" : "дома"} · ${group.items.length} квартир</small></div>
+          <div class="complex-houses">${[...group.houses].slice(0, 3).map(house => `<span>${escapeXml(house)}</span>`).join("")}</div>
+          <span class="catalog-state">${issues ? `${issues} замечаний` : "Данные заполнены"}</span>
+          <button type="button" data-complex-apartments="${escapeXml(group.name)}">Квартиры</button>
+          <button type="button" class="${isPublished ? "" : "primary"}" data-complex-publish="${group.key}">${isPublished ? "Снять с публикации" : "Опубликовать"}</button>
+        </article>`;
+      }).join("") || `<div class="project-empty"><h3>${query ? "Ничего не найдено" : "ЖК появятся после загрузки фида"}</h3><p>${query ? "Измените поисковый запрос." : "Подключите XML в разделе «Источники»."}</p></div>`;
+    }
+
+    function saveProjectSources() {
+      localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
+    }
+
+    function sourceIntervalLabel(value) {
+      return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
+    }
+
+    function renderProjectSources() {
+      const node = document.querySelector("#projectSourceList");
+      if (!node) return;
+      node.innerHTML = projectSources.map(source => {
+        const platform = platformProfiles[source.platform]?.name || "Определяется";
+        const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
+        return `<article class="source-record">
+          <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
+          <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
+          <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
+          <span><small>${escapeXml(source.error || updated)}</small></span>
+          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+        </article>`;
+      }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
+    }
+
+    function renderProjects() {
+      const query = document.querySelector("#projectSearch").value.trim().toLowerCase();
+      const visible = projects.filter(project => project.name.toLowerCase().includes(query));
+      document.querySelector("#projectList").innerHTML = visible.map(project => {
+        const suffix = project.id === "legacy" ? "" : "-" + project.id;
+        const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
+        return '<a class="project-entry" href="?project=' + encodeURIComponent(project.id) + '"><div><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></div><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><span>Открыть →</span></a>';
+      }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
+    }
+
     function renderPage() {
-      const isFeedsPage = activePage === "feeds";
-      const isValidatorPage = activePage === "validator";
-      const isLayoutsPage = false;
-      document.querySelector("#appShell").classList.toggle("feeds-mode", isFeedsPage);
-      document.querySelector("#appShell").classList.toggle("layouts-mode", false);
-      document.querySelector("#appShell").classList.toggle("validator-mode", isValidatorPage);
+      const titles = { projects: "Проекты фидов", source: "Источники", complexes: "ЖК и дома", apartments: "Квартиры", branding: "Шаблон планировок", validator: "Проверка фида", results: "Результаты и ссылки", feeds: "Мониторинг" };
+      const shell = document.querySelector("#appShell");
+      shell.classList.toggle("feeds-mode", activePage !== "apartments");
+      shell.classList.toggle("validator-mode", activePage === "validator");
+      shell.classList.toggle("project-list-mode", activePage === "projects");
       document.querySelectorAll("[data-page]").forEach(section => {
-        section.classList.toggle("page-hidden", section.dataset.page !== activePage);
+        const isWorkflow = section.classList.contains("workflow-nav");
+        section.classList.toggle("page-hidden", isWorkflow ? !currentProject : section.dataset.page !== activePage);
       });
       document.querySelectorAll("[data-nav]").forEach(item => {
         item.classList.toggle("active", item.dataset.nav === activePage);
+        item.hidden = !currentProject;
       });
-      const profile = platformProfiles[activePlatform];
-      document.querySelector(".topbar h1").textContent = isFeedsPage ? "Мониторинг" : isValidatorPage ? "Валидатор фидов" : "Фиды недвижимости";
-      document.querySelector(".subtitle").textContent = isFeedsPage
-        ? "Контроль рабочих ссылок, статусов проверки и ошибок по сохраненным фидам"
-        : isValidatorPage
-          ? `Проверка текущего фида по требованиям ${profile.name}`
-          : `Исходный фид → ${profile.name}: точечные и массовые правки перед выгрузкой`;
+      document.querySelector(".topbar h1").textContent = currentProject ? currentProject.name : titles.projects;
+      document.querySelector(".subtitle").textContent = titles[activePage];
+      document.querySelectorAll("[data-step]").forEach(button => {
+        if (stepPages[button.dataset.step] === activePage) button.setAttribute("aria-current", "step");
+        else button.removeAttribute("aria-current");
+      });
+      document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
+      if (activePage === "projects") renderProjects();
+      if (activePage === "complexes") renderComplexes();
     }
 
     function switchPage(page) {
       activePage = page;
       renderPage();
-      const resetScroll = () => {
-        const main = document.querySelector(".main");
-        if (main) main.scrollTop = 0;
-        window.scrollTo(0, 0);
-      };
-      resetScroll();
-      requestAnimationFrame(resetScroll);
+      document.querySelector(".main").scrollTop = 0;
+      window.scrollTo(0, 0);
     }
+
+    const stepPages = { ".source-panel": "source", ".complexes-panel": "complexes", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".quality-panel": "validator", ".publish-panel": "results" };
+    document.querySelectorAll("[data-step]").forEach(button => {
+      button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
+    });
+    document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
+    document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
+    document.querySelector("#projectSearch").addEventListener("input", renderProjects);
+    document.querySelector("#projectForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const name = document.querySelector("#projectName").value.trim();
+      if (!name) return;
+      const project = { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
+      projects.push(project);
+      try {
+        localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+        location.href = "?project=" + encodeURIComponent(project.id);
+      } catch {
+        projects.pop();
+        showToast("Не удалось сохранить проект: хранилище браузера заполнено.");
+      }
+    });
 
     function providerFromUrl(url = "") {
       try {
@@ -5713,7 +6028,7 @@
     }
 
     function currentFeedProjectKey() {
-      return normalizeProjectName(appState.feedUrl || appState.feedName || "current-feed");
+      return normalizeProjectName(currentProject?.id || appState.feedName || appState.feedUrl || "current-feed");
     }
 
     function currentFeedProjectLabel() {
@@ -6094,7 +6409,13 @@
         widthPercent: clamp(document.querySelector("#brandSize")?.value, 20, 95, 78),
         marginPercent: clamp(document.querySelector("#brandMargin")?.value, 0, 20, 4),
         offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, -60, 60, 0),
-        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0)
+        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0),
+        headline: document.querySelector("#templateHeadline")?.value || "",
+        subline: document.querySelector("#templateSubline")?.value || "",
+        textColor: document.querySelector("#templateTextColor")?.value || "#111111",
+        textSize: clamp(document.querySelector("#templateTextSize")?.value, 16, 120, 42),
+        textXPercent: clamp(document.querySelector("#templateTextX")?.value, 0, 100, 7),
+        textYPercent: clamp(document.querySelector("#templateTextY")?.value, 0, 100, 10)
       };
     }
 
@@ -6119,7 +6440,13 @@
         widthPercent: config.widthPercent,
         marginPercent: config.marginPercent,
         offsetXPercent: config.offsetXPercent,
-        offsetYPercent: config.offsetYPercent
+        offsetYPercent: config.offsetYPercent,
+        headline: config.headline,
+        subline: config.subline,
+        textColor: config.textColor,
+        textSize: config.textSize,
+        textXPercent: config.textXPercent,
+        textYPercent: config.textYPercent
       };
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
@@ -6141,6 +6468,12 @@
       setValue("#brandMargin", profile.marginPercent, 0);
       setValue("#brandOffsetX", profile.offsetXPercent, 0);
       setValue("#brandOffsetY", profile.offsetYPercent, 0);
+      setValue("#templateHeadline", profile.headline, "");
+      setValue("#templateSubline", profile.subline, "");
+      setValue("#templateTextColor", profile.textColor, "#111111");
+      setValue("#templateTextSize", profile.textSize, 42);
+      setValue("#templateTextX", profile.textXPercent, 7);
+      setValue("#templateTextY", profile.textYPercent, 10);
       document.querySelector("#brandBadgeFileInput").value = "";
 
       try {
@@ -6253,7 +6586,12 @@
       };
     }
 
-    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig()) {
+    function templateText(value, item = {}) {
+      const moneyText = Number(item.price || 0).toLocaleString("ru-RU") + " ₽";
+      return String(value || "").replace(/{{\s*(price|area|rooms|complex)\s*}}/gi, (_, field) => ({ price: moneyText, area: item.totalArea || "—", rooms: item.rooms || "—", complex: item.complexName || "" })[field.toLowerCase()] || "");
+    }
+
+    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig(), item = brandPreviewImages?.target || {}) {
       const context = canvas.getContext("2d");
       const width = badgeImage.naturalWidth || badgeImage.width;
       const height = badgeImage.naturalHeight || badgeImage.height;
@@ -6264,6 +6602,20 @@
 
       const placement = brandedLayoutPlacement(baseImage, badgeImage, config);
       context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
+      const headline = templateText(config.headline, item);
+      const subline = templateText(config.subline, item);
+      if (headline || subline) {
+        const x = width * (config.textXPercent / 100);
+        const y = height * (config.textYPercent / 100);
+        context.fillStyle = config.textColor;
+        context.textBaseline = "top";
+        context.font = `700 ${config.textSize}px Inter, Arial, sans-serif`;
+        if (headline) context.fillText(headline, x, y, width - x * 2);
+        if (subline) {
+          context.font = `500 ${Math.max(14, Math.round(config.textSize * .55))}px Inter, Arial, sans-serif`;
+          context.fillText(subline, x, y + config.textSize * 1.3, width - x * 2);
+        }
+      }
       return canvas;
     }
 
@@ -6491,7 +6843,7 @@
           button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
           brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
           const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
-          drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig);
+          drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig, firstItem);
           const output = await brandedLayoutBlob(canvas);
           brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
           const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
@@ -6957,7 +7309,7 @@
         if (!pendingSingleEdit || pendingSingleEdit.id !== previousId) pendingSingleEdit = { id: previousId, fields: new Set() };
         changedFields.forEach(field => pendingSingleEdit.fields.add(field));
       }
-      objects[existingIndex] = draft;
+      objects[existingIndex] = { ...objects[existingIndex], ...draft };
       selectedId = draft.externalId;
       if (checkedIds.has(previousId)) {
         checkedIds.delete(previousId);
@@ -7458,6 +7810,7 @@ ${photos}
       renderBeforeAfterPreview();
       renderChangeLog();
       renderFeedValidator();
+      renderProjectSources();
       renderPage();
     }
 
@@ -7568,9 +7921,11 @@ ${photos}
       return response.text();
     }
 
-    async function loadFeedFromUrl() {
+    async function loadFeedFromUrl(sourceId = "") {
+      if (loadFeedFromUrl.running) return;
       const input = document.querySelector("#feedUrl");
-      const url = input.value.trim();
+      const existingSource = projectSources.find(source => source.id === sourceId);
+      const url = (existingSource?.url || input.value).trim();
       if (!url) {
         setLoadStatus("Вставьте ссылку на XML-фид.", "bad");
         return;
@@ -7582,38 +7937,86 @@ ${photos}
         return;
       }
       setLoadStatus("Загружаю фид по ссылке...");
+      loadFeedFromUrl.running = true;
       document.querySelector("#loadUrlBtn").disabled = true;
       document.querySelector("#loadUrlBtn").classList.add("loading");
       document.querySelector("#loadUrlBtn").textContent = "Загружаю...";
       try {
         const text = await fetchFeedXmlByUrl(url);
         const parsed = parseXmlFile(text, url);
+        const requestedPlatform = existingSource?.requestedPlatform || document.querySelector("#sourcePlatform").value;
         if (!parsed.objects.length) throw new Error("В XML не найдено объектов");
+        const id = existingSource?.id || crypto.randomUUID();
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
-        objects = parsed.objects;
-        originalObjects = structuredClone(parsed.objects);
+        const withoutSource = objects.reduce((result, item) => {
+          const sourceIds = Array.isArray(item._sourceIds) ? item._sourceIds.filter(value => value !== id) : item._sourceId === id ? [] : item._sourceId ? [item._sourceId] : [];
+          if (item._sourceId !== id && !Array.isArray(item._sourceIds)) result.push(item);
+          else if (sourceIds.length) result.push({ ...item, _sourceId: sourceIds[0], _sourceIds: sourceIds });
+          return result;
+        }, []);
+        parsed.objects.forEach(item => {
+          const duplicate = withoutSource.find(candidate => candidate.externalId === item.externalId);
+          if (duplicate) {
+            duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), id])];
+          } else {
+            withoutSource.push({ ...item, _sourceId: id, _sourceIds: [id] });
+          }
+        });
+        objects = withoutSource;
+        originalObjects = structuredClone(objects);
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
         brandSelectionTouched = false;
-        appState.feedUrl = url;
-        appState.feedName = defaultFeedName(url);
+        appState.feedUrl = projectSources[0]?.url || url;
+        appState.feedName = currentProject?.name || defaultFeedName(url);
         appState.generatedLink = "";
         appState.generatedFeedId = "";
-        clearChangeLog();
+        const sourceRecord = {
+          id,
+          name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
+          url,
+          platform: parsed.platform,
+          requestedPlatform,
+          interval: existingSource?.interval || document.querySelector("#sourceInterval").value,
+          objectCount: parsed.objects.length,
+          updatedAt: new Date().toISOString(),
+          error: ""
+        };
+        const sourceIndex = projectSources.findIndex(source => source.id === id);
+        if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
+        else projectSources.push(sourceRecord);
+        saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
         renderAll();
-        setLoadStatus(`Фид загружен. Определено: ${platformProfiles[activePlatform].name}. Объектов: ${objects.length}.`, "ok");
-        showToast(`Фид загружен: ${objects.length} объектов`);
+        document.querySelector("#sourceName").value = "";
+        if (!existingSource) input.value = "";
+        const correction = requestedPlatform !== "auto" && requestedPlatform !== parsed.platform ? ` Выбранный тип скорректирован на ${platformProfiles[parsed.platform].name}.` : "";
+        setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}`, "ok");
+        showToast(`Источник обновлён: ${parsed.objects.length} квартир`);
       } catch (error) {
+        if (existingSource) {
+          existingSource.error = error.message;
+          existingSource.updatedAt = new Date().toISOString();
+          saveProjectSources();
+          renderProjectSources();
+        }
         setLoadStatus(`Не удалось загрузить фид: ${error.message}. Проверьте ссылку, доступность XML и права доступа к источнику.`, "bad");
       } finally {
+        loadFeedFromUrl.running = false;
         document.querySelector("#loadUrlBtn").disabled = false;
         document.querySelector("#loadUrlBtn").classList.remove("loading");
-        document.querySelector("#loadUrlBtn").textContent = "Подтянуть фид";
+        document.querySelector("#loadUrlBtn").textContent = "Добавить источник";
       }
+    }
+
+    async function syncDueProjectSource() {
+      if (!currentProject || document.hidden || loadFeedFromUrl.running) return;
+      const now = Date.now();
+      const due = projectSources.find(source => source.interval !== "manual" && now - new Date(source.updatedAt || 0).getTime() >= Number(source.interval) * 60 * 1000);
+      if (due) await loadFeedFromUrl(due.id);
     }
 
     function downloadXml() {
@@ -8030,7 +8433,7 @@ ${photos}
       }
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
         drawBrandPreviewFrame() || renderBrandPreview();
       });
@@ -8132,7 +8535,29 @@ ${photos}
     document.querySelector("#resetChangesBtn").addEventListener("click", resetChanges);
     document.querySelector("#clearChangeLogBtn").addEventListener("click", clearChangeLog);
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
-    document.querySelector("#loadUrlBtn").addEventListener("click", loadFeedFromUrl);
+    document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
+    document.querySelector("#projectSourceList").addEventListener("click", event => {
+      const syncButton = event.target.closest("[data-source-sync]");
+      const removeButton = event.target.closest("[data-source-remove]");
+      if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
+      if (removeButton) {
+        const id = removeButton.dataset.sourceRemove;
+        const source = projectSources.find(item => item.id === id);
+        if (!source || !confirm(`Удалить источник «${source.name}» и полученные только из него квартиры?`)) return;
+        projectSources = projectSources.filter(item => item.id !== id);
+        objects = objects.reduce((result, item) => {
+          const remaining = (item._sourceIds || [item._sourceId]).filter(Boolean).filter(value => value !== id);
+          if (!item._sourceId && !item._sourceIds) result.push(item);
+          else if (remaining.length) result.push({ ...item, _sourceId: remaining[0], _sourceIds: remaining });
+          return result;
+        }, []);
+        originalObjects = structuredClone(objects);
+        saveProjectSources();
+        save();
+        renderAll();
+        showToast("Источник удалён");
+      }
+    });
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
     document.querySelector("#copyGeneratedLinkBtn").addEventListener("click", copyGeneratedLink);
     document.querySelector("#chooseLayoutForObjectBtn").addEventListener("click", chooseLayoutForObject);
@@ -8164,23 +8589,29 @@ ${photos}
         const parsed = file.name.endsWith(".xml") ? parseXmlFile(text, file.name) : { platform: "cian", objects: file.name.endsWith(".json") ? JSON.parse(text) : parseCsvFile(text) };
         const next = parsed.objects;
         if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
+        const sourceId = crypto.randomUUID();
         activePlatform = parsed.platform || "cian";
         activeMonitorPlatform = activePlatform;
-        objects = next;
-        originalObjects = structuredClone(next);
+        next.forEach(item => {
+          const duplicate = objects.find(candidate => candidate.externalId === item.externalId);
+          if (duplicate) duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), sourceId])];
+          else objects.push({ ...item, _sourceId: sourceId, _sourceIds: [sourceId] });
+        });
+        originalObjects = structuredClone(objects);
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
         brandSelectionTouched = false;
-        appState.feedUrl = file.name;
-        appState.feedName = defaultFeedName(file.name);
+        appState.feedUrl = projectSources[0]?.url || file.name;
+        appState.feedName = currentProject?.name || defaultFeedName(file.name);
         appState.generatedLink = "";
         appState.generatedFeedId = "";
-        clearChangeLog();
+        projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
+        saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
         renderAll();
-        showToast(`Файл загружен: ${objects.length} объектов`);
+        showToast(`Файл добавлен: ${next.length} квартир`);
       } catch (error) {
         alert(error.message || "Файл не удалось импортировать");
       } finally {
@@ -8188,9 +8619,38 @@ ${photos}
       }
     });
 
+    document.querySelector("#complexSearch").addEventListener("input", renderComplexes);
+    document.querySelector("#complexList").addEventListener("click", event => {
+      const apartmentsButton = event.target.closest("[data-complex-apartments]");
+      const publishButton = event.target.closest("[data-complex-publish]");
+      if (apartmentsButton) {
+        document.querySelector("#search").value = apartmentsButton.dataset.complexApartments === "Без названия" ? "" : apartmentsButton.dataset.complexApartments;
+        switchPage("apartments");
+        renderRows();
+      }
+      if (publishButton) {
+        const key = publishButton.dataset.complexPublish;
+        if (publishedComplexes.has(key)) publishedComplexes.delete(key);
+        else publishedComplexes.add(key);
+        localStorage.setItem(complexStatusStorageKey, JSON.stringify([...publishedComplexes]));
+        renderComplexes();
+        showToast(publishedComplexes.has(key) ? "ЖК добавлен в публикацию" : "ЖК снят с публикации");
+      }
+    });
+    document.querySelectorAll("[data-editor-anchor]").forEach(button => {
+      button.addEventListener("click", () => {
+        const title = [...form.querySelectorAll(".section-title")].find(node => node.textContent.trim() === button.dataset.editorAnchor);
+        title?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
     loginForm.addEventListener("submit", submitLogin);
     document.querySelector("#logoutButton").addEventListener("click", logout);
+    window.setInterval(syncDueProjectSource, 60000);
     initializeAuth();
   </script>
+  <link rel="stylesheet" href="layout-editor.css">
+  <script src="layout-editor.js"></script>
+  <script src="monitor-client.js"></script>
 </body>
 </html>

@@ -21,6 +21,7 @@ const AUTH_COOKIE = "feeddev_session";
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "");
 const TELEGRAM_CHAT_ID = String(process.env.TELEGRAM_CHAT_ID || "");
+const monitor = require('./feed-monitor').createMonitor({file:path.join(DATA_DIR,'monitor.json'),notify:sendTelegramAlert});
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -502,6 +503,7 @@ async function sendTelegramAlert(payload) {
 }
 
 function serveStatic(req, res, pathname) {
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/layout-editor.js','/layout-editor.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
@@ -565,6 +567,16 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
     return send(res, 200, { feeds: await readFeeds() });
+  }
+
+  if (url.pathname === '/api/monitor') {
+    if(process.env.VERCEL)return sendError(res,503,'Серверное расписание требует постоянно работающего Node-сервера. На Vercel оно пока не подключено.');
+    const project=String(url.searchParams.get('project')||'default');
+    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
+    if(req.method==='GET')return send(res,200,{feeds:monitor.read()[project]||[],intervalMinutes:60});
+    if(req.method==='PUT'){const body=await parseBody(req);return send(res,200,{feeds:monitor.replace(project,body.feeds)});}
+    if(req.method==='POST'){const body=await parseBody(req);await monitor.run(project,body.id||null,true);return send(res,200,{feeds:monitor.read()[project]||[]});}
+    return sendError(res,405,'Метод не поддерживается');
   }
 
   if (req.method === "POST" && url.pathname === "/api/monitor-alert") {
@@ -708,6 +720,7 @@ async function serveImageProxy(res, sourceUrl) {
 }
 
 async function handleRequest(req, res) {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.(php|xml)$/i);
@@ -732,6 +745,8 @@ if (require.main === module) {
   http.createServer(handleRequest).listen(PORT, () => {
     ensureStorage();
     console.log(`FeedDev server is running on http://localhost:${PORT}`);
+    const tick=()=>monitor.run().catch(error=>console.error('Monitor:',error.message));
+    tick();setInterval(tick,60000).unref();
   });
 }
 
