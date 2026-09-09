@@ -4298,6 +4298,28 @@
     @media(max-width:780px) { .layer-list, .template-text-controls { grid-template-columns:1fr; } .layer-list>div { border-right:0; border-bottom:1px solid var(--line); } .template-text-controls .span-2 { grid-column:auto; } }
     @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } }
     @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } }
+    /* One page title and one navigation; technical guidance stays contextual. */
+    .main > section > .panel-title,
+    #validatorPanel > div:first-child > .panel-title,
+    .catalog-head .panel-title, .table-headline > .panel-title,
+    .projects-heading h2, .projects-heading p { display:none; }
+    .workspace-note, .workspace-switcher, .platform-guidance, .top-status { display:none; }
+    .monitor-note:empty { display:none; }
+    .feeds-toolbar[hidden], #monitorSummary[hidden], .monitor-notification-settings [hidden] { display:none !important; }
+    .topbar .subtitle { font-size:13px; color:#666; margin-top:5px; }
+    .monitor-notification-settings { grid-template-columns:auto minmax(180px,1fr) auto minmax(200px,1fr); }
+    #saveMonitorNotifications { justify-self:end; grid-column:1/-1; }
+    #telegramConnectionStatus { font-size:12px; line-height:1.5; color:#555; }
+    .feed-notification-channels { display:none; }
+    .feed-row { grid-template-columns:minmax(180px,1fr) 110px 110px 140px auto; }
+    :focus-visible { outline:2px solid #111; outline-offset:3px; }
+    @media(max-width:1000px){
+      .monitor-notification-settings { grid-template-columns:1fr; }
+      #saveMonitorNotifications { justify-self:stretch; }
+      .feed-row { grid-template-columns:1fr; }
+      .project-entry { grid-template-columns:1fr auto; gap:12px; }
+      .project-entry-main { grid-column:1/-1; }
+    }
   </style>
 </head>
 <body>
@@ -4419,8 +4441,12 @@
           <p>Настройки применяются ко всем фидам текущего проекта. Сообщение отправляется при появлении новой ошибки или изменении её текста.</p>
           <label class="notification-channel"><input id="monitorTelegramEnabled" type="checkbox"><span>Telegram</span></label>
           <div class="field compact">
-            <label for="monitorTelegramChatId">ID чата Telegram</label>
-            <input id="monitorTelegramChatId" placeholder="По умолчанию с сервера">
+            <input id="monitorTelegramChatId" type="hidden">
+            <span id="telegramConnectionStatus" role="status">Проверяем подключение…</span>
+            <button id="connectTelegram" type="button">Подключить Telegram</button>
+            <a id="telegramConnectLink" hidden target="_blank" rel="noopener noreferrer">Открыть бота</a>
+            <button id="confirmTelegram" hidden type="button">Подтвердить получателя</button>
+            <button id="disconnectTelegram" hidden type="button">Отключить</button>
           </div>
           <label class="notification-channel"><input id="monitorEmailEnabled" type="checkbox"><span>Email</span></label>
           <div class="field compact">
@@ -5838,6 +5864,7 @@
       projects = projects.filter(item => item.id !== projectId);
       localStorage.setItem(projectIndexKey, JSON.stringify(projects));
       await deleteBrandAsset(projectId).catch(() => {});
+      await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`,{method:'DELETE'}).catch(()=>{});
       fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, {
         method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] })
       }).catch(() => {});
@@ -5853,14 +5880,14 @@
       shell.classList.toggle("project-list-mode", activePage === "projects");
       document.querySelectorAll("[data-page]").forEach(section => {
         const isWorkflow = section.classList.contains("workflow-nav");
-        section.classList.toggle("page-hidden", isWorkflow ? !currentProject : section.dataset.page !== activePage);
+        section.classList.toggle("page-hidden", isWorkflow || section.dataset.page !== activePage);
       });
       document.querySelectorAll("[data-nav]").forEach(item => {
         item.classList.toggle("active", item.dataset.nav === activePage);
         item.hidden = !currentProject;
       });
-      document.querySelector(".topbar h1").textContent = currentProject ? currentProject.name : titles.projects;
-      document.querySelector(".subtitle").textContent = titles[activePage];
+      document.querySelector(".topbar h1").textContent = titles[activePage];
+      document.querySelector(".subtitle").textContent = currentProject?.name || "Управляйте источниками и выгрузками";
       document.querySelectorAll("[data-step]").forEach(button => {
         if (stepPages[button.dataset.step] === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
@@ -6050,10 +6077,13 @@
     function renderFeedsList() {
       const list = document.querySelector("#feedsList");
       const feeds = monitorFilteredFeeds();
+      const hasSavedFeeds = readMonitoredFeeds().length > 0;
+      document.querySelector('.feeds-toolbar').hidden = !hasSavedFeeds;
+      document.querySelector('#monitorSummary').hidden = !hasSavedFeeds;
       if (!feeds.length) {
         list.innerHTML = `
           <div class="feed-empty">
-            Сохраненных фидов по текущим условиям нет. Добавьте ссылку выше или очистите поиск и фильтр статуса.
+            ${hasSavedFeeds ? 'Фиды не найдены. Измените поиск или фильтр статуса.' : 'Добавьте первый фид по ссылке выше. После проверки здесь появится его статус.'}
           </div>
         `;
         renderMonitorSummary();

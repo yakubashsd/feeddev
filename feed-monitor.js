@@ -58,7 +58,7 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
           const latest=read(),record=latest[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
           if(checked.status==='bad'&&(record.telegramEnabled||record.emailEnabled)&&(record.status!=='bad'||record.error!==checked.error)){
             try{
-              const notification=await notify(checked);
+              const notification=await notify({...checked,...record,status:checked.status,error:checked.error,projectId:key});
               if(notification?.telegramSent)checked.telegramNotifiedAt=new Date().toISOString();
               if(notification?.emailSent)checked.emailNotifiedAt=new Date().toISOString();
               checked.notificationError=notification?.errors?.join(' ')||'';

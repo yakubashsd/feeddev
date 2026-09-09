@@ -29,6 +29,22 @@ const SMTP_USER = String(process.env.SMTP_USER || "");
 const SMTP_PASS = String(process.env.SMTP_PASS || "");
 const EMAIL_FROM = String(process.env.EMAIL_FROM || SMTP_USER || "");
 const MONITOR_INTERVAL_MINUTES = 12 * 60;
+const telegramLinks = require('./telegram-link').createTelegramLinks({file:path.join(DATA_DIR,'telegram-links.json')});
+async function telegramApi(method, body={}) {
+  if(!TELEGRAM_BOT_TOKEN)throw Error('Бот ещё не настроен. Обратитесь к администратору.');
+  const response=await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
+  const result=await response.json();
+  if(!response.ok || !result.ok)throw Error('Telegram недоступен. Проверьте настройки бота.');
+  return result.result;
+}
+let pollingTelegram=false;
+async function pollTelegram(){
+  if(!TELEGRAM_BOT_TOKEN || pollingTelegram)return;
+  pollingTelegram=true;
+  try { for(const update of await telegramApi('getUpdates',{offset:telegramLinks.offset(),timeout:20,allowed_updates:['message']}))telegramLinks.accept(update); }
+  catch { console.error('Telegram: не удалось получить сообщения бота'); }
+  finally {pollingTelegram=false;}
+}
 const monitor = require('./feed-monitor').createMonitor({file:path.join(DATA_DIR,'monitor.json'),notify:sendMonitorAlerts,intervalMs:MONITOR_INTERVAL_MINUTES*60*1000});
 
 const mimeTypes = {
@@ -543,9 +559,12 @@ async function sendEmailAlert(payload) {
 }
 
 async function sendMonitorAlerts(payload = {}) {
+  const connection=telegramLinks.status(AUTH_USERNAME,payload.projectId || '').connected;
+  payload={...payload,telegramChatId:connection?.chatId || ''};
   const result = { telegramSent: false, emailSent: false, errors: [] };
   if (payload.telegramEnabled) {
     try {
+      if(!connection)throw Error('Подключите Telegram в настройках проекта.');
       await sendTelegramAlert(payload);
       result.telegramSent = true;
     } catch (error) {
@@ -641,11 +660,23 @@ async function handleApi(req, res, url) {
     return sendError(res,405,'Метод не поддерживается');
   }
 
+  if(url.pathname==='/api/telegram-link'){
+    const project=String(url.searchParams.get('project')||'');
+    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
+    if(req.method==='GET')return send(res,200,{...telegramLinks.status(AUTH_USERNAME,project),configured:Boolean(TELEGRAM_BOT_TOKEN)});
+    if(req.method==='DELETE')return send(res,200,telegramLinks.disconnect(AUTH_USERNAME,project));
+    if(req.method==='POST'){
+      const body=await parseBody(req);
+      if(body.confirmationId)return send(res,200,telegramLinks.confirm(AUTH_USERNAME,project,body.confirmationId));
+      const bot=await telegramApi('getMe');
+      const token=telegramLinks.begin(AUTH_USERNAME,project);
+      return send(res,200,{url:`https://t.me/${bot.username}?start=${token}`,expiresIn:600});
+    }
+    return sendError(res,405,'Метод не поддерживается');
+  }
+
   if (req.method === "POST" && url.pathname === "/api/monitor-alert") {
-    const payload = await parseBody(req);
-    const result = await sendMonitorAlerts(payload);
-    if (result.errors.length && !result.telegramSent && !result.emailSent) return sendError(res, 503, result.errors.join(" "));
-    return send(res, 200, result);
+    return sendError(res,410,'Используйте серверную проверку мониторинга.');
   }
 
   if (req.method === "GET" && url.pathname === "/api/layouts") {
@@ -810,6 +841,7 @@ if (require.main === module) {
     console.log(`FeedDev server is running on http://localhost:${PORT}`);
     const tick=()=>monitor.run().catch(error=>console.error('Monitor:',error.message));
     tick();setInterval(tick,60000).unref();
+    pollTelegram();setInterval(pollTelegram,25000).unref();
   });
 }
 
