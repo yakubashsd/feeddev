@@ -4176,7 +4176,8 @@
     .workspace-switcher span { display: block; font-size: 11px; color: #737373; margin-bottom: 5px; }
     .workspace-switcher strong { font-size: 14px; font-weight: 600; }
     .nav-label { padding: 0 14px; margin: 0 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: #737373; }
-    .nav-item { border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; }
+    .nav-item { display:flex; align-items:center; gap:10px; border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; }
+    .nav-icon { flex:0 0 auto; width:18px; height:18px; color:currentColor; opacity:.78; }
     .nav-item.active { background: #171717; color: #fff; }
     .nav-item:hover:not(.active) { background: #f1f1f1; color: #171717; }
     .workspace-note { padding: 20px 14px; font-size: 11px; line-height: 1.7; color: #737373; border-top: 1px solid var(--line); }
@@ -4184,10 +4185,22 @@
     .topbar h1 { font-size: 26px; font-weight: 650; letter-spacing: -.7px; }
     .subtitle { line-height: 1.6; }
     .top-status::before { background: #171717; }
-    .workflow-nav { display: flex; gap: 6px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-    .workflow-nav button { flex: 1; white-space: nowrap; border: 0; background: transparent; padding: 10px 8px; font-size: 12px; color: #444; box-shadow: none; }
-    .workflow-nav button:hover { background: #e9e9e9; }
-    .workflow-nav span { display: inline-block; margin-right: 7px; color: #858585; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .workflow-nav { display:flex; align-items:stretch; gap:0; margin:0 0 24px; padding:14px; border:1px solid var(--line); border-radius:12px; background:#fff; overflow-x:auto; box-shadow:none; }
+    .workflow-nav button { position:relative; display:grid; grid-template-columns:28px minmax(90px,1fr); align-items:center; gap:9px; flex:1 0 132px; min-height:52px; white-space:normal; border:0; border-radius:8px; background:transparent; padding:8px 12px; font-size:12px; line-height:1.25; color:#555; box-shadow:none; text-align:left; }
+    .workflow-nav button:not(:last-child)::after { content:""; position:absolute; top:50%; right:-8px; width:16px; height:2px; background:#d7d7d7; transform:translateY(-50%); z-index:1; }
+    .workflow-nav button:hover { background:#f3f3f3; }
+    .workflow-nav .step-icon { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:#f1f1f1; color:#777; }
+    .workflow-nav .step-icon svg { width:15px; height:15px; }
+    .workflow-nav .step-copy { display:grid; gap:2px; min-width:0; }
+    .workflow-nav .step-number { color:#8a8a8a; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-variant-numeric:tabular-nums; }
+    .workflow-nav .step-title { color:inherit; font-size:12px; font-weight:650; }
+    .workflow-nav button[data-state="done"] .step-icon { background:#eaf8f0; color:#15803d; }
+    .workflow-nav button[data-state="done"]::after { background:#22c55e; }
+    .workflow-nav button[data-state="active"] { background:#111; color:#fff; }
+    .workflow-nav button[data-state="active"] .step-icon { background:#fff; color:#111; }
+    .workflow-nav button[data-state="active"] .step-number { color:#d6d6d6; }
+    .workflow-nav button[data-state="active"]::after { background:#38bdf8; }
+    .workflow-nav button[data-state="todo"] .step-icon { background:#f1f1f1; color:#888; }
     .source-panel, .feeds-panel, .layouts-panel, .validator-panel, .bulk-panel,
     .publish-panel, .quality-panel, .change-log-panel, .table-wrap {
       border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: none;
@@ -4227,7 +4240,9 @@
     @media (max-width:720px) {
       .topbar { min-height: 100px; }
       .topbar h1 { font-size: 23px; }
-      .workflow-nav button { flex: 0 0 auto; }
+      .workflow-nav { padding:10px; }
+      .workflow-nav button { flex: 0 0 138px; grid-template-columns:26px minmax(0,1fr); padding:8px 10px; }
+      .workflow-nav .step-icon { width:26px; height:26px; }
       .top-status { display: none; }
       .nav-item { font-size: 12px; padding: 10px; }
       .source-panel, .publish-panel, .bulk-panel { padding: 16px; }
@@ -4252,7 +4267,7 @@
     .sidebar .nav-item { white-space:normal; line-height:1.5; height:auto; }
     .sidebar .nav-text { display:inline; }
     .generated-link { background:#f1f1f1; color:#444; }
-    .workflow-nav button[aria-current="step"] { background:#e5e5e5; color:#111; }
+    .workflow-nav button[aria-current="step"] { background:#111; color:#fff; }
     .complexes-panel { padding:22px; }
     .catalog-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
     .catalog-head #complexSearch { width:min(320px,100%); }
@@ -4312,6 +4327,47 @@
     #telegramConnectionStatus { font-size:12px; line-height:1.5; color:#555; }
     .feed-notification-channels { display:none; }
     .feed-row { grid-template-columns:minmax(180px,1fr) 110px 110px 140px auto; }
+    .feed-error-popover {
+      position:fixed; right:22px; bottom:22px; z-index:20; width:min(360px,calc(100vw - 44px));
+      border:1px solid #d8d8d8; border-radius:12px; background:#fff; box-shadow:0 18px 50px rgba(0,0,0,.16);
+      color:#171717; overflow:hidden;
+    }
+    .feed-error-popover[hidden] { display:none !important; }
+    .feed-error-popover.is-clean { width:260px; box-shadow:0 10px 28px rgba(0,0,0,.08); }
+    .feed-error-popover.minimized { width:auto; border-radius:999px; }
+    .feed-error-popover.minimized .feed-error-body,
+    .feed-error-popover.minimized .feed-error-actions { display:none; }
+    .feed-error-head {
+      display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:10px; align-items:center;
+      padding:12px 12px 11px; border-bottom:1px solid #ededed; background:#111; color:#fff;
+    }
+    .feed-error-popover.is-clean .feed-error-head { background:#f6fff9; color:#14532d; border-bottom:0; }
+    .feed-error-popover.minimized .feed-error-head { border:0; padding:8px 10px; cursor:pointer; }
+    .feed-error-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.12); color:currentColor; }
+    .feed-error-popover.is-clean .feed-error-icon { background:#dcfce7; }
+    .feed-error-icon svg { width:17px; height:17px; }
+    .feed-error-title { min-width:0; }
+    .feed-error-title strong { display:block; font-size:13px; line-height:1.2; }
+    .feed-error-title span { display:block; margin-top:2px; color:currentColor; opacity:.7; font-size:10px; line-height:1.35; }
+    .feed-error-toggle { display:grid; place-items:center; width:28px; height:28px; padding:0; border:0; border-radius:50%; background:rgba(255,255,255,.12); color:inherit; }
+    .feed-error-popover.is-clean .feed-error-toggle { background:#fff; border:1px solid #bbf7d0; }
+    .feed-error-toggle svg { width:14px; height:14px; }
+    .feed-error-body { max-height:340px; overflow:auto; padding:12px; display:grid; gap:10px; background:#fff; }
+    .feed-error-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); overflow:hidden; border:1px solid #ededed; border-radius:9px; }
+    .feed-error-summary div { padding:10px; border-right:1px solid #ededed; }
+    .feed-error-summary div:last-child { border-right:0; }
+    .feed-error-summary strong { display:block; font-size:18px; line-height:1; }
+    .feed-error-summary span { display:block; margin-top:5px; color:#777; font-size:9px; line-height:1.3; }
+    .feed-error-list { display:grid; gap:8px; }
+    .feed-error-item { display:grid; gap:6px; padding:10px; border:1px solid #ededed; border-radius:9px; background:#fafafa; }
+    .feed-error-item button { justify-self:start; min-height:30px; padding:0 10px; font-size:10px; }
+    .feed-error-line { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .feed-error-line strong { font-size:12px; line-height:1.35; }
+    .feed-error-line b { flex:0 0 auto; min-width:24px; padding:3px 7px; border-radius:999px; background:#111; color:#fff; font-size:10px; text-align:center; }
+    .feed-error-hint { margin:0; color:#666; font-size:10px; line-height:1.45; }
+    .feed-error-actions { display:flex; gap:8px; padding:0 12px 12px; background:#fff; }
+    .feed-error-actions button { flex:1; min-height:34px; }
+    .feed-error-actions .primary { background:#111; color:#fff; border-color:#111; }
     :focus-visible { outline:2px solid #111; outline-offset:3px; }
     @media(max-width:1000px){
       .monitor-notification-settings { grid-template-columns:1fr; }
@@ -4319,6 +4375,8 @@
       .feed-row { grid-template-columns:1fr; }
       .project-entry { grid-template-columns:1fr auto; gap:12px; }
       .project-entry-main { grid-column:1/-1; }
+      .feed-error-popover { right:14px; bottom:14px; width:min(360px,calc(100vw - 28px)); }
+      .feed-error-body { max-height:250px; }
     }
   </style>
 </head>
@@ -4351,14 +4409,14 @@
       </div>
       <div class="workspace-switcher"><span>Рабочая область</span><strong>Создатели</strong></div>
       <div class="nav-label">Управление</div>
-      <a class="nav-item" href="/">Все проекты</a>
-      <button type="button" class="nav-item" data-nav="source">Источники</button>
-      <button type="button" class="nav-item" data-nav="complexes"><span class="nav-text">ЖК и дома</span></button>
-      <button type="button" class="nav-item active" data-nav="apartments"><span class="nav-text">Квартиры</span></button>
-      <button type="button" class="nav-item" data-nav="branding">Шаблон планировок</button>
-      <button type="button" class="nav-item" data-nav="validator"><span class="nav-text">Валидатор фидов</span></button>
-      <button type="button" class="nav-item" data-nav="results">Результаты и ссылки</button>
-      <button type="button" class="nav-item" data-nav="feeds"><span class="nav-text">Мониторинг</span></button>
+      <a class="nav-item" href="/"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7.5h16M6 4h12a2 2 0 0 1 2 2v12.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5V6a2 2 0 0 1 2-2Z"/><path d="M8 11h8M8 15h5"/></svg><span class="nav-text">Все проекты</span></a>
+      <button type="button" class="nav-item" data-nav="source"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Источники</span></button>
+      <button type="button" class="nav-item" data-nav="complexes"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V6a2 2 0 0 1 2-2h8v16"/><path d="M14 9h4a2 2 0 0 1 2 2v9"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1"/></svg><span class="nav-text">ЖК и дома</span></button>
+      <button type="button" class="nav-item active" data-nav="apartments"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/><path d="M9 21v-6h6v6"/></svg><span class="nav-text">Квартиры</span></button>
+      <button type="button" class="nav-item" data-nav="branding"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/><circle cx="9" cy="9" r="1.2"/></svg><span class="nav-text">Шаблон планировок</span></button>
+      <button type="button" class="nav-item" data-nav="validator"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M15 6h3.5A1.5 1.5 0 0 1 20 7.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7.5A1.5 1.5 0 0 1 5.5 6H10"/></svg><span class="nav-text">Валидатор фидов</span></button>
+      <button type="button" class="nav-item" data-nav="results"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg><span class="nav-text">Результаты и ссылки</span></button>
+      <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
       <div class="sidebar-spacer"></div>
       <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.</div>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
@@ -4373,13 +4431,14 @@
         <div class="top-status">Сервис работает</div>
       </div>
 
-      <nav class="workflow-nav" data-page="objects" aria-label="Этапы работы с фидом">
-        <button type="button" data-step=".source-panel"><span>01</span> Источник</button>
-        <button type="button" data-step=".complexes-panel"><span>02</span> ЖК и дома</button>
-        <button type="button" data-step=".table-wrap"><span>03</span> Квартиры</button>
-        <button type="button" data-step=".brand-workflow-panel"><span>04</span> Планировки</button>
-        <button type="button" data-step=".quality-panel"><span>05</span> Проверка</button>
-        <button type="button" data-step=".publish-panel"><span>06</span> Результаты</button>
+      <nav class="workflow-nav" data-page="workflow" aria-label="Этапы работы с фидом">
+        <button type="button" data-step=".source-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg></span><span class="step-copy"><span class="step-number">01</span><span class="step-title">Источник</span></span></button>
+        <button type="button" data-step=".complexes-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V6a2 2 0 0 1 2-2h8v16"/><path d="M14 9h4a2 2 0 0 1 2 2v9"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1"/></svg></span><span class="step-copy"><span class="step-number">02</span><span class="step-title">ЖК и дома</span></span></button>
+        <button type="button" data-step=".table-wrap"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg></span><span class="step-copy"><span class="step-number">03</span><span class="step-title">Квартиры</span></span></button>
+        <button type="button" data-step=".brand-workflow-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Планировки</span></span></button>
+        <button type="button" data-step=".quality-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Проверка</span></span></button>
+        <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Результаты</span></span></button>
+        <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">07</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
 
       <section class="projects-page" data-page="projects">
@@ -4931,6 +4990,18 @@
 
       <pre id="preview" class="preview"></pre>
     </aside>
+    <aside class="feed-error-popover" id="feedErrorPopover" hidden aria-live="polite">
+      <div class="feed-error-head" id="feedErrorHead">
+        <span class="feed-error-icon" id="feedErrorIcon" aria-hidden="true"></span>
+        <span class="feed-error-title"><strong id="feedErrorTitle">Проверка фида</strong><span id="feedErrorMeta">Ошибок пока нет</span></span>
+        <button class="feed-error-toggle" id="feedErrorToggle" type="button" aria-label="Свернуть панель ошибок" aria-expanded="true" onclick="toggleFeedErrorPopover(event)"></button>
+      </div>
+      <div class="feed-error-body" id="feedErrorBody"></div>
+      <div class="feed-error-actions">
+        <button type="button" id="feedErrorOpenApartments">Исправить</button>
+        <button type="button" class="primary" id="feedErrorOpenValidator">Валидатор</button>
+      </div>
+    </aside>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </div>
 
@@ -5151,6 +5222,8 @@
     let selectedId = "";
     let checkedIds = new Set();
     let validated = false;
+    let feedErrorPanelActivated = Boolean(currentProject && objects.length);
+    let feedErrorPanelMinimized = false;
     let layoutsCache = [];
     let layoutsLoaded = false;
     let brandBadgeDataUrl = "";
@@ -5880,7 +5953,7 @@
       shell.classList.toggle("project-list-mode", activePage === "projects");
       document.querySelectorAll("[data-page]").forEach(section => {
         const isWorkflow = section.classList.contains("workflow-nav");
-        section.classList.toggle("page-hidden", isWorkflow || section.dataset.page !== activePage);
+        section.classList.toggle("page-hidden", isWorkflow ? !currentProject : section.dataset.page !== activePage);
       });
       document.querySelectorAll("[data-nav]").forEach(item => {
         item.classList.toggle("active", item.dataset.nav === activePage);
@@ -5888,8 +5961,14 @@
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
       document.querySelector(".subtitle").textContent = currentProject?.name || "Управляйте источниками и выгрузками";
+      const stepOrder = Object.values(stepPages);
+      const activeStepIndex = stepOrder.indexOf(activePage);
       document.querySelectorAll("[data-step]").forEach(button => {
-        if (stepPages[button.dataset.step] === activePage) button.setAttribute("aria-current", "step");
+        const page = stepPages[button.dataset.step];
+        const stepIndex = stepOrder.indexOf(page);
+        const state = stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
+        button.dataset.state = state;
+        if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
       document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
@@ -5905,7 +5984,7 @@
       window.scrollTo(0, 0);
     }
 
-    const stepPages = { ".source-panel": "source", ".complexes-panel": "complexes", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".quality-panel": "validator", ".publish-panel": "results" };
+    const stepPages = { ".source-panel": "source", ".complexes-panel": "complexes", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".quality-panel": "validator", ".publish-panel": "results", ".feeds-panel": "feeds" };
     document.querySelectorAll("[data-step]").forEach(button => {
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
     });
@@ -7967,6 +8046,7 @@ ${photos}
       renderFeedValidator();
       renderProjectSources();
       renderPage();
+      renderFeedErrorPopover();
     }
 
     function setLoadStatus(message, type = "") {
@@ -8004,6 +8084,77 @@ ${photos}
         });
       });
       return [...groups.values()].sort((a, b) => b.count - a.count);
+    }
+
+    function feedErrorIcon(kind = "alert") {
+      if (kind === "ok") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>';
+      if (kind === "close") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+      if (kind === "open") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>';
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>';
+    }
+
+    function platformErrorFindings() {
+      return validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
+    }
+
+    function toggleFeedErrorPopover(event) {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      feedErrorPanelMinimized = !feedErrorPanelMinimized;
+      renderFeedErrorPopover();
+    }
+
+    function renderFeedErrorPopover() {
+      const panel = document.querySelector("#feedErrorPopover");
+      if (!panel) return;
+      const shouldShow = Boolean(currentProject && feedErrorPanelActivated && activePage !== "projects");
+      panel.hidden = !shouldShow;
+      if (!shouldShow) return;
+
+      const groups = issueGroups();
+      const platformErrors = platformErrorFindings();
+      const issueTotal = groups.reduce((sum, group) => sum + group.count, 0);
+      const objectsWithIssues = objects.filter(item => requiredIssues(item).length).length;
+      const hasErrors = Boolean(issueTotal || platformErrors.length);
+      panel.classList.toggle("is-clean", !hasErrors);
+      panel.classList.toggle("minimized", feedErrorPanelMinimized);
+
+      document.querySelector("#feedErrorIcon").innerHTML = feedErrorIcon(hasErrors ? "alert" : "ok");
+      document.querySelector("#feedErrorToggle").innerHTML = feedErrorIcon(feedErrorPanelMinimized ? "open" : "close");
+      document.querySelector("#feedErrorToggle").setAttribute("aria-label", feedErrorPanelMinimized ? "Развернуть панель ошибок" : "Свернуть панель ошибок");
+      document.querySelector("#feedErrorToggle").setAttribute("aria-expanded", feedErrorPanelMinimized ? "false" : "true");
+      document.querySelector("#feedErrorTitle").textContent = hasErrors ? `Ошибки фида: ${issueTotal + platformErrors.length}` : "Фид без ошибок";
+      document.querySelector("#feedErrorMeta").textContent = hasErrors
+        ? `${objectsWithIssues} ${pluralRu(objectsWithIssues, "объект", "объекта", "объектов")} требуют внимания`
+        : `${objects.length} ${pluralRu(objects.length, "объект", "объекта", "объектов")} готовы к работе`;
+
+      const body = document.querySelector("#feedErrorBody");
+      if (!hasErrors) {
+        body.innerHTML = '<p class="feed-error-hint">Встроенная проверка не нашла критичных проблем. Можно продолжать настройку, публикацию или мониторинг.</p>';
+      } else {
+        body.innerHTML = `
+          <div class="feed-error-summary">
+            <div><strong>${objects.length}</strong><span>объектов</span></div>
+            <div><strong>${objectsWithIssues}</strong><span>с ошибками</span></div>
+            <div><strong>${platformErrors.length}</strong><span>по схеме</span></div>
+          </div>
+          <div class="feed-error-list">
+            ${groups.slice(0, 4).map(group => `
+              <article class="feed-error-item">
+                <div class="feed-error-line"><strong>${escapeXml(group.guide.label)}</strong><b>${group.count}</b></div>
+                <p class="feed-error-hint">${escapeXml(group.guide.fix)}</p>
+                <button type="button" data-popover-filter="${escapeXml(group.key)}">Показать объекты</button>
+              </article>
+            `).join("")}
+            ${platformErrors.slice(0, 2).map(item => `
+              <article class="feed-error-item">
+                <div class="feed-error-line"><strong>${escapeXml(item.title)}</strong><b>${item.ids?.length || 1}</b></div>
+                <p class="feed-error-hint">${escapeXml(item.message)}</p>
+              </article>
+            `).join("")}
+          </div>
+        `;
+      }
     }
 
     function renderIssueDiagnostics(groups = issueGroups()) {
@@ -8145,6 +8296,8 @@ ${photos}
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
+        feedErrorPanelActivated = true;
+        feedErrorPanelMinimized = false;
         renderAll();
         document.querySelector("#sourceName").value = "";
         if (!existingSource) input.value = "";
@@ -8521,6 +8674,31 @@ ${photos}
       document.querySelector(".table-wrap").scrollIntoView({ behavior: "smooth", block: "start" });
       showToast(`Показаны объекты: ${button.textContent.replace(/^Показать\s+/, "")}`);
     });
+    document.querySelector("#feedErrorHead").addEventListener("click", event => {
+      if (event.target.closest("button") || !feedErrorPanelMinimized) return;
+      feedErrorPanelMinimized = false;
+      renderFeedErrorPopover();
+    });
+    document.querySelector("#feedErrorOpenValidator").addEventListener("click", () => {
+      switchPage("validator");
+      validated = true;
+      renderFeedValidator();
+      renderFeedErrorPopover();
+    });
+    document.querySelector("#feedErrorOpenApartments").addEventListener("click", () => {
+      const firstGroup = issueGroups()[0];
+      if (firstGroup) document.querySelector("#issueFilter").value = firstGroup.key;
+      switchPage("apartments");
+      renderRows();
+    });
+    document.querySelector("#feedErrorBody").addEventListener("click", event => {
+      const button = event.target.closest("[data-popover-filter]");
+      if (!button) return;
+      document.querySelector("#issueFilter").value = button.dataset.popoverFilter;
+      switchPage("apartments");
+      renderRows();
+      showToast("Открыты объекты с выбранной ошибкой");
+    });
     [["price", "from"], ["price", "to"], ["area", "from"], ["area", "to"]].forEach(([kind, edge]) => {
       const prefix = kind === "price" ? "price" : "area";
       const suffix = edge === "from" ? "From" : "To";
@@ -8705,6 +8883,7 @@ ${photos}
         originalObjects = structuredClone(objects);
         saveProjectSources();
         save();
+        if (!objects.length) feedErrorPanelActivated = false;
         renderAll();
         showToast("Источник удалён");
       }
@@ -8762,6 +8941,8 @@ ${photos}
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
+        feedErrorPanelActivated = true;
+        feedErrorPanelMinimized = false;
         renderAll();
         showToast(`Файл добавлен: ${next.length} квартир`);
       } catch (error) {
