@@ -40,7 +40,7 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
     data[project]=feeds.map(f=>{
       const url=new URL(String(f.url));if(!['http:','https:'].includes(url.protocol))throw Error('Нужна HTTP(S)-ссылка');
       const previous=old.find(o=>o.id===f.id&&o.url===url.href);
-      return {...previous,id:String(f.id).slice(0,150),url:url.href,name:String(f.name||'Фид').slice(0,200),platform:String(f.platform||''),telegramEnabled:f.telegramEnabled===true,status:previous?.status||'pending'};
+      return {...previous,id:String(f.id).slice(0,150),url:url.href,name:String(f.name||'Фид').slice(0,200),projectName:String(f.projectName||'Проект без названия').slice(0,200),platform:String(f.platform||''),telegramEnabled:f.telegramEnabled===true,telegramChatId:String(f.telegramChatId||'').trim().slice(0,100),emailEnabled:f.emailEnabled===true,emailTo:String(f.emailTo||'').trim().slice(0,320),status:previous?.status||'pending'};
     });write(data);return data[project];
   }
   async function run(project=null,id=null,force=false){
@@ -56,10 +56,15 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
           try{const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');}
           catch(error){checked.status='bad';checked.error=error.message;}
           const latest=read(),record=latest[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
-          if(checked.status==='bad'&&record.telegramEnabled&&(record.status!=='bad'||record.error!==checked.error)){
-            try{await notify(checked);checked.telegramNotifiedAt=new Date().toISOString();checked.notificationError='';}catch(error){checked.notificationError=error.message;}
+          if(checked.status==='bad'&&(record.telegramEnabled||record.emailEnabled)&&(record.status!=='bad'||record.error!==checked.error)){
+            try{
+              const notification=await notify(checked);
+              if(notification?.telegramSent)checked.telegramNotifiedAt=new Date().toISOString();
+              if(notification?.emailSent)checked.emailNotifiedAt=new Date().toISOString();
+              checked.notificationError=notification?.errors?.join(' ')||'';
+            }catch(error){checked.notificationError=error.message;}
           }
-          Object.assign(record,{status:checked.status,error:checked.error,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,notificationError:checked.notificationError});write(latest);
+          Object.assign(record,{status:checked.status,error:checked.error,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,emailNotifiedAt:checked.emailNotifiedAt,notificationError:checked.notificationError});write(latest);
         }
       }
     }finally{busy=false;}

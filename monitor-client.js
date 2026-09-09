@@ -14,7 +14,7 @@
       let result=await request();
       if(!ready&& !result.feeds.length && readMonitoredFeeds().length)result=await request('PUT',{feeds:readMonitoredFeeds()});
       ready=true;localSave(result.feeds);renderFeedsList();
-      note.textContent='Сервер проверяет XML каждый час, даже если браузер закрыт. Локальный сервер должен оставаться запущенным. Уведомления доступны при настроенном Telegram.';
+      note.textContent='Сервер проверяет фиды проекта каждые 12 часов, даже если браузер закрыт. Уведомления отправляются в Telegram и на email, если каналы настроены на сервере.';
     }catch(error){note.textContent=error.message;}
   }
   saveMonitoredFeeds=function(feeds){
@@ -29,6 +29,6 @@
     catch(error){showToast(error.message);}finally{button.disabled=false;}
   };
   document.querySelector('[data-nav="feeds"]').addEventListener('click',refresh);
-  document.querySelector('#feedsPanel .panel-caption').textContent='Добавьте ссылки: сервер будет проверять доступность и корректность XML каждый час.';
+  document.querySelector('#feedsPanel .panel-caption').textContent='Добавьте ссылки: сервер будет проверять все фиды проекта каждые 12 часов и сообщать о новых ошибках.';
   setInterval(()=>{if(activePage==='feeds')refresh();},30000);
 })();

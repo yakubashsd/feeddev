@@ -1454,6 +1454,23 @@
       background: rgba(255,255,255,.58);
     }
 
+    .monitor-notification-settings {
+      display: grid;
+      grid-template-columns: auto minmax(180px, .7fr) auto minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,.72);
+    }
+
+    .monitor-notification-settings h3,
+    .monitor-notification-settings p { grid-column: 1 / -1; margin: 0; }
+    .monitor-notification-settings p { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .notification-channel { min-height: 42px; }
+    .feed-notification-channels { color: var(--muted); font-size: 12px; font-weight: 700; }
+
     .monitor-summary {
       display: grid;
       grid-template-columns: repeat(4, minmax(120px, 1fr));
@@ -1560,43 +1577,6 @@
     .validator-result.ok { border-left: 5px solid #2d9a68; }
     .validator-result strong { display: block; margin-bottom: 4px; }
     .validator-result p { margin: 0; color: var(--muted-strong); line-height: 1.45; }
-
-    .official-validators {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .official-validator-card {
-      display: flex;
-      min-width: 0;
-      flex-direction: column;
-      gap: 8px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      background: var(--site-gray);
-    }
-
-    .official-validator-card p {
-      flex: 1;
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
-    .official-validator-card a {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 9px 12px;
-      border: 1px solid var(--line-strong);
-      color: var(--text);
-      font-weight: 750;
-      text-decoration: none;
-      text-align: center;
-    }
 
     .source-grid {
       display: grid;
@@ -1857,7 +1837,8 @@
       flex-wrap: wrap;
     }
 
-    .telegram-toggle {
+    .telegram-toggle,
+    .notification-channel {
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -1867,7 +1848,8 @@
       user-select: none;
     }
 
-    .telegram-toggle input {
+    .telegram-toggle input,
+    .notification-channel input {
       width: 18px;
       height: 18px;
       accent-color: #111116;
@@ -2558,6 +2540,7 @@
       .feeds-tabs,
       .feed-row,
       .monitor-add,
+      .monitor-notification-settings,
       .object-filter-panel,
       .source-grid,
       .issue-card,
@@ -3207,11 +3190,18 @@
     }
 
     .monitor-add,
+    .monitor-notification-settings,
     .monitor-filters,
     .feeds-toolbar { gap: 12px; }
 
     .monitor-add {
       padding: 14px;
+      border: 0;
+      border-radius: 20px;
+      background: var(--site-gray);
+    }
+
+    .monitor-notification-settings {
       border: 0;
       border-radius: 20px;
       background: var(--site-gray);
@@ -3849,7 +3839,6 @@
       .detected-source,
       .quality-panel,
       .publish-row { grid-template-columns: 1fr; }
-      .official-validators { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .layout-upload { grid-template-columns: repeat(6, minmax(0, 1fr)); }
       .layout-upload .field:nth-child(1),
       .layout-upload .field:nth-child(2),
@@ -3876,7 +3865,6 @@
       .validator-toolbar,
       .validator-summary,
       .validator-result,
-      .official-validators { grid-template-columns: 1fr; }
       .app { border-top-width: 6px; }
       .sidebar { align-items: stretch; flex-wrap: wrap; }
       .brand { width: 100%; min-height: 44px; }
@@ -3992,6 +3980,7 @@
     .brand-controls,
     .brand-source-panel,
     .monitor-add,
+    .monitor-notification-settings,
     .object-filter-panel {
       border: 1px solid var(--line);
       background: var(--site-gray);
@@ -4229,7 +4218,7 @@
       background: #f1f1f1; color: #333; border-left: 4px solid #555; border-radius: 8px;
     }
     .validator-result strong, .validator-result p { color: #444; }
-    .change-log-item, .official-validator-card { box-shadow: none; border-color: var(--line); border-radius: 8px; }
+    .change-log-item { box-shadow: none; border-color: var(--line); border-radius: 8px; }
     @media (max-width:1120px) {
       .workspace-switcher, .nav-label, .workspace-note { display: none; }
       .sidebar { flex-wrap: wrap; gap: 5px; }
@@ -4247,10 +4236,12 @@
     .projects-heading h2 { font-size:28px; margin:0 0 8px; letter-spacing:-.7px; }
     .projects-heading p, .project-empty p { color:#666; line-height:1.6; }
     #projectSearch { margin:24px 0; width:min(100%,360px); }
-    .project-entry { display:grid; grid-template-columns:minmax(0,1fr) 130px 110px 90px; align-items:center; gap:20px; padding:24px 16px; border-bottom:1px solid #ddd; text-decoration:none; font-size:13px; }
+    .project-entry { display:grid; grid-template-columns:minmax(0,1fr) 130px 110px 90px 90px; align-items:center; gap:20px; padding:24px 16px; border-bottom:1px solid #ddd; font-size:13px; }
     .project-entry:hover { background:#eee; }
+    .project-entry-main { color:inherit; text-decoration:none; min-width:0; }
     .project-entry strong { display:block; font-size:17px; margin-bottom:8px; }
     .project-entry small { display:block; color:#666; overflow-wrap:anywhere; }
+    .project-delete { color:#8a2424; }
     .project-empty { border:1px dashed #bbb; border-radius:12px; padding:48px 24px; text-align:center; background:white; }
     #projectDialog { width:min(460px,calc(100% - 32px)); border:1px solid #ddd; border-radius:14px; padding:28px; }
     #projectDialog::backdrop { background:rgba(0,0,0,.35); }
@@ -4415,13 +4406,28 @@
 
       <section class="feeds-panel page-hidden" id="feedsPanel" data-page="feeds">
         <h2 class="panel-title">Мониторинг фидов</h2>
-        <div class="panel-caption">Сохраняйте рабочие ссылки и проверяйте, открываются ли они без ошибок. После подключения сервера здесь появятся проверки по расписанию и уведомления.</div>
+        <div class="panel-caption">Сервер проверяет все фиды проекта раз в 12 часов и сообщает о новых ошибках.</div>
         <div class="monitor-add">
           <div class="field">
             <label for="monitorFeedUrl">Ссылка на фид для мониторинга</label>
             <input id="monitorFeedUrl" type="url" placeholder="https://site.ru/feed.xml">
           </div>
           <button id="addMonitorFeedBtn" type="button" class="primary">Добавить фид</button>
+        </div>
+        <div class="monitor-notification-settings">
+          <h3>Уведомления проекта</h3>
+          <p>Настройки применяются ко всем фидам текущего проекта. Сообщение отправляется при появлении новой ошибки или изменении её текста.</p>
+          <label class="notification-channel"><input id="monitorTelegramEnabled" type="checkbox"><span>Telegram</span></label>
+          <div class="field compact">
+            <label for="monitorTelegramChatId">ID чата Telegram</label>
+            <input id="monitorTelegramChatId" placeholder="По умолчанию с сервера">
+          </div>
+          <label class="notification-channel"><input id="monitorEmailEnabled" type="checkbox"><span>Email</span></label>
+          <div class="field compact">
+            <label for="monitorEmailRecipient">Email получателя</label>
+            <input id="monitorEmailRecipient" type="email" placeholder="feeds@company.ru" autocomplete="email">
+          </div>
+          <button id="saveMonitorNotifications" type="button">Сохранить уведомления</button>
         </div>
         <div class="monitor-summary" id="monitorSummary"></div>
         <div class="feeds-toolbar">
@@ -4443,13 +4449,13 @@
           <button id="checkFeedsBtn" type="button">Проверить сейчас</button>
         </div>
         <div class="feeds-list" id="feedsList"></div>
-        <div class="monitor-note">Telegram-уведомления включаются отдельно у каждого фида. Если заданы TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID, сервис отправит сообщение при новой ошибке проверки. Проверки по расписанию подключаются следующим шагом через серверный мониторинг.</div>
+        <div class="monitor-note">Для отправки серверу нужны настройки Telegram и SMTP в переменных окружения.</div>
       </section>
 
       <section class="validator-panel page-hidden" id="validatorPanel" data-page="validator">
         <div>
           <h2 class="panel-title">Валидатор фидов</h2>
-          <div class="panel-caption">Проверьте текущий XML до отправки агрегатору. Сервис проверяет структуру, обязательные поля и допустимые значения, а затем подсказывает, что исправить.</div>
+          <div class="panel-caption">Проверьте текущий XML до отправки агрегатору. Сервис применит правила выбранной площадки, проверит обязательные поля и допустимые значения.</div>
         </div>
         <div class="validator-toolbar">
           <div class="field compact">
@@ -4460,32 +4466,6 @@
         </div>
         <div class="validator-summary" id="validatorSummary"></div>
         <div class="validator-results" id="validatorResults"></div>
-        <div>
-          <h3>Официальная проверка</h3>
-          <div class="official-validators">
-            <article class="official-validator-card">
-              <strong>Авито</strong>
-              <p>Внутренняя схема сверена с официальным XML-шаблоном «Продам · Новостройка» от 21.08.2026. После проверки сервиса выполните финальный тест Авито.</p>
-              <a href="https://autoload.avito.ru/format/xmlcheck/" target="_blank" rel="noopener">Открыть валидатор Авито</a>
-              <a href="https://www.avito.ru/autoload/documentation/templates/67066?fileFormat=xml" target="_blank" rel="noopener">Открыть шаблон Авито</a>
-            </article>
-            <article class="official-validator-card">
-              <strong>Яндекс Недвижимость</strong>
-              <p>Проверка YRL по схеме Realty. Обязательные бизнес-поля дополнительно проверяются внутри сервиса.</p>
-              <a href="https://webmaster.yandex.ru/tools/xml-validator/" target="_blank" rel="noopener">Открыть валидатор Яндекса</a>
-            </article>
-            <article class="official-validator-card">
-              <strong>ЦИАН</strong>
-              <p>Итоговые ошибки импорта доступны в кабинете партнёра после загрузки фида.</p>
-              <a href="https://www.cian.ru/partners/" target="_blank" rel="noopener">Открыть кабинет ЦИАН</a>
-            </article>
-            <article class="official-validator-card">
-              <strong>Домклик</strong>
-              <p>Проверка выполняется в партнёрском кабинете по подключённому профилю выгрузки.</p>
-              <a href="https://pro.domclick.ru/" target="_blank" rel="noopener">Открыть Домклик PRO</a>
-            </article>
-          </div>
-        </div>
       </section>
 
       <section class="complexes-panel" data-page="complexes">
@@ -4953,6 +4933,7 @@
     const publishedStorageKey = "feed-generator-published-v1" + projectSuffix;
     const brandProfilesStorageKey = "feed-generator-brand-profiles-v1" + projectSuffix;
     const monitoredStorageKey = "feed-generator-monitor-v1" + projectSuffix;
+    const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1" + projectSuffix;
     const changeLogStorageKey = "feed-generator-change-log-v1" + projectSuffix;
     const complexStatusStorageKey = "feed-generator-complex-status-v1" + projectSuffix;
     const projectSourcesStorageKey = "feed-generator-sources-v1" + projectSuffix;
@@ -5375,6 +5356,16 @@
         const request = db.transaction("underlays", "readwrite").objectStore("underlays").put(dataUrl, projectKey);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error || new Error("Не удалось сохранить подложку текущего фида."));
+      }).finally(() => db.close());
+    }
+
+    async function deleteBrandAsset(projectKey) {
+      if (!projectKey || projectKey === "all") return;
+      const db = await openBrandAssetsDb();
+      return new Promise((resolve, reject) => {
+        const request = db.transaction("underlays", "readwrite").objectStore("underlays").delete(projectKey);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error || new Error("Не удалось удалить подложку проекта."));
       }).finally(() => db.close());
     }
 
@@ -5830,8 +5821,28 @@
       document.querySelector("#projectList").innerHTML = visible.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
-        return '<a class="project-entry" href="?project=' + encodeURIComponent(project.id) + '"><div><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></div><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><span>Открыть →</span></a>';
+        return '<article class="project-entry"><a class="project-entry-main" href="?project=' + encodeURIComponent(project.id) + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="?project=' + encodeURIComponent(project.id) + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
       }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
+    }
+
+    async function deleteProject(projectId) {
+      const project = projects.find(item => item.id === projectId);
+      if (!project) return;
+      if (!confirm(`Удалить проект «${project.name}»? Настройки, источники и черновик будут удалены из этого браузера. Уже опубликованный XML останется доступен по своей ссылке.`)) return;
+      const suffix = project.id === "legacy" ? "" : `-${project.id}`;
+      [
+        "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1",
+        "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1",
+        "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"
+      ].forEach(prefix => localStorage.removeItem(prefix + suffix));
+      projects = projects.filter(item => item.id !== projectId);
+      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      await deleteBrandAsset(projectId).catch(() => {});
+      fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, {
+        method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] })
+      }).catch(() => {});
+      renderProjects();
+      showToast(`Проект «${project.name}» удалён`);
     }
 
     function renderPage() {
@@ -5857,6 +5868,7 @@
       document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
       if (activePage === "projects") renderProjects();
       if (activePage === "complexes") renderComplexes();
+      if (activePage === "feeds") renderMonitorNotificationSettings();
     }
 
     function switchPage(page) {
@@ -5873,6 +5885,10 @@
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
     document.querySelector("#projectSearch").addEventListener("input", renderProjects);
+    document.querySelector("#projectList").addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-project]");
+      if (button) deleteProject(button.dataset.deleteProject);
+    });
     document.querySelector("#projectForm").addEventListener("submit", event => {
       event.preventDefault();
       const name = document.querySelector("#projectName").value.trim();
@@ -5910,6 +5926,54 @@
       } catch {
         return [];
       }
+    }
+
+    function readMonitorNotificationSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(monitorNotificationsStorageKey) || "{}");
+        return {
+          telegramEnabled: saved.telegramEnabled !== false,
+          telegramChatId: String(saved.telegramChatId || "").trim(),
+          emailEnabled: saved.emailEnabled === true,
+          emailTo: String(saved.emailTo || "").trim()
+        };
+      } catch {
+        return { telegramEnabled: true, telegramChatId: "", emailEnabled: false, emailTo: "" };
+      }
+    }
+
+    function renderMonitorNotificationSettings() {
+      const settings = readMonitorNotificationSettings();
+      const telegram = document.querySelector("#monitorTelegramEnabled");
+      const telegramChatId = document.querySelector("#monitorTelegramChatId");
+      const email = document.querySelector("#monitorEmailEnabled");
+      const recipient = document.querySelector("#monitorEmailRecipient");
+      if (telegram) telegram.checked = settings.telegramEnabled;
+      if (telegramChatId) telegramChatId.value = settings.telegramChatId;
+      if (email) email.checked = settings.emailEnabled;
+      if (recipient) recipient.value = settings.emailTo;
+    }
+
+    function saveMonitorNotificationSettings() {
+      const settings = {
+        telegramEnabled: document.querySelector("#monitorTelegramEnabled").checked,
+        telegramChatId: document.querySelector("#monitorTelegramChatId").value.trim(),
+        emailEnabled: document.querySelector("#monitorEmailEnabled").checked,
+        emailTo: document.querySelector("#monitorEmailRecipient").value.trim()
+      };
+      if (settings.emailEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.emailTo)) {
+        showToast("Укажите корректный email получателя");
+        document.querySelector("#monitorEmailRecipient").focus();
+        return;
+      }
+      localStorage.setItem(monitorNotificationsStorageKey, JSON.stringify(settings));
+      saveMonitoredFeeds(readMonitoredFeeds().map(feed => ({
+        ...feed,
+        ...settings,
+        projectName: currentProject?.name || "Проект без названия"
+      })));
+      renderFeedsList();
+      showToast("Настройки уведомлений проекта сохранены");
     }
 
     function saveMonitoredFeeds(feeds) {
@@ -6004,15 +6068,16 @@
           <div class="feed-platform">${escapeXml(platformProfiles[feed.platform]?.name || "Не определено")}</div>
           <span class="feed-status ${escapeXml(feed.status || "pending")}">${escapeXml(monitorStatus(feed))}</span>
           <div class="feed-meta">Проверка: ${escapeXml(formatCheckDate(feed.lastChecked))}</div>
-          <label class="telegram-toggle" title="Отправить сообщение в Telegram при новой ошибке этого фида">
-            <input type="checkbox" data-telegram-feed="${escapeXml(feed.id)}" ${feed.telegramEnabled !== false ? "checked" : ""}>
-            <span>Telegram</span>
-          </label>
+          <div class="feed-notification-channels">${[
+            feed.telegramEnabled ? `Telegram${feed.telegramChatId ? `: ${escapeXml(feed.telegramChatId)}` : ""}` : "",
+            feed.emailEnabled && feed.emailTo ? `Email: ${escapeXml(feed.emailTo)}` : ""
+          ].filter(Boolean).join(" · ") || "Уведомления выключены"}</div>
           <div class="feed-monitor-actions">
             <button type="button" data-check-feed="${escapeXml(feed.id)}">Проверить</button>
             <button type="button" class="danger" data-delete-feed="${escapeXml(feed.id)}">Удалить</button>
           </div>
-          ${feed.telegramEnabled !== false && feed.telegramNotifiedAt ? `<div class="feed-telegram-note">Последнее уведомление: ${escapeXml(formatCheckDate(feed.telegramNotifiedAt))}</div>` : ""}
+          ${feed.telegramNotifiedAt || feed.emailNotifiedAt ? `<div class="feed-telegram-note">Последнее уведомление: ${escapeXml(formatCheckDate([feed.telegramNotifiedAt, feed.emailNotifiedAt].filter(Boolean).sort().at(-1)))}</div>` : ""}
+          ${feed.notificationError ? `<div class="feed-error">Ошибка уведомления: ${escapeXml(feed.notificationError)}</div>` : ""}
           ${feed.error ? `<div class="feed-error">Сообщение ошибки: ${escapeXml(feed.error)}</div>` : ""}
         </div>
       `).join("");
@@ -7012,6 +7077,7 @@
       }
       const feedPlatform = platformProfiles[platform] ? platform : detectPlatformFromUrl(sourceUrl);
       const feeds = readMonitoredFeeds();
+      const notificationSettings = readMonitorNotificationSettings();
       const existingIndex = feeds.findIndex(feed => feed.url === sourceUrl && feed.platform === feedPlatform);
       const feed = {
         id: existingIndex >= 0 ? feeds[existingIndex].id : `feed-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -7023,8 +7089,10 @@
         error: error || "Автоматическая проверка по расписанию будет работать после подключения серверного мониторинга.",
         objectCount: objectCount || 0,
         createdAt: existingIndex >= 0 ? feeds[existingIndex].createdAt : new Date().toISOString(),
-        telegramEnabled: existingIndex >= 0 ? feeds[existingIndex].telegramEnabled !== false : true,
-        telegramNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].telegramNotifiedAt || "" : ""
+        projectName: currentProject?.name || "Проект без названия",
+        ...notificationSettings,
+        telegramNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].telegramNotifiedAt || "" : "",
+        emailNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].emailNotifiedAt || "" : ""
       };
       if (existingIndex >= 0) feeds[existingIndex] = { ...feeds[existingIndex], ...feed };
       else feeds.unshift(feed);
@@ -7091,7 +7159,7 @@
       }
     }
 
-    async function sendMonitorTelegramAlert(feed) {
+    async function sendMonitorAlert(feed) {
       try {
         const response = await fetch("/api/monitor-alert", {
           method: "POST",
@@ -7099,18 +7167,23 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: feed.name,
+            projectName: feed.projectName || currentProject?.name || "Проект без названия",
             platform: platformProfiles[feed.platform]?.name || feed.platform || "Не определено",
             url: feed.url,
-            error: feed.error
+            error: feed.error,
+            telegramEnabled: feed.telegramEnabled === true,
+            telegramChatId: feed.telegramChatId || "",
+            emailEnabled: feed.emailEnabled === true,
+            emailTo: feed.emailTo || ""
           })
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
-        return true;
+        return result;
       } catch (error) {
-        console.warn("Telegram alert failed:", error);
-        showToast(`Telegram не отправлен: ${error.message}`);
-        return false;
+        console.warn("Monitor alert failed:", error);
+        showToast(`Уведомление не отправлено: ${error.message}`);
+        return { telegramSent: false, emailSent: false, errors: [error.message] };
       }
     }
 
@@ -7128,9 +7201,11 @@
         }
         const checked = await checkMonitoredFeed({ ...feed, status: "checking" });
         const isNewBreakage = checked.status === "bad" && (feed.status !== "bad" || feed.error !== checked.error);
-        if (isNewBreakage && feed.telegramEnabled !== false) {
-          const sent = await sendMonitorTelegramAlert(checked);
-          checked.telegramNotifiedAt = sent ? new Date().toISOString() : checked.telegramNotifiedAt || "";
+        if (isNewBreakage && (feed.telegramEnabled || feed.emailEnabled)) {
+          const notification = await sendMonitorAlert(checked);
+          if (notification.telegramSent) checked.telegramNotifiedAt = new Date().toISOString();
+          if (notification.emailSent) checked.emailNotifiedAt = new Date().toISOString();
+          checked.notificationError = notification.errors?.join(" ") || "";
         }
         next.push(checked);
       }
@@ -7142,14 +7217,6 @@
     function deleteMonitoredFeed(id) {
       saveMonitoredFeeds(readMonitoredFeeds().filter(feed => feed.id !== id));
       renderFeedsList();
-    }
-
-    function toggleFeedTelegram(id, enabled) {
-      saveMonitoredFeeds(readMonitoredFeeds().map(feed => feed.id === id
-        ? { ...feed, telegramEnabled: enabled }
-        : feed));
-      renderFeedsList();
-      showToast(enabled ? "Telegram-уведомления включены" : "Telegram-уведомления выключены");
     }
 
     function renderGeneratedLink() {
@@ -7588,9 +7655,17 @@ ${photoXml}
       return `<?xml version="1.0" encoding="UTF-8"?>\n<feed>\n  <feed_version>2</feed_version>\n${body}\n</feed>\n`;
     }
 
+    function normalizeRussianPhone(value = "") {
+      const digits = String(value).replace(/\D/g, "").replace(/^8(?=\d{10}$)/, "7");
+      return digits.length === 10 ? `7${digits}` : digits;
+    }
+
     function buildYandexXml(items = objects) {
       const body = items.map(item => {
-        const images = feedImageList(item).map(url => `    <image>${escapeXml(url)}</image>`).join("\n");
+        const images = feedImageList(item).map((url, index) => `    <image${index === 0 ? ' tag="plan"' : ""}>${escapeXml(url)}</image>`).join("\n");
+        const readyQuarter = ({ first: 1, second: 2, third: 3, fourth: 4 })[item.quarter] || item.quarter || "";
+        const currentYear = new Date().getFullYear();
+        const buildingState = Number(item.year) < currentYear ? "hand-over" : "unfinished";
         return `  <offer internal-id="${escapeXml(item.externalId || "")}">
     <type>продажа</type>
     <property-type>жилая</property-type>
@@ -7601,12 +7676,14 @@ ${photoXml}
       <address>${escapeXml(item.address || "")}</address>
     </location>
     <sales-agent>
-      <phone>+7${escapeXml(item.phone || "")}</phone>
+      <phone>+${escapeXml(normalizeRussianPhone(item.phone))}</phone>
       <organization>${escapeXml(item.developer || "")}</organization>
+      <category>developer</category>
     </sales-agent>
+    <deal-status>первичная продажа</deal-status>
     <price>
       <value>${escapeXml(item.price || "")}</value>
-      <currency>RUB</currency>
+      <currency>RUR</currency>
     </price>
     <area>
       <value>${escapeXml(item.totalArea || "")}</value>
@@ -7617,10 +7694,16 @@ ${photoXml}
       <unit>кв. м</unit>
     </living-space>
     <rooms>${escapeXml(item.rooms || "")}</rooms>
+    <new-flat>1</new-flat>
     <floor>${escapeXml(item.floor || "")}</floor>
     <floors-total>${escapeXml(item.floorsCount || "")}</floors-total>
     <building-name>${escapeXml(item.complexName || "")}</building-name>
+    <yandex-building-id>${escapeXml(item.complexId || "")}</yandex-building-id>
+    <yandex-house-id>${escapeXml(item.houseId || "")}</yandex-house-id>
     <building-section>${escapeXml(item.sectionNumber || "")}</building-section>
+    <building-state>${buildingState}</building-state>
+    <ready-quarter>${escapeXml(readyQuarter)}</ready-quarter>
+    <built-year>${escapeXml(item.year || "")}</built-year>
     <description><![CDATA[${cdata(item.description || "")}]]></description>
 ${images}
   </offer>`;
@@ -7684,7 +7767,7 @@ ${multiOptions("BathroomMulti", item.bathroomType)}
     <ComplexName>${escapeXml(item.complexName || "")}</ComplexName>
     <Developer>${escapeXml(item.developer || "")}</Developer>
     <Address>${escapeXml(item.address || "")}</Address>
-    <Phone>+7${escapeXml(item.phone || "")}</Phone>
+    <Phone>+${escapeXml(normalizeRussianPhone(item.phone))}</Phone>
     <Price>${escapeXml(item.price || "")}</Price>
     <Rooms>${escapeXml(item.rooms || "")}</Rooms>
     <TotalArea>${escapeXml(item.totalArea || "")}</TotalArea>
@@ -7714,18 +7797,37 @@ ${photos}
         return findings;
       }
 
-      const required = platform === "avito"
-        ? [
+      const requiredByPlatform = {
+        avito: [
             ["externalId", "Id"], ["address", "Address"], ["description", "Description"],
             ["price", "Price"], ["rooms", "Rooms"], ["totalArea", "Square"],
             ["floor", "Floor"], ["floorsCount", "Floors"], ["phone", "ContactPhone"],
             ["houseType", "HouseType"], ["decoration", "Decoration"],
             ["avitoNewDevelopmentId", "NewDevelopmentId"]
-          ]
-        : [
+          ],
+        yandex: [
+          ["externalId", "internal-id"], ["address", "location/address"], ["description", "description"],
+          ["price", "price/value"], ["totalArea", "area/value"], ["phone", "sales-agent/phone"],
+          ["developer", "sales-agent/organization"], ["rooms", "rooms"], ["floor", "floor"],
+          ["floorsCount", "floors-total"], ["complexName", "building-name"],
+          ["complexId", "yandex-building-id"], ["houseId", "yandex-house-id"],
+          ["year", "built-year"], ["quarter", "ready-quarter"]
+        ],
+        cian: [
+          ["externalId", "ExternalId"], ["address", "Address"], ["description", "Description"],
+          ["price", "BargainTerms/Price"], ["totalArea", "TotalArea"], ["phone", "Phones"],
+          ["rooms", "FlatRoomsCount"], ["floor", "FloorNumber"], ["complexId", "JKSchema/Id"],
+          ["complexName", "JKSchema/Name"], ["houseId", "JKSchema/House/Id"],
+          ["flatNumber", "FlatNumber"], ["sectionNumber", "SectionNumber"]
+        ],
+        domclick: [
             ["externalId", "ID"], ["address", "Адрес"], ["description", "Описание"],
-            ["price", "Цена"], ["totalArea", "Площадь"]
-          ];
+            ["price", "Цена"], ["totalArea", "Площадь"], ["phone", "Телефон"],
+            ["rooms", "Комнатность"], ["floor", "Этаж"], ["floorsCount", "Этажность"],
+            ["complexName", "ЖК"], ["developer", "Застройщик"]
+        ]
+      };
+      const required = requiredByPlatform[platform] || requiredByPlatform.cian;
 
       required.forEach(([key, label]) => {
         const ids = objects.filter(item => !String(item[key] ?? "").trim()).map(item => item.externalId || "без ID");
@@ -7734,6 +7836,13 @@ ${photos}
 
       const imageIds = objects.filter(item => !feedImageList(item).length).map(item => item.externalId || "без ID");
       if (imageIds.length) add("error", "Нет изображений", `Добавьте хотя бы одно доступное изображение у ${imageIds.length} объектов.`, imageIds);
+
+      const duplicateIds = [...new Set(objects.map(item => String(item.externalId || "").trim()).filter((id, index, all) => id && all.indexOf(id) !== index))];
+      if (duplicateIds.length) add("error", "Повторяются ID объектов", "Идентификатор объявления должен быть уникальным внутри фида.", duplicateIds);
+      const badNumbers = objects.filter(item => !(Number(item.price) > 0) || !(Number(item.totalArea) > 0));
+      if (badNumbers.length) add("error", "Некорректная цена или площадь", "Цена и площадь должны быть положительными числами.", badNumbers.map(item => item.externalId || "без ID"));
+      const badFloors = objects.filter(item => Number(item.floor) < 1 || Number(item.floorsCount) < Number(item.floor));
+      if (badFloors.length) add("error", "Некорректный этаж", "Этаж должен быть положительным и не превышать этажность дома.", badFloors.map(item => item.externalId || "без ID"));
 
       if (platform === "avito") {
         const ads = [...parsed.querySelectorAll("Ads > Ad")];
@@ -7763,8 +7872,24 @@ ${photos}
         if (badPhones.length) add("error", "Авито: неверный ContactPhone", "Укажите российский номер в формате +7XXXXXXXXXX.", badPhones.map(item => item.externalId || "без ID"));
       }
 
+      if (platform === "cian") {
+        const badDescriptions = objects.filter(item => String(item.description || "").trim().length < 15 || String(item.description || "").trim().length > 3000);
+        if (badDescriptions.length) add("error", "ЦИАН: длина Description", "Описание должно содержать от 15 до 3000 символов.", badDescriptions.map(item => item.externalId || "без ID"));
+        const badRooms = objects.filter(item => ![1, 2, 3, 4, 5, 6, 7, 9].includes(Number(item.rooms)));
+        if (badRooms.length) add("error", "ЦИАН: неверный FlatRoomsCount", "Допустимы значения 1–7 и 9 для студии.", badRooms.map(item => item.externalId || "без ID"));
+      }
+
+      if (platform === "yandex") {
+        const badQuarters = objects.filter(item => !["first", "second", "third", "fourth", "1", "2", "3", "4"].includes(String(item.quarter || "")));
+        if (badQuarters.length) add("error", "Яндекс: неверный ready-quarter", "Квартал сдачи должен быть от 1 до 4.", badQuarters.map(item => item.externalId || "без ID"));
+        const badYears = objects.filter(item => !/^\d{4}$/.test(String(item.year || "")));
+        if (badYears.length) add("error", "Яндекс: неверный built-year", "Год сдачи указывается четырьмя цифрами.", badYears.map(item => item.externalId || "без ID"));
+        const badPhones = objects.filter(item => !/^7\d{10}$/.test(String(item.phone || "").replace(/\D/g, "").replace(/^8/, "7")));
+        if (badPhones.length) add("error", "Яндекс: неверный телефон", "Номер продавца должен соответствовать формату +7XXXXXXXXXX.", badPhones.map(item => item.externalId || "без ID"));
+      }
+
       if (!findings.some(item => item.severity === "error")) {
-        add("ok", "Внутренняя проверка пройдена", `XML сформирован корректно. Выполните финальную проверку в официальном валидаторе ${platformProfiles[platform].name}.`);
+        add("ok", "Проверка пройдена", `XML соответствует встроенным правилам формата ${platformProfiles[platform].name}.`);
       }
       return findings;
     }
@@ -8491,10 +8616,6 @@ ${photos}
       if (checkButton) checkSavedFeeds(checkButton.dataset.checkFeed);
       if (deleteButton) deleteMonitoredFeed(deleteButton.dataset.deleteFeed);
     });
-    document.querySelector("#feedsList").addEventListener("change", event => {
-      const telegramToggle = event.target.closest("[data-telegram-feed]");
-      if (telegramToggle) toggleFeedTelegram(telegramToggle.dataset.telegramFeed, telegramToggle.checked);
-    });
     document.querySelector(".sidebar").addEventListener("click", event => {
       const item = event.target.closest("[data-nav]");
       if (!item) return;
@@ -8563,6 +8684,7 @@ ${photos}
     document.querySelector("#chooseLayoutForObjectBtn").addEventListener("click", chooseLayoutForObject);
     document.querySelector("#addMonitorFeedBtn").addEventListener("click", addManualMonitoredFeed);
     document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
+    document.querySelector("#saveMonitorNotifications").addEventListener("click", saveMonitorNotificationSettings);
     document.querySelector("#serverBaseUrl").addEventListener("change", save);
     document.querySelector("#feedName").addEventListener("change", () => {
       invalidateGeneratedLink();

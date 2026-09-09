@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -21,7 +22,14 @@ const AUTH_COOKIE = "feeddev_session";
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "");
 const TELEGRAM_CHAT_ID = String(process.env.TELEGRAM_CHAT_ID || "");
-const monitor = require('./feed-monitor').createMonitor({file:path.join(DATA_DIR,'monitor.json'),notify:sendTelegramAlert});
+const SMTP_HOST = String(process.env.SMTP_HOST || "");
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
+const SMTP_USER = String(process.env.SMTP_USER || "");
+const SMTP_PASS = String(process.env.SMTP_PASS || "");
+const EMAIL_FROM = String(process.env.EMAIL_FROM || SMTP_USER || "");
+const MONITOR_INTERVAL_MINUTES = 12 * 60;
+const monitor = require('./feed-monitor').createMonitor({file:path.join(DATA_DIR,'monitor.json'),notify:sendMonitorAlerts,intervalMs:MONITOR_INTERVAL_MINUTES*60*1000});
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -57,8 +65,12 @@ function requireWritableStorage() {
   throw new Error("Vercel Blob не подключен. Добавьте BLOB_READ_WRITE_TOKEN в Environment Variables для Production и сделайте Redeploy.");
 }
 
-function telegramAlertsEnabled() {
-  return Boolean(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
+function telegramAlertsEnabled(chatId = TELEGRAM_CHAT_ID) {
+  return Boolean(TELEGRAM_BOT_TOKEN && chatId);
+}
+
+function emailAlertsEnabled() {
+  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && EMAIL_FROM);
 }
 
 function readLocalIndex() {
@@ -472,6 +484,7 @@ async function saveLayout(req, payload) {
 function telegramMessage(payload = {}) {
   const lines = [
     "FeedDev: ошибка фида",
+    `Проект: ${String(payload.projectName || "без названия").slice(0, 160)}`,
     `Фид: ${String(payload.name || "без названия").slice(0, 160)}`,
     `Площадка: ${String(payload.platform || "не определена").slice(0, 80)}`,
     `Ссылка: ${String(payload.url || "-").slice(0, 500)}`,
@@ -482,15 +495,16 @@ function telegramMessage(payload = {}) {
 }
 
 async function sendTelegramAlert(payload) {
-  if (!telegramAlertsEnabled()) {
-    throw new Error("Telegram-уведомления не настроены. Добавьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в Vercel Environment Variables.");
+  const chatId = String(payload.telegramChatId || TELEGRAM_CHAT_ID || "").trim();
+  if (!telegramAlertsEnabled(chatId)) {
+    throw new Error("Telegram-уведомления не настроены. Добавьте TELEGRAM_BOT_TOKEN и укажите ID чата в проекте или TELEGRAM_CHAT_ID на сервере.");
   }
 
   const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
+      chat_id: chatId,
       text: telegramMessage(payload),
       disable_web_page_preview: true
     })
@@ -498,6 +512,53 @@ async function sendTelegramAlert(payload) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result.ok === false) {
     throw new Error(result.description || `Telegram вернул HTTP ${response.status}`);
+  }
+  return result;
+}
+
+function validEmail(value = "") {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+}
+
+async function sendEmailAlert(payload) {
+  if (!emailAlertsEnabled()) {
+    throw new Error("Email-уведомления не настроены. Добавьте SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS и EMAIL_FROM.");
+  }
+  const emailTo = String(payload.emailTo || "").trim();
+  if (!validEmail(emailTo)) throw new Error("Укажите корректный email получателя уведомлений.");
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    disableFileAccess: true,
+    disableUrlAccess: true
+  });
+  return transporter.sendMail({
+    from: EMAIL_FROM,
+    to: emailTo,
+    subject: `FeedDev: ошибка фида «${String(payload.name || "без названия").slice(0, 120)}»`,
+    text: telegramMessage(payload)
+  });
+}
+
+async function sendMonitorAlerts(payload = {}) {
+  const result = { telegramSent: false, emailSent: false, errors: [] };
+  if (payload.telegramEnabled) {
+    try {
+      await sendTelegramAlert(payload);
+      result.telegramSent = true;
+    } catch (error) {
+      result.errors.push(`Telegram: ${error.message}`);
+    }
+  }
+  if (payload.emailEnabled) {
+    try {
+      await sendEmailAlert(payload);
+      result.emailSent = true;
+    } catch (error) {
+      result.errors.push(`Email: ${error.message}`);
+    }
   }
   return result;
 }
@@ -523,7 +584,8 @@ async function handleApi(req, res, url) {
       ok: true,
       storage: usesBlobStorage() ? "vercel-blob" : "local",
       feedPublishingReady: usesBlobStorage() || !process.env.VERCEL,
-      telegramAlertsReady: telegramAlertsEnabled()
+      telegramAlertsReady: telegramAlertsEnabled(),
+      emailAlertsReady: emailAlertsEnabled()
     });
   }
 
@@ -573,7 +635,7 @@ async function handleApi(req, res, url) {
     if(process.env.VERCEL)return sendError(res,503,'Серверное расписание требует постоянно работающего Node-сервера. На Vercel оно пока не подключено.');
     const project=String(url.searchParams.get('project')||'default');
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
-    if(req.method==='GET')return send(res,200,{feeds:monitor.read()[project]||[],intervalMinutes:60});
+    if(req.method==='GET')return send(res,200,{feeds:monitor.read()[project]||[],intervalMinutes:MONITOR_INTERVAL_MINUTES});
     if(req.method==='PUT'){const body=await parseBody(req);return send(res,200,{feeds:monitor.replace(project,body.feeds)});}
     if(req.method==='POST'){const body=await parseBody(req);await monitor.run(project,body.id||null,true);return send(res,200,{feeds:monitor.read()[project]||[]});}
     return sendError(res,405,'Метод не поддерживается');
@@ -581,8 +643,9 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/monitor-alert") {
     const payload = await parseBody(req);
-    await sendTelegramAlert(payload);
-    return send(res, 200, { sent: true });
+    const result = await sendMonitorAlerts(payload);
+    if (result.errors.length && !result.telegramSent && !result.emailSent) return sendError(res, 503, result.errors.join(" "));
+    return send(res, 200, result);
   }
 
   if (req.method === "GET" && url.pathname === "/api/layouts") {
