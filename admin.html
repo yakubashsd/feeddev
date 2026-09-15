@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Администрирование FeedDev</title>
+  <style>
+    :root{font-family:Inter,system-ui,sans-serif;color:#17201c;background:#f5f7f8}*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;background:#17201c;color:#fff}header h1{margin:0;font-size:20px}button{font:inherit;border:1px solid #dbe2df;border-radius:7px;background:#fff;padding:9px 12px;cursor:pointer}.danger{color:#a52b24}.wrap{max-width:1180px;margin:auto;padding:28px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}.metric{background:#fff;border:1px solid #dbe2df;border-radius:9px;padding:20px}.metric span{color:#66736d;font-size:13px}.metric strong{display:block;font-size:28px;margin-top:7px}.metric small{display:block;margin-top:6px;color:#66736d}.positive{color:#0f7a4f!important}.negative{color:#b4332a!important}.panel{background:#fff;border:1px solid #dbe2df;border-radius:9px;overflow:auto;margin-bottom:22px}.panel h2{font-size:18px;padding:18px 20px;margin:0;border-bottom:1px solid #dbe2df}.revenue-chart{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;align-items:end;height:250px;padding:28px 24px 20px}.revenue-column{height:100%;display:flex;flex-direction:column;justify-content:flex-end;text-align:center;min-width:0}.revenue-value{font-size:12px;font-weight:700;margin-bottom:7px}.revenue-bar{min-height:3px;background:#0f7a4f;border-radius:5px 5px 2px 2px}.revenue-label{margin-top:8px;color:#66736d;font-size:12px}.revenue-note{padding:0 24px 20px;color:#66736d;font-size:12px}table{width:100%;border-collapse:collapse;min-width:880px}th,td{text-align:left;padding:13px 16px;border-bottom:1px solid #edf0ef;font-size:13px}th{color:#66736d;font-weight:600}select,input{font:inherit;border:1px solid #dbe2df;border-radius:6px;padding:7px;background:#fff}.project-limit{width:70px}.empty{padding:24px;color:#66736d}@media(max-width:850px){.summary{grid-template-columns:1fr 1fr}.revenue-chart{gap:8px;padding-inline:12px}.revenue-value{font-size:10px}}@media(max-width:520px){.summary{grid-template-columns:1fr}.wrap{padding:16px}}
+  </style>
+</head>
+<body>
+  <header><h1>FeedDev · администрирование</h1><button id="logout">Выйти</button></header>
+  <main class="wrap">
+    <section class="summary" id="summary"></section>
+    <section class="panel"><h2>Динамика выручки за 6 месяцев</h2><div id="revenueChart"></div></section>
+    <section class="panel"><h2>Пользователи</h2><div id="users"></div></section>
+    <section class="panel"><h2>Платежи</h2><div id="payments"></div></section>
+  </main>
+  <script>
+    const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+    const date=value=>value?new Date(value).toLocaleDateString("ru-RU"):"—";
+    async function load(){
+      const response=await fetch("/api/admin",{credentials:"same-origin",cache:"no-store"});
+      if(response.status===401||response.status===403){location.href="/";return}
+      const data=await response.json();
+      const revenue=data.revenue||{total:0,currentMonth:0,previousMonth:0,growthPercent:null,series:[]};
+      const growth=revenue.growthPercent;
+      document.querySelector("#summary").innerHTML=`<div class="metric"><span>Выручка за месяц</span><strong>${revenue.currentMonth.toLocaleString("ru-RU")} ₽</strong><small>Прошлый: ${revenue.previousMonth.toLocaleString("ru-RU")} ₽</small></div><div class="metric"><span>Изменение к прошлому месяцу</span><strong class="${growth===null?"":growth>=0?"positive":"negative"}">${growth===null?"—":`${growth>0?"+":""}${growth}%`}</strong><small>${growth===null?"Нет базы для сравнения":"По подтверждённым платежам"}</small></div><div class="metric"><span>Выручка за всё время</span><strong>${revenue.total.toLocaleString("ru-RU")} ₽</strong><small>Только оплаченные заказы</small></div><div class="metric"><span>Активные подписки</span><strong>${data.users.filter(item=>item.status==="active"&&new Date(item.subscriptionUntil)>new Date()).length}</strong><small>Всего клиентов: ${data.users.length}</small></div>`;
+      const max=Math.max(1,...revenue.series.map(item=>item.amount));
+      document.querySelector("#revenueChart").innerHTML=`<div class="revenue-chart">${revenue.series.map(item=>`<div class="revenue-column"><div class="revenue-value">${item.amount?`${item.amount.toLocaleString("ru-RU")} ₽`:"0"}</div><div class="revenue-bar" style="height:${Math.max(2,Math.round(item.amount/max*150))}px" title="${esc(item.label)}: ${item.amount.toLocaleString("ru-RU")} ₽, платежей: ${item.payments}"></div><div class="revenue-label">${esc(item.label)}</div></div>`).join("")}</div><div class="revenue-note">Суммы построены по подтверждённым callback FreeKassa. Значения всегда видны над столбцами.</div>`;
+      document.querySelector("#users").innerHTML=data.users.length?`<table><thead><tr><th>Клиент</th><th>Статус</th><th>Доступ до</th><th>Проекты</th><th>Лимит</th><th></th></tr></thead><tbody>${data.users.map(user=>`<tr><td><strong>${esc(user.name)}</strong><br>${esc(user.email)}</td><td><select data-status="${user.id}"><option value="pending_payment" ${user.status==="pending_payment"?"selected":""}>Ожидает оплату</option><option value="active" ${user.status==="active"?"selected":""}>Активен</option><option value="blocked" ${user.status==="blocked"?"selected":""}>Заблокирован</option></select></td><td><input type="date" data-until="${user.id}" value="${user.subscriptionUntil?user.subscriptionUntil.slice(0,10):""}"></td><td>${user.projects}</td><td><input class="project-limit" type="number" min="${data.plan.minProjects}" max="${data.plan.maxProjects}" data-limit="${user.id}" value="${user.projectLimit}"></td><td><button data-save="${user.id}">Сохранить</button></td></tr>`).join("")}</tbody></table>`:'<div class="empty">Пользователей пока нет.</div>';
+      document.querySelector("#payments").innerHTML=data.payments.length?`<table><thead><tr><th>Заказ</th><th>Клиент</th><th>Проекты</th><th>Сумма</th><th>Статус</th><th>Дата</th></tr></thead><tbody>${data.payments.map(item=>`<tr><td>${esc(item.orderId)}</td><td>${esc(item.email)}</td><td>${item.projectCount||1}</td><td>${item.amount.toLocaleString("ru-RU")} ₽</td><td>${item.status==="paid"?"Оплачен":"Ожидает"}</td><td>${date(item.paidAt||item.createdAt)}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">Платежей пока нет.</div>';
+    }
+    document.querySelector("#users").addEventListener("click",async event=>{const id=event.target.dataset.save;if(!id)return;const until=document.querySelector(`[data-until="${id}"]`).value;const response=await fetch("/api/admin",{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id,status:document.querySelector(`[data-status="${id}"]`).value,subscriptionUntil:until?`${until}T23:59:59.000Z`:null,projectLimit:Number(document.querySelector(`[data-limit="${id}"]`).value)})});if(response.ok)load();});
+    document.querySelector("#logout").addEventListener("click",async()=>{await fetch("/api/auth-logout",{method:"POST"});location.href="/"});
+    load();
+  </script>
+</body>
+</html>

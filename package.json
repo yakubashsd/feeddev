@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "start:local": "node --env-file=.env.local-login server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js && node --check saas-store.js && node --check freekassa.js",
+    "test": "node --test *.test.js"
   },
   "engines": {
     "node": "20.x"

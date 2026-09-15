@@ -4,6 +4,8 @@ const path = require("path");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
+const { PLAN, createSaasStore, isSubscriptionActive, normalizeEmail } = require("./saas-store");
+const { createFreeKassa } = require("./freekassa");
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/, "");
@@ -20,6 +22,11 @@ const AUTH_PASSWORD = String(process.env.AUTH_PASSWORD || "");
 const AUTH_SECRET = String(process.env.AUTH_SECRET || AUTH_PASSWORD);
 const AUTH_COOKIE = "feeddev_session";
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
+const APP_MODE = String(process.env.APP_MODE || "internal").toLowerCase() === "external" ? "external" : "internal";
+const SAAS_SESSION_SECRET = String(process.env.SAAS_SESSION_SECRET || "");
+const SESSION_SECRET = APP_MODE === "external" ? SAAS_SESSION_SECRET : AUTH_SECRET;
+const EXTERNAL_ADMIN_EMAIL = normalizeEmail(process.env.EXTERNAL_ADMIN_EMAIL);
+const EXTERNAL_ADMIN_PASSWORD = String(process.env.EXTERNAL_ADMIN_PASSWORD || "");
 const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "");
 const TELEGRAM_CHAT_ID = String(process.env.TELEGRAM_CHAT_ID || "");
 const SMTP_HOST = String(process.env.SMTP_HOST || "");
@@ -30,6 +37,15 @@ const SMTP_PASS = String(process.env.SMTP_PASS || "");
 const EMAIL_FROM = String(process.env.EMAIL_FROM || SMTP_USER || "");
 const MONITOR_INTERVAL_MINUTES = 12 * 60;
 const telegramLinks = require('./telegram-link').createTelegramLinks({file:path.join(DATA_DIR,'telegram-links.json')});
+const saasStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
+  ? createSaasStore({ dataDir: DATA_DIR, secret: process.env.SAAS_DATA_SECRET })
+  : null;
+const freeKassa = createFreeKassa({
+  merchantId: process.env.FREEKASSA_MERCHANT_ID,
+  secret1: process.env.FREEKASSA_SECRET_1,
+  secret2: process.env.FREEKASSA_SECRET_2,
+  paymentUrl: process.env.FREEKASSA_PAYMENT_URL
+});
 async function telegramApi(method, body={}) {
   if(!TELEGRAM_BOT_TOKEN)throw Error('Бот ещё не настроен. Обратитесь к администратору.');
   const response=await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
@@ -271,28 +287,42 @@ function parseCookies(req) {
 }
 
 function signSession(payload) {
-  return crypto.createHmac("sha256", AUTH_SECRET).update(payload).digest("base64url");
+  return crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
 }
 
-function createSessionToken(username) {
+function createSessionToken(subject) {
   const payload = Buffer.from(JSON.stringify({
-    username,
+    ...subject,
     expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000
   })).toString("base64url");
   return `${payload}.${signSession(payload)}`;
 }
 
-function isAuthenticated(req) {
-  if (!AUTH_PASSWORD || !AUTH_SECRET) return false;
+function readSession(req) {
+  if (!SESSION_SECRET) return null;
   const token = parseCookies(req)[AUTH_COOKIE] || "";
   const [payload, signature] = token.split(".");
-  if (!payload || !signature || !safeEqual(signature, signSession(payload))) return false;
+  if (!payload || !signature || !safeEqual(signature, signSession(payload))) return null;
   try {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    return session.username === AUTH_USERNAME && Number(session.expiresAt) > Date.now();
+    if (Number(session.expiresAt) <= Date.now()) return null;
+    if (APP_MODE === "internal") return session.role === "internal" && session.username === AUTH_USERNAME ? session : null;
+    return ["customer", "admin"].includes(session.role) ? session : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function isAuthenticated(req) {
+  return Boolean(readSession(req));
+}
+
+async function currentActor(req) {
+  const session = readSession(req);
+  if (!session) return null;
+  if (session.role !== "customer") return session;
+  const user = await saasStore?.getUser(session.userId);
+  return user && user.status !== "blocked" ? { ...session, user } : null;
 }
 
 function setSessionCookie(req, res, token, maxAge = SESSION_TTL_SECONDS) {
@@ -305,6 +335,9 @@ function setSessionCookie(req, res, token, maxAge = SESSION_TTL_SECONDS) {
 function parseBody(req) {
   if (req.body !== undefined && req.body !== null) {
     if (typeof req.body === "object") return Promise.resolve(req.body);
+    if (String(req.headers["content-type"] || "").toLowerCase().includes("application/x-www-form-urlencoded")) {
+      return Promise.resolve(Object.fromEntries(new URLSearchParams(String(req.body))));
+    }
     try {
       return Promise.resolve(JSON.parse(String(req.body)));
     } catch {
@@ -327,7 +360,12 @@ function parseBody(req) {
     req.on("end", () => {
       try {
         const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : {});
+        const contentType = String(req.headers["content-type"] || "").toLowerCase();
+        if (contentType.includes("application/x-www-form-urlencoded")) {
+          resolve(Object.fromEntries(new URLSearchParams(raw)));
+        } else {
+          resolve(raw ? JSON.parse(raw) : {});
+        }
       } catch {
         reject(new Error("Некорректный JSON в запросе."));
       }
@@ -403,13 +441,16 @@ function validateFeedPayload(payload) {
   };
 }
 
-async function saveFeed(req, payload, existingSlug = "") {
+async function saveFeed(req, payload, existingSlug = "", actor = null) {
   const data = validateFeedPayload(payload);
   const feeds = await readFeeds();
   const now = new Date().toISOString();
   const requestedSlug = existingSlug || payload.slug || data.name || `${data.platform}-${new Date().toISOString().slice(0, 10)}-${crypto.randomBytes(3).toString("hex")}`;
   let slug = makeSlug(requestedSlug);
   const existing = feeds.find(feed => feed.slug === slug);
+  if (APP_MODE === "external" && existingSlug && existing?.ownerId !== actor?.userId) {
+    throw new Error("Фид не найден в вашем аккаунте.");
+  }
 
   if (!existingSlug && existing) {
     slug = `${slug}-${crypto.randomBytes(3).toString("hex")}`;
@@ -420,6 +461,8 @@ async function saveFeed(req, payload, existingSlug = "") {
   const record = {
     id: slug,
     slug,
+    ownerId: APP_MODE === "external" ? actor?.userId : undefined,
+    projectId: APP_MODE === "external" ? String(payload.projectId || "") : undefined,
     platform: data.platform,
     sourceUrl: data.sourceUrl,
     sourceType: data.sourceType,
@@ -469,7 +512,7 @@ function validateLayoutPayload(payload) {
   };
 }
 
-async function saveLayout(req, payload) {
+async function saveLayout(req, payload, actor = null) {
   const data = validateLayoutPayload(payload);
   const now = new Date().toISOString();
   const baseSlug = makeSlug(`${data.name}-${data.rooms || ""}-${data.area || ""}`) || crypto.randomBytes(5).toString("hex");
@@ -478,6 +521,8 @@ async function saveLayout(req, payload) {
   const blob = await persistLayoutFile(fileName, data.bytes, data.contentType);
   const record = {
     id,
+    ownerId: APP_MODE === "external" ? actor?.userId : undefined,
+    projectId: APP_MODE === "external" ? String(payload.projectId || "") : undefined,
     name: data.name,
     project: data.project,
     building: data.building,
@@ -559,7 +604,8 @@ async function sendEmailAlert(payload) {
 }
 
 async function sendMonitorAlerts(payload = {}) {
-  const connection=telegramLinks.status(AUTH_USERNAME,payload.projectId || '').connected;
+  const telegramOwner = APP_MODE === "external" ? String(payload.ownerId || "") : AUTH_USERNAME;
+  const connection=telegramLinks.status(telegramOwner,payload.projectId || '').connected;
   payload={...payload,telegramChatId:connection?.chatId || ''};
   const result = { telegramSent: false, emailSent: false, errors: [] };
   if (payload.telegramEnabled) {
@@ -583,7 +629,7 @@ async function sendMonitorAlerts(payload = {}) {
 }
 
 function serveStatic(req, res, pathname) {
-  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/layout-editor.js','/layout-editor.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/layout-editor.js','/layout-editor.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
@@ -601,31 +647,57 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/health") {
     return send(res, 200, {
       ok: true,
+      mode: APP_MODE,
       storage: usesBlobStorage() ? "vercel-blob" : "local",
       feedPublishingReady: usesBlobStorage() || !process.env.VERCEL,
       telegramAlertsReady: telegramAlertsEnabled(),
-      emailAlertsReady: emailAlertsEnabled()
+      emailAlertsReady: emailAlertsEnabled(),
+      billingReady: APP_MODE === "external" ? freeKassa.configured() : null
     });
   }
 
   if (req.method === "GET" && url.pathname === "/api/auth-session") {
+    const actor = await currentActor(req);
     return send(res, 200, {
-      authenticated: isAuthenticated(req),
-      configured: Boolean(AUTH_PASSWORD && AUTH_SECRET)
+      authenticated: Boolean(actor),
+      configured: APP_MODE === "external" ? Boolean(saasStore && SESSION_SECRET) : Boolean(AUTH_PASSWORD && AUTH_SECRET),
+      mode: APP_MODE,
+      role: actor?.role || null,
+      user: actor?.user || null,
+      subscriptionActive: actor?.user ? isSubscriptionActive(actor.user) : APP_MODE === "internal",
+      plan: APP_MODE === "external" ? PLAN : null
     });
   }
 
-  if (req.method === "POST" && url.pathname === "/api/auth-login") {
-    if (!AUTH_PASSWORD || !AUTH_SECRET) {
-      return sendError(res, 503, "Вход ещё не настроен на сервере.");
-    }
+  if (req.method === "POST" && url.pathname === "/api/auth-register") {
+    if (APP_MODE !== "external" || !saasStore) return sendError(res, 404, "Регистрация недоступна.");
     const payload = await parseBody(req);
+    const user = await saasStore.register(payload);
+    setSessionCookie(req, res, createSessionToken({ role: "customer", userId: user.id }));
+    return send(res, 201, { authenticated: true, user, subscriptionActive: false, plan: PLAN });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth-login") {
+    const payload = await parseBody(req);
+    if (APP_MODE === "external") {
+      if (!saasStore || !SESSION_SECRET) return sendError(res, 503, "Внешний контур ещё не настроен.");
+      const email = normalizeEmail(payload.email || payload.username);
+      if (email === EXTERNAL_ADMIN_EMAIL && EXTERNAL_ADMIN_PASSWORD && safeEqual(payload.password || "", EXTERNAL_ADMIN_PASSWORD)) {
+        setSessionCookie(req, res, createSessionToken({ role: "admin", email }));
+        return send(res, 200, { authenticated: true, role: "admin" });
+      }
+      const user = await saasStore.authenticate(email, payload.password || "");
+      if (!user) return sendError(res, 401, "Неверный email или пароль.");
+      setSessionCookie(req, res, createSessionToken({ role: "customer", userId: user.id }));
+      return send(res, 200, { authenticated: true, role: "customer" });
+    }
+    if (!AUTH_PASSWORD || !AUTH_SECRET) return sendError(res, 503, "Вход ещё не настроен на сервере.");
     const usernameMatches = safeEqual(payload.username || "", AUTH_USERNAME);
     const passwordMatches = safeEqual(payload.password || "", AUTH_PASSWORD);
     if (!usernameMatches || !passwordMatches) {
       return sendError(res, 401, "Неверный логин или пароль.");
     }
-    setSessionCookie(req, res, createSessionToken(AUTH_USERNAME));
+    setSessionCookie(req, res, createSessionToken({ role: "internal", username: AUTH_USERNAME }));
     return send(res, 200, { authenticated: true });
   }
 
@@ -642,18 +714,70 @@ async function handleApi(req, res, url) {
     return servePublicLayout(req, res, String(url.searchParams.get("file") || ""));
   }
 
-  if (!isAuthenticated(req)) {
+  if (req.method === "POST" && url.pathname === "/api/billing/freekassa/callback") {
+    if (APP_MODE !== "external" || !saasStore || !freeKassa.configured()) return sendError(res, 503, "Касса не настроена.");
+    const payload = await parseBody(req);
+    if (!freeKassa.verifyNotification(payload)) return sendError(res, 403, "Неверная подпись уведомления.");
+    const orderId = String(payload.MERCHANT_ORDER_ID || payload.order_id || "");
+    await saasStore.completePayment(orderId, payload.intid || payload.INTID || "", payload.AMOUNT || payload.amount);
+    return send(res, 200, "YES", "text/plain; charset=utf-8");
+  }
+
+  const actor = await currentActor(req);
+  if (!actor) {
     return sendError(res, 401, "Требуется вход в сервис.");
   }
 
+  if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/projects") {
+    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    return send(res, 200, { projects: await saasStore.listProjects(actor.userId), limit: actor.user.projectLimit || PLAN.minProjects });
+  }
+
+  if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/projects") {
+    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    const payload = await parseBody(req);
+    return send(res, 201, await saasStore.createProject(actor.userId, payload.name));
+  }
+
+  const projectDeleteMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)$/i) : null;
+  if (projectDeleteMatch && req.method === "DELETE") {
+    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    const deleted = await saasStore.deleteProject(actor.userId, projectDeleteMatch[1]);
+    return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Проект не найден." });
+  }
+
+  if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/billing/checkout") {
+    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!freeKassa.configured()) return sendError(res, 503, "FreeKassa ещё не настроена администратором.");
+    const payload = await parseBody(req);
+    const payment = await saasStore.createPayment(actor.userId, payload.projectCount);
+    return send(res, 201, { orderId: payment.orderId, url: freeKassa.checkoutUrl({ ...payment, email: actor.user.email }) });
+  }
+
+  if (APP_MODE === "external" && url.pathname === "/api/admin") {
+    if (actor.role !== "admin") return sendError(res, 403, "Требуются права администратора.");
+    if (req.method === "GET") return send(res, 200, await saasStore.adminSnapshot());
+    if (req.method === "PUT") {
+      const payload = await parseBody(req);
+      return send(res, 200, await saasStore.updateUser(payload.userId, payload));
+    }
+    return sendError(res, 405, "Метод не поддерживается");
+  }
+
+  if (APP_MODE === "external" && actor.role === "customer" && !isSubscriptionActive(actor.user)) {
+    return sendError(res, 402, "Для работы с сервисом оплатите тариф от 7 500 ₽ в месяц.");
+  }
+
   if (req.method === "GET" && url.pathname === "/api/feeds") {
-    return send(res, 200, { feeds: await readFeeds() });
+    const feeds = await readFeeds();
+    return send(res, 200, { feeds: APP_MODE === "external" ? feeds.filter(feed => feed.ownerId === actor.userId) : feeds });
   }
 
   if (url.pathname === '/api/monitor') {
     if(process.env.VERCEL)return sendError(res,503,'Серверное расписание требует постоянно работающего Node-сервера. На Vercel оно пока не подключено.');
     const project=String(url.searchParams.get('project')||'default');
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
+    if(APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, project))return sendError(res,403,'Проект недоступен.');
     if(req.method==='GET')return send(res,200,{feeds:monitor.read()[project]||[],intervalMinutes:MONITOR_INTERVAL_MINUTES});
     if(req.method==='PUT'){const body=await parseBody(req);return send(res,200,{feeds:monitor.replace(project,body.feeds)});}
     if(req.method==='POST'){const body=await parseBody(req);await monitor.run(project,body.id||null,true);return send(res,200,{feeds:monitor.read()[project]||[]});}
@@ -663,13 +787,15 @@ async function handleApi(req, res, url) {
   if(url.pathname==='/api/telegram-link'){
     const project=String(url.searchParams.get('project')||'');
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
-    if(req.method==='GET')return send(res,200,{...telegramLinks.status(AUTH_USERNAME,project),configured:Boolean(TELEGRAM_BOT_TOKEN)});
-    if(req.method==='DELETE')return send(res,200,telegramLinks.disconnect(AUTH_USERNAME,project));
+    if(APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, project))return sendError(res,403,'Проект недоступен.');
+    const telegramOwner = APP_MODE === "external" ? actor.userId : AUTH_USERNAME;
+    if(req.method==='GET')return send(res,200,{...telegramLinks.status(telegramOwner,project),configured:Boolean(TELEGRAM_BOT_TOKEN)});
+    if(req.method==='DELETE')return send(res,200,telegramLinks.disconnect(telegramOwner,project));
     if(req.method==='POST'){
       const body=await parseBody(req);
-      if(body.confirmationId)return send(res,200,telegramLinks.confirm(AUTH_USERNAME,project,body.confirmationId));
+      if(body.confirmationId)return send(res,200,telegramLinks.confirm(telegramOwner,project,body.confirmationId));
       const bot=await telegramApi('getMe');
-      const token=telegramLinks.begin(AUTH_USERNAME,project);
+      const token=telegramLinks.begin(telegramOwner,project);
       return send(res,200,{url:`https://t.me/${bot.username}?start=${token}`,expiresIn:600});
     }
     return sendError(res,405,'Метод не поддерживается');
@@ -680,7 +806,8 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/layouts") {
-    return send(res, 200, { layouts: await readLayouts() });
+    const layouts = await readLayouts();
+    return send(res, 200, { layouts: APP_MODE === "external" ? layouts.filter(layout => layout.ownerId === actor.userId) : layouts });
   }
 
   if (req.method === "GET" && url.pathname === "/api/layout-image-proxy") {
@@ -689,12 +816,17 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/layouts") {
     const payload = await parseBody(req);
-    const record = await saveLayout(req, payload);
+    if (APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, payload.projectId)) return sendError(res, 403, "Проект недоступен.");
+    const record = await saveLayout(req, payload, actor);
     return send(res, 201, record);
   }
 
   const deleteLayoutMatch = url.pathname.match(/^\/api\/layouts\/([a-z0-9а-яё-]+)$/i);
   if (req.method === "DELETE" && deleteLayoutMatch) {
+    if (APP_MODE === "external") {
+      const target = (await readLayouts()).find(layout => layout.id === deleteLayoutMatch[1]);
+      if (!target || target.ownerId !== actor.userId) return sendError(res, 404, "Планировка не найдена.");
+    }
     const deleted = await deleteLayoutRecord(deleteLayoutMatch[1]);
     return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Планировка не найдена." });
   }
@@ -711,20 +843,23 @@ async function handleApi(req, res, url) {
 
   if (req.method === "POST" && url.pathname === "/api/feeds") {
     const payload = await parseBody(req);
-    const record = await saveFeed(req, payload);
+    if (APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, payload.projectId)) return sendError(res, 403, "Проект недоступен.");
+    const record = await saveFeed(req, payload, "", actor);
     return send(res, 201, record);
   }
 
   if (req.method === "PUT" && url.pathname === "/api/feeds" && url.searchParams.get("slug")) {
     const payload = await parseBody(req);
-    const record = await saveFeed(req, payload, url.searchParams.get("slug"));
+    if (APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, payload.projectId)) return sendError(res, 403, "Проект недоступен.");
+    const record = await saveFeed(req, payload, url.searchParams.get("slug"), actor);
     return send(res, 200, record);
   }
 
   const updateMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)$/i);
   if (req.method === "PUT" && updateMatch) {
     const payload = await parseBody(req);
-    const record = await saveFeed(req, payload, updateMatch[1]);
+    if (APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, payload.projectId)) return sendError(res, 403, "Проект недоступен.");
+    const record = await saveFeed(req, payload, updateMatch[1], actor);
     return send(res, 200, record);
   }
 
@@ -740,6 +875,10 @@ async function servePublicFeed(req, res, slug) {
     if (!sourceUrl) return sendError(res, 404, "Feed not found");
     const response = await fetch(sourceUrl, { cache: "no-store" });
     if (!response.ok) return sendError(res, 502, "Feed storage is unavailable");
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=60" });
+      return res.end();
+    }
     return send(res, 200, await response.text(), "application/xml; charset=utf-8");
   }
 
@@ -749,6 +888,7 @@ async function servePublicFeed(req, res, slug) {
     "Content-Type": "application/xml; charset=utf-8",
     "Cache-Control": "public, max-age=60"
   });
+  if (req.method === "HEAD") return res.end();
   return fs.createReadStream(filePath).pipe(res);
 }
 
@@ -820,7 +960,7 @@ async function handleRequest(req, res) {
     const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.(php|xml)$/i);
     const publicLayoutMatch = url.pathname.match(/^\/layouts\/([^/]+)$/i);
 
-    if (publicFeedMatch && req.method === "GET") {
+    if (publicFeedMatch && (req.method === "GET" || req.method === "HEAD")) {
       return servePublicFeed(req, res, publicFeedMatch[1]);
     }
 

@@ -24,3 +24,13 @@ test('internal addresses are not accepted',()=>{
   for(const ip of ['127.0.0.1','10.1.1.1','169.254.169.254','192.168.1.1','172.20.1.1','::1'])assert.equal(publicAddress(ip),false);
   assert.equal(publicAddress('8.8.8.8'),true);
 });
+test('Avito content errors are detected',async()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'feed-monitor-content-'));
+  try{
+    const monitor=createMonitor({file:path.join(dir,'state.json'),load:async()=>'<Ads><Ad><Id>1</Id><Description></Description></Ad></Ads>'});
+    monitor.replace('test',[{id:'a',url:'https://example.com/feed'}]);
+    await monitor.run('test',null,true);
+    assert.equal(monitor.read().test[0].status,'bad');
+    assert.match(monitor.read().test[0].error,/Description у 1 объектов/);
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

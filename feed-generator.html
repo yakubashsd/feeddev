@@ -102,6 +102,19 @@
       line-height: 1.4;
     }
 
+    .auth-switch { display:flex; gap:8px; margin:0 0 20px; }
+    .auth-switch button { flex:1; }
+    .auth-switch button.active { border-color:var(--green); background:var(--green-2); color:var(--green); }
+    .billing-page { max-width:760px; }
+    .billing-card { padding:28px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .billing-price { margin:18px 0 6px; font-size:38px; font-weight:780; letter-spacing:-1.4px; }
+    .billing-price small { font-size:15px; color:var(--muted); font-weight:500; letter-spacing:0; }
+    .billing-features { margin:24px 0; padding-left:20px; line-height:1.9; }
+    .billing-status { margin:18px 0; padding:14px; background:var(--surface-2); border-radius:7px; line-height:1.5; }
+    .billing-quantity { display:flex; align-items:end; gap:12px; margin:22px 0; }
+    .billing-quantity .field { flex:1; max-width:260px; }
+    .billing-total { font-size:20px; font-weight:750; padding-bottom:9px; }
+
     button, input, textarea, select {
       font: inherit;
     }
@@ -4399,9 +4412,14 @@
       <img class="auth-mark" src="assets/sozdateli-logo.png" alt="Создатели">
       <h1>Вход в сервис</h1>
       <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
+      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Вход</button><button type="button" data-auth-mode="register">Регистрация</button></div>
       <div class="auth-fields">
+        <div class="field" id="loginNameField" hidden>
+          <label for="loginName">Имя</label>
+          <input id="loginName" name="name" autocomplete="name">
+        </div>
         <div class="field">
-          <label for="loginUsername">Логин</label>
+          <label for="loginUsername" id="loginUsernameLabel">Логин</label>
           <input id="loginUsername" name="username" autocomplete="username" required autofocus>
         </div>
         <div class="field">
@@ -4432,6 +4450,7 @@
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
       <div class="sidebar-spacer"></div>
       <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.</div>
+      <button type="button" class="nav-item" data-nav="billing" id="billingNav" hidden><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span class="nav-text">Тариф и оплата</span></button>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
     </aside>
 
@@ -4459,6 +4478,16 @@
         <p class="panel-caption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
         <input id="projectSearch" type="search" placeholder="Найти проект" aria-label="Найти проект">
         <div id="projectList"></div>
+      </section>
+      <section class="billing-page page-hidden" data-page="billing">
+        <div class="billing-card">
+          <h2 class="panel-title">Тариф по количеству проектов</h2>
+          <div class="billing-price">7 500 ₽ <small>за 1 проект / 30 дней</small></div>
+          <ul class="billing-features"><li>От 1 до 10 проектов в одном аккаунте</li><li>Редактор, проверка и публикация фидов</li><li>Мониторинг и уведомления</li></ul>
+          <div class="billing-quantity"><div class="field"><label for="billingProjectCount">Количество проектов</label><select id="billingProjectCount"><option value="1">1 проект</option><option value="2">2 проекта</option><option value="3">3 проекта</option><option value="4">4 проекта</option><option value="5">5 проектов</option><option value="6">6 проектов</option><option value="7">7 проектов</option><option value="8">8 проектов</option><option value="9">9 проектов</option><option value="10">10 проектов</option></select></div><div class="billing-total" id="billingTotal">7 500 ₽ / мес</div></div>
+          <div class="billing-status" id="billingStatus">Проверяем статус подписки…</div>
+          <button class="primary" id="checkoutButton" type="button">Оплатить через FreeKassa</button>
+        </div>
       </section>
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>Объедините источник, настройки и результат в одном пространстве.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
@@ -4863,7 +4892,7 @@
         <div class="section-title">Параметры квартиры</div>
         <div class="field">
           <label for="rooms">Комнат</label>
-          <input id="rooms" name="rooms" type="number" min="0">
+          <input id="rooms" name="rooms" inputmode="numeric" placeholder="Например, 2 или Студия">
         </div>
         <div class="field">
           <label for="floor">Этаж</label>
@@ -4877,6 +4906,9 @@
           <label for="livingArea">Жилая площадь</label>
           <input id="livingArea" name="livingArea" type="number" min="0" step="0.01">
         </div>
+        <div class="field"><label for="kitchenArea">Площадь кухни</label><input id="kitchenArea" name="kitchenArea" type="number" min="0" step="0.01"></div>
+        <div class="field"><label for="latitude">Широта</label><input id="latitude" name="latitude" type="number" step="any"></div>
+        <div class="field"><label for="longitude">Долгота</label><input id="longitude" name="longitude" type="number" step="any"></div>
         <div class="field">
           <label for="decoration">Отделка</label>
           <select id="decoration" name="decoration">
@@ -4945,6 +4977,7 @@
           <select id="houseType" name="houseType">
             <option value="">Не указан</option>
             <option value="Монолитный">Монолитный</option>
+            <option value="Монолитно-каркасный">Монолитно-каркасный</option>
             <option value="Монолитно-кирпичный">Монолитно-кирпичный</option>
             <option value="Кирпичный">Кирпичный</option>
             <option value="Панельный">Панельный</option>
@@ -5029,6 +5062,9 @@
   </dialog>
 
   <script>
+    let runtimeMode = "internal";
+    let authFormMode = "login";
+    let sessionState = null;
     const projectIndexKey = "feeddev-projects-v1";
     let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
@@ -5287,6 +5323,64 @@
       appInitialized = true;
     }
 
+    function configureExternalMode(state) {
+      runtimeMode = state.mode || "internal";
+      const external = runtimeMode === "external";
+      document.querySelector("#authSwitch").hidden = !external;
+      document.querySelector("#loginUsernameLabel").textContent = external ? "Email" : "Логин";
+      document.querySelector("#loginUsername").type = external ? "email" : "text";
+      document.querySelector("#loginUsername").autocomplete = external ? "email" : "username";
+      document.querySelector("#billingNav").hidden = !external;
+      document.querySelector(".brand small").textContent = external ? "сервис управления фидами" : "управление фидами";
+    }
+
+    function setAuthFormMode(mode) {
+      authFormMode = mode;
+      const register = mode === "register";
+      document.querySelector("#loginNameField").hidden = !register;
+      document.querySelector("#loginName").required = register;
+      document.querySelector("#loginForm h1").textContent = register ? "Создать аккаунт" : "Вход в сервис";
+      document.querySelector(".auth-description").textContent = register ? "Зарегистрируйтесь и оплатите доступ к одному проекту." : "Введите данные доступа к рабочей области фидов.";
+      loginButton.textContent = register ? "Создать аккаунт" : "Войти";
+      document.querySelectorAll("[data-auth-mode]").forEach(button => button.classList.toggle("active", button.dataset.authMode === mode));
+      loginError.textContent = "";
+    }
+
+    async function syncExternalProjects() {
+      if (runtimeMode !== "external" || sessionState?.role !== "customer") return false;
+      const response = await fetch("/api/projects", { credentials: "same-origin", cache: "no-store" });
+      if (response.status === 402) return false;
+      if (!response.ok) throw new Error("Не удалось загрузить проекты аккаунта.");
+      const result = await response.json();
+      const next = Array.isArray(result.projects) ? result.projects : [];
+      if (JSON.stringify(next) === JSON.stringify(projects)) return false;
+      localStorage.setItem(projectIndexKey, JSON.stringify(next));
+      return true;
+    }
+
+    function renderBilling() {
+      const status = document.querySelector("#billingStatus");
+      const button = document.querySelector("#checkoutButton");
+      const count = document.querySelector("#billingProjectCount");
+      const total = document.querySelector("#billingTotal");
+      if (!status || runtimeMode !== "external") return;
+      const unitAmount = Number(sessionState?.plan?.unitAmount || 7500);
+      if (count && !count.dataset.initialized) {
+        count.value = String(sessionState?.user?.projectLimit || 1);
+        count.dataset.initialized = "true";
+      }
+      const projectCount = Number(count?.value || 1);
+      if (total) total.textContent = `${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ / мес`;
+      const until = sessionState?.user?.subscriptionUntil;
+      if (sessionState?.subscriptionActive && until) {
+        status.textContent = `Доступ к ${sessionState.user.projectLimit || 1} проектам оплачен до ${new Date(until).toLocaleDateString("ru-RU")}. Следующая оплата установит выбранный лимит и продлит срок ещё на 30 дней.`;
+        button.textContent = "Продлить через FreeKassa";
+      } else {
+        status.textContent = "Доступ пока не оплачен. После подтверждения платежа можно создать выбранное количество проектов.";
+        button.textContent = `Оплатить ${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ через FreeKassa`;
+      }
+    }
+
     async function initializeAuth() {
       loginButton.disabled = true;
       loginButton.textContent = "Проверяю доступ...";
@@ -5294,7 +5388,21 @@
         const response = await fetch("/api/auth-session", { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) throw new Error(`Сервер вернул HTTP ${response.status}`);
         const state = await response.json();
-        if (state.authenticated) showWorkspace();
+        sessionState = state;
+        configureExternalMode(state);
+        if (state.authenticated && state.role === "admin") {
+          location.href = "/admin.html";
+          return;
+        }
+        if (state.authenticated) {
+          if (await syncExternalProjects()) {
+            location.reload();
+            return;
+          }
+          showWorkspace();
+          if (runtimeMode === "external" && !state.subscriptionActive) switchPage("billing");
+          renderBilling();
+        }
         else showLogin(state.configured ? "" : "Вход ещё не настроен в параметрах Vercel.");
       } catch (error) {
         showLogin(`Не удалось проверить доступ: ${error.message}`);
@@ -5310,24 +5418,31 @@
       loginButton.disabled = true;
       loginButton.textContent = "Вхожу...";
       try {
-        const response = await fetch("/api/auth-login", {
+        const register = runtimeMode === "external" && authFormMode === "register";
+        const response = await fetch(register ? "/api/auth-register" : "/api/auth-login", {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: document.querySelector("#loginUsername").value.trim(),
+            email: document.querySelector("#loginUsername").value.trim(),
+            name: document.querySelector("#loginName").value.trim(),
             password: document.querySelector("#loginPassword").value
           })
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
-        showWorkspace();
+        if (result.role === "admin") {
+          location.href = "/admin.html";
+          return;
+        }
+        location.reload();
       } catch (error) {
         showLogin(error.message || "Не удалось войти.");
         document.querySelector("#loginPassword").focus();
       } finally {
         loginButton.disabled = false;
-        loginButton.textContent = "Войти";
+        loginButton.textContent = authFormMode === "register" ? "Создать аккаунт" : "Войти";
       }
     }
 
@@ -5646,7 +5761,7 @@
       if (activePlatform === "yandex") rules.push(["buildingName", "корпус или дом"]);
       const missing = rules.filter(([key]) => !String(item[key] || "").trim()).map(([, label]) => label);
       if (activePlatform === "avito") {
-        const allowedHouseTypes = ["монолитный", "монолитно-кирпичный", "кирпичный", "панельный", "блочный", "деревянный"];
+        const allowedHouseTypes = ["монолитный", "монолитно-каркасный", "монолитно-кирпичный", "кирпичный", "панельный", "блочный", "деревянный"];
         const allowedDecorations = [
           "rough", "preFine", "fine", "without", "repair", "repairBeige", "repairGray",
           "Черновая", "Предчистовая", "Чистовая", "Без отделки", "Ремонт", "Ремонт бежевый", "Ремонт серый"
@@ -5874,12 +5989,12 @@
     function complexGroups() {
       const groups = new Map();
       objects.forEach(item => {
-        const name = String(item.complexName || item.buildingName || "Без названия").trim();
+        const name = String(item.complexName || item.buildingName || (item.avitoNewDevelopmentId ? `Новостройка Avito ${item.avitoNewDevelopmentId}` : item.address) || "Без названия").trim();
         const key = normalizeProjectName(name);
         if (!groups.has(key)) groups.set(key, { key, name, items: [], houses: new Set() });
         const group = groups.get(key);
         group.items.push(item);
-        group.houses.add(String(item.buildingName || item.houseId || "Дом не указан"));
+        group.houses.add(String(item.buildingName || item.houseId || item.address || "Дом не указан"));
       });
       return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "ru"));
     }
@@ -5935,12 +6050,29 @@
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
         return '<article class="project-entry"><a class="project-entry-main" href="?project=' + encodeURIComponent(project.id) + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="?project=' + encodeURIComponent(project.id) + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
       }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
+      const createButton = document.querySelector("#newProjectBtn");
+      if (runtimeMode === "external") {
+        const limit = Number(sessionState?.user?.projectLimit || 1);
+        const limitReached = projects.length >= limit;
+        createButton.disabled = limitReached;
+        createButton.textContent = limitReached ? `Лимит проектов: ${limit}` : "Создать проект";
+      } else {
+        createButton.disabled = false;
+        createButton.textContent = "Создать проект";
+      }
     }
 
     async function deleteProject(projectId) {
       const project = projects.find(item => item.id === projectId);
       if (!project) return;
       if (!confirm(`Удалить проект «${project.name}»? Настройки, источники и черновик будут удалены из этого браузера. Уже опубликованный XML останется доступен по своей ссылке.`)) return;
+      if (runtimeMode === "external") {
+        await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" }).catch(() => {});
+        await fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] }) }).catch(() => {});
+        const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) return showToast(result.error || "Не удалось удалить проект.");
+      }
       const suffix = project.id === "legacy" ? "" : `-${project.id}`;
       [
         "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1",
@@ -5950,16 +6082,18 @@
       projects = projects.filter(item => item.id !== projectId);
       localStorage.setItem(projectIndexKey, JSON.stringify(projects));
       await deleteBrandAsset(projectId).catch(() => {});
-      await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`,{method:'DELETE'}).catch(()=>{});
-      fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, {
-        method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] })
-      }).catch(() => {});
+      if (runtimeMode !== "external") {
+        await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`,{method:'DELETE'}).catch(()=>{});
+        fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, {
+          method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] })
+        }).catch(() => {});
+      }
       renderProjects();
       showToast(`Проект «${project.name}» удалён`);
     }
 
     function renderPage() {
-      const titles = { projects: "Проекты фидов", source: "Источники", complexes: "ЖК и дома", apartments: "Квартиры", branding: "Шаблон планировок", validator: "Проверка фида", results: "Результаты и ссылки", feeds: "Мониторинг" };
+      const titles = { projects: "Проекты фидов", source: "Источники", complexes: "ЖК и дома", apartments: "Квартиры", branding: "Шаблон планировок", validator: "Проверка фида", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
       const shell = document.querySelector("#appShell");
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", activePage === "validator");
@@ -5976,7 +6110,7 @@
         item.classList.toggle("active", item.dataset.nav === activePage);
         if (state) item.dataset.state = state;
         else delete item.dataset.state;
-        item.hidden = !currentProject;
+        item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : !currentProject;
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
       document.querySelector(".subtitle").textContent = currentProject?.name || "Управляйте источниками и выгрузками";
@@ -5992,6 +6126,7 @@
       if (activePage === "projects") renderProjects();
       if (activePage === "complexes") renderComplexes();
       if (activePage === "feeds") renderMonitorNotificationSettings();
+      if (activePage === "billing") renderBilling();
     }
 
     function switchPage(page) {
@@ -6014,11 +6149,22 @@
       const button = event.target.closest("[data-delete-project]");
       if (button) deleteProject(button.dataset.deleteProject);
     });
-    document.querySelector("#projectForm").addEventListener("submit", event => {
+    document.querySelector("#projectForm").addEventListener("submit", async event => {
       event.preventDefault();
       const name = document.querySelector("#projectName").value.trim();
       if (!name) return;
-      const project = { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
+      if (runtimeMode === "external" && !sessionState?.subscriptionActive) {
+        document.querySelector("#projectDialog").close();
+        switchPage("billing");
+        return;
+      }
+      let project = { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
+      if (runtimeMode === "external") {
+        const response = await fetch("/api/projects", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) return showToast(result.error || "Не удалось создать проект.");
+        project = result;
+      }
       projects.push(project);
       try {
         localStorage.setItem(projectIndexKey, JSON.stringify(projects));
@@ -6026,6 +6172,23 @@
       } catch {
         projects.pop();
         showToast("Не удалось сохранить проект: хранилище браузера заполнено.");
+      }
+    });
+
+    document.querySelectorAll("[data-auth-mode]").forEach(button => button.addEventListener("click", () => setAuthFormMode(button.dataset.authMode)));
+    document.querySelector("#billingProjectCount").addEventListener("change", renderBilling);
+    document.querySelector("#checkoutButton").addEventListener("click", async () => {
+      const button = document.querySelector("#checkoutButton");
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/billing/checkout", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectCount: Number(document.querySelector("#billingProjectCount").value) }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось создать оплату.");
+        location.href = result.url;
+      } catch (error) {
+        showToast(error.message);
+      } finally {
+        button.disabled = false;
       }
     });
 
@@ -6102,7 +6265,8 @@
     }
 
     function saveMonitoredFeeds(feeds) {
-      localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80)));
+      const ownerId = runtimeMode === "external" ? sessionState?.user?.id || "" : "";
+      localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80).map(feed => ({ ...feed, ownerId }))));
     }
 
     function hasFeedChanges() {
@@ -6410,6 +6574,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: nameInput.value.trim(),
+            projectId: currentProject?.id || "",
             project: document.querySelector("#layoutProject")?.value.trim() || "",
             building: document.querySelector("#layoutBuilding")?.value.trim() || "",
             rooms: document.querySelector("#layoutRooms")?.value.trim() || "",
@@ -6997,6 +7162,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: `Планировка на подложке ${item.externalId || ""}`.trim(),
+          projectId: currentProject?.id || "",
           project: item.complexName || "",
           building: item.buildingName || item.sectionNumber || "",
           rooms: item.rooms || "",
@@ -7671,7 +7837,7 @@
 
     function feedImageList(item) {
       const layout = String(item.layoutPhoto || "").trim();
-      const photos = photoList(item);
+      const photos = photoList(item).filter(url => url !== layout);
       const branded = photos.filter(isBrandedLayoutUrl);
       const otherPhotos = photos.filter(url => !isBrandedLayoutUrl(url));
       if (branded.length) return [...branded, layout, ...otherPhotos].filter(Boolean);
@@ -7863,6 +8029,8 @@ ${images}
     <ContactPhone>+${escapeXml(contactPhone)}</ContactPhone>
     <Category>Квартиры</Category>
     <Address>${escapeXml(item.address || "")}</Address>
+    ${item.latitude ? `<Latitude>${escapeXml(item.latitude)}</Latitude>` : ""}
+    ${item.longitude ? `<Longitude>${escapeXml(item.longitude)}</Longitude>` : ""}
     <Price>${escapeXml(item.price || "")}</Price>
     <OperationType>Продам</OperationType>
 ${multiOptions("BalconyOrLoggiaMulti", item.balconyOrLoggia)}
@@ -7873,6 +8041,7 @@ ${multiOptions("BalconyOrLoggiaMulti", item.balconyOrLoggia)}
     <Rooms>${escapeXml(item.rooms || "")}</Rooms>
     <Square>${escapeXml(item.totalArea || "")}</Square>
     ${item.livingArea ? `<LivingSpace>${escapeXml(item.livingArea)}</LivingSpace>` : ""}
+    ${item.kitchenArea ? `<KitchenSpace>${escapeXml(item.kitchenArea)}</KitchenSpace>` : ""}
     ${item.flatNumber ? `<ApartmentNumber>${escapeXml(item.flatNumber)}</ApartmentNumber>` : ""}
     <Status>${status}</Status>
 ${multiOptions("BathroomMulti", item.bathroomType)}
@@ -7976,7 +8145,7 @@ ${photos}
         const ads = [...parsed.querySelectorAll("Ads > Ad")];
         const allowed = {
           MarketType: ["Новостройка"],
-          HouseType: ["монолитный", "монолитно-кирпичный", "кирпичный", "панельный", "блочный", "деревянный"],
+          HouseType: ["монолитный", "монолитно-каркасный", "монолитно-кирпичный", "кирпичный", "панельный", "блочный", "деревянный"],
           Status: ["Квартира", "Апартаменты"],
           Decoration: ["Черновая", "Предчистовая", "Чистовая", "Без отделки", "Ремонт", "Ремонт бежевый", "Ремонт серый"]
         };
@@ -8274,13 +8443,29 @@ ${photos}
         const id = existingSource?.id || crypto.randomUUID();
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
+        const sourceOverrides = new Map();
+        if (existingSource) {
+          const originalById = new Map(originalObjects.map(item => [item.externalId, item]));
+          objects.forEach(item => {
+            const original = originalById.get(item.externalId);
+            const belongs = item._sourceId === id || (item._sourceIds || []).includes(id);
+            if (!belongs || !original) return;
+            const changed = { ...(item._overrides || {}) };
+            Object.keys(item).forEach(field => {
+              if (!field.startsWith("_") && String(item[field] ?? "") !== String(original[field] ?? "")) changed[field] = item[field];
+            });
+            if (Object.keys(changed).length) sourceOverrides.set(item.externalId, changed);
+          });
+        }
         const withoutSource = objects.reduce((result, item) => {
           const sourceIds = Array.isArray(item._sourceIds) ? item._sourceIds.filter(value => value !== id) : item._sourceId === id ? [] : item._sourceId ? [item._sourceId] : [];
           if (item._sourceId !== id && !Array.isArray(item._sourceIds)) result.push(item);
           else if (sourceIds.length) result.push({ ...item, _sourceId: sourceIds[0], _sourceIds: sourceIds });
           return result;
         }, []);
-        parsed.objects.forEach(item => {
+        parsed.objects.forEach(sourceItem => {
+          const overrides = sourceOverrides.get(sourceItem.externalId) || {};
+          const item = { ...sourceItem, ...overrides, ...(Object.keys(overrides).length ? { _overrides: overrides } : {}) };
           const duplicate = withoutSource.find(candidate => candidate.externalId === item.externalId);
           if (duplicate) {
             duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), id])];
@@ -8425,6 +8610,7 @@ ${photos}
     async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
       const payload = {
         platform,
+        projectId: currentProject?.id || "",
         sourceUrl,
         sourceType,
         xml,
@@ -8558,6 +8744,14 @@ ${photos}
       return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "";
     }
 
+    function inferLayoutPhoto(node) {
+      const explicit = textOf(node, ["LayoutPhoto FullUrl", "LayoutPhoto", "layout-photo"]);
+      if (explicit) return explicit;
+      return Array.from(node.querySelectorAll("Images Image, image, Photo"))
+        .map(el => el.getAttribute("url") || el.textContent.trim()).filter(Boolean)
+        .find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url)) || "";
+    }
+
     function parseXmlFile(text, sourceUrl = "") {
       const doc = new DOMParser().parseFromString(text, "application/xml");
       const parseError = doc.querySelector("parsererror");
@@ -8571,8 +8765,11 @@ ${photos}
         address: textOf(node, ["Address", "address", "location address"]),
         phone: textOf(node, ["PhoneSchema Number", "ContactPhone", "Phone", "phone", "sales-agent phone"]).replace(/^\+7/, ""),
         totalArea: textOf(node, ["TotalArea", "Square", "area value", "total-area value"]),
-        livingArea: textOf(node, ["LivingArea", "living-space value"]),
-        layoutPhoto: textOf(node, ["LayoutPhoto FullUrl", "Images Image", "image", "Photo"]),
+        livingArea: textOf(node, ["LivingArea", "LivingSpace", "living-space value"]),
+        kitchenArea: textOf(node, ["KitchenArea", "KitchenSpace", "kitchen-space value"]),
+        latitude: textOf(node, ["Latitude", "location latitude"]),
+        longitude: textOf(node, ["Longitude", "location longitude"]),
+        layoutPhoto: inferLayoutPhoto(node),
         photos: Array.from(node.querySelectorAll("Photos PhotoSchema FullUrl, Images Image, image, Photo")).map(el => el.getAttribute("url") || el.textContent.trim()).filter(Boolean).join("\n"),
         rooms: textOf(node, ["FlatRoomsCount", "Rooms", "rooms"]),
         isApartments: node.querySelector("IsApartments")?.textContent || "false",

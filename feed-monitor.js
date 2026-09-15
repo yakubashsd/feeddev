@@ -4,7 +4,23 @@ const dns = require('node:dns').promises;
 const http = require('node:http');
 const https = require('node:https');
 const net = require('node:net');
-const { XMLValidator } = require('fast-xml-parser');
+const { XMLParser, XMLValidator } = require('fast-xml-parser');
+
+function validateContent(xml) {
+  const parsed=new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);
+  const ads=parsed?.Ads?.Ad;
+  if(ads){
+    const items=Array.isArray(ads)?ads:[ads];
+    const missing=items.filter(item=>!String(item?.Description||'').trim()).length;
+    if(missing)throw Error(`Авито: не заполнено поле Description у ${missing} объектов`);
+  }
+  const offers=parsed?.['realty-feed']?.offer;
+  if(offers){
+    const items=Array.isArray(offers)?offers:[offers];
+    const missing=items.filter(item=>!String(item?.description||'').trim()).length;
+    if(missing)throw Error(`Яндекс: не заполнено поле description у ${missing} объектов`);
+  }
+}
 
 function publicAddress(address) {
   if(net.isIP(address)!==4)return false;
@@ -53,7 +69,7 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
           if(id&&feed.id!==id)continue;
           if(!force&&Date.now()-Date.parse(feed.lastChecked||0)<intervalMs)continue;
           const checked={...feed,lastChecked:new Date().toISOString(),status:'ok',error:''};
-          try{const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');}
+          try{const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');validateContent(xml);}
           catch(error){checked.status='bad';checked.error=error.message;}
           const latest=read(),record=latest[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
           if(checked.status==='bad'&&(record.telegramEnabled||record.emailEnabled)&&(record.status!=='bad'||record.error!==checked.error)){
@@ -71,4 +87,4 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
   }
   return {read,replace,run};
 }
-module.exports={createMonitor,publicAddress};
+module.exports={createMonitor,publicAddress,validateContent};
