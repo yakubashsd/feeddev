@@ -8271,6 +8271,24 @@ ${photos}
       return objects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
     }
 
+    function focusIssueObjects(issueKey) {
+      const group = issueGroups().find(item => item.key === issueKey);
+      if (!group?.ids?.length) {
+        showToast("Для этой ошибки не найдены объекты");
+        return;
+      }
+      checkedIds = new Set(group.ids);
+      selectedId = group.ids[0];
+      const selected = selectedItem();
+      if (selected) selectBrandLayoutFromObject(selected);
+      switchPage("apartments");
+      const select = document.querySelector("#issueFilter");
+      if (select) select.value = issueKey;
+      renderAll();
+      document.querySelector(".table-wrap")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast(`Выделено ${group.count} ${pluralRu(group.count, "объект", "объекта", "объектов")}`);
+    }
+
     function issueGroups() {
       const groups = new Map();
       objects.forEach(item => {
@@ -8771,10 +8789,19 @@ ${photos}
 
     function inferLayoutPhoto(node) {
       const explicit = textOf(node, ["LayoutPhoto FullUrl", "LayoutPhoto", "layout-photo"]);
-      if (explicit) return explicit;
-      return Array.from(node.querySelectorAll("Images Image, image, Photo"))
-        .map(el => el.getAttribute("url") || el.textContent.trim()).filter(Boolean)
-        .find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url)) || "";
+      const images = Array.from(node.querySelectorAll("Images Image, image, Photo"))
+        .map(el => el.getAttribute("url") || el.textContent.trim())
+        .filter(Boolean);
+      const isFloorPlan = url => /(?:\/|[_-])(?:floor(?:[\s_-]?plan)?|section|entrance|podjezd|podjezd)(?:\/|[_-])/i.test(url);
+      const isApartmentLayout = url => /\/(?:preset|apartment|apartments|flat|flats|unit)\//i.test(url);
+
+      // В Profitbase `preset` — планировка конкретной квартиры, а `layout` часто
+      // содержит поэтажный план. Всегда предпочитаем изображение объекта.
+      const candidates = [explicit, ...images].filter(url => url && !isFloorPlan(url));
+      return candidates.find(isApartmentLayout)
+        || candidates.find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url))
+        || explicit
+        || "";
     }
 
     function parseXmlFile(text, sourceUrl = "") {
@@ -8909,11 +8936,7 @@ ${photos}
     document.querySelector("#issueDiagnostics").addEventListener("click", event => {
       const button = event.target.closest("[data-filter-issue]");
       if (!button) return;
-      const select = document.querySelector("#issueFilter");
-      select.value = button.dataset.filterIssue;
-      renderRows();
-      document.querySelector(".table-wrap").scrollIntoView({ behavior: "smooth", block: "start" });
-      showToast(`Показаны объекты: ${button.textContent.replace(/^Показать\s+/, "")}`);
+      focusIssueObjects(button.dataset.filterIssue);
     });
     document.querySelector("#feedErrorHead").addEventListener("click", event => {
       if (event.target.closest("button") || !feedErrorPanelMinimized) return;
@@ -8935,10 +8958,7 @@ ${photos}
     document.querySelector("#feedErrorBody").addEventListener("click", event => {
       const button = event.target.closest("[data-popover-filter]");
       if (!button) return;
-      document.querySelector("#issueFilter").value = button.dataset.popoverFilter;
-      switchPage("apartments");
-      renderRows();
-      showToast("Открыты объекты с выбранной ошибкой");
+      focusIssueObjects(button.dataset.popoverFilter);
     });
     [["price", "from"], ["price", "to"], ["area", "from"], ["area", "to"]].forEach(([kind, edge]) => {
       const prefix = kind === "price" ? "price" : "area";
