@@ -7274,7 +7274,8 @@
     }
 
     function prependPhotoUrl(item, url) {
-      const current = photoList(item).filter(photoUrl => photoUrl !== url);
+      // При повторном создании макета заменяем старый, а не копим его в фиде.
+      const current = photoList(item).filter(photoUrl => photoUrl !== url && !isBrandedLayoutUrl(photoUrl));
       return [url, ...current].join("\n");
     }
 
@@ -7863,7 +7864,7 @@
     }
 
     function isBrandedLayoutUrl(url = "") {
-      return /\/layouts\/branded-|branded-/i.test(String(url));
+      return /\/layouts\/(?:branded-|planirovka-na-podlozhke-)|(?:branded-|planirovka-na-podlozhke-)/i.test(String(url));
     }
 
     function feedImageList(item) {
@@ -7871,7 +7872,9 @@
       const photos = photoList(item).filter(url => url !== layout);
       const branded = photos.filter(isBrandedLayoutUrl);
       const otherPhotos = photos.filter(url => !isBrandedLayoutUrl(url));
-      if (branded.length) return [...branded, layout, ...otherPhotos].filter(Boolean);
+      // В повторно сформированных макетах оставляем только последний: он находится
+      // первым в списке. Это исключает дублирование в итоговом XML.
+      if (branded.length) return [branded[0], layout, ...otherPhotos].filter(Boolean);
       return [layout, ...photos].filter(Boolean);
     }
 
@@ -7919,7 +7922,7 @@
 
     function buildCianXml(items = objects) {
       const body = items.map(item => {
-        const photos = photoList(item);
+        const photos = feedImageList(item);
         const photoXml = photos.map((url, index) => `      <PhotoSchema>
         <FullUrl>${escapeXml(url)}</FullUrl>
         <IsDefault>${index === 0 ? 1 : 0}</IsDefault>
