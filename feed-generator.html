@@ -5319,7 +5319,9 @@
     function showWorkspace() {
       authScreen.hidden = true;
       appShell.hidden = false;
+      const repairedLayouts = repairLegacyProfitbaseLayouts();
       renderAll();
+      if (repairedLayouts) showToast(`Обновлены планировки квартир: ${repairedLayouts}`);
       appInitialized = true;
     }
 
@@ -8789,21 +8791,40 @@ ${photos}
       return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "";
     }
 
-    function inferLayoutPhoto(node) {
-      const explicit = textOf(node, ["LayoutPhoto FullUrl", "LayoutPhoto", "layout-photo"]);
-      const images = Array.from(node.querySelectorAll("Images Image, image, Photo"))
-        .map(el => el.getAttribute("url") || el.textContent.trim())
-        .filter(Boolean);
+    function preferredLayoutPhoto(explicit = "", images = []) {
       const isFloorPlan = url => /(?:\/|[_-])(?:floor(?:[\s_-]?plan)?|section|entrance|podjezd|podjezd)(?:\/|[_-])/i.test(url);
       const isApartmentLayout = url => /\/(?:preset|apartment|apartments|flat|flats|unit)\//i.test(url);
-
-      // В Profitbase `preset` — планировка конкретной квартиры, а `layout` часто
-      // содержит поэтажный план. Всегда предпочитаем изображение объекта.
       const candidates = [explicit, ...images].filter(url => url && !isFloorPlan(url));
       return candidates.find(isApartmentLayout)
         || candidates.find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url))
         || explicit
         || "";
+    }
+
+    function inferLayoutPhoto(node) {
+      const explicit = textOf(node, ["LayoutPhoto FullUrl", "LayoutPhoto", "layout-photo"]);
+      const images = Array.from(node.querySelectorAll("Images Image, image, Photo"))
+        .map(el => el.getAttribute("url") || el.textContent.trim())
+        .filter(Boolean);
+      // В Profitbase `preset` — планировка конкретной квартиры, а `layout` часто
+      // содержит поэтажный план. Всегда предпочитаем изображение объекта.
+      return preferredLayoutPhoto(explicit, images);
+    }
+
+    function repairLegacyProfitbaseLayouts() {
+      let repaired = 0;
+      const repair = (item, countRepair = false) => {
+        const current = String(item.layoutPhoto || "");
+        if (!/\/uploads\/layout\//i.test(current)) return item;
+        const preset = preferredLayoutPhoto("", String(item.photos || "").split(/\r?\n/));
+        if (!/\/uploads\/preset\//i.test(preset) || preset === current) return item;
+        if (countRepair) repaired += 1;
+        return { ...item, layoutPhoto: preset };
+      };
+      objects = objects.map(item => repair(item, true));
+      originalObjects = originalObjects.map(item => repair(item));
+      if (repaired) save();
+      return repaired;
     }
 
     function parseXmlFile(text, sourceUrl = "") {
