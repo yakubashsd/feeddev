@@ -4277,8 +4277,9 @@
     .projects-heading h2 { font-size:28px; margin:0 0 8px; letter-spacing:-.7px; }
     .projects-heading p, .project-empty p { color:#666; line-height:1.6; }
     #projectSearch { margin:24px 0; width:min(100%,360px); }
-    .project-entry { display:grid; grid-template-columns:minmax(0,1fr) 130px 110px 90px 90px; align-items:center; gap:20px; padding:24px 16px; border-bottom:1px solid #ddd; font-size:13px; }
+    .project-entry { display:grid; grid-template-columns:minmax(0,1fr) 130px 110px 90px 90px; align-items:center; gap:20px; padding:24px 16px; border-bottom:1px solid #ddd; font-size:13px; cursor:pointer; transition:background .16s ease, transform .16s ease; }
     .project-entry:hover { background:#eee; }
+    .project-entry:focus-visible { outline:2px solid #111; outline-offset:-3px; }
     .project-entry-main { color:inherit; text-decoration:none; min-width:0; }
     .project-entry strong { display:block; font-size:17px; margin-bottom:8px; }
     .project-entry small { display:block; color:#666; overflow-wrap:anywhere; }
@@ -6066,7 +6067,8 @@
       document.querySelector("#projectList").innerHTML = visible.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
-        return '<article class="project-entry"><a class="project-entry-main" href="?project=' + encodeURIComponent(project.id) + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="?project=' + encodeURIComponent(project.id) + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
+        const projectUrl = '?project=' + encodeURIComponent(project.id);
+        return '<article class="project-entry" data-open-project="' + escapeXml(projectUrl) + '" role="link" tabindex="0" aria-label="Открыть проект ' + escapeXml(project.name) + '"><a class="project-entry-main" href="' + projectUrl + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="' + projectUrl + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
       }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
       const createButton = document.querySelector("#newProjectBtn");
       if (runtimeMode === "external") {
@@ -6165,7 +6167,18 @@
     document.querySelector("#projectSearch").addEventListener("input", renderProjects);
     document.querySelector("#projectList").addEventListener("click", event => {
       const button = event.target.closest("[data-delete-project]");
-      if (button) deleteProject(button.dataset.deleteProject);
+      if (button) {
+        deleteProject(button.dataset.deleteProject);
+        return;
+      }
+      const card = event.target.closest("[data-open-project]");
+      if (card && !event.target.closest("a, button")) location.href = card.dataset.openProject;
+    });
+    document.querySelector("#projectList").addEventListener("keydown", event => {
+      const card = event.target.closest("[data-open-project]");
+      if (!card || event.target !== card || !["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      location.href = card.dataset.openProject;
     });
     document.querySelector("#projectForm").addEventListener("submit", async event => {
       event.preventDefault();
