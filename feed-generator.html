@@ -8302,7 +8302,9 @@ ${photos}
           if (!groups.has(key)) groups.set(key, { key, guide, count: 0, ids: [] });
           const group = groups.get(key);
           group.count += 1;
-          if (group.ids.length < 4) group.ids.push(item.externalId || "без ID");
+          // Храним все ID: они нужны для выделения всей группы при исправлении.
+          // Ограничение применяется только в тексте предпросмотра ниже.
+          group.ids.push(item.externalId || "без ID");
         });
       });
       return [...groups.values()].sort((a, b) => b.count - a.count);
@@ -8394,7 +8396,7 @@ ${photos}
         <div class="issue-card">
           <div>
             <strong>${escapeXml(group.guide.label)} · ${group.count}</strong>
-            <span class="muted">Объекты: ${escapeXml(group.ids.join(", "))}${group.count > group.ids.length ? "..." : ""}</span>
+            <span class="muted">Объекты: ${escapeXml(group.ids.slice(0, 4).join(", "))}${group.count > 4 ? "..." : ""}</span>
             <code>${escapeXml(group.key)}</code>
           </div>
           <div class="issue-fix">
