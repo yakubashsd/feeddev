@@ -4508,7 +4508,7 @@
           </div>
           <div class="field compact">
             <label for="sourceInterval">Обновление</label>
-            <select id="sourceInterval"><option value="manual">Вручную</option><option value="60">Каждый час</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720">Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
+            <select id="sourceInterval"><option value="manual">Вручную</option><option value="60">Каждый час</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720" selected>Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
           </div>
           <button id="loadUrlBtn" type="button" class="primary">Добавить источник</button>
           <button id="importBtn">Загрузить XML</button>
@@ -4521,7 +4521,7 @@
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
-        <div class="source-schedule-note">Автообновление по интервалу работает, пока сервис открыт в браузере. Для автономного серверного расписания будет добавлена очередь фоновых задач.</div>
+        <div class="source-schedule-note">Новые источники обновляются каждые 12 часов. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
         </div>
@@ -5292,7 +5292,7 @@
     let publishedComplexes = new Set(JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]"));
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
     if (!projectSources.length && appState.feedUrl) {
-      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "manual", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "" }];
+      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "720", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "" }];
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
       objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
       originalObjects = structuredClone(objects);
@@ -6026,18 +6026,34 @@
       return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
     }
 
+    function sourceNextSync(source, now = Date.now()) {
+      const intervalMinutes = Number(source.interval);
+      if (!intervalMinutes || source.interval === "manual") return { label: "Только вручную", title: "Для этого источника автообновление выключено" };
+      const updatedAt = new Date(source.updatedAt || 0).getTime();
+      const dueAt = updatedAt + intervalMinutes * 60 * 1000;
+      const remaining = dueAt - now;
+      if (!Number.isFinite(dueAt) || updatedAt <= 0) return { label: "Ожидает синхронизации", title: "Время следующего обновления будет рассчитано после первой загрузки" };
+      if (remaining <= 0) return { label: "Обновление запускается…", title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
+      const totalMinutes = Math.ceil(remaining / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const duration = hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
+      return { label: `Следующее через ${duration}`, title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
+    }
+
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
+        const nextSync = sourceNextSync(source);
         return `<article class="source-record">
           <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
-          <span><small>${escapeXml(source.error || updated)}</small></span>
-          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+          <span><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
+          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
     }
@@ -8419,6 +8435,7 @@ ${photos}
       if (loadFeedFromUrl.running) return;
       const input = document.querySelector("#feedUrl");
       const existingSource = projectSources.find(source => source.id === sourceId);
+      const publishedFeedIdBeforeSync = existingSource ? appState.generatedFeedId : "";
       const url = (existingSource?.url || input.value).trim();
       if (!url) {
         setLoadStatus("Вставьте ссылку на XML-фид.", "bad");
@@ -8481,8 +8498,10 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || url;
         appState.feedName = currentProject?.name || defaultFeedName(url);
-        appState.generatedLink = "";
-        appState.generatedFeedId = "";
+        if (!existingSource) {
+          appState.generatedLink = "";
+          appState.generatedFeedId = "";
+        }
         const sourceRecord = {
           id,
           name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
@@ -8506,8 +8525,11 @@ ${photos}
         document.querySelector("#sourceName").value = "";
         if (!existingSource) input.value = "";
         const correction = requestedPlatform !== "auto" && requestedPlatform !== parsed.platform ? ` Выбранный тип скорректирован на ${platformProfiles[parsed.platform].name}.` : "";
-        setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}`, "ok");
-        showToast(`Источник обновлён: ${parsed.objects.length} квартир`);
+        const autoPublish = Boolean(publishedFeedIdBeforeSync);
+        if (autoPublish) await generateFeedLink();
+        const published = autoPublish ? " Постоянная ссылка обновлена." : "";
+        setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}${published}`, "ok");
+        showToast(autoPublish ? `Источник и опубликованный фид обновлены: ${parsed.objects.length} квартир` : `Источник обновлён: ${parsed.objects.length} квартир`);
       } catch (error) {
         if (existingSource) {
           existingSource.error = error.message;
@@ -8608,11 +8630,14 @@ ${photos}
     }
 
     async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
+      const source = projectSources.find(item => item.url === sourceUrl);
+      const autoSyncIntervalMinutes = sourceType === "url" ? Number(source?.interval) || 0 : 0;
       const payload = {
         platform,
         projectId: currentProject?.id || "",
         sourceUrl,
         sourceType,
+        autoSyncIntervalMinutes,
         xml,
         objectCount,
         name: name || `${platformProfiles[platform]?.name || platform} • ${objectCount} объектов`,
@@ -9195,7 +9220,10 @@ ${photos}
 
     loginForm.addEventListener("submit", submitLogin);
     document.querySelector("#logoutButton").addEventListener("click", logout);
-    window.setInterval(syncDueProjectSource, 60000);
+    window.setInterval(() => {
+      syncDueProjectSource();
+      renderProjectSources();
+    }, 30000);
     initializeAuth();
   </script>
   <link rel="stylesheet" href="layout-editor.css">

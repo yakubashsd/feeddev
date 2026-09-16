@@ -1,3 +1,10 @@
+// Local deployments keep secrets in .env; Vercel supplies them itself.
+try {
+  process.loadEnvFile?.(__dirname + "/.env");
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -6,6 +13,7 @@ const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
 const { PLAN, createSaasStore, isSubscriptionActive, normalizeEmail } = require("./saas-store");
 const { createFreeKassa } = require("./freekassa");
+const { synchronizePrices } = require("./feed-sync");
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/, "");
@@ -441,6 +449,11 @@ function validateFeedPayload(payload) {
   };
 }
 
+function normalizeAutoSyncInterval(value) {
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 60 && minutes <= 1440 ? minutes : 0;
+}
+
 async function saveFeed(req, payload, existingSlug = "", actor = null) {
   const data = validateFeedPayload(payload);
   const feeds = await readFeeds();
@@ -466,6 +479,10 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     platform: data.platform,
     sourceUrl: data.sourceUrl,
     sourceType: data.sourceType,
+    autoSyncIntervalMinutes: normalizeAutoSyncInterval(payload.autoSyncIntervalMinutes),
+    lastAutoSyncAt: existing?.lastAutoSyncAt || "",
+    nextAutoSyncAt: existing?.nextAutoSyncAt || "",
+    autoSyncError: "",
     name: data.name || `${data.platform} feed`,
     objectCount: Number(payload.objectCount || 0),
     file: `feeds/${slug}.xml`,
@@ -477,6 +494,63 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
 
   await persistFeedRecord(record);
   return record;
+}
+
+let feedSyncRunning = false;
+
+async function syncPublishedFeed(record) {
+  if (!record.sourceUrl || record.sourceType !== "url") return;
+  const sourceResponse = await fetch(record.sourceUrl, {
+    headers: { "User-Agent": "FeedDev/0.1" },
+    signal: AbortSignal.timeout(30000)
+  });
+  if (!sourceResponse.ok) throw new Error(`Источник вернул HTTP ${sourceResponse.status}`);
+  const sourceXml = await sourceResponse.text();
+  const filePath = path.join(FEEDS_DIR, `${record.slug}.xml`);
+  if (!fs.existsSync(filePath)) throw new Error("Опубликованный XML не найден");
+  const publishedXml = fs.readFileSync(filePath, "utf8");
+  const result = synchronizePrices(publishedXml, sourceXml);
+  if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
+  if (result.updated) {
+    const tempPath = `${filePath}.${process.pid}.tmp`;
+    fs.writeFileSync(tempPath, result.xml);
+    fs.renameSync(tempPath, filePath);
+  }
+  const now = new Date();
+  record.lastAutoSyncAt = now.toISOString();
+  record.nextAutoSyncAt = new Date(now.getTime() + record.autoSyncIntervalMinutes * 60 * 1000).toISOString();
+  record.autoSyncError = "";
+  record.updatedAt = now.toISOString();
+  await persistFeedRecord(record);
+  console.log(`Feed sync: ${record.slug}, prices updated: ${result.updated}/${result.checked}`);
+}
+
+async function runScheduledFeedSync() {
+  if (feedSyncRunning || usesBlobStorage()) return;
+  feedSyncRunning = true;
+  try {
+    const now = Date.now();
+    const feeds = await readFeeds();
+    for (const record of feeds) {
+      const interval = normalizeAutoSyncInterval(record.autoSyncIntervalMinutes);
+      if (!interval || !record.sourceUrl || record.sourceType !== "url") continue;
+      const dueAt = new Date(record.nextAutoSyncAt || record.updatedAt || 0).getTime();
+      if (Number.isFinite(dueAt) && dueAt > now) continue;
+      try {
+        record.autoSyncIntervalMinutes = interval;
+        await syncPublishedFeed(record);
+      } catch (error) {
+        const attemptedAt = new Date();
+        record.lastAutoSyncAt = attemptedAt.toISOString();
+        record.nextAutoSyncAt = new Date(attemptedAt.getTime() + interval * 60 * 1000).toISOString();
+        record.autoSyncError = error.message || "Не удалось обновить источник";
+        await persistFeedRecord(record);
+        console.error(`Feed sync: ${record.slug}:`, record.autoSyncError);
+      }
+    }
+  } finally {
+    feedSyncRunning = false;
+  }
 }
 
 function validateLayoutPayload(payload) {
@@ -981,6 +1055,8 @@ if (require.main === module) {
     console.log(`FeedDev server is running on http://localhost:${PORT}`);
     const tick=()=>monitor.run().catch(error=>console.error('Monitor:',error.message));
     tick();setInterval(tick,60000).unref();
+    const syncTick=()=>runScheduledFeedSync().catch(error=>console.error('Feed sync:',error.message));
+    syncTick();setInterval(syncTick,60000).unref();
     pollTelegram();setInterval(pollTelegram,25000).unref();
   });
 }
