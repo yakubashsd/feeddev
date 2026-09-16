@@ -4826,8 +4826,9 @@
             <input id="feedName" placeholder="Например: Символ ЦИАН июль">
           </div>
           <div class="field">
-            <label for="serverBaseUrl">Домен сервера</label>
-            <input id="serverBaseUrl" type="url" placeholder="Автоматически или https://feeds.example.ru">
+            <label for="serverBaseUrl">Домен публикации</label>
+            <input id="serverBaseUrl" type="url" value="https://feeds.sozdateli.ru" readonly aria-describedby="serverBaseUrlHint">
+            <small id="serverBaseUrlHint">Закреплённый домен публикации</small>
           </div>
           <button id="generateLinkBtn" type="button" class="primary">Сгенерировать ссылку</button>
           <button id="downloadBtn">Скачать XML</button>
@@ -5260,7 +5261,9 @@
       }
     ];
 
+    const PUBLIC_FEED_ORIGIN = "https://feeds.sozdateli.ru";
     let appState = load();
+    appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
     let objects = appState.objects;
     let originalObjects = appState.originalObjects;
     let activePlatform = appState.activePlatform;
@@ -5481,7 +5484,7 @@
     function save() {
       appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
-      appState.serverBaseUrl = document.querySelector("#serverBaseUrl")?.value || appState.serverBaseUrl || "";
+      appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
     }
@@ -7545,7 +7548,7 @@
       const serverInput = document.querySelector("#serverBaseUrl");
       const box = document.querySelector("#generatedLink");
       const input = document.querySelector("#generatedLinkInput");
-      if (serverInput && !serverInput.value) serverInput.value = appState.serverBaseUrl || "";
+      if (serverInput) serverInput.value = PUBLIC_FEED_ORIGIN;
       if (appState.generatedLink) {
         const isDraft = isLocalDraftUrl(appState.generatedLink);
         box.dataset.url = appState.generatedLink;
@@ -8719,10 +8722,10 @@ ${photos}
           name: feedName,
           slug: generatedFeedId(feedName)
         });
-        appState.serverBaseUrl = new URL(publishedFeed.url).origin;
+        appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
         appState.generatedFeedId = publishedFeed.id;
         appState.generatedLink = publishedFeed.url;
-        document.querySelector("#serverBaseUrl").value = appState.serverBaseUrl;
+        document.querySelector("#serverBaseUrl").value = PUBLIC_FEED_ORIGIN;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
         save();
@@ -9191,7 +9194,6 @@ ${photos}
     document.querySelector("#addMonitorFeedBtn").addEventListener("click", addManualMonitoredFeed);
     document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
     document.querySelector("#saveMonitorNotifications").addEventListener("click", saveMonitorNotificationSettings);
-    document.querySelector("#serverBaseUrl").addEventListener("change", save);
     document.querySelector("#feedName").addEventListener("change", () => {
       invalidateGeneratedLink();
       save();
