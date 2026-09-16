@@ -8736,8 +8736,11 @@ ${photos}
       } catch (error) {
         console.warn("Server publish failed:", error);
         const message = error?.message || "Не удалось опубликовать фид";
+        const hint = /HTTP 413/.test(message)
+          ? "XML-фид превышает лимит Nginx. Увеличьте client_max_body_size для FeedDev и повторите попытку."
+          : "Проверьте подключение сервера и повторите попытку.";
         document.querySelector("#generatedLink").classList.remove("ready");
-        document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}. Проверьте подключение Vercel Blob и повторите попытку.`;
+        document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}. ${hint}`;
         document.querySelector("#generatedLinkInput").value = "";
         showToast(`Не удалось создать ссылку: ${message}`);
         return;
