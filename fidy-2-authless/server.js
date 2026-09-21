@@ -53,7 +53,7 @@ function canUseLocalStorage() {
 
 function requireWritableStorage() {
   if (usesBlobStorage() || canUseLocalStorage()) return;
-  throw new Error("Vercel Blob не подключен. Добавьте BLOB_READ_WRITE_TOKEN в Environment Variables для Production и сделайте Redeploy.");
+  throw new Error("Хранилище публикаций не настроено. Проверьте параметры и права записи сервиса.");
 }
 
 function telegramAlertsEnabled() {
@@ -483,7 +483,7 @@ function telegramMessage(payload = {}) {
 
 async function sendTelegramAlert(payload) {
   if (!telegramAlertsEnabled()) {
-    throw new Error("Telegram-уведомления не настроены. Добавьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в Vercel Environment Variables.");
+    throw new Error("Telegram-уведомления не настроены. Добавьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в переменные окружения сервиса.");
   }
 
   const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {

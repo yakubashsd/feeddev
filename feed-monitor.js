@@ -27,7 +27,7 @@ function publicAddress(address) {
   const [a,b]=address.split('.').map(Number);
   return !(a===0 || a===10 || a===127 || a>=224 || (a===169&&b===254) || (a===172&&b>=16&&b<=31) || (a===192&&b===168) || (a===100&&b>=64&&b<=127) || (a===198&&(b===18||b===19)));
 }
-async function download(url, redirects=0) {
+async function downloadResource(url, { redirects=0, maxBytes=20*1024*1024, binary=false }={}) {
   const target=new URL(url);
   if(!['http:','https:'].includes(target.protocol)||target.username||target.password)throw Error('Нужна HTTP(S)-ссылка без логина и пароля');
   const addresses=await dns.lookup(target.hostname,{all:true,family:4});
@@ -36,16 +36,18 @@ async function download(url, redirects=0) {
   if(!addresses.length||(!ownLocal&&addresses.some(a=>!publicAddress(a.address))))throw Error('Адрес внутренней сети недоступен для мониторинга');
   return new Promise((resolve,reject)=>{
     const request=(target.protocol==='https:'?https:http).get(target, {lookup:(_host,options,callback)=>options.all?callback(null,[addresses[0]]):callback(null,addresses[0].address,4)}, response=>{
-      if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){response.resume();if(redirects>=3)return reject(Error('Слишком много перенаправлений'));resolve(download(new URL(response.headers.location,target).href,redirects+1));return;}
+      if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){response.resume();if(redirects>=3)return reject(Error('Слишком много перенаправлений'));resolve(downloadResource(new URL(response.headers.location,target).href,{redirects:redirects+1,maxBytes,binary}));return;}
       if(response.statusCode!==200){response.resume();reject(Error(`HTTP ${response.statusCode}`));return;}
       let size=0;const chunks=[];
-      response.on('data',chunk=>{size+=chunk.length;if(size>20*1024*1024)request.destroy(Error('Фид превышает 20 МБ'));else chunks.push(chunk);});
-      response.on('end',()=>resolve(Buffer.concat(chunks).toString('utf8')));response.on('error',reject);
+      response.on('data',chunk=>{size+=chunk.length;if(size>maxBytes)request.destroy(Error('Удалённый файл превышает допустимый размер'));else chunks.push(chunk);});
+      response.on('end',()=>{const body=Buffer.concat(chunks);resolve(binary?{body,contentType:String(response.headers['content-type']||'')}:body.toString('utf8'));});response.on('error',reject);
     });
     const deadline=setTimeout(()=>request.destroy(Error('Источник не ответил за 20 секунд')),20000);
     request.on('close',()=>clearTimeout(deadline));request.on('error',reject);
   });
 }
+const download=url=>downloadResource(url);
+const downloadBuffer=(url,maxBytes)=>downloadResource(url,{maxBytes,binary:true});
 function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000}) {
   let busy=false;
   const read=()=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{};
@@ -87,4 +89,4 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
   }
   return {read,replace,run};
 }
-module.exports={createMonitor,publicAddress,validateContent};
+module.exports={createMonitor,publicAddress,validateContent,download,downloadBuffer};

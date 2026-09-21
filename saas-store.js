@@ -1,45 +1,39 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
-const { get, put } = require("@vercel/blob");
 
 const PLAN = Object.freeze({ code: "projects", name: "Проекты", unitAmount: 7500, days: 30, minProjects: 1, maxProjects: 10 });
 const FILE_NAME = "saas-store.enc";
 const BLOB_PATH = "private/saas-store.enc";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function emptyState() {
-  return { version: 1, users: [], projects: [], payments: [] };
+function emptyState() { return { version: 3, users: [], staff: [], projects: [], payments: [], passwordResets: [], paymentLogs: [], audit: [] }; }
+function migrateState(value) {
+  const state = value && typeof value === "object" ? value : emptyState();
+  state.version = 3;
+  for (const key of ["users", "staff", "projects", "payments", "passwordResets", "paymentLogs", "audit"]) state[key] = Array.isArray(state[key]) ? state[key] : [];
+  for (const project of state.projects) {
+    project.status ||= "active";
+    project.updatedAt ||= project.createdAt || new Date().toISOString();
+  }
+  for (const account of [...state.users, ...state.staff]) account.sessionVersion = Number(account.sessionVersion || 1);
+  return state;
 }
-
-function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-function deriveKey(secret) {
-  return crypto.createHash("sha256").update(String(secret)).digest();
-}
-
+function normalizeEmail(value) { return String(value || "").trim().toLowerCase(); }
+function deriveKey(secret) { return crypto.createHash("sha256").update(String(secret)).digest(); }
 function encrypt(value, secret) {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", deriveKey(secret), iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]);
   return Buffer.concat([iv, cipher.getAuthTag(), ciphertext]).toString("base64");
 }
-
 function decrypt(value, secret) {
   const bytes = Buffer.from(String(value).trim(), "base64");
-  const iv = bytes.subarray(0, 12);
-  const tag = bytes.subarray(12, 28);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", deriveKey(secret), iv);
-  decipher.setAuthTag(tag);
+  const decipher = crypto.createDecipheriv("aes-256-gcm", deriveKey(secret), bytes.subarray(0, 12));
+  decipher.setAuthTag(bytes.subarray(12, 28));
   return JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]).toString("utf8"));
 }
-
-function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-  return `${salt}:${crypto.scryptSync(String(password), salt, 64).toString("hex")}`;
-}
-
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) { return `${salt}:${crypto.scryptSync(String(password), salt, 64).toString("hex")}`; }
 function verifyPassword(password, stored) {
   const [salt, expectedHex] = String(stored || "").split(":");
   if (!salt || !expectedHex) return false;
@@ -47,210 +41,172 @@ function verifyPassword(password, stored) {
   const expected = Buffer.from(expectedHex, "hex");
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
-
-function publicUser(user) {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    status: user.status,
-    projectLimit: Number(user.projectLimit || 1),
-    subscriptionUntil: user.subscriptionUntil || null,
-    createdAt: user.createdAt
-  };
+function publicUser(user = {}) {
+  return { id: user.id, role: "client", email: user.email, name: user.name, company: user.company || "", phone: user.phone || "", status: user.status, projectLimit: Number(user.projectLimit || 1), subscriptionUntil: user.subscriptionUntil || null, sessionVersion: Number(user.sessionVersion || 1), createdAt: user.createdAt, updatedAt: user.updatedAt || user.createdAt };
 }
+function publicStaff(staff) { return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, status: staff.status, sessionVersion: Number(staff.sessionVersion || 1), createdAt: staff.createdAt }; }
 
 function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN) }) {
   if (!secret) throw new Error("Для внешнего режима задайте SAAS_DATA_SECRET.");
   const filePath = path.join(dataDir, FILE_NAME);
+  let writeQueue = Promise.resolve();
+  const blobApi = () => require("@vercel/blob");
 
   async function read() {
     try {
       if (!blobEnabled()) {
         if (!fs.existsSync(filePath)) return emptyState();
-        return decrypt(fs.readFileSync(filePath, "utf8"), secret);
+        return migrateState(decrypt(fs.readFileSync(filePath, "utf8"), secret));
       }
-      const result = await get(BLOB_PATH, { access: "private", useCache: false });
-      if (!result?.stream) return emptyState();
-      return decrypt(await new Response(result.stream).text(), secret);
+      const result = await blobApi().get(BLOB_PATH, { access: "private", useCache: false });
+      return result?.stream ? migrateState(decrypt(await new Response(result.stream).text(), secret)) : emptyState();
     } catch (error) {
-      if (error.code === "ENOENT") return emptyState();
+      if (error.code === "ENOENT" || error.status === 404) return emptyState();
       throw error;
     }
   }
-
   async function write(state) {
     const encoded = encrypt(state, secret);
     if (!blobEnabled()) {
       fs.mkdirSync(dataDir, { recursive: true });
-      fs.writeFileSync(filePath, `${encoded}\n`, { mode: 0o600 });
+      const tempPath = `${filePath}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+      fs.writeFileSync(tempPath, `${encoded}\n`, { mode: 0o600 });
+      fs.renameSync(tempPath, filePath);
       return;
     }
-    await put(BLOB_PATH, encoded, {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "text/plain; charset=utf-8"
+    await blobApi().put(BLOB_PATH, encoded, { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "text/plain; charset=utf-8" });
+  }
+  function mutate(callback) {
+    const operation = writeQueue.then(async () => {
+      const state = await read();
+      const result = await callback(state);
+      await write(state);
+      return result;
     });
+    writeQueue = operation.catch(() => {});
+    return operation;
+  }
+  function audit(state, actor, action, entityType, entityId, details = {}) {
+    state.audit.unshift({ id: crypto.randomUUID(), actor: String(actor || "system"), action, entityType, entityId, details, createdAt: new Date().toISOString() });
+    state.audit = state.audit.slice(0, 1000);
+  }
+  function paymentLog(state, event, details = {}) {
+    state.paymentLogs.unshift({ id: crypto.randomUUID(), event: String(event), orderId: String(details.orderId || ""), providerPaymentId: String(details.providerPaymentId || ""), amount: Number(details.amount || 0), status: String(details.status || ""), source: String(details.source || "server"), message: String(details.message || "").slice(0, 500), createdAt: new Date().toISOString() });
+    state.paymentLogs = state.paymentLogs.slice(0, 2000);
   }
 
-  async function register({ email, password, name }) {
-    email = normalizeEmail(email);
-    name = String(name || "").trim();
+  async function register({ email, password, name, company = "", phone = "", acceptedLegal = false, legalVersion = "2026-09-17" }) {
+    email = normalizeEmail(email); name = String(name || "").trim();
     if (!EMAIL_RE.test(email)) throw new Error("Укажите корректный email.");
     if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов.");
     if (!name) throw new Error("Укажите имя.");
-    const state = await read();
-    if (state.users.some(user => user.email === email)) throw new Error("Аккаунт с таким email уже существует.");
-    const now = new Date().toISOString();
-    const user = {
-      id: crypto.randomUUID(), email, name: name.slice(0, 120), passwordHash: hashPassword(password),
-      status: "pending_payment", projectLimit: 1, subscriptionUntil: null, createdAt: now, updatedAt: now
-    };
-    state.users.push(user);
-    await write(state);
-    return publicUser(user);
+    if (acceptedLegal !== true) throw new Error("Для регистрации необходимо принять оферту и согласие на обработку данных.");
+    return mutate(async state => {
+      if (state.users.some(user => user.email === email) || state.staff.some(user => user.email === email)) throw new Error("Аккаунт с таким email уже существует.");
+      const now = new Date().toISOString();
+      const user = { id: crypto.randomUUID(), email, name: name.slice(0, 120), company: String(company).trim().slice(0, 160), phone: String(phone).trim().slice(0, 40), passwordHash: hashPassword(password), status: "pending_payment", projectLimit: 1, subscriptionUntil: null, legalAcceptedAt: now, legalVersion: String(legalVersion).slice(0, 40), createdAt: now, updatedAt: now };
+      state.users.push(user); audit(state, user.id, "register", "client", user.id); return publicUser(user);
+    });
   }
-
   async function authenticate(email, password) {
-    const state = await read();
-    const user = state.users.find(item => item.email === normalizeEmail(email));
-    if (!user || user.status === "blocked" || !verifyPassword(password, user.passwordHash)) return null;
-    return publicUser(user);
+    const state = await read(); const user = state.users.find(item => item.email === normalizeEmail(email));
+    return !user || user.status === "blocked" || !verifyPassword(password, user.passwordHash) ? null : publicUser(user);
   }
-
-  async function getUser(userId) {
-    const state = await read();
-    const user = state.users.find(item => item.id === userId);
-    return user ? publicUser(user) : null;
+  async function authenticateStaff(email, password) {
+    const state = await read(); const staff = state.staff.find(item => item.email === normalizeEmail(email));
+    return !staff || staff.status !== "active" || !verifyPassword(password, staff.passwordHash) ? null : publicStaff(staff);
   }
-
-  async function listProjects(userId) {
-    const state = await read();
-    return state.projects.filter(project => project.userId === userId).map(({ userId: _, ...project }) => project);
-  }
-
-  async function createProject(userId, name) {
-    name = String(name || "").trim();
-    if (!name) throw new Error("Укажите название проекта.");
-    const state = await read();
-    const user = state.users.find(item => item.id === userId);
-    if (!user || user.status === "blocked") throw new Error("Аккаунт недоступен.");
-    if (!isSubscriptionActive(user)) throw new Error("Сначала оплатите тариф.");
-    const projectLimit = Math.min(PLAN.maxProjects, Math.max(PLAN.minProjects, Number(user.projectLimit || 1)));
-    if (state.projects.filter(project => project.userId === userId).length >= projectLimit) {
-      throw new Error(`На тарифе доступно проектов: ${projectLimit}.`);
-    }
-    const project = { id: crypto.randomUUID(), userId, name: name.slice(0, 100), createdAt: new Date().toISOString() };
-    state.projects.push(project);
-    await write(state);
-    const { userId: _, ...result } = project;
+  async function requestPasswordReset(email, ttlMinutes = 30) {
+    email = normalizeEmail(email);
+    const token = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const result = await mutate(async state => {
+      const user = state.users.find(item => item.email === email && item.status !== "blocked");
+      state.passwordResets = state.passwordResets.filter(item => new Date(item.expiresAt) > new Date() && (!user || item.userId !== user.id));
+      if (!user) return null;
+      const expiresAt = new Date(Date.now() + Math.max(5, Math.min(60, Number(ttlMinutes) || 30)) * 60 * 1000).toISOString();
+      state.passwordResets.push({ id: crypto.randomUUID(), userId: user.id, tokenHash, expiresAt, createdAt: new Date().toISOString() });
+      audit(state, user.id, "request", "password-reset", user.id);
+      return { token, user: publicUser(user), expiresAt };
+    });
     return result;
   }
-
+  async function resetPassword(token, password) {
+    if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов.");
+    const tokenHash = crypto.createHash("sha256").update(String(token || "")).digest("hex");
+    return mutate(async state => {
+      const reset = state.passwordResets.find(item => item.tokenHash === tokenHash && new Date(item.expiresAt) > new Date());
+      if (!reset) throw new Error("Ссылка недействительна или срок её действия истёк.");
+      const user = state.users.find(item => item.id === reset.userId);
+      if (!user) throw new Error("Аккаунт не найден.");
+      user.passwordHash = hashPassword(password);
+      user.sessionVersion = Number(user.sessionVersion || 1) + 1;
+      user.updatedAt = new Date().toISOString();
+      state.passwordResets = state.passwordResets.filter(item => item.userId !== user.id);
+      audit(state, user.id, "complete", "password-reset", user.id);
+      return publicUser(user);
+    });
+  }
+  async function getUser(userId) { const state = await read(); const user = state.users.find(item => item.id === userId); return user ? publicUser(user) : null; }
+  async function getStaff(staffId) { const state = await read(); const staff = state.staff.find(item => item.id === staffId); return staff ? publicStaff(staff) : null; }
+  async function listProjects(userId) { const state = await read(); return state.projects.filter(project => project.userId === userId).map(({ userId: _, ...project }) => project); }
+  async function createProject(userId, name) {
+    name = String(name || "").trim(); if (!name) throw new Error("Укажите название проекта.");
+    return mutate(async state => {
+      const user = state.users.find(item => item.id === userId);
+      if (!user || user.status === "blocked") throw new Error("Аккаунт недоступен.");
+      if (!isSubscriptionActive(user)) throw new Error("Сначала оплатите тариф.");
+      const limit = Math.min(PLAN.maxProjects, Math.max(PLAN.minProjects, Number(user.projectLimit || 1)));
+      if (state.projects.filter(project => project.userId === userId && project.status !== "archived").length >= limit) throw new Error(`На тарифе доступно проектов: ${limit} (учитываются только активные).`);
+      const now = new Date().toISOString(); const project = { id: crypto.randomUUID(), userId, name: name.slice(0, 100), status: "active", createdAt: now, updatedAt: now };
+      state.projects.push(project); audit(state, userId, "create", "project", project.id, { name: project.name }); const { userId: _, ...result } = project; return result;
+    });
+  }
   async function deleteProject(userId, projectId) {
-    const state = await read();
-    const before = state.projects.length;
-    state.projects = state.projects.filter(project => !(project.id === projectId && project.userId === userId));
-    if (state.projects.length === before) return false;
-    await write(state);
-    return true;
+    return mutate(async state => { const project = state.projects.find(item => item.id === projectId && item.userId === userId); if (!project) return false; state.projects = state.projects.filter(item => item !== project); audit(state, userId, "delete", "project", projectId, { name: project.name }); return true; });
   }
-
-  async function ownsProject(userId, projectId) {
-    const state = await read();
-    return state.projects.some(project => project.userId === userId && project.id === projectId);
-  }
-
+  async function ownsProject(userId, projectId) { const state = await read(); return state.projects.some(project => project.userId === userId && project.id === projectId && project.status !== "archived"); }
   async function createPayment(userId, projectCount = 1) {
-    const state = await read();
-    if (!state.users.some(user => user.id === userId && user.status !== "blocked")) throw new Error("Аккаунт не найден.");
-    projectCount = Number(projectCount);
-    if (!Number.isInteger(projectCount) || projectCount < PLAN.minProjects || projectCount > PLAN.maxProjects) {
-      throw new Error(`Выберите от ${PLAN.minProjects} до ${PLAN.maxProjects} проектов.`);
-    }
-    const payment = {
-      id: crypto.randomUUID(), orderId: `FD-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`,
-      userId, projectCount, amount: PLAN.unitAmount * projectCount, currency: "RUB", status: "pending", createdAt: new Date().toISOString(), paidAt: null
-    };
-    state.payments.push(payment);
-    await write(state);
-    return payment;
+    projectCount = Number(projectCount); if (!Number.isInteger(projectCount) || projectCount < PLAN.minProjects || projectCount > PLAN.maxProjects) throw new Error(`Выберите от ${PLAN.minProjects} до ${PLAN.maxProjects} проектов.`);
+    return mutate(async state => {
+      if (!state.users.some(user => user.id === userId && user.status !== "blocked")) throw new Error("Аккаунт не найден.");
+      const payment = { id: crypto.randomUUID(), orderId: `FD-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`, userId, projectCount, amount: PLAN.unitAmount * projectCount, currency: "RUB", status: "pending", createdAt: new Date().toISOString(), paidAt: null };
+      state.payments.push(payment); audit(state, userId, "create", "payment", payment.id, { amount: payment.amount, projectCount }); paymentLog(state, "checkout_created", { orderId: payment.orderId, amount: payment.amount, status: payment.status, source: "client" }); return payment;
+    });
   }
-
   async function completePayment(orderId, providerPaymentId = "", notifiedAmount) {
-    const state = await read();
-    const payment = state.payments.find(item => item.orderId === orderId);
-    if (!payment) throw new Error("Заказ не найден.");
-    if (Number(notifiedAmount) !== payment.amount) throw new Error("Сумма платежа не совпадает с заказом.");
-    if (payment.status === "paid") return payment;
-    const user = state.users.find(item => item.id === payment.userId);
-    if (!user) throw new Error("Пользователь заказа не найден.");
-    const now = new Date();
-    const currentEnd = user.subscriptionUntil ? new Date(user.subscriptionUntil) : now;
-    const start = new Date((currentEnd > now ? currentEnd : now).getTime());
-    start.setUTCDate(start.getUTCDate() + PLAN.days);
-    user.subscriptionUntil = start.toISOString();
-    user.projectLimit = payment.projectCount;
-    user.status = "active";
-    user.updatedAt = now.toISOString();
-    payment.status = "paid";
-    payment.providerPaymentId = String(providerPaymentId || "");
-    payment.paidAt = now.toISOString();
-    await write(state);
-    return payment;
+    return mutate(async state => {
+      const payment = state.payments.find(item => item.orderId === orderId); if (!payment) throw new Error("Заказ не найден.");
+      if (Number(notifiedAmount) !== payment.amount) { paymentLog(state, "callback_rejected", { orderId, amount: notifiedAmount, status: "rejected", source: "freekassa", message: "Сумма платежа не совпадает с заказом." }); throw new Error("Сумма платежа не совпадает с заказом."); }
+      if (payment.status === "paid") { paymentLog(state, "callback_duplicate", { orderId, providerPaymentId, amount: notifiedAmount, status: "paid", source: "freekassa" }); return payment; }
+      const user = state.users.find(item => item.id === payment.userId); if (!user) throw new Error("Пользователь заказа не найден.");
+      const now = new Date(); const currentEnd = user.subscriptionUntil ? new Date(user.subscriptionUntil) : now; const end = new Date((currentEnd > now ? currentEnd : now).getTime()); end.setUTCDate(end.getUTCDate() + PLAN.days);
+      Object.assign(user, { subscriptionUntil: end.toISOString(), projectLimit: payment.projectCount, status: "active", updatedAt: now.toISOString() });
+      Object.assign(payment, { status: "paid", providerPaymentId: String(providerPaymentId || ""), paidAt: now.toISOString() }); audit(state, "freekassa", "paid", "payment", payment.id, { amount: payment.amount }); paymentLog(state, "payment_confirmed", { orderId, providerPaymentId, amount: payment.amount, status: "paid", source: "freekassa" }); return payment;
+    });
   }
-
+  async function logPaymentEvent(event, details = {}) { return mutate(async state => { paymentLog(state, event, details); return true; }); }
   async function adminSnapshot() {
-    const state = await read();
-    const paidPayments = state.payments.filter(payment => payment.status === "paid" && payment.paidAt);
-    const monthKey = value => String(value).slice(0, 7);
-    const now = new Date();
-    const months = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - index), 1));
-      return { month: date.toISOString().slice(0, 7), label: date.toLocaleDateString("ru-RU", { month: "short", year: "2-digit", timeZone: "UTC" }) };
-    });
-    const revenueSeries = months.map(item => {
-      const matching = paidPayments.filter(payment => monthKey(payment.paidAt) === item.month);
-      return { ...item, amount: matching.reduce((sum, payment) => sum + payment.amount, 0), payments: matching.length };
-    });
-    const currentMonth = revenueSeries.at(-1)?.amount || 0;
-    const previousMonth = revenueSeries.at(-2)?.amount || 0;
-    return {
-      plan: PLAN,
-      users: state.users.map(user => ({ ...publicUser(user), projects: state.projects.filter(project => project.userId === user.id).length })),
-      payments: state.payments.map(payment => ({ ...payment, email: state.users.find(user => user.id === payment.userId)?.email || "" })),
-      revenue: {
-        total: paidPayments.reduce((sum, payment) => sum + payment.amount, 0),
-        currentMonth,
-        previousMonth,
-        growthPercent: previousMonth ? Math.round(((currentMonth - previousMonth) / previousMonth) * 1000) / 10 : null,
-        series: revenueSeries
-      }
-    };
+    const state = await read(); const paidPayments = state.payments.filter(payment => payment.status === "paid" && payment.paidAt); const now = new Date();
+    const months = Array.from({ length: 6 }, (_, index) => { const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - index), 1)); return { month: date.toISOString().slice(0, 7), label: date.toLocaleDateString("ru-RU", { month: "short", year: "2-digit", timeZone: "UTC" }) }; });
+    const series = months.map(item => { const matching = paidPayments.filter(payment => String(payment.paidAt).startsWith(item.month)); return { ...item, amount: matching.reduce((sum, payment) => sum + payment.amount, 0), payments: matching.length }; });
+    const users = state.users.map(user => { const projects = state.projects.filter(project => project.userId === user.id); const payments = state.payments.filter(payment => payment.userId === user.id).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); return { ...publicUser(user), projects, activeProjects: projects.filter(project => project.status !== "archived").length, revenue: payments.filter(payment => payment.status === "paid").reduce((sum, payment) => sum + payment.amount, 0), payments }; });
+    const currentMonth = series.at(-1)?.amount || 0, previousMonth = series.at(-2)?.amount || 0;
+    return { plan: PLAN, users, projects: state.projects.map(project => ({ ...project, client: publicUser(state.users.find(user => user.id === project.userId) || {}) })), payments: state.payments.map(payment => ({ ...payment, email: state.users.find(user => user.id === payment.userId)?.email || "", clientName: state.users.find(user => user.id === payment.userId)?.name || "" })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), paymentLogs: state.paymentLogs.slice(0, 500), staff: state.staff.map(publicStaff), audit: state.audit.slice(0, 100), revenue: { total: paidPayments.reduce((sum, payment) => sum + payment.amount, 0), currentMonth, previousMonth, growthPercent: previousMonth ? Math.round(((currentMonth - previousMonth) / previousMonth) * 1000) / 10 : null, mrr: users.filter(user => isSubscriptionActive(user)).reduce((sum, user) => sum + user.projectLimit * PLAN.unitAmount, 0), series } };
   }
-
-  async function updateUser(userId, { status, subscriptionUntil, projectLimit }) {
-    const state = await read();
-    const user = state.users.find(item => item.id === userId);
-    if (!user) throw new Error("Пользователь не найден.");
-    if (status && ["active", "pending_payment", "blocked"].includes(status)) user.status = status;
-    if (subscriptionUntil !== undefined) user.subscriptionUntil = subscriptionUntil ? new Date(subscriptionUntil).toISOString() : null;
-    if (projectLimit !== undefined) {
-      const limit = Number(projectLimit);
-      if (!Number.isInteger(limit) || limit < PLAN.minProjects || limit > PLAN.maxProjects) throw new Error(`Лимит должен быть от ${PLAN.minProjects} до ${PLAN.maxProjects}.`);
-      user.projectLimit = limit;
-    }
-    user.updatedAt = new Date().toISOString();
-    await write(state);
-    return publicUser(user);
+  async function updateUser(userId, changes, actor = "owner") {
+    return mutate(async state => { const user = state.users.find(item => item.id === userId); if (!user) throw new Error("Пользователь не найден."); if (changes.status && ["active", "pending_payment", "blocked"].includes(changes.status)) user.status = changes.status; if (changes.subscriptionUntil !== undefined) user.subscriptionUntil = changes.subscriptionUntil ? new Date(changes.subscriptionUntil).toISOString() : null; if (changes.projectLimit !== undefined) { const limit = Number(changes.projectLimit); if (!Number.isInteger(limit) || limit < PLAN.minProjects || limit > PLAN.maxProjects) throw new Error(`Лимит должен быть от ${PLAN.minProjects} до ${PLAN.maxProjects}.`); user.projectLimit = limit; } for (const key of ["name", "company", "phone"]) if (changes[key] !== undefined) user[key] = String(changes[key]).trim().slice(0, 160); user.updatedAt = new Date().toISOString(); audit(state, actor, "update", "client", user.id, { status: user.status, projectLimit: user.projectLimit }); return publicUser(user); });
   }
+  async function updateProject(projectId, changes, actor = "owner") {
+    return mutate(async state => { const project = state.projects.find(item => item.id === projectId); if (!project) throw new Error("Проект не найден."); if (changes.status && ["active", "archived"].includes(changes.status)) project.status = changes.status; if (changes.name !== undefined && String(changes.name).trim()) project.name = String(changes.name).trim().slice(0, 100); project.updatedAt = new Date().toISOString(); audit(state, actor, "update", "project", project.id, { status: project.status }); return project; });
+  }
+  async function createStaff({ email, password, name, role = "manager" }, actor = "owner") {
+    email = normalizeEmail(email); if (!EMAIL_RE.test(email)) throw new Error("Укажите корректный email."); if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов."); if (!String(name || "").trim()) throw new Error("Укажите имя.");
+    return mutate(async state => { if (state.users.some(user => user.email === email) || state.staff.some(user => user.email === email)) throw new Error("Аккаунт с таким email уже существует."); const staff = { id: crypto.randomUUID(), email, name: String(name).trim().slice(0, 120), role: role === "owner" ? "owner" : "manager", status: "active", passwordHash: hashPassword(password), createdAt: new Date().toISOString() }; state.staff.push(staff); audit(state, actor, "create", "staff", staff.id, { role: staff.role }); return publicStaff(staff); });
+  }
+  async function deleteStaff(staffId, actor = "owner") { return mutate(async state => { const before = state.staff.length; state.staff = state.staff.filter(item => item.id !== staffId); if (state.staff.length === before) return false; audit(state, actor, "delete", "staff", staffId); return true; }); }
 
-  return { register, authenticate, getUser, listProjects, createProject, deleteProject, ownsProject, createPayment, completePayment, adminSnapshot, updateUser };
+  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, listProjects, createProject, deleteProject, ownsProject, createPayment, completePayment, logPaymentEvent, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
 }
-
-function isSubscriptionActive(user) {
-  return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date();
-}
-
+function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
 module.exports = { PLAN, createSaasStore, hashPassword, verifyPassword, isSubscriptionActive, normalizeEmail };

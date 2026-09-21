@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
   <title>Генератор фидов недвижимости</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2340394a'/%3E%3Cpath d='M20 17h28v9H30v8h15v9H30v15H20z' fill='white'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="/assets/listingflow-logo.png">
   <style>
     :root {
       --bg: #f5f7f8;
@@ -23,7 +23,7 @@
       --red-2: #fff0ee;
       --shadow: 0 16px 40px rgba(19, 31, 27, .08);
       --radius: 8px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Circe", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     * { box-sizing: border-box; }
@@ -4405,15 +4405,16 @@
       .feed-error-popover { right:14px; bottom:14px; width:min(360px,calc(100vw - 28px)); }
       .feed-error-body { max-height:250px; }
     }
+
   </style>
 </head>
-<body>
+<body class="client-ui">
   <section class="auth-screen" id="authScreen">
     <form class="auth-card" id="loginForm">
-      <img class="auth-mark" src="assets/sozdateli-logo.png" alt="Создатели">
+      <div class="lf-brand-lockup" aria-label="ListingFlow"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
       <h1>Вход в сервис</h1>
       <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
-      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Вход</button><button type="button" data-auth-mode="register">Регистрация</button></div>
+      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Вход</button><button type="button" data-auth-mode="register">Регистрация</button><button type="button" data-auth-mode="forgot">Восстановить</button></div>
       <div class="auth-fields">
         <div class="field" id="loginNameField" hidden>
           <label for="loginName">Имя</label>
@@ -4423,10 +4424,18 @@
           <label for="loginUsername" id="loginUsernameLabel">Логин</label>
           <input id="loginUsername" name="username" autocomplete="username" required autofocus>
         </div>
-        <div class="field">
+        <div class="field" id="loginPasswordField">
           <label for="loginPassword">Пароль</label>
           <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
         </div>
+        <div class="field" id="loginPasswordConfirmField" hidden>
+          <label for="loginPasswordConfirm">Повторите пароль</label>
+          <input id="loginPasswordConfirm" type="password" autocomplete="new-password">
+        </div>
+        <label id="legalConsentField" hidden style="display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.45;color:var(--muted)">
+          <input id="legalConsent" type="checkbox" style="width:auto;margin-top:3px">
+          <span>Я принимаю <a href="/legal.html#offer" target="_blank">публичную оферту</a>, <a href="/legal.html#privacy" target="_blank">политику обработки данных</a> и даю <a href="/legal.html#consent" target="_blank">согласие на обработку персональных данных</a>.</span>
+        </label>
         <div class="auth-error" id="loginError" role="alert"></div>
         <button class="primary auth-submit" id="loginButton" type="submit">Войти</button>
       </div>
@@ -4436,17 +4445,22 @@
   <div class="app" id="appShell" hidden>
     <aside class="sidebar">
       <div class="brand">
-        <img class="brand-logo" src="assets/sozdateli-logo.png" alt="Создатели">
+        <div class="lf-brand-lockup"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
         <small>управление фидами</small>
       </div>
       <div class="workspace-switcher"><span>Рабочая область</span><strong>Создатели</strong></div>
       <div class="nav-label">Управление</div>
-      <a class="nav-item" href="/"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7.5h16M6 4h12a2 2 0 0 1 2 2v12.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5V6a2 2 0 0 1 2-2Z"/><path d="M8 11h8M8 15h5"/></svg><span class="nav-text">Все проекты</span></a>
-      <button type="button" class="nav-item" data-nav="source"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Источники</span></button>
-      <button type="button" class="nav-item active" data-nav="apartments"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/><path d="M9 21v-6h6v6"/></svg><span class="nav-text">Квартиры</span></button>
-      <button type="button" class="nav-item" data-nav="branding"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/><circle cx="9" cy="9" r="1.2"/></svg><span class="nav-text">Шаблон планировок</span></button>
-      <button type="button" class="nav-item" data-nav="validator"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M15 6h3.5A1.5 1.5 0 0 1 20 7.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7.5A1.5 1.5 0 0 1 5.5 6H10"/></svg><span class="nav-text">Валидатор фидов</span></button>
-      <button type="button" class="nav-item" data-nav="results"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg><span class="nav-text">Результаты и ссылки</span></button>
+      <a class="nav-item" href="/"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Проекты</span></a>
+      <div class="nav-workflow expanded">
+        <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Работа с фидом</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
+        <div class="nav-workflow-items" id="feedWorkflowNav">
+          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники фидов</span></button>
+          <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">2</span><span class="nav-text">Квартиры</span></button>
+          <button type="button" class="nav-item" data-nav="branding"><span class="nav-step">3</span><span class="nav-text">Шаблоны планировок</span></button>
+          <button type="button" class="nav-item" data-nav="results"><span class="nav-step">4</span><span class="nav-text">Результаты и ссылки</span></button>
+        </div>
+      </div>
+      <div class="nav-label nav-label-secondary">Контроль</div>
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
       <div class="sidebar-spacer"></div>
       <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.</div>
@@ -4457,6 +4471,7 @@
     <main class="main">
       <div class="topbar">
         <div>
+          <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
           <h1>Фиды недвижимости</h1>
           <div class="subtitle">Кастомизация выгрузок Profitbase для ЦИАН, Авито, Яндекс Недвижимости и Домклик</div>
         </div>
@@ -4467,15 +4482,16 @@
         <button type="button" data-step=".source-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg></span><span class="step-copy"><span class="step-number">01</span><span class="step-title">Источник</span></span></button>
         <button type="button" data-step=".table-wrap"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg></span><span class="step-copy"><span class="step-number">02</span><span class="step-title">Квартиры</span></span></button>
         <button type="button" data-step=".brand-workflow-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/></svg></span><span class="step-copy"><span class="step-number">03</span><span class="step-title">Планировки</span></span></button>
-        <button type="button" data-step=".quality-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Проверка</span></span></button>
-        <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Результаты</span></span></button>
-        <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Мониторинг</span></span></button>
+        <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Результаты</span></span></button>
+        <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
 
       <section class="projects-page" data-page="projects">
         <div class="projects-heading"><div><h2>Проекты фидов</h2><p>Источники, помещения, планировки и готовые ссылки каждого проекта.</p></div><button class="primary" id="newProjectBtn">Создать проект</button></div>
-        <p class="panel-caption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
+        <p class="panel-caption" id="projectsStorageCaption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
+        <div class="project-metrics" id="projectMetrics" aria-label="Сводка по проектам"></div>
         <input id="projectSearch" type="search" placeholder="Найти проект" aria-label="Найти проект">
+        <div class="project-list-head" aria-hidden="true"><span>Проект и источник</span><span>Объекты</span><span>Состояние</span><span>Открыть</span><span>Действия</span></div>
         <div id="projectList"></div>
       </section>
       <section class="billing-page page-hidden" data-page="billing">
@@ -4578,10 +4594,10 @@
         <div class="monitor-note">Для отправки серверу нужны настройки Telegram и SMTP в переменных окружения.</div>
       </section>
 
-      <section class="validator-panel page-hidden" id="validatorPanel" data-page="validator">
+      <section class="validator-panel page-hidden" id="validatorPanel" data-page="feeds">
         <div>
-          <h2 class="panel-title">Валидатор фидов</h2>
-          <div class="panel-caption">Проверьте текущий XML до отправки агрегатору. Сервис применит правила выбранной площадки, проверит обязательные поля и допустимые значения.</div>
+          <h2 class="panel-title">Проверка текущего фида</h2>
+          <div class="panel-caption">Ручная проверка входит в мониторинг: сервис применит правила выбранной площадки, проверит обязательные поля и допустимые значения перед отправкой.</div>
         </div>
         <div class="validator-toolbar">
           <div class="field compact">
@@ -5203,6 +5219,12 @@
         note: "Домклик часто принимает фиды через партнерский кабинет или интеграцию. В прототипе раздел вынесен отдельно, чтобы хранить свои проверки и правки; финальную схему нужно подтвердить в кабинете Домклик."
       }
     };
+    function platformMark(platform = "auto") {
+      const normalized = platformProfiles[platform] ? platform : "auto";
+      if (normalized === "avito") return '<span class="aggregator-mark avito" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+      const letters = { cian: "Ц", yandex: "Я", domclick: "Д", auto: "↗" };
+      return `<span class="aggregator-mark ${normalized}" aria-hidden="true">${letters[normalized]}</span>`;
+    }
     const defaultDescription = "Продается квартира в современном жилом комплексе в районе Лесобазы. Для жителей предусмотрены детские и спортивные площадки, приватные дворы-парки и комфортные зоны отдыха. Квартиры отличаются высокими потолками, панорамными окнами и предчистовой отделкой.";
     const seed = [
       {
@@ -5261,9 +5283,10 @@
       }
     ];
 
-    const PUBLIC_FEED_ORIGIN = "https://feeds.sozdateli.ru";
+    const INTERNAL_FEED_ORIGIN = "https://feeds.sozdateli.ru";
+    let publicFeedOrigin = INTERNAL_FEED_ORIGIN;
     let appState = load();
-    appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
+    appState.serverBaseUrl = publicFeedOrigin;
     let objects = appState.objects;
     let originalObjects = appState.originalObjects;
     let activePlatform = appState.activePlatform;
@@ -5325,33 +5348,64 @@
       renderAll();
       if (repairedLayouts) showToast(`Обновлены планировки квартир: ${repairedLayouts}`);
       appInitialized = true;
+      if (runtimeMode === "external" && currentProject) {
+        window.setInterval(() => pushExternalProjectState().catch(() => {}), 15000);
+      }
     }
 
     function configureExternalMode(state) {
       runtimeMode = state.mode || "internal";
+      window.listingFlowBillingMode = state.billingMode || "manual";
+      window.listingFlowSupportEmail = state.supportEmail || "";
       const external = runtimeMode === "external";
+      publicFeedOrigin = external ? location.origin : INTERNAL_FEED_ORIGIN;
+      appState.serverBaseUrl = publicFeedOrigin;
       document.querySelector("#authSwitch").hidden = !external;
       document.querySelector("#loginUsernameLabel").textContent = external ? "Email" : "Логин";
       document.querySelector("#loginUsername").type = external ? "email" : "text";
       document.querySelector("#loginUsername").autocomplete = external ? "email" : "username";
       document.querySelector("#billingNav").hidden = !external;
+      document.querySelector("#projectsStorageCaption").textContent = external
+        ? "Проекты и доступ хранятся в вашем аккаунте. Рабочий черновик автоматически сохраняется в этом браузере."
+        : "Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.";
       document.querySelector(".brand small").textContent = external ? "сервис управления фидами" : "управление фидами";
+      const clientName = document.querySelector("#clientName");
+      const clientEmail = document.querySelector("#clientEmail");
+      const clientAvatar = document.querySelector("#clientAvatar");
+      const displayName = state.user?.name || state.user?.company || "Клиент ListingFlow";
+      if (clientName) clientName.textContent = displayName;
+      if (clientEmail) clientEmail.textContent = state.user?.email || "Личный кабинет";
+      if (clientAvatar) clientAvatar.textContent = displayName.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "LF";
     }
 
     function setAuthFormMode(mode) {
       authFormMode = mode;
       const register = mode === "register";
+      const forgot = mode === "forgot";
+      const reset = mode === "reset";
       document.querySelector("#loginNameField").hidden = !register;
       document.querySelector("#loginName").required = register;
-      document.querySelector("#loginForm h1").textContent = register ? "Создать аккаунт" : "Вход в сервис";
-      document.querySelector(".auth-description").textContent = register ? "Зарегистрируйтесь и оплатите доступ к одному проекту." : "Введите данные доступа к рабочей области фидов.";
-      loginButton.textContent = register ? "Создать аккаунт" : "Войти";
+      document.querySelector("#loginUsername").closest(".field").hidden = reset;
+      document.querySelector("#loginUsername").required = !reset;
+      document.querySelector("#loginPasswordField").hidden = forgot;
+      document.querySelector("#loginPassword").required = !forgot;
+      document.querySelector("#loginPassword").autocomplete = register || reset ? "new-password" : "current-password";
+      document.querySelector("#loginPasswordConfirmField").hidden = !reset;
+      document.querySelector("#loginPasswordConfirm").required = reset;
+      document.querySelector("#authSwitch").hidden = reset || runtimeMode !== "external";
+      const consentField = document.querySelector("#legalConsentField");
+      consentField.hidden = !register;
+      consentField.style.display = register ? "flex" : "none";
+      document.querySelector("#legalConsent").required = register;
+      document.querySelector("#loginForm h1").textContent = reset ? "Новый пароль" : forgot ? "Восстановление" : register ? "Создать аккаунт" : "Вход в сервис";
+      document.querySelector(".auth-description").textContent = reset ? "Придумайте новый пароль длиной не менее 8 символов." : forgot ? "Укажите email — отправим одноразовую ссылку для смены пароля." : register ? "Зарегистрируйтесь и оплатите доступ к одному проекту." : "Введите данные доступа к рабочей области фидов.";
+      loginButton.textContent = reset ? "Сохранить пароль" : forgot ? "Отправить ссылку" : register ? "Создать аккаунт" : "Войти";
       document.querySelectorAll("[data-auth-mode]").forEach(button => button.classList.toggle("active", button.dataset.authMode === mode));
       loginError.textContent = "";
     }
 
     async function syncExternalProjects() {
-      if (runtimeMode !== "external" || sessionState?.role !== "customer") return false;
+      if (runtimeMode !== "external" || !["client", "customer"].includes(sessionState?.role)) return false;
       const response = await fetch("/api/projects", { credentials: "same-origin", cache: "no-store" });
       if (response.status === 402) return false;
       if (!response.ok) throw new Error("Не удалось загрузить проекты аккаунта.");
@@ -5359,6 +5413,52 @@
       const next = Array.isArray(result.projects) ? result.projects : [];
       if (JSON.stringify(next) === JSON.stringify(projects)) return false;
       localStorage.setItem(projectIndexKey, JSON.stringify(next));
+      return true;
+    }
+
+    function projectStateKeys() {
+      return [storageKey, publishedStorageKey, brandProfilesStorageKey, monitoredStorageKey, monitorNotificationsStorageKey, changeLogStorageKey, complexStatusStorageKey, projectSourcesStorageKey];
+    }
+
+    function captureProjectBrowserState() {
+      return Object.fromEntries(projectStateKeys().flatMap(key => {
+        const value = localStorage.getItem(key);
+        return value === null ? [] : [[key, value]];
+      }));
+    }
+
+    async function pushExternalProjectState() {
+      if (runtimeMode !== "external" || !currentProject || !sessionState?.subscriptionActive) return;
+      const state = captureProjectBrowserState();
+      if (!Object.keys(state).length) return;
+      await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
+        method: "PUT", credentials: "same-origin", keepalive: true,
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ state })
+      });
+    }
+
+    let projectStateSyncTimer = 0;
+    function scheduleProjectStateSync() {
+      if (runtimeMode !== "external" || !currentProject) return;
+      clearTimeout(projectStateSyncTimer);
+      projectStateSyncTimer = setTimeout(() => pushExternalProjectState().catch(() => {}), 1200);
+    }
+
+    async function hydrateExternalProjectState() {
+      if (runtimeMode !== "external" || !currentProject || !["client", "customer"].includes(sessionState?.role)) return false;
+      const response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+      if (!response.ok) return false;
+      const remote = await response.json();
+      const local = captureProjectBrowserState();
+      if (!remote.state) {
+        if (Object.keys(local).length) await pushExternalProjectState();
+        return false;
+      }
+      if (JSON.stringify(remote.state) === JSON.stringify(local)) return false;
+      for (const key of projectStateKeys()) {
+        if (Object.hasOwn(remote.state, key)) localStorage.setItem(key, remote.state[key]);
+        else localStorage.removeItem(key);
+      }
       return true;
     }
 
@@ -5376,12 +5476,13 @@
       const projectCount = Number(count?.value || 1);
       if (total) total.textContent = `${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ / мес`;
       const until = sessionState?.user?.subscriptionUntil;
+      const onlineBilling = sessionState?.billingMode === "freekassa";
       if (sessionState?.subscriptionActive && until) {
         status.textContent = `Доступ к ${sessionState.user.projectLimit || 1} проектам оплачен до ${new Date(until).toLocaleDateString("ru-RU")}. Следующая оплата установит выбранный лимит и продлит срок ещё на 30 дней.`;
-        button.textContent = "Продлить через FreeKassa";
+        button.textContent = onlineBilling ? "Продлить онлайн" : "Запросить счёт";
       } else {
-        status.textContent = "Доступ пока не оплачен. После подтверждения платежа можно создать выбранное количество проектов.";
-        button.textContent = `Оплатить ${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ через FreeKassa`;
+        status.textContent = onlineBilling ? "Доступ пока не оплачен. После подтверждения платежа можно создать выбранное количество проектов." : "Онлайн-касса пока не подключена. Мы выставим счёт вручную и активируем доступ после оплаты.";
+        button.textContent = onlineBilling ? `Оплатить ${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ онлайн` : "Запросить счёт";
       }
     }
 
@@ -5394,7 +5495,9 @@
         const state = await response.json();
         sessionState = state;
         configureExternalMode(state);
-        if (state.authenticated && state.role === "admin") {
+        const resetToken = new URLSearchParams(location.search).get("reset");
+        if (!state.authenticated && state.mode === "external" && resetToken) setAuthFormMode("reset");
+        if (state.authenticated && ["owner", "manager", "admin"].includes(state.role)) {
           location.href = "/admin.html";
           return;
         }
@@ -5403,16 +5506,20 @@
             location.reload();
             return;
           }
+          if (await hydrateExternalProjectState()) {
+            location.reload();
+            return;
+          }
           showWorkspace();
           if (runtimeMode === "external" && !state.subscriptionActive) switchPage("billing");
           renderBilling();
         }
-        else showLogin(state.configured ? "" : "Вход ещё не настроен в параметрах Vercel.");
+        else showLogin(state.configured ? "" : "Вход ещё не настроен на сервере. Проверьте переменные окружения Selectel.");
       } catch (error) {
         showLogin(`Не удалось проверить доступ: ${error.message}`);
       } finally {
         loginButton.disabled = false;
-        loginButton.textContent = "Войти";
+        loginButton.textContent = authFormMode === "reset" ? "Сохранить пароль" : authFormMode === "forgot" ? "Отправить ссылку" : authFormMode === "register" ? "Создать аккаунт" : "Войти";
       }
     }
 
@@ -5420,10 +5527,16 @@
       event.preventDefault();
       loginError.textContent = "";
       loginButton.disabled = true;
-      loginButton.textContent = "Вхожу...";
+      loginButton.textContent = authFormMode === "forgot" ? "Отправляю..." : authFormMode === "reset" ? "Сохраняю..." : "Вхожу...";
       try {
         const register = runtimeMode === "external" && authFormMode === "register";
-        const response = await fetch(register ? "/api/auth-register" : "/api/auth-login", {
+        const forgot = runtimeMode === "external" && authFormMode === "forgot";
+        const reset = runtimeMode === "external" && authFormMode === "reset";
+        const password = document.querySelector("#loginPassword").value;
+        if (register && !document.querySelector("#legalConsent").checked) throw new Error("Для регистрации примите оферту и согласие на обработку данных.");
+        if (reset && password !== document.querySelector("#loginPasswordConfirm").value) throw new Error("Пароли не совпадают.");
+        const endpoint = reset ? "/api/auth/reset-password" : forgot ? "/api/auth/forgot-password" : register ? "/api/auth-register" : "/api/auth-login";
+        const response = await fetch(endpoint, {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
@@ -5431,22 +5544,27 @@
             username: document.querySelector("#loginUsername").value.trim(),
             email: document.querySelector("#loginUsername").value.trim(),
             name: document.querySelector("#loginName").value.trim(),
-            password: document.querySelector("#loginPassword").value
+            password,
+            acceptedLegal: register ? document.querySelector("#legalConsent").checked : false,
+            legalVersion: "2026-09-17",
+            token: new URLSearchParams(location.search).get("reset") || ""
           })
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
-        if (result.role === "admin") {
+        if (forgot) { setAuthFormMode("login"); loginError.textContent = result.message; return; }
+        if (reset) { history.replaceState({}, "", location.pathname); setAuthFormMode("login"); loginError.textContent = "Пароль обновлён. Теперь войдите в аккаунт."; return; }
+        if (["owner", "manager", "admin"].includes(result.role)) {
           location.href = "/admin.html";
           return;
         }
         location.reload();
       } catch (error) {
         showLogin(error.message || "Не удалось войти.");
-        document.querySelector("#loginPassword").focus();
+        if (!document.querySelector("#loginPasswordField").hidden) document.querySelector("#loginPassword").focus();
       } finally {
         loginButton.disabled = false;
-        loginButton.textContent = authFormMode === "register" ? "Создать аккаунт" : "Войти";
+        loginButton.textContent = authFormMode === "reset" ? "Сохранить пароль" : authFormMode === "forgot" ? "Отправить ссылку" : authFormMode === "register" ? "Создать аккаунт" : "Войти";
       }
     }
 
@@ -5484,9 +5602,10 @@
     function save() {
       appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
-      appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
+      appState.serverBaseUrl = publicFeedOrigin;
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+      scheduleProjectStateSync();
     }
 
     function loadChangeLog() {
@@ -6053,8 +6172,8 @@
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record">
-          <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
-          <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
+          <div class="source-identity"><span><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></span></div>
+          <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
           <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
@@ -6065,11 +6184,24 @@
     function renderProjects() {
       const query = document.querySelector("#projectSearch").value.trim().toLowerCase();
       const visible = projects.filter(project => project.name.toLowerCase().includes(query));
+      const projectStates = projects.map(project => {
+        const suffix = project.id === "legacy" ? "" : "-" + project.id;
+        return JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
+      });
+      const published = projectStates.filter(state => state.generatedLink).length;
+      const inProgress = projectStates.filter(state => !state.generatedLink && (state.objects?.length || state.feedUrl)).length;
+      const totalObjects = projectStates.reduce((sum, state) => sum + (state.objects?.length || 0), 0);
+      document.querySelector("#projectMetrics").innerHTML = `
+        <div class="project-metric"><span class="metric-icon">▤</span><span>Всего проектов</span><strong>${projects.length}</strong><small>Лимит аккаунта: ${Number(sessionState?.user?.projectLimit || Math.max(1, projects.length))}</small></div>
+        <div class="project-metric"><span class="metric-icon success">✓</span><span>Опубликовано</span><strong>${published}</strong><small>${projects.length ? Math.round(published / projects.length * 100) : 0}% проектов готовы</small></div>
+        <div class="project-metric"><span class="metric-icon info">↻</span><span>В работе</span><strong>${inProgress}</strong><small>Требуют продолжения настройки</small></div>
+        <div class="project-metric"><span class="metric-icon neutral">⌂</span><span>Объектов в фидах</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong><small>Во всех проектах</small></div>`;
       document.querySelector("#projectList").innerHTML = visible.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
         const projectUrl = '?project=' + encodeURIComponent(project.id);
-        return '<article class="project-entry" data-open-project="' + escapeXml(projectUrl) + '" role="link" tabindex="0" aria-label="Открыть проект ' + escapeXml(project.name) + '"><a class="project-entry-main" href="' + projectUrl + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="' + projectUrl + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
+        const projectPlatform = state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
+        return '<article class="project-entry" data-open-project="' + escapeXml(projectUrl) + '" role="link" tabindex="0" aria-label="Открыть проект ' + escapeXml(project.name) + '"><a class="project-entry-main" href="' + projectUrl + '">' + platformMark(projectPlatform) + '<span><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></span></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="' + projectUrl + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
       }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
       const createButton = document.querySelector("#newProjectBtn");
       if (runtimeMode === "external") {
@@ -6114,10 +6246,11 @@
     }
 
     function renderPage() {
-      const titles = { projects: "Проекты фидов", source: "Источники", apartments: "Квартиры", branding: "Шаблон планировок", validator: "Проверка фида", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
+      if (activePage === "validator") activePage = "feeds";
+      const titles = { projects: "Проекты фидов", source: "Источники фидов", apartments: "Квартиры", branding: "Шаблоны планировок", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
       const shell = document.querySelector("#appShell");
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
-      shell.classList.toggle("validator-mode", activePage === "validator");
+      shell.classList.toggle("validator-mode", false);
       shell.classList.toggle("project-list-mode", activePage === "projects");
       document.querySelectorAll("[data-page]").forEach(section => {
         const isWorkflow = section.classList.contains("workflow-nav");
@@ -6125,6 +6258,9 @@
       });
       const stepOrder = Object.values(stepPages);
       const activeStepIndex = stepOrder.indexOf(activePage);
+      const workflow = document.querySelector(".nav-workflow");
+      if (activeStepIndex >= 0) workflow.classList.add("expanded");
+      workflow.querySelector(".nav-workflow-toggle").setAttribute("aria-expanded", String(workflow.classList.contains("expanded")));
       document.querySelectorAll("[data-nav]").forEach(item => {
         const stepIndex = stepOrder.indexOf(item.dataset.nav);
         const state = stepIndex < 0 ? "" : stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
@@ -6145,7 +6281,10 @@
       });
       document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
       if (activePage === "projects") renderProjects();
-      if (activePage === "feeds") renderMonitorNotificationSettings();
+      if (activePage === "feeds") {
+        renderMonitorNotificationSettings();
+        renderFeedValidator();
+      }
       if (activePage === "billing") renderBilling();
     }
 
@@ -6158,7 +6297,7 @@
       window.scrollTo(0, 0);
     }
 
-    const stepPages = { ".source-panel": "source", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".quality-panel": "validator", ".publish-panel": "results", ".feeds-panel": "feeds" };
+    const stepPages = { ".source-panel": "source", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".publish-panel": "results", ".feeds-panel": "feeds" };
     document.querySelectorAll("[data-step]").forEach(button => {
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
     });
@@ -6210,6 +6349,13 @@
     document.querySelector("#billingProjectCount").addEventListener("change", renderBilling);
     document.querySelector("#checkoutButton").addEventListener("click", async () => {
       const button = document.querySelector("#checkoutButton");
+      if (sessionState?.billingMode !== "freekassa") {
+        const email = sessionState?.supportEmail || "";
+        if (!email) return showToast("Контакт для выставления счёта ещё не указан администратором.");
+        const count = Number(document.querySelector("#billingProjectCount").value);
+        location.href = `mailto:${email}?subject=${encodeURIComponent("ListingFlow — счёт на оплату")}&body=${encodeURIComponent(`Здравствуйте! Прошу выставить счёт на ListingFlow, проектов: ${count}. Аккаунт: ${sessionState?.user?.email || ""}`)}`;
+        return;
+      }
       button.disabled = true;
       try {
         const response = await fetch("/api/billing/checkout", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectCount: Number(document.querySelector("#billingProjectCount").value) }) });
@@ -6388,7 +6534,7 @@
             ${escapeXml(feed.name)}
             <span class="feed-url">${escapeXml(feed.url)}</span>
           </div>
-          <div class="feed-platform">${escapeXml(platformProfiles[feed.platform]?.name || "Не определено")}</div>
+          <div class="feed-platform">${platformMark(feed.platform)}<span>${escapeXml(platformProfiles[feed.platform]?.name || "Не определено")}</span></div>
           <span class="feed-status ${escapeXml(feed.status || "pending")}">${escapeXml(monitorStatus(feed))}</span>
           <div class="feed-meta">Проверка: ${escapeXml(formatCheckDate(feed.lastChecked))}</div>
           <div class="feed-notification-channels">${[
@@ -6998,10 +7144,10 @@
         const y = height * (config.textYPercent / 100);
         context.fillStyle = config.textColor;
         context.textBaseline = "top";
-        context.font = `700 ${config.textSize}px Inter, Arial, sans-serif`;
+        context.font = `700 ${config.textSize}px Circe, Arial, sans-serif`;
         if (headline) context.fillText(headline, x, y, width - x * 2);
         if (subline) {
-          context.font = `500 ${Math.max(14, Math.round(config.textSize * .55))}px Inter, Arial, sans-serif`;
+          context.font = `500 ${Math.max(14, Math.round(config.textSize * .55))}px Circe, Arial, sans-serif`;
           context.fillText(subline, x, y + config.textSize * 1.3, width - x * 2);
         }
       }
@@ -7549,7 +7695,7 @@
       const serverInput = document.querySelector("#serverBaseUrl");
       const box = document.querySelector("#generatedLink");
       const input = document.querySelector("#generatedLinkInput");
-      if (serverInput) serverInput.value = PUBLIC_FEED_ORIGIN;
+      if (serverInput) serverInput.value = publicFeedOrigin;
       if (appState.generatedLink) {
         const isDraft = isLocalDraftUrl(appState.generatedLink);
         box.dataset.url = appState.generatedLink;
@@ -8725,10 +8871,10 @@ ${photos}
           name: feedName,
           slug: generatedFeedId(feedName)
         });
-        appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
+        appState.serverBaseUrl = publicFeedOrigin;
         appState.generatedFeedId = publishedFeed.id;
         appState.generatedLink = publishedFeed.url;
-        document.querySelector("#serverBaseUrl").value = PUBLIC_FEED_ORIGIN;
+        document.querySelector("#serverBaseUrl").value = publicFeedOrigin;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
         save();
@@ -8743,7 +8889,7 @@ ${photos}
         console.warn("Server publish failed:", error);
         const message = error?.message || "Не удалось опубликовать фид";
         const hint = /HTTP 413/.test(message)
-          ? "XML-фид превышает лимит Nginx. Увеличьте client_max_body_size для FeedDev и повторите попытку."
+          ? "XML-фид превышает лимит Nginx. Увеличьте client_max_body_size для ListingFlow и повторите попытку."
           : "Проверьте подключение сервера и повторите попытку.";
         document.querySelector("#generatedLink").classList.remove("ready");
         document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}. ${hint}`;
@@ -8986,9 +9132,10 @@ ${photos}
       renderFeedErrorPopover();
     });
     document.querySelector("#feedErrorOpenValidator").addEventListener("click", () => {
-      switchPage("validator");
+      switchPage("feeds");
       validated = true;
       renderFeedValidator();
+      document.querySelector("#validatorPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
       renderFeedErrorPopover();
     });
     document.querySelector("#feedErrorOpenApartments").addEventListener("click", () => {
@@ -9131,6 +9278,17 @@ ${photos}
       const item = event.target.closest("[data-nav]");
       if (!item) return;
       switchPage(item.dataset.nav);
+      document.querySelector("#appShell").classList.remove("nav-open");
+      document.querySelector("#sidebarToggle").setAttribute("aria-expanded", "false");
+    });
+    document.querySelector(".nav-workflow-toggle").addEventListener("click", event => {
+      const workflow = event.currentTarget.closest(".nav-workflow");
+      const expanded = workflow.classList.toggle("expanded");
+      event.currentTarget.setAttribute("aria-expanded", String(expanded));
+    });
+    document.querySelector("#sidebarToggle").addEventListener("click", event => {
+      const expanded = document.querySelector("#appShell").classList.toggle("nav-open");
+      event.currentTarget.setAttribute("aria-expanded", String(expanded));
     });
     document.querySelector("#runValidatorBtn")?.addEventListener("click", () => {
       renderFeedValidator();
@@ -9288,7 +9446,15 @@ ${photos}
     initializeAuth();
   </script>
   <link rel="stylesheet" href="layout-editor.css">
+  <link rel="stylesheet" href="listingflow-ui.css">
   <script src="layout-editor.js"></script>
   <script src="monitor-client.js"></script>
+  <div id="cookieNotice" hidden style="position:fixed;z-index:10000;left:16px;right:16px;bottom:16px;max-width:720px;margin:auto;padding:16px 18px;border:1px solid #fff;background:#f4f5f4;box-shadow:0 18px 50px #0003;border-radius:14px;color:#202121;font:14px/1.45 Circe,system-ui,sans-serif">
+    ListingFlow использует обязательные cookies для входа. Яндекс Метрика и Webvisor включатся только с вашего согласия. <a href="/legal.html#cookies">Подробнее</a>
+    <div style="display:flex;gap:8px;margin-top:12px"><button type="button" id="acceptAnalytics" style="padding:9px 14px;border:0;border-radius:8px;background:#202121;color:white">Разрешить аналитику</button><button type="button" id="declineAnalytics" style="padding:9px 14px;border:1px solid #aaa;border-radius:8px;background:white">Только необходимые</button></div>
+  </div>
+  <script>
+    (()=>{const key="listingflow-analytics-consent-v1";const notice=document.querySelector("#cookieNotice");function load(){if(window.ym)return;(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js?id=112732392","ym");ym(112732392,"init",{ssr:true,webvisor:true,clickmap:true,ecommerce:"dataLayer",referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true})}const saved=localStorage.getItem(key);if(saved==="yes")load();else if(!saved)notice.hidden=false;document.querySelector("#acceptAnalytics").onclick=()=>{localStorage.setItem(key,"yes");notice.hidden=true;load()};document.querySelector("#declineAnalytics").onclick=()=>{localStorage.setItem(key,"no");notice.hidden=true}})();
+  </script>
 </body>
 </html>

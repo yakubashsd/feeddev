@@ -1,4 +1,4 @@
-// Local deployments keep secrets in .env; Vercel supplies them itself.
+// Локальный запуск читает .env; на Selectel переменные задаются в окружении сервиса.
 try {
   process.loadEnvFile?.(__dirname + "/.env");
 } catch (error) {
@@ -12,13 +12,16 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
 const { PLAN, createSaasStore, isSubscriptionActive, normalizeEmail } = require("./saas-store");
+const { createProjectStateStore } = require("./project-state-store");
 const { createFreeKassa } = require("./freekassa");
 const { synchronizePrices } = require("./feed-sync");
+const { download: safeDownload, downloadBuffer: safeDownloadBuffer } = require("./feed-monitor");
 
 const PORT = Number(process.env.PORT || 3000);
+const HOST = String(process.env.HOST || "127.0.0.1");
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/, "");
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, "data");
+const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
 const FEEDS_DIR = path.join(DATA_DIR, "feeds");
 const LAYOUTS_DIR = path.join(DATA_DIR, "layouts");
 const INDEX_FILE = path.join(DATA_DIR, "feeds-index.json");
@@ -43,10 +46,25 @@ const SMTP_SECURE = String(process.env.SMTP_SECURE || "false").toLowerCase() ===
 const SMTP_USER = String(process.env.SMTP_USER || "");
 const SMTP_PASS = String(process.env.SMTP_PASS || "");
 const EMAIL_FROM = String(process.env.EMAIL_FROM || SMTP_USER || "");
+const TRUST_PROXY = String(process.env.TRUST_PROXY || "false").toLowerCase() === "true";
+const PASSWORD_RESET_MINUTES = Math.max(5, Math.min(60, Number(process.env.PASSWORD_RESET_MINUTES || 30)));
+const BILLING_MODE = String(process.env.BILLING_MODE || "manual").toLowerCase() === "freekassa" ? "freekassa" : "manual";
+const LEGAL = {
+  name: String(process.env.LEGAL_NAME || "ИП Якубаш С.Д."),
+  inn: String(process.env.LEGAL_INN || "720326517332"),
+  ogrnip: String(process.env.LEGAL_OGRNIP || "326723200087150"),
+  address: String(process.env.LEGAL_ADDRESS || ""),
+  email: String(process.env.LEGAL_EMAIL || EMAIL_FROM.match(/[\w.+-]+@[\w.-]+/)?.[0] || ""),
+  phone: String(process.env.LEGAL_PHONE || "")
+};
+const rateBuckets = new Map();
 const MONITOR_INTERVAL_MINUTES = 12 * 60;
 const telegramLinks = require('./telegram-link').createTelegramLinks({file:path.join(DATA_DIR,'telegram-links.json')});
 const saasStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
   ? createSaasStore({ dataDir: DATA_DIR, secret: process.env.SAAS_DATA_SECRET })
+  : null;
+const projectStateStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
+  ? createProjectStateStore({ dataDir: DATA_DIR, secret: process.env.SAAS_DATA_SECRET })
   : null;
 const freeKassa = createFreeKassa({
   merchantId: process.env.FREEKASSA_MERCHANT_ID,
@@ -102,7 +120,7 @@ function canUseLocalStorage() {
 
 function requireWritableStorage() {
   if (usesBlobStorage() || canUseLocalStorage()) return;
-  throw new Error("Vercel Blob не подключен. Добавьте BLOB_READ_WRITE_TOKEN в Environment Variables для Production и сделайте Redeploy.");
+  throw new Error("Хранилище публикаций не настроено. Проверьте DATA_DIR и права записи сервиса.");
 }
 
 function telegramAlertsEnabled(chatId = TELEGRAM_CHAT_ID) {
@@ -111,6 +129,21 @@ function telegramAlertsEnabled(chatId = TELEGRAM_CHAT_ID) {
 
 function emailAlertsEnabled() {
   return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && EMAIL_FROM);
+}
+
+function createMailer() {
+  return nodemailer.createTransport({ host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_SECURE, auth: { user: SMTP_USER, pass: SMTP_PASS }, disableFileAccess: true, disableUrlAccess: true });
+}
+
+async function sendPasswordResetEmail(user, token) {
+  if (!emailAlertsEnabled()) throw new Error("Email не настроен. Добавьте SMTP-параметры сервера.");
+  const resetUrl = `${PUBLIC_BASE_URL || `http://localhost:${PORT}`}/?reset=${encodeURIComponent(token)}`;
+  await createMailer().sendMail({
+    from: EMAIL_FROM,
+    to: user.email,
+    subject: "ListingFlow — восстановление пароля",
+    text: `Здравствуйте, ${user.name || "пользователь"}.\n\nЧтобы задать новый пароль, откройте ссылку:\n${resetUrl}\n\nСсылка действует ${PASSWORD_RESET_MINUTES} минут. Если вы не запрашивали восстановление, проигнорируйте письмо.`
+  });
 }
 
 function readLocalIndex() {
@@ -262,6 +295,24 @@ async function deleteLayoutRecord(id) {
   return true;
 }
 
+async function deleteProjectAssets(userId, projectId) {
+  const feeds = await readFeeds();
+  const projectFeeds = feeds.filter(feed => feed.ownerId === userId && feed.projectId === projectId);
+  if (!usesBlobStorage()) {
+    for (const feed of projectFeeds) {
+      const filePath = path.join(FEEDS_DIR, `${feed.slug}.xml`);
+      if (filePath.startsWith(FEEDS_DIR) && fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+    if (projectFeeds.length) writeLocalIndex(feeds.filter(feed => !projectFeeds.includes(feed)));
+  } else {
+    await Promise.allSettled(projectFeeds.flatMap(feed => [del(`feeds/${feed.slug}.xml`), del(`feed-records/${feed.slug}.json`)]));
+  }
+  const layouts = await readLayouts();
+  for (const layout of layouts.filter(item => item.ownerId === userId && item.projectId === projectId)) await deleteLayoutRecord(layout.id);
+  if (!process.env.VERCEL) monitor.replace(projectId, []);
+  telegramLinks.disconnect(userId, projectId);
+}
+
 function send(res, status, body, type = "application/json; charset=utf-8") {
   res.writeHead(status, {
     "Content-Type": type,
@@ -275,6 +326,39 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
 
 function sendError(res, status, message) {
   send(res, status, { error: message });
+}
+
+function requestIp(req) {
+  if (TRUST_PROXY) return String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "unknown";
+  return req.socket.remoteAddress || "unknown";
+}
+
+function enforceRateLimit(req, res, name, limit, windowMs) {
+  const now = Date.now();
+  const key = `${name}:${requestIp(req)}`;
+  const current = rateBuckets.get(key);
+  const bucket = !current || current.resetAt <= now ? { count: 0, resetAt: now + windowMs } : current;
+  bucket.count += 1;
+  rateBuckets.set(key, bucket);
+  if (rateBuckets.size > 10000) for (const [entry, value] of rateBuckets) if (value.resetAt <= now) rateBuckets.delete(entry);
+  if (bucket.count <= limit) return false;
+  res.setHeader("Retry-After", String(Math.max(1, Math.ceil((bucket.resetAt - now) / 1000))));
+  sendError(res, 429, "Слишком много запросов. Повторите попытку позже.");
+  return true;
+}
+
+function protectSensitiveRoute(req, res, pathname) {
+  if (req.method !== "POST") return false;
+  const policies = {
+    "/api/auth-login": ["login", 8, 15 * 60 * 1000],
+    "/api/auth-register": ["register", 5, 60 * 60 * 1000],
+    "/api/auth/forgot-password": ["forgot", 4, 30 * 60 * 1000],
+    "/api/auth/reset-password": ["reset", 8, 30 * 60 * 1000],
+    "/api/billing/checkout": ["checkout", 12, 15 * 60 * 1000],
+    "/api/billing/freekassa/callback": ["freekassa", 180, 60 * 1000]
+  };
+  const policy = policies[pathname];
+  return policy ? enforceRateLimit(req, res, ...policy) : false;
 }
 
 function safeEqual(left, right) {
@@ -315,7 +399,7 @@ function readSession(req) {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
     if (Number(session.expiresAt) <= Date.now()) return null;
     if (APP_MODE === "internal") return session.role === "internal" && session.username === AUTH_USERNAME ? session : null;
-    return ["customer", "admin"].includes(session.role) ? session : null;
+    return ["client", "customer", "manager", "owner", "admin"].includes(session.role) ? session : null;
   } catch {
     return null;
   }
@@ -328,9 +412,15 @@ function isAuthenticated(req) {
 async function currentActor(req) {
   const session = readSession(req);
   if (!session) return null;
-  if (session.role !== "customer") return session;
-  const user = await saasStore?.getUser(session.userId);
-  return user && user.status !== "blocked" ? { ...session, user } : null;
+  if (["client", "customer"].includes(session.role)) {
+    const user = await saasStore?.getUser(session.userId);
+    return user && user.status !== "blocked" && user.sessionVersion === session.sessionVersion ? { ...session, user } : null;
+  }
+  if (session.role === "manager") {
+    const staff = await saasStore?.getStaff(session.staffId);
+    return staff && staff.status === "active" && staff.sessionVersion === session.sessionVersion ? { ...session, ...staff } : null;
+  }
+  return session;
 }
 
 function setSessionCookie(req, res, token, maxAge = SESSION_TTL_SECONDS) {
@@ -500,12 +590,7 @@ let feedSyncRunning = false;
 
 async function syncPublishedFeed(record) {
   if (!record.sourceUrl || record.sourceType !== "url") return;
-  const sourceResponse = await fetch(record.sourceUrl, {
-    headers: { "User-Agent": "FeedDev/0.1" },
-    signal: AbortSignal.timeout(30000)
-  });
-  if (!sourceResponse.ok) throw new Error(`Источник вернул HTTP ${sourceResponse.status}`);
-  const sourceXml = await sourceResponse.text();
+  const sourceXml = await safeDownload(record.sourceUrl);
   const filePath = path.join(FEEDS_DIR, `${record.slug}.xml`);
   if (!fs.existsSync(filePath)) throw new Error("Опубликованный XML не найден");
   const publishedXml = fs.readFileSync(filePath, "utf8");
@@ -618,7 +703,7 @@ async function saveLayout(req, payload, actor = null) {
 
 function telegramMessage(payload = {}) {
   const lines = [
-    "FeedDev: ошибка фида",
+    "ListingFlow: ошибка фида",
     `Проект: ${String(payload.projectName || "без названия").slice(0, 160)}`,
     `Фид: ${String(payload.name || "без названия").slice(0, 160)}`,
     `Площадка: ${String(payload.platform || "не определена").slice(0, 80)}`,
@@ -661,18 +746,10 @@ async function sendEmailAlert(payload) {
   }
   const emailTo = String(payload.emailTo || "").trim();
   if (!validEmail(emailTo)) throw new Error("Укажите корректный email получателя уведомлений.");
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-    disableFileAccess: true,
-    disableUrlAccess: true
-  });
-  return transporter.sendMail({
+  return createMailer().sendMail({
     from: EMAIL_FROM,
     to: emailTo,
-    subject: `FeedDev: ошибка фида «${String(payload.name || "без названия").slice(0, 120)}»`,
+    subject: `ListingFlow: ошибка фида «${String(payload.name || "без названия").slice(0, 120)}»`,
     text: telegramMessage(payload)
   });
 }
@@ -703,7 +780,7 @@ async function sendMonitorAlerts(payload = {}) {
 }
 
 function serveStatic(req, res, pathname) {
-  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/layout-editor.js','/layout-editor.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
@@ -717,6 +794,7 @@ function serveStatic(req, res, pathname) {
 
 async function handleApi(req, res, url) {
   if (req.method === "OPTIONS") return send(res, 204, {});
+  if (protectSensitiveRoute(req, res, url.pathname)) return;
 
   if (req.method === "GET" && url.pathname === "/api/health") {
     return send(res, 200, {
@@ -726,8 +804,14 @@ async function handleApi(req, res, url) {
       feedPublishingReady: usesBlobStorage() || !process.env.VERCEL,
       telegramAlertsReady: telegramAlertsEnabled(),
       emailAlertsReady: emailAlertsEnabled(),
-      billingReady: APP_MODE === "external" ? freeKassa.configured() : null
+      billingMode: APP_MODE === "external" ? BILLING_MODE : null,
+      billingReady: APP_MODE === "external" ? BILLING_MODE === "manual" || freeKassa.configured() : null,
+      legalReady: APP_MODE === "external" ? Boolean(LEGAL.name && LEGAL.inn && LEGAL.ogrnip && LEGAL.address && LEGAL.email) : null
     });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/public-config") {
+    return send(res, 200, { ...LEGAL, billingMode: BILLING_MODE, plan: APP_MODE === "external" ? PLAN : null });
   }
 
   if (req.method === "GET" && url.pathname === "/api/auth-session") {
@@ -739,7 +823,9 @@ async function handleApi(req, res, url) {
       role: actor?.role || null,
       user: actor?.user || null,
       subscriptionActive: actor?.user ? isSubscriptionActive(actor.user) : APP_MODE === "internal",
-      plan: APP_MODE === "external" ? PLAN : null
+      plan: APP_MODE === "external" ? PLAN : null,
+      billingMode: APP_MODE === "external" ? BILLING_MODE : null,
+      supportEmail: APP_MODE === "external" ? LEGAL.email : null
     });
   }
 
@@ -747,7 +833,7 @@ async function handleApi(req, res, url) {
     if (APP_MODE !== "external" || !saasStore) return sendError(res, 404, "Регистрация недоступна.");
     const payload = await parseBody(req);
     const user = await saasStore.register(payload);
-    setSessionCookie(req, res, createSessionToken({ role: "customer", userId: user.id }));
+    setSessionCookie(req, res, createSessionToken({ role: "client", userId: user.id, sessionVersion: user.sessionVersion }));
     return send(res, 201, { authenticated: true, user, subscriptionActive: false, plan: PLAN });
   }
 
@@ -757,13 +843,18 @@ async function handleApi(req, res, url) {
       if (!saasStore || !SESSION_SECRET) return sendError(res, 503, "Внешний контур ещё не настроен.");
       const email = normalizeEmail(payload.email || payload.username);
       if (email === EXTERNAL_ADMIN_EMAIL && EXTERNAL_ADMIN_PASSWORD && safeEqual(payload.password || "", EXTERNAL_ADMIN_PASSWORD)) {
-        setSessionCookie(req, res, createSessionToken({ role: "admin", email }));
-        return send(res, 200, { authenticated: true, role: "admin" });
+        setSessionCookie(req, res, createSessionToken({ role: "owner", email }));
+        return send(res, 200, { authenticated: true, role: "owner" });
+      }
+      const staff = await saasStore.authenticateStaff(email, payload.password || "");
+      if (staff) {
+        setSessionCookie(req, res, createSessionToken({ role: staff.role, staffId: staff.id, email: staff.email, name: staff.name, sessionVersion: staff.sessionVersion }));
+        return send(res, 200, { authenticated: true, role: staff.role });
       }
       const user = await saasStore.authenticate(email, payload.password || "");
       if (!user) return sendError(res, 401, "Неверный email или пароль.");
-      setSessionCookie(req, res, createSessionToken({ role: "customer", userId: user.id }));
-      return send(res, 200, { authenticated: true, role: "customer" });
+      setSessionCookie(req, res, createSessionToken({ role: "client", userId: user.id, sessionVersion: user.sessionVersion }));
+      return send(res, 200, { authenticated: true, role: "client" });
     }
     if (!AUTH_PASSWORD || !AUTH_SECRET) return sendError(res, 503, "Вход ещё не настроен на сервере.");
     const usernameMatches = safeEqual(payload.username || "", AUTH_USERNAME);
@@ -773,6 +864,25 @@ async function handleApi(req, res, url) {
     }
     setSessionCookie(req, res, createSessionToken({ role: "internal", username: AUTH_USERNAME }));
     return send(res, 200, { authenticated: true });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/forgot-password") {
+    if (APP_MODE !== "external" || !saasStore) return sendError(res, 404, "Восстановление недоступно.");
+    const payload = await parseBody(req);
+    const reset = await saasStore.requestPasswordReset(payload.email, PASSWORD_RESET_MINUTES);
+    if (reset) {
+      try { await sendPasswordResetEmail(reset.user, reset.token); }
+      catch (error) { console.error("Password reset email:", error.message); }
+    }
+    return send(res, 200, { sent: true, message: "Если аккаунт существует, письмо со ссылкой уже отправлено." });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/auth/reset-password") {
+    if (APP_MODE !== "external" || !saasStore) return sendError(res, 404, "Восстановление недоступно.");
+    const payload = await parseBody(req);
+    try { await saasStore.resetPassword(payload.token, payload.password); }
+    catch (error) { return sendError(res, 400, error.message); }
+    return send(res, 200, { reset: true });
   }
 
   if (req.method === "POST" && url.pathname === "/api/auth-logout") {
@@ -791,9 +901,15 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/billing/freekassa/callback") {
     if (APP_MODE !== "external" || !saasStore || !freeKassa.configured()) return sendError(res, 503, "Касса не настроена.");
     const payload = await parseBody(req);
-    if (!freeKassa.verifyNotification(payload)) return sendError(res, 403, "Неверная подпись уведомления.");
     const orderId = String(payload.MERCHANT_ORDER_ID || payload.order_id || "");
-    await saasStore.completePayment(orderId, payload.intid || payload.INTID || "", payload.AMOUNT || payload.amount);
+    const logBase = { orderId, providerPaymentId: payload.intid || payload.INTID || "", amount: payload.AMOUNT || payload.amount, source: "freekassa" };
+    if (!freeKassa.verifyNotification(payload)) {
+      await saasStore.logPaymentEvent("callback_rejected", { ...logBase, status: "rejected", message: "Неверная подпись уведомления." });
+      return sendError(res, 403, "Неверная подпись уведомления.");
+    }
+    await saasStore.logPaymentEvent("callback_received", { ...logBase, status: "received" });
+    try { await saasStore.completePayment(orderId, logBase.providerPaymentId, logBase.amount); }
+    catch (error) { await saasStore.logPaymentEvent("callback_error", { ...logBase, status: "error", message: error.message }); throw error; }
     return send(res, 200, "YES", "text/plain; charset=utf-8");
   }
 
@@ -803,25 +919,40 @@ async function handleApi(req, res, url) {
   }
 
   if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/projects") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
     return send(res, 200, { projects: await saasStore.listProjects(actor.userId), limit: actor.user.projectLimit || PLAN.minProjects });
   }
 
   if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/projects") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
     const payload = await parseBody(req);
     return send(res, 201, await saasStore.createProject(actor.userId, payload.name));
   }
 
+  const projectStateMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)\/state$/i) : null;
+  if (projectStateMatch && ["GET", "PUT"].includes(req.method)) {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 403, "Проект недоступен.");
+    if (req.method === "GET") return send(res, 200, await projectStateStore.get(actor.userId, projectStateMatch[1]));
+    if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для сохранения проекта оплатите тариф.");
+    const payload = await parseBody(req);
+    return send(res, 200, await projectStateStore.put(actor.userId, projectStateMatch[1], payload.state));
+  }
+
   const projectDeleteMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)$/i) : null;
   if (projectDeleteMatch && req.method === "DELETE") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
     const deleted = await saasStore.deleteProject(actor.userId, projectDeleteMatch[1]);
+    if (deleted) {
+      await projectStateStore.remove(actor.userId, projectDeleteMatch[1]);
+      await deleteProjectAssets(actor.userId, projectDeleteMatch[1]);
+    }
     return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Проект не найден." });
   }
 
   if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/billing/checkout") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
+    if (BILLING_MODE !== "freekassa") return sendError(res, 409, LEGAL.email ? `Онлайн-оплата пока не подключена. Для выставления счёта напишите на ${LEGAL.email}.` : "Онлайн-оплата пока не подключена. Обратитесь к администратору сервиса.");
     if (!freeKassa.configured()) return sendError(res, 503, "FreeKassa ещё не настроена администратором.");
     const payload = await parseBody(req);
     const payment = await saasStore.createPayment(actor.userId, payload.projectCount);
@@ -829,16 +960,39 @@ async function handleApi(req, res, url) {
   }
 
   if (APP_MODE === "external" && url.pathname === "/api/admin") {
-    if (actor.role !== "admin") return sendError(res, 403, "Требуются права администратора.");
+    if (!["owner", "manager", "admin"].includes(actor.role)) return sendError(res, 403, "Требуются права администратора.");
     if (req.method === "GET") return send(res, 200, await saasStore.adminSnapshot());
     if (req.method === "PUT") {
       const payload = await parseBody(req);
-      return send(res, 200, await saasStore.updateUser(payload.userId, payload));
+      return send(res, 200, await saasStore.updateUser(payload.userId, payload, actor.email || actor.staffId || actor.role));
     }
     return sendError(res, 405, "Метод не поддерживается");
   }
 
-  if (APP_MODE === "external" && actor.role === "customer" && !isSubscriptionActive(actor.user)) {
+  const adminProjectMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/admin\/projects\/([a-f0-9-]+)$/i) : null;
+  if (adminProjectMatch && req.method === "PUT") {
+    if (!["owner", "manager", "admin"].includes(actor.role)) return sendError(res, 403, "Требуются права администратора.");
+    const payload = await parseBody(req);
+    return send(res, 200, await saasStore.updateProject(adminProjectMatch[1], payload, actor.email || actor.staffId || actor.role));
+  }
+
+  if (APP_MODE === "external" && url.pathname === "/api/admin/staff" && req.method === "POST") {
+    if (!["owner", "admin"].includes(actor.role)) return sendError(res, 403, "Только владелец может управлять командой.");
+    return send(res, 201, await saasStore.createStaff(await parseBody(req), actor.email || actor.role));
+  }
+
+  const adminStaffMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/admin\/staff\/([a-f0-9-]+)$/i) : null;
+  if (adminStaffMatch && req.method === "DELETE") {
+    if (!["owner", "admin"].includes(actor.role)) return sendError(res, 403, "Только владелец может управлять командой.");
+    const deleted = await saasStore.deleteStaff(adminStaffMatch[1], actor.email || actor.role);
+    return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Сотрудник не найден." });
+  }
+
+  if (APP_MODE === "external" && !["client", "customer"].includes(actor.role)) {
+    return sendError(res, 403, "Раздел доступен клиентам.");
+  }
+
+  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !isSubscriptionActive(actor.user)) {
     return sendError(res, 402, "Для работы с сервисом оплатите тариф от 7 500 ₽ в месяц.");
   }
 
@@ -848,7 +1002,7 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === '/api/monitor') {
-    if(process.env.VERCEL)return sendError(res,503,'Серверное расписание требует постоянно работающего Node-сервера. На Vercel оно пока не подключено.');
+    if(process.env.VERCEL)return sendError(res,503,'Серверное расписание требует постоянно работающего Node-процесса. Проверьте конфигурацию сервиса.');
     const project=String(url.searchParams.get('project')||'default');
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
     if(APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, project))return sendError(res,403,'Проект недоступен.');
@@ -909,9 +1063,7 @@ async function handleApi(req, res, url) {
     const payload = await parseBody(req);
     const sourceUrl = String(payload.url || "").trim();
     if (!sourceUrl) return sendError(res, 400, "Передайте ссылку на фид.");
-    const response = await fetch(sourceUrl, { headers: { "User-Agent": "FeedDev/0.1" } });
-    if (!response.ok) return sendError(res, 502, `Источник вернул HTTP ${response.status}`);
-    const xml = await response.text();
+    const xml = await safeDownload(sourceUrl);
     return send(res, 200, { xml, sourceUrl });
   }
 
@@ -1003,21 +1155,15 @@ async function serveImageProxy(res, sourceUrl) {
     return sendError(res, 400, "Поддерживаются только http и https ссылки.");
   }
 
-  const response = await fetch(parsed.href, {
-    cache: "no-store",
-    headers: { "User-Agent": "FeedDev/0.1" }
-  });
-  if (!response.ok) return sendError(res, 502, `Источник изображения вернул HTTP ${response.status}`);
-
-  const headerContentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const remote = await safeDownloadBuffer(parsed.href, MAX_LAYOUT_BYTES);
+  const headerContentType = String(remote.contentType || "").split(";")[0].trim().toLowerCase();
   const inferredContentType = imageContentTypeFromPath(parsed.href);
   const contentType = headerContentType.startsWith("image/") ? headerContentType : inferredContentType;
   if (!contentType.startsWith("image/")) {
     return sendError(res, 400, `Ссылка должна вести на изображение планировки. Источник вернул Content-Type: ${headerContentType || "не указан"}.`);
   }
 
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length > MAX_LAYOUT_BYTES) return sendError(res, 413, "Изображение слишком большое. Максимум 12 МБ.");
+  const bytes = remote.body;
 
   res.writeHead(200, {
     "Content-Type": contentType,
@@ -1029,6 +1175,11 @@ async function serveImageProxy(res, sourceUrl) {
 
 async function handleRequest(req, res) {
   res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mc.yandex.ru; connect-src 'self' https://mc.yandex.ru https://yandex.ru; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://pay.freekassa.ru");
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.(php|xml)$/i);
@@ -1050,9 +1201,9 @@ async function handleRequest(req, res) {
 }
 
 if (require.main === module) {
-  http.createServer(handleRequest).listen(PORT, () => {
+  http.createServer(handleRequest).listen(PORT, HOST, () => {
     ensureStorage();
-    console.log(`FeedDev server is running on http://localhost:${PORT}`);
+    console.log(`ListingFlow server is running on http://${HOST}:${PORT}`);
     const tick=()=>monitor.run().catch(error=>console.error('Monitor:',error.message));
     tick();setInterval(tick,60000).unref();
     const syncTick=()=>runScheduledFeedSync().catch(error=>console.error('Feed sync:',error.message));

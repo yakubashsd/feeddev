@@ -6,12 +6,13 @@ const os = require("node:os");
 const path = require("node:path");
 const { createSaasStore, verifyPassword } = require("./saas-store");
 const { createFreeKassa } = require("./freekassa");
+const { runBackup } = require("./backup");
 
 test("external accounts are isolated, billed per project and limited by purchased quantity", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feeddev-saas-"));
   try {
     const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
-    const user = await store.register({ email: "User@example.ru", password: "long-password", name: "Иван" });
+    const user = await store.register({ email: "User@example.ru", password: "long-password", name: "Иван", acceptedLegal: true });
     assert.equal(user.email, "user@example.ru");
     assert.ok(await store.authenticate("USER@example.ru", "long-password"));
     assert.equal(await store.authenticate("user@example.ru", "wrong-password"), null);
@@ -49,4 +50,79 @@ test("FreeKassa checkout and callback signatures use separate secrets", () => {
 
 test("password verifier rejects malformed hashes", () => {
   assert.equal(verifyPassword("password", "broken"), false);
+});
+
+test("password reset tokens are one-use and expire safely", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-reset-"));
+  try {
+    const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
+    await store.register({ email: "reset@example.ru", password: "old-password", name: "Клиент", acceptedLegal: true });
+    assert.equal(await store.requestPasswordReset("missing@example.ru"), null);
+    const reset = await store.requestPasswordReset("reset@example.ru");
+    assert.ok(reset.token.length > 30);
+    await store.resetPassword(reset.token, "new-password");
+    assert.ok(await store.authenticate("reset@example.ru", "new-password"));
+    assert.equal(await store.authenticate("reset@example.ru", "old-password"), null);
+    await assert.rejects(store.resetPassword(reset.token, "another-password"), /недействительна/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("payment processing keeps an operator-visible event log", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-payment-log-"));
+  try {
+    const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
+    const user = await store.register({ email: "payer@example.ru", password: "payer-password", name: "Плательщик", acceptedLegal: true });
+    const payment = await store.createPayment(user.id, 2);
+    await store.logPaymentEvent("callback_received", { orderId: payment.orderId, amount: payment.amount, source: "freekassa", status: "received" });
+    await store.completePayment(payment.orderId, "provider-1", payment.amount);
+    const events = (await store.adminSnapshot()).paymentLogs;
+    assert.ok(events.some(item => item.event === "checkout_created"));
+    assert.ok(events.some(item => item.event === "callback_received"));
+    assert.ok(events.some(item => item.event === "payment_confirmed"));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("backup creates an atomic snapshot with a manifest", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-backup-"));
+  try {
+    const dataDir = path.join(root, "data");
+    const backupDir = path.join(root, "backups");
+    fs.mkdirSync(dataDir);
+    fs.writeFileSync(path.join(dataDir, "saas-store.enc"), "encrypted\n");
+    const result = runBackup({ dataDir, backupDir, retentionDays: 30, now: new Date("2026-09-17T10:00:00.000Z") });
+    assert.equal(fs.readFileSync(path.join(result, "data", "saas-store.enc"), "utf8"), "encrypted\n");
+    assert.equal(JSON.parse(fs.readFileSync(path.join(result, "manifest.json"), "utf8")).service, "ListingFlow");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("owner can add a manager and archived projects stop consuming the paid limit", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feeddev-roles-"));
+  try {
+    const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
+    const manager = await store.createStaff({ email: "manager@example.ru", password: "manager-password", name: "Мария" });
+    assert.equal(manager.role, "manager");
+    assert.equal((await store.authenticateStaff("MANAGER@example.ru", "manager-password")).id, manager.id);
+
+    const user = await store.register({ email: "client@example.ru", password: "client-password", name: "Клиент", acceptedLegal: true });
+    const payment = await store.createPayment(user.id, 1);
+    await store.completePayment(payment.orderId, "fk-manager-test", payment.amount);
+    const first = await store.createProject(user.id, "Первый проект");
+    await assert.rejects(store.createProject(user.id, "Второй проект"), /доступно проектов: 1/);
+    await store.updateProject(first.id, { status: "archived" }, manager.id);
+    const second = await store.createProject(user.id, "Второй проект");
+    assert.equal(second.status, "active");
+
+    const snapshot = await store.adminSnapshot();
+    assert.equal(snapshot.staff.length, 1);
+    assert.equal(snapshot.users[0].activeProjects, 1);
+    assert.ok(snapshot.audit.some(item => item.entityType === "project" && item.action === "update"));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
