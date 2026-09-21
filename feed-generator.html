@@ -7173,14 +7173,36 @@
       });
     }
 
+    function feedSafeLayoutCanvas(sourceCanvas) {
+      const targetSize = 1024;
+      const safeSize = Math.round(targetSize * .88);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, targetSize, targetSize);
+
+      const sourceWidth = sourceCanvas.width || targetSize;
+      const sourceHeight = sourceCanvas.height || targetSize;
+      const ratio = Math.min(safeSize / sourceWidth, safeSize / sourceHeight);
+      const width = Math.round(sourceWidth * ratio);
+      const height = Math.round(sourceHeight * ratio);
+      const x = Math.round((targetSize - width) / 2);
+      const y = Math.round((targetSize - height) / 2);
+      context.drawImage(sourceCanvas, x, y, width, height);
+      return canvas;
+    }
+
     async function brandedLayoutBlob(canvas) {
+      const exportCanvas = feedSafeLayoutCanvas(canvas);
       const variants = [
         ["image/jpeg", .86, "jpg"],
         ["image/jpeg", .74, "jpg"],
         ["image/jpeg", .62, "jpg"]
       ];
       for (const [contentType, quality, ext] of variants) {
-        const blob = await canvasToBlob(canvas, contentType, quality);
+        const blob = await canvasToBlob(exportCanvas, contentType, quality);
         if (blob.size <= 9 * 1024 * 1024) return { blob, contentType, ext };
       }
       throw new Error("Итоговая планировка слишком большая. Попробуйте уменьшить исходную картинку или подложку.");
@@ -7922,10 +7944,18 @@
 
     function buildCianXml(items = objects) {
       const body = items.map(item => {
-        const photos = feedImageList(item);
+        const originalLayout = String(item.layoutPhoto || "").trim();
+        const allPhotos = photoList(item).filter(Boolean);
+        const brandedLayout = allPhotos.find(isBrandedLayoutUrl) || "";
+        const layout = brandedLayout || originalLayout;
+        const photos = [
+          brandedLayout ? originalLayout : "",
+          ...allPhotos.filter(url => url !== layout && url !== originalLayout && !isBrandedLayoutUrl(url))
+        ].filter(Boolean);
+        const hasLayoutDefault = Boolean(layout);
         const photoXml = photos.map((url, index) => `      <PhotoSchema>
         <FullUrl>${escapeXml(url)}</FullUrl>
-        <IsDefault>${index === 0 ? 1 : 0}</IsDefault>
+        <IsDefault>${hasLayoutDefault ? 0 : index === 0 ? 1 : 0}</IsDefault>
       </PhotoSchema>`).join("\n");
         return `  <object>
     <Category>newBuildingFlatSale</Category>
@@ -7940,8 +7970,8 @@
     </Phones>
     <TotalArea>${escapeXml(item.totalArea || "")}</TotalArea>
     <LayoutPhoto>
-      <FullUrl>${escapeXml(item.layoutPhoto || "")}</FullUrl>
-      <IsDefault>1</IsDefault>
+      <FullUrl>${escapeXml(layout)}</FullUrl>
+      <IsDefault>${hasLayoutDefault ? 1 : 0}</IsDefault>
     </LayoutPhoto>
     <Photos>
 ${photoXml}
