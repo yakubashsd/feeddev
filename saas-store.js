@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
-const PLAN = Object.freeze({ code: "projects", name: "Проекты", unitAmount: 7500, days: 30, minProjects: 1, maxProjects: 10 });
+const PLAN = Object.freeze({ code: "projects", name: "Проекты", unitAmount: 5000, days: 30, minProjects: 1, maxProjects: 10 });
 const FILE_NAME = "saas-store.enc";
 const BLOB_PATH = "private/saas-store.enc";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,17 +95,18 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     state.paymentLogs = state.paymentLogs.slice(0, 2000);
   }
 
-  async function register({ email, password, name, company = "", phone = "", acceptedLegal = false, legalVersion = "2026-09-17" }) {
+  async function register({ email, password, name, company = "", phone = "", acceptedOffer = false, acceptedPersonalData = false, offerVersion = "2026-09-22", privacyVersion = "2026-09-22", consentVersion = "2026-09-22" }) {
     email = normalizeEmail(email); name = String(name || "").trim();
     if (!EMAIL_RE.test(email)) throw new Error("Укажите корректный email.");
     if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов.");
     if (!name) throw new Error("Укажите имя.");
-    if (acceptedLegal !== true) throw new Error("Для регистрации необходимо принять оферту и согласие на обработку данных.");
+    if (acceptedOffer !== true) throw new Error("Для регистрации необходимо принять публичную оферту.");
+    if (acceptedPersonalData !== true) throw new Error("Отметьте отдельное согласие на обработку персональных данных.");
     return mutate(async state => {
       if (state.users.some(user => user.email === email) || state.staff.some(user => user.email === email)) throw new Error("Аккаунт с таким email уже существует.");
       const now = new Date().toISOString();
-      const user = { id: crypto.randomUUID(), email, name: name.slice(0, 120), company: String(company).trim().slice(0, 160), phone: String(phone).trim().slice(0, 40), passwordHash: hashPassword(password), status: "pending_payment", projectLimit: 1, subscriptionUntil: null, legalAcceptedAt: now, legalVersion: String(legalVersion).slice(0, 40), createdAt: now, updatedAt: now };
-      state.users.push(user); audit(state, user.id, "register", "client", user.id); return publicUser(user);
+      const user = { id: crypto.randomUUID(), email, name: name.slice(0, 120), company: String(company).trim().slice(0, 160), phone: String(phone).trim().slice(0, 40), passwordHash: hashPassword(password), status: "pending_payment", projectLimit: 1, subscriptionUntil: null, offerAcceptedAt: now, personalDataConsentAt: now, offerVersion: String(offerVersion).slice(0, 40), privacyVersion: String(privacyVersion).slice(0, 40), consentVersion: String(consentVersion).slice(0, 40), createdAt: now, updatedAt: now };
+      state.users.push(user); audit(state, user.id, "register", "client", user.id, { offerVersion: user.offerVersion, privacyVersion: user.privacyVersion, consentVersion: user.consentVersion }); return publicUser(user);
     });
   }
   async function authenticate(email, password) {
@@ -162,10 +163,12 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
       state.projects.push(project); audit(state, userId, "create", "project", project.id, { name: project.name }); const { userId: _, ...result } = project; return result;
     });
   }
-  async function deleteProject(userId, projectId) {
-    return mutate(async state => { const project = state.projects.find(item => item.id === projectId && item.userId === userId); if (!project) return false; state.projects = state.projects.filter(item => item !== project); audit(state, userId, "delete", "project", projectId, { name: project.name }); return true; });
+async function deleteProject(userId, projectId) {
+    return mutate(async state => { const project = state.projects.find(item => item.id === projectId && item.userId === userId); if (!project) return false; if (project.status !== "archived") { project.status = "archived"; project.archivedAt = new Date().toISOString(); project.updatedAt = project.archivedAt; audit(state, userId, "archive", "project", projectId, { name: project.name }); } return true; });
   }
   async function ownsProject(userId, projectId) { const state = await read(); return state.projects.some(project => project.userId === userId && project.id === projectId && project.status !== "archived"); }
+  async function hasProject(userId, projectId) { const state = await read(); return state.projects.some(project => project.userId === userId && project.id === projectId); }
+  async function restoreProject(userId, projectId) { return mutate(async state => { const project = state.projects.find(item => item.id === projectId && item.userId === userId); if (!project) return false; const user = state.users.find(item => item.id === userId); const limit = Math.min(PLAN.maxProjects, Math.max(PLAN.minProjects, Number(user?.projectLimit || 1))); if (state.projects.filter(item => item.userId === userId && item.status !== "archived").length >= limit) throw new Error(`На тарифе доступно проектов: ${limit}. Освободите место или увеличьте лимит.`); project.status = "active"; project.archivedAt = null; project.updatedAt = new Date().toISOString(); audit(state, userId, "restore", "project", projectId, { name: project.name }); return true; }); }
   async function createPayment(userId, projectCount = 1) {
     projectCount = Number(projectCount); if (!Number.isInteger(projectCount) || projectCount < PLAN.minProjects || projectCount > PLAN.maxProjects) throw new Error(`Выберите от ${PLAN.minProjects} до ${PLAN.maxProjects} проектов.`);
     return mutate(async state => {
@@ -174,15 +177,49 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
       state.payments.push(payment); audit(state, userId, "create", "payment", payment.id, { amount: payment.amount, projectCount }); paymentLog(state, "checkout_created", { orderId: payment.orderId, amount: payment.amount, status: payment.status, source: "client" }); return payment;
     });
   }
-  async function completePayment(orderId, providerPaymentId = "", notifiedAmount) {
+  async function completePayment(orderId, providerPaymentId = "", notifiedAmount, source = "platega") {
     return mutate(async state => {
       const payment = state.payments.find(item => item.orderId === orderId); if (!payment) throw new Error("Заказ не найден.");
-      if (Number(notifiedAmount) !== payment.amount) { paymentLog(state, "callback_rejected", { orderId, amount: notifiedAmount, status: "rejected", source: "freekassa", message: "Сумма платежа не совпадает с заказом." }); throw new Error("Сумма платежа не совпадает с заказом."); }
-      if (payment.status === "paid") { paymentLog(state, "callback_duplicate", { orderId, providerPaymentId, amount: notifiedAmount, status: "paid", source: "freekassa" }); return payment; }
+      if (Number(notifiedAmount) !== payment.amount) { paymentLog(state, "callback_rejected", { orderId, amount: notifiedAmount, status: "rejected", source, message: "Сумма платежа не совпадает с заказом." }); throw new Error("Сумма платежа не совпадает с заказом."); }
+      if (payment.status === "paid") { paymentLog(state, "callback_duplicate", { orderId, providerPaymentId, amount: notifiedAmount, status: "paid", source }); return payment; }
       const user = state.users.find(item => item.id === payment.userId); if (!user) throw new Error("Пользователь заказа не найден.");
       const now = new Date(); const currentEnd = user.subscriptionUntil ? new Date(user.subscriptionUntil) : now; const end = new Date((currentEnd > now ? currentEnd : now).getTime()); end.setUTCDate(end.getUTCDate() + PLAN.days);
       Object.assign(user, { subscriptionUntil: end.toISOString(), projectLimit: payment.projectCount, status: "active", updatedAt: now.toISOString() });
-      Object.assign(payment, { status: "paid", providerPaymentId: String(providerPaymentId || ""), paidAt: now.toISOString() }); audit(state, "freekassa", "paid", "payment", payment.id, { amount: payment.amount }); paymentLog(state, "payment_confirmed", { orderId, providerPaymentId, amount: payment.amount, status: "paid", source: "freekassa" }); return payment;
+      Object.assign(payment, { status: "paid", providerPaymentId: String(providerPaymentId || ""), paidAt: now.toISOString() }); audit(state, source, "paid", "payment", payment.id, { amount: payment.amount }); paymentLog(state, "payment_confirmed", { orderId, providerPaymentId, amount: payment.amount, status: "paid", source }); return payment;
+    });
+  }
+  async function completePaymentByProviderTransactionId(transactionId, notifiedAmount) {
+    return mutate(async state => {
+      const payment = state.payments.find(item => item.id === transactionId || item.providerPaymentId === transactionId); if (!payment) throw new Error("Заказ не найден.");
+      if (Number(notifiedAmount) !== payment.amount) { paymentLog(state, "callback_rejected", { orderId: payment.orderId, providerPaymentId: transactionId, amount: notifiedAmount, status: "rejected", source: "platega", message: "Сумма платежа не совпадает с заказом." }); throw new Error("Сумма платежа не совпадает с заказом."); }
+      if (payment.status === "paid") { paymentLog(state, "callback_duplicate", { orderId: payment.orderId, providerPaymentId: transactionId, amount: notifiedAmount, status: "paid", source: "platega" }); return payment; }
+      const user = state.users.find(item => item.id === payment.userId); if (!user) throw new Error("Пользователь заказа не найден.");
+      const now = new Date(); const currentEnd = user.subscriptionUntil ? new Date(user.subscriptionUntil) : now; const end = new Date((currentEnd > now ? currentEnd : now).getTime()); end.setUTCDate(end.getUTCDate() + PLAN.days);
+      Object.assign(user, { subscriptionUntil: end.toISOString(), projectLimit: payment.projectCount, status: "active", updatedAt: now.toISOString() });
+      Object.assign(payment, { status: "paid", providerPaymentId: String(transactionId || ""), paidAt: now.toISOString() }); audit(state, "platega", "paid", "payment", payment.id, { amount: payment.amount }); paymentLog(state, "payment_confirmed", { orderId: payment.orderId, providerPaymentId: transactionId, amount: payment.amount, status: "paid", source: "platega" }); return payment;
+    });
+  }
+  async function attachPaymentProviderTransaction(orderId, providerPaymentId) {
+    return mutate(async state => {
+      const payment = state.payments.find(item => item.orderId === orderId); if (!payment) throw new Error("Заказ не найден.");
+      if (!providerPaymentId) return payment;
+      payment.providerPaymentId = String(providerPaymentId);
+      paymentLog(state, "checkout_provider_created", { orderId, providerPaymentId: payment.providerPaymentId, amount: payment.amount, status: payment.status, source: "platega" });
+      return payment;
+    });
+  }
+  async function setPaymentProviderStatus(providerPaymentId, providerStatus, message = "") {
+    return mutate(async state => {
+      const payment = state.payments.find(item => item.providerPaymentId === String(providerPaymentId) || item.orderId === String(providerPaymentId));
+      if (!payment) throw new Error("Заказ не найден.");
+      const normalized = String(providerStatus || "").toUpperCase();
+      if (payment.status === "paid" && normalized !== "CHARGEBACKED") return payment;
+      if (normalized === "CANCELED") payment.status = "failed";
+      else if (normalized === "CHARGEBACKED") payment.status = "chargebacked";
+      else return payment;
+      payment.updatedAt = new Date().toISOString();
+      paymentLog(state, "payment_status_changed", { orderId: payment.orderId, providerPaymentId, amount: payment.amount, status: payment.status, source: "platega", message });
+      return payment;
     });
   }
   async function logPaymentEvent(event, details = {}) { return mutate(async state => { paymentLog(state, event, details); return true; }); }
@@ -192,7 +229,8 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     const series = months.map(item => { const matching = paidPayments.filter(payment => String(payment.paidAt).startsWith(item.month)); return { ...item, amount: matching.reduce((sum, payment) => sum + payment.amount, 0), payments: matching.length }; });
     const users = state.users.map(user => { const projects = state.projects.filter(project => project.userId === user.id); const payments = state.payments.filter(payment => payment.userId === user.id).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); return { ...publicUser(user), projects, activeProjects: projects.filter(project => project.status !== "archived").length, revenue: payments.filter(payment => payment.status === "paid").reduce((sum, payment) => sum + payment.amount, 0), payments }; });
     const currentMonth = series.at(-1)?.amount || 0, previousMonth = series.at(-2)?.amount || 0;
-    return { plan: PLAN, users, projects: state.projects.map(project => ({ ...project, client: publicUser(state.users.find(user => user.id === project.userId) || {}) })), payments: state.payments.map(payment => ({ ...payment, email: state.users.find(user => user.id === payment.userId)?.email || "", clientName: state.users.find(user => user.id === payment.userId)?.name || "" })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), paymentLogs: state.paymentLogs.slice(0, 500), staff: state.staff.map(publicStaff), audit: state.audit.slice(0, 100), revenue: { total: paidPayments.reduce((sum, payment) => sum + payment.amount, 0), currentMonth, previousMonth, growthPercent: previousMonth ? Math.round(((currentMonth - previousMonth) / previousMonth) * 1000) / 10 : null, mrr: users.filter(user => isSubscriptionActive(user)).reduce((sum, user) => sum + user.projectLimit * PLAN.unitAmount, 0), series } };
+    const actorNames = new Map([...state.users, ...state.staff].map(account => [account.id, account.email]));
+    return { plan: PLAN, users, projects: state.projects.map(project => ({ ...project, client: publicUser(state.users.find(user => user.id === project.userId) || {}) })), payments: state.payments.map(payment => ({ ...payment, email: state.users.find(user => user.id === payment.userId)?.email || "", clientName: state.users.find(user => user.id === payment.userId)?.name || "" })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), paymentLogs: state.paymentLogs.slice(0, 500), staff: state.staff.map(publicStaff), audit: state.audit.slice(0, 100).map(item => ({ ...item, actor: actorNames.get(item.actor) || item.actor })), revenue: { total: paidPayments.reduce((sum, payment) => sum + payment.amount, 0), currentMonth, previousMonth, growthPercent: previousMonth ? Math.round(((currentMonth - previousMonth) / previousMonth) * 1000) / 10 : null, mrr: users.filter(user => isSubscriptionActive(user)).reduce((sum, user) => sum + user.projectLimit * PLAN.unitAmount, 0), series } };
   }
   async function updateUser(userId, changes, actor = "owner") {
     return mutate(async state => { const user = state.users.find(item => item.id === userId); if (!user) throw new Error("Пользователь не найден."); if (changes.status && ["active", "pending_payment", "blocked"].includes(changes.status)) user.status = changes.status; if (changes.subscriptionUntil !== undefined) user.subscriptionUntil = changes.subscriptionUntil ? new Date(changes.subscriptionUntil).toISOString() : null; if (changes.projectLimit !== undefined) { const limit = Number(changes.projectLimit); if (!Number.isInteger(limit) || limit < PLAN.minProjects || limit > PLAN.maxProjects) throw new Error(`Лимит должен быть от ${PLAN.minProjects} до ${PLAN.maxProjects}.`); user.projectLimit = limit; } for (const key of ["name", "company", "phone"]) if (changes[key] !== undefined) user[key] = String(changes[key]).trim().slice(0, 160); user.updatedAt = new Date().toISOString(); audit(state, actor, "update", "client", user.id, { status: user.status, projectLimit: user.projectLimit }); return publicUser(user); });
@@ -206,7 +244,19 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
   }
   async function deleteStaff(staffId, actor = "owner") { return mutate(async state => { const before = state.staff.length; state.staff = state.staff.filter(item => item.id !== staffId); if (state.staff.length === before) return false; audit(state, actor, "delete", "staff", staffId); return true; }); }
 
-  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, listProjects, createProject, deleteProject, ownsProject, createPayment, completePayment, logPaymentEvent, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
+  async function listPayments(userId) { const state = await read(); return state.payments.filter(payment => payment.userId === userId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ userId: _, ...payment }) => payment); }
+  async function recordAudit(actor, action, entityType, entityId, details = {}) { return mutate(async state => { audit(state, actor, action, entityType, entityId, details); return true; }); }
+
+  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, listProjects, createProject, deleteProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
 }
 function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
-module.exports = { PLAN, createSaasStore, hashPassword, verifyPassword, isSubscriptionActive, normalizeEmail };
+const SUBSCRIPTION_GRACE_DAYS = 7;
+function subscriptionGraceUntil(user) {
+  if (!user?.subscriptionUntil) return null;
+  const until = new Date(user.subscriptionUntil);
+  if (!Number.isFinite(until.getTime())) return null;
+  until.setUTCDate(until.getUTCDate() + SUBSCRIPTION_GRACE_DAYS);
+  return until.toISOString();
+}
+function hasSubscriptionReadAccess(user) { return isSubscriptionActive(user) || (user?.status === "active" && Boolean(subscriptionGraceUntil(user)) && new Date(subscriptionGraceUntil(user)) > new Date()); }
+module.exports = { PLAN, createSaasStore, hashPassword, verifyPassword, isSubscriptionActive, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail };

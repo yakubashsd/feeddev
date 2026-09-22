@@ -11,9 +11,10 @@ const path = require("path");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
-const { PLAN, createSaasStore, isSubscriptionActive, normalizeEmail } = require("./saas-store");
+const { XMLParser, XMLValidator } = require("fast-xml-parser");
+const { PLAN, createSaasStore, isSubscriptionActive, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail } = require("./saas-store");
 const { createProjectStateStore } = require("./project-state-store");
-const { createFreeKassa } = require("./freekassa");
+const { createPlatega } = require("./platega");
 const { synchronizePrices } = require("./feed-sync");
 const { download: safeDownload, downloadBuffer: safeDownloadBuffer } = require("./feed-monitor");
 
@@ -48,15 +49,24 @@ const SMTP_PASS = String(process.env.SMTP_PASS || "");
 const EMAIL_FROM = String(process.env.EMAIL_FROM || SMTP_USER || "");
 const TRUST_PROXY = String(process.env.TRUST_PROXY || "false").toLowerCase() === "true";
 const PASSWORD_RESET_MINUTES = Math.max(5, Math.min(60, Number(process.env.PASSWORD_RESET_MINUTES || 30)));
-const BILLING_MODE = String(process.env.BILLING_MODE || "manual").toLowerCase() === "freekassa" ? "freekassa" : "manual";
+const BILLING_MODE = String(process.env.BILLING_MODE || "manual").toLowerCase() === "platega" ? "platega" : "manual";
+const OFFER_VERSION = "2026-09-22";
+const PRIVACY_VERSION = "2026-09-22";
+const CONSENT_VERSION = "2026-09-22";
+const ONLINE_RECEIPTS_READY = String(process.env.ONLINE_RECEIPTS_READY || "false").toLowerCase() === "true";
+const LEGAL_PROFILE_CONFIRMED = String(process.env.LEGAL_PROFILE_CONFIRMED || "false").toLowerCase() === "true";
 const LEGAL = {
-  name: String(process.env.LEGAL_NAME || "ИП Якубаш С.Д."),
+  name: String(process.env.LEGAL_NAME || "ИП Якубаш Сергей Дмитриевич"),
   inn: String(process.env.LEGAL_INN || "720326517332"),
   ogrnip: String(process.env.LEGAL_OGRNIP || "326723200087150"),
-  address: String(process.env.LEGAL_ADDRESS || ""),
-  email: String(process.env.LEGAL_EMAIL || EMAIL_FROM.match(/[\w.+-]+@[\w.-]+/)?.[0] || ""),
+  address: String(process.env.LEGAL_ADDRESS || "Тюменская область, г. Тюмень"),
+  email: String(process.env.LEGAL_EMAIL || "yakubashsd@gmail.com"),
   phone: String(process.env.LEGAL_PHONE || "")
 };
+const LEGAL_PROFILE_READY = Boolean(
+  LEGAL_PROFILE_CONFIRMED && LEGAL.name.trim().split(/\s+/).length >= 4 && /^\d{12}$/.test(LEGAL.inn) && /^\d{15}$/.test(LEGAL.ogrnip) &&
+  LEGAL.address.trim().length >= 8 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(LEGAL.email)
+);
 const rateBuckets = new Map();
 const MONITOR_INTERVAL_MINUTES = 12 * 60;
 const telegramLinks = require('./telegram-link').createTelegramLinks({file:path.join(DATA_DIR,'telegram-links.json')});
@@ -66,12 +76,13 @@ const saasStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
 const projectStateStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
   ? createProjectStateStore({ dataDir: DATA_DIR, secret: process.env.SAAS_DATA_SECRET })
   : null;
-const freeKassa = createFreeKassa({
-  merchantId: process.env.FREEKASSA_MERCHANT_ID,
-  secret1: process.env.FREEKASSA_SECRET_1,
-  secret2: process.env.FREEKASSA_SECRET_2,
-  paymentUrl: process.env.FREEKASSA_PAYMENT_URL
+const platega = createPlatega({
+  merchantId: process.env.PLATEGA_MERCHANT_ID,
+  secret: process.env.PLATEGA_API_KEY,
+  apiBase: process.env.PLATEGA_API_BASE,
+  paymentMethod: process.env.PLATEGA_PAYMENT_METHOD
 });
+const PLATEGA_CHECKOUT_READY = BILLING_MODE === "platega" && platega.configured() && ONLINE_RECEIPTS_READY;
 async function telegramApi(method, body={}) {
   if(!TELEGRAM_BOT_TOKEN)throw Error('Бот ещё не настроен. Обратитесь к администратору.');
   const response=await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
@@ -295,22 +306,26 @@ async function deleteLayoutRecord(id) {
   return true;
 }
 
-async function deleteProjectAssets(userId, projectId) {
-  const feeds = await readFeeds();
-  const projectFeeds = feeds.filter(feed => feed.ownerId === userId && feed.projectId === projectId);
+async function persistReleaseXml(slug, releaseId, xml) {
   if (!usesBlobStorage()) {
-    for (const feed of projectFeeds) {
-      const filePath = path.join(FEEDS_DIR, `${feed.slug}.xml`);
-      if (filePath.startsWith(FEEDS_DIR) && fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
-    if (projectFeeds.length) writeLocalIndex(feeds.filter(feed => !projectFeeds.includes(feed)));
-  } else {
-    await Promise.allSettled(projectFeeds.flatMap(feed => [del(`feeds/${feed.slug}.xml`), del(`feed-records/${feed.slug}.json`)]));
+    const directory = path.join(FEEDS_DIR, "releases", slug);
+    fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(path.join(directory, `${releaseId}.xml`), xml, { mode: 0o600, flag: "wx" });
+    return;
   }
-  const layouts = await readLayouts();
-  for (const layout of layouts.filter(item => item.ownerId === userId && item.projectId === projectId)) await deleteLayoutRecord(layout.id);
-  if (!process.env.VERCEL) monitor.replace(projectId, []);
-  telegramLinks.disconnect(userId, projectId);
+  await put(`feed-releases/${slug}/${releaseId}.xml`, xml, { access: "public", addRandomSuffix: false, contentType: "application/xml; charset=utf-8", cacheControlMaxAge: 31536000 });
+}
+
+async function readReleaseXml(feed, release) {
+  if (usesBlobStorage()) {
+    if (!release.url) throw new Error("Архив выпуска недоступен.");
+    const response = await fetch(release.url, { cache: "no-store" });
+    if (!response.ok) throw new Error("Архив выпуска недоступен.");
+    return response.text();
+  }
+  const target = path.join(FEEDS_DIR, "releases", feed.slug, `${release.id}.xml`);
+  if (!target.startsWith(path.join(FEEDS_DIR, "releases") + path.sep) || !fs.existsSync(target)) throw new Error("Архив выпуска не найден.");
+  return fs.readFileSync(target, "utf8");
 }
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
@@ -319,7 +334,7 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
+    "Access-Control-Allow-Headers": "Content-Type, If-Match"
   });
   res.end(type.includes("json") ? JSON.stringify(body) : body);
 }
@@ -355,7 +370,7 @@ function protectSensitiveRoute(req, res, pathname) {
     "/api/auth/forgot-password": ["forgot", 4, 30 * 60 * 1000],
     "/api/auth/reset-password": ["reset", 8, 30 * 60 * 1000],
     "/api/billing/checkout": ["checkout", 12, 15 * 60 * 1000],
-    "/api/billing/freekassa/callback": ["freekassa", 180, 60 * 1000]
+    "/api/billing/platega/callback": ["platega", 180, 60 * 1000]
   };
   const policy = policies[pathname];
   return policy ? enforceRateLimit(req, res, ...policy) : false;
@@ -530,6 +545,25 @@ function validateFeedPayload(payload) {
   if (!xml) throw new Error("XML фида пустой.");
   if (!xml.includes("<") || !xml.includes(">")) throw new Error("Содержимое не похоже на XML.");
   const platform = String(payload.platform || "cian").trim() || "cian";
+  const invalid = message => { const error = new Error(message); error.status = 422; throw error; };
+  if (platform === "domclick") invalid("Постоянная публикация Домклик закрыта до подтверждения схемы агрегатором.");
+  const wellFormed = XMLValidator.validate(xml);
+  if (wellFormed !== true) invalid("Публикация остановлена: XML содержит синтаксическую ошибку.");
+  const document = new XMLParser({ ignoreAttributes: false, trimValues: true, cdataPropName: "__cdata" }).parse(xml);
+  const rows = platform === "avito" ? document?.Ads?.Ad : platform === "yandex" ? document?.["realty-feed"]?.offer : document?.feed?.object;
+  const items = rows ? (Array.isArray(rows) ? rows : [rows]) : [];
+  if (!items.length) invalid("Публикация остановлена: в XML не найдено объявлений.");
+  const text = value => typeof value === "object" && value !== null ? String(value.__cdata || value["#text"] || "").trim() : String(value ?? "").trim();
+  const missing = items.flatMap((item, index) => {
+    const checks = platform === "avito"
+      ? [["Id", item.Id], ["Description", item.Description], ["Address", item.Address], ["Price", item.Price]]
+      : platform === "yandex"
+        ? [["internal-id", item["@_internal-id"]], ["description", item.description], ["address", item.location?.address], ["price", item.price?.value]]
+        : [["ExternalId", item.ExternalId], ["Description", item.Description], ["Address", item.Address], ["Price", item.BargainTerms?.Price]];
+    return checks.filter(([, value]) => !text(value)).map(([name]) => `объявление ${index + 1}: ${name}`);
+  });
+  if (missing.length) invalid(`Публикация остановлена: обязательные поля не заполнены (${missing.slice(0, 5).join(", ")}).`);
+  if (Number(payload.objectCount) !== items.length) invalid(`Публикация остановлена: в XML ${items.length} объявлений, а указано ${Number(payload.objectCount) || 0}.`);
   return {
     xml,
     platform,
@@ -559,7 +593,35 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     slug = `${slug}-${crypto.randomBytes(3).toString("hex")}`;
   }
 
+  const releaseHistory = Array.isArray(existing?.releases) ? [...existing.releases] : [];
+  let previousXml = "";
+  if (existing) {
+    try {
+      if (usesBlobStorage() && existing.blobUrl) {
+        const response = await fetch(existing.blobUrl, { cache: "no-store" });
+        if (response.ok) previousXml = await response.text();
+      } else {
+        const previousFile = path.join(FEEDS_DIR, `${slug}.xml`);
+        if (fs.existsSync(previousFile)) previousXml = fs.readFileSync(previousFile, "utf8");
+      }
+    } catch (error) {
+      console.warn(`Could not read previous feed release ${slug}:`, error.message);
+    }
+  }
+  if (previousXml && previousXml !== data.xml && !releaseHistory.some(release => release.checksum === crypto.createHash("sha256").update(previousXml).digest("hex"))) {
+    const releaseId = crypto.randomUUID();
+    const archived = await persistReleaseXml(slug, releaseId, previousXml);
+    releaseHistory.unshift({ id: releaseId, version: Math.max(0, ...releaseHistory.map(item => Number(item.version) || 0)) + 1, createdAt: existing.updatedAt || existing.createdAt, objectCount: Number(existing.objectCount || 0), platform: existing.platform, checksum: crypto.createHash("sha256").update(previousXml).digest("hex"), ...(archived?.url ? { url: archived.url } : {}) });
+  }
+
+  const shouldAddRelease = !existing || previousXml !== data.xml;
   const blob = await persistFeedXml(slug, data.xml);
+  const checksum = crypto.createHash("sha256").update(data.xml).digest("hex");
+  if (shouldAddRelease) {
+    const releaseId = crypto.randomUUID();
+    const releaseRecord = await persistReleaseXml(slug, releaseId, data.xml);
+    releaseHistory.unshift({ id: releaseId, version: Math.max(0, ...releaseHistory.map(item => Number(item.version) || 0)) + 1, createdAt: now, objectCount: Number(payload.objectCount || 0), platform: data.platform, checksum, ...(releaseRecord?.url ? { url: releaseRecord.url } : {}) });
+  }
 
   const record = {
     id: slug,
@@ -572,17 +634,23 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     autoSyncIntervalMinutes: normalizeAutoSyncInterval(payload.autoSyncIntervalMinutes),
     lastAutoSyncAt: existing?.lastAutoSyncAt || "",
     nextAutoSyncAt: existing?.nextAutoSyncAt || "",
+    lastSuccessAt: now,
+    nextRunAt: normalizeAutoSyncInterval(payload.autoSyncIntervalMinutes) ? new Date(Date.now() + normalizeAutoSyncInterval(payload.autoSyncIntervalMinutes) * 60 * 1000).toISOString() : "",
     autoSyncError: "",
+    feedStale: false,
+    syncFailureCount: 0,
     name: data.name || `${data.platform} feed`,
     objectCount: Number(payload.objectCount || 0),
     file: `feeds/${slug}.xml`,
     blobUrl: blob?.url || "",
+    releases: releaseHistory.slice(0, 100),
     url: feedUrl(req, slug),
     updatedAt: now,
     createdAt: existing?.createdAt || now
   };
 
   await persistFeedRecord(record);
+  if (APP_MODE === "external" && actor?.userId) await saasStore.recordAudit(actor.userId, existing ? "publish_update" : "publish", "feed", slug, { projectId: record.projectId, platform: record.platform, objectCount: record.objectCount, releaseCount: record.releases.length }).catch(error => console.error("Audit log:", error.message));
   return record;
 }
 
@@ -597,6 +665,20 @@ async function syncPublishedFeed(record) {
   const result = synchronizePrices(publishedXml, sourceXml);
   if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
   if (result.updated) {
+    const checksum = crypto.createHash("sha256").update(publishedXml).digest("hex");
+    const history = Array.isArray(record.releases) ? [...record.releases] : [];
+    if (!history.some(item => item.checksum === checksum)) {
+      const id = crypto.randomUUID();
+      await persistReleaseXml(record.slug, id, publishedXml);
+      history.unshift({ id, version: Math.max(0, ...history.map(item => Number(item.version) || 0)) + 1, createdAt: record.updatedAt || record.createdAt, objectCount: record.objectCount, platform: record.platform, checksum });
+    }
+    const nextChecksum = crypto.createHash("sha256").update(result.xml).digest("hex");
+    if (!history.some(item => item.checksum === nextChecksum)) {
+      const id = crypto.randomUUID();
+      await persistReleaseXml(record.slug, id, result.xml);
+      history.unshift({ id, version: Math.max(0, ...history.map(item => Number(item.version) || 0)) + 1, createdAt: new Date().toISOString(), objectCount: record.objectCount, platform: record.platform, checksum: nextChecksum });
+    }
+    record.releases = history.slice(0, 100);
     const tempPath = `${filePath}.${process.pid}.tmp`;
     fs.writeFileSync(tempPath, result.xml);
     fs.renameSync(tempPath, filePath);
@@ -604,7 +686,11 @@ async function syncPublishedFeed(record) {
   const now = new Date();
   record.lastAutoSyncAt = now.toISOString();
   record.nextAutoSyncAt = new Date(now.getTime() + record.autoSyncIntervalMinutes * 60 * 1000).toISOString();
+  record.nextRunAt = record.nextAutoSyncAt;
   record.autoSyncError = "";
+  record.lastSuccessAt = now.toISOString();
+  record.feedStale = false;
+  record.syncFailureCount = 0;
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
   console.log(`Feed sync: ${record.slug}, prices updated: ${result.updated}/${result.checked}`);
@@ -619,7 +705,7 @@ async function runScheduledFeedSync() {
     for (const record of feeds) {
       const interval = normalizeAutoSyncInterval(record.autoSyncIntervalMinutes);
       if (!interval || !record.sourceUrl || record.sourceType !== "url") continue;
-      const dueAt = new Date(record.nextAutoSyncAt || record.updatedAt || 0).getTime();
+      const dueAt = new Date(record.nextRunAt || record.nextAutoSyncAt || record.updatedAt || 0).getTime();
       if (Number.isFinite(dueAt) && dueAt > now) continue;
       try {
         record.autoSyncIntervalMinutes = interval;
@@ -629,6 +715,11 @@ async function runScheduledFeedSync() {
         record.lastAutoSyncAt = attemptedAt.toISOString();
         record.nextAutoSyncAt = new Date(attemptedAt.getTime() + interval * 60 * 1000).toISOString();
         record.autoSyncError = error.message || "Не удалось обновить источник";
+        record.lastSyncErrorAt = attemptedAt.toISOString();
+        record.syncFailureCount = Number(record.syncFailureCount || 0) + 1;
+        const retryMinutes = Math.min(60, 2 ** Math.min(5, record.syncFailureCount - 1));
+        record.nextRunAt = new Date(attemptedAt.getTime() + retryMinutes * 60 * 1000).toISOString();
+        record.feedStale = !record.lastSuccessAt || attemptedAt.getTime() - new Date(record.lastSuccessAt).getTime() > interval * 2 * 60 * 1000;
         await persistFeedRecord(record);
         console.error(`Feed sync: ${record.slug}:`, record.autoSyncError);
       }
@@ -780,11 +871,33 @@ async function sendMonitorAlerts(payload = {}) {
 }
 
 function serveStatic(req, res, pathname) {
-  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
-  const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : path.join(ROOT, pathname);
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
+  const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : pathname === "/legal.html" ? path.join(ROOT, "legal-documents.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
   const ext = path.extname(filePath).toLowerCase();
+  if (pathname === "/legal.html") {
+    const escapeHtml = value => String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    const email = escapeHtml(LEGAL.email);
+    const emailHref = LEGAL.email ? `mailto:${encodeURIComponent(LEGAL.email)}` : "#";
+    const html = fs.readFileSync(filePath, "utf8")
+      .replaceAll("@@LEGAL_ADDRESS@@", escapeHtml(LEGAL.address || "не указан"))
+      .replaceAll("@@LEGAL_PHONE@@", escapeHtml(LEGAL.phone || "не указан"))
+      .replaceAll("@@LEGAL_EMAIL@@", email || "не указан")
+      .replaceAll("@@LEGAL_EMAIL_HREF@@", emailHref)
+      .replaceAll("@@LEGAL_NAME@@", escapeHtml(LEGAL.name))
+      .replaceAll("@@LEGAL_INN@@", escapeHtml(LEGAL.inn))
+      .replaceAll("@@LEGAL_OGRNIP@@", escapeHtml(LEGAL.ogrnip))
+      .replaceAll("@@OFFER_VERSION@@", OFFER_VERSION)
+      .replaceAll("@@PRIVACY_VERSION@@", PRIVACY_VERSION)
+      .replaceAll("@@CONSENT_VERSION@@", CONSENT_VERSION)
+      .replaceAll('<span data-address></span>', escapeHtml(LEGAL.address || "не указан"))
+      .replaceAll('<span data-phone></span>', escapeHtml(LEGAL.phone || "не указан"))
+      .replaceAll('<a data-email></a>', `<a href="${emailHref}">${email || "не указан"}</a>`)
+      .replace(/<script>fetch\('\/api\/public-config'\)[\s\S]*?<\/script>/g, "");
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    return res.end(html);
+  }
   res.writeHead(200, {
     "Content-Type": mimeTypes[ext] || "application/octet-stream",
     "Cache-Control": "no-store"
@@ -802,11 +915,14 @@ async function handleApi(req, res, url) {
       mode: APP_MODE,
       storage: usesBlobStorage() ? "vercel-blob" : "local",
       feedPublishingReady: usesBlobStorage() || !process.env.VERCEL,
+      backgroundSyncReady: Boolean(APP_MODE === "external" && !usesBlobStorage() && canUseLocalStorage()),
+      backgroundSyncIntervalMinutes: 1,
       telegramAlertsReady: telegramAlertsEnabled(),
       emailAlertsReady: emailAlertsEnabled(),
       billingMode: APP_MODE === "external" ? BILLING_MODE : null,
-      billingReady: APP_MODE === "external" ? BILLING_MODE === "manual" || freeKassa.configured() : null,
-      legalReady: APP_MODE === "external" ? Boolean(LEGAL.name && LEGAL.inn && LEGAL.ogrnip && LEGAL.address && LEGAL.email) : null
+      billingReady: APP_MODE === "external" ? BILLING_MODE === "manual" || PLATEGA_CHECKOUT_READY : null,
+      legalReady: APP_MODE === "external" ? LEGAL_PROFILE_READY : null,
+      onlineReceiptsReady: APP_MODE === "external" ? ONLINE_RECEIPTS_READY : null
     });
   }
 
@@ -823,16 +939,21 @@ async function handleApi(req, res, url) {
       role: actor?.role || null,
       user: actor?.user || null,
       subscriptionActive: actor?.user ? isSubscriptionActive(actor.user) : APP_MODE === "internal",
+      subscriptionReadOnly: actor?.user ? hasSubscriptionReadAccess(actor.user) && !isSubscriptionActive(actor.user) : false,
+      subscriptionGraceUntil: actor?.user && hasSubscriptionReadAccess(actor.user) && !isSubscriptionActive(actor.user) ? subscriptionGraceUntil(actor.user) : null,
       plan: APP_MODE === "external" ? PLAN : null,
       billingMode: APP_MODE === "external" ? BILLING_MODE : null,
-      supportEmail: APP_MODE === "external" ? LEGAL.email : null
+      supportEmail: APP_MODE === "external" ? LEGAL.email : null,
+      legalReady: APP_MODE === "external" ? LEGAL_PROFILE_READY : null,
+      onlineReceiptsReady: APP_MODE === "external" ? ONLINE_RECEIPTS_READY : null
     });
   }
 
   if (req.method === "POST" && url.pathname === "/api/auth-register") {
     if (APP_MODE !== "external" || !saasStore) return sendError(res, 404, "Регистрация недоступна.");
+    if (!LEGAL_PROFILE_READY) return sendError(res, 503, "Регистрация временно недоступна: заполните реквизиты и контактный email в настройках сервиса.");
     const payload = await parseBody(req);
-    const user = await saasStore.register(payload);
+    const user = await saasStore.register({ ...payload, offerVersion: OFFER_VERSION, privacyVersion: PRIVACY_VERSION, consentVersion: CONSENT_VERSION });
     setSessionCookie(req, res, createSessionToken({ role: "client", userId: user.id, sessionVersion: user.sessionVersion }));
     return send(res, 201, { authenticated: true, user, subscriptionActive: false, plan: PLAN });
   }
@@ -898,19 +1019,34 @@ async function handleApi(req, res, url) {
     return servePublicLayout(req, res, String(url.searchParams.get("file") || ""));
   }
 
-  if (req.method === "POST" && url.pathname === "/api/billing/freekassa/callback") {
-    if (APP_MODE !== "external" || !saasStore || !freeKassa.configured()) return sendError(res, 503, "Касса не настроена.");
+  if (req.method === "POST" && url.pathname === "/api/billing/platega/callback") {
+    if (APP_MODE !== "external" || !saasStore || !platega.configured()) return sendError(res, 503, "Касса не настроена.");
     const payload = await parseBody(req);
-    const orderId = String(payload.MERCHANT_ORDER_ID || payload.order_id || "");
-    const logBase = { orderId, providerPaymentId: payload.intid || payload.INTID || "", amount: payload.AMOUNT || payload.amount, source: "freekassa" };
-    if (!freeKassa.verifyNotification(payload)) {
+    const transactionId = String(payload.id || payload.transactionId || "");
+    const callbackAmount = payload.amount ?? payload.paymentDetails?.amount;
+    const status = String(payload.status || "").toUpperCase();
+    const logBase = { providerPaymentId: transactionId, amount: callbackAmount, status, source: "platega" };
+    if (!platega.verifyNotification(req.headers)) {
       await saasStore.logPaymentEvent("callback_rejected", { ...logBase, status: "rejected", message: "Неверная подпись уведомления." });
       return sendError(res, 403, "Неверная подпись уведомления.");
     }
     await saasStore.logPaymentEvent("callback_received", { ...logBase, status: "received" });
-    try { await saasStore.completePayment(orderId, logBase.providerPaymentId, logBase.amount); }
+    if (!transactionId) {
+      await saasStore.logPaymentEvent("callback_rejected", { ...logBase, status: "rejected", message: "В уведомлении Platega нет идентификатора транзакции." });
+      return sendError(res, 400, "Нет идентификатора транзакции.");
+    }
+    if (status !== "CONFIRMED") {
+      if (transactionId && ["CANCELED", "CHARGEBACKED"].includes(status)) {
+        try { await saasStore.setPaymentProviderStatus(transactionId, status, "Статус получен от Platega."); }
+        catch (error) { await saasStore.logPaymentEvent("callback_error", { ...logBase, status: "error", message: error.message }); }
+        return send(res, 200, { received: true });
+      }
+      await saasStore.logPaymentEvent("callback_rejected", { ...logBase, status: status || "unknown", message: "Платёж не подтверждён." });
+      return send(res, 200, { received: true });
+    }
+    try { await saasStore.completePaymentByProviderTransactionId(transactionId, callbackAmount); }
     catch (error) { await saasStore.logPaymentEvent("callback_error", { ...logBase, status: "error", message: error.message }); throw error; }
-    return send(res, 200, "YES", "text/plain; charset=utf-8");
+    return send(res, 200, { received: true });
   }
 
   const actor = await currentActor(req);
@@ -920,7 +1056,16 @@ async function handleApi(req, res, url) {
 
   if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/projects") {
     if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
-    return send(res, 200, { projects: await saasStore.listProjects(actor.userId), limit: actor.user.projectLimit || PLAN.minProjects });
+    const projectList = await saasStore.listProjects(actor.userId);
+    const feeds = await readFeeds();
+    const summaries = await Promise.all(projectList.map(async project => {
+      const projectFeeds = feeds.filter(feed => feed.ownerId === actor.userId && feed.projectId === project.id);
+      const saved = await projectStateStore.get(actor.userId, project.id);
+      const editor = saved.state?.["feed-generator-cian-v2-" + project.id];
+      const stale = projectFeeds.some(feed => feed.feedStale || (feed.nextAutoSyncAt && new Date(feed.nextAutoSyncAt).getTime() < Date.now() && feed.autoSyncError));
+      return { ...project, summary: { sourceCount: Array.isArray(saved.state?.["feed-generator-sources-v1-" + project.id]) ? saved.state["feed-generator-sources-v1-" + project.id].length : 0, objectCount: Number(editor?.objects?.length || projectFeeds.at(0)?.objectCount || 0), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", feeds: projectFeeds.map(feed => ({ id: feed.id, name: feed.name, url: feed.url, platform: feed.platform, objectCount: feed.objectCount, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
+    }));
+    return send(res, 200, { projects: summaries, limit: actor.user.projectLimit || PLAN.minProjects });
   }
 
   if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/projects") {
@@ -932,31 +1077,88 @@ async function handleApi(req, res, url) {
   const projectStateMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)\/state$/i) : null;
   if (projectStateMatch && ["GET", "PUT"].includes(req.method)) {
     if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
-    if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 403, "Проект недоступен.");
-    if (req.method === "GET") return send(res, 200, await projectStateStore.get(actor.userId, projectStateMatch[1]));
+    if (!await saasStore.hasProject(actor.userId, projectStateMatch[1])) return sendError(res, 403, "Проект недоступен.");
+    if (req.method === "GET") {
+      if (!hasSubscriptionReadAccess(actor.user)) return sendError(res, 402, "Льготный период закончился. Продлите тариф, чтобы открыть проекты.");
+      const result = await projectStateStore.get(actor.userId, projectStateMatch[1]);
+      res.setHeader("ETag", `"${result.revision}"`);
+      return send(res, 200, result);
+    }
+    if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 409, "Архивный проект доступен только для просмотра.");
     if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для сохранения проекта оплатите тариф.");
     const payload = await parseBody(req);
-    return send(res, 200, await projectStateStore.put(actor.userId, projectStateMatch[1], payload.state));
+    const expected = req.headers["if-match"]?.replace(/^\"|\"$/g, "");
+    try {
+      const saved = await projectStateStore.put(actor.userId, projectStateMatch[1], payload.state, expected === undefined ? undefined : Number(expected));
+      await saasStore.recordAudit(actor.userId, "save", "project-state", projectStateMatch[1], { revision: saved.revision }).catch(error => console.error("Audit log:", error.message));
+      res.setHeader("ETag", `"${saved.revision}"`);
+      return send(res, 200, saved);
+    } catch (error) {
+      if (error.code === "REVISION_CONFLICT") return send(res, 409, { error: error.message, current: error.current });
+      throw error;
+    }
+  }
+
+  const releaseMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/releases(?:\/([a-f0-9-]+)\/rollback)?$/i) : null;
+  if (releaseMatch && ["GET", "POST"].includes(req.method)) {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
+    const feeds = await readFeeds();
+    const feed = feeds.find(item => item.slug === releaseMatch[1] && item.ownerId === actor.userId);
+    if (!feed) return sendError(res, 404, "Фид не найден.");
+    if (req.method === "GET" && !releaseMatch[2]) return send(res, 200, { releases: (feed.releases || []).map(({ id, version, createdAt, objectCount, platform, checksum }) => ({ id, version, createdAt, objectCount, platform, checksum })) });
+    if (req.method !== "POST" || !releaseMatch[2]) return sendError(res, 405, "Метод не поддерживается.");
+    if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для отката выпуска продлите тариф.");
+    const release = (feed.releases || []).find(item => item.id === releaseMatch[2]);
+    if (!release) return sendError(res, 404, "Выпуск не найден.");
+    const xml = await readReleaseXml(feed, release);
+    const restored = await saveFeed(req, { ...feed, xml, platform: release.platform, objectCount: release.objectCount, projectId: feed.projectId, sourceUrl: feed.sourceUrl, sourceType: feed.sourceType }, feed.slug, actor);
+    await saasStore.recordAudit(actor.userId, "rollback", "feed", feed.slug, { releaseId: release.id, version: release.version, projectId: feed.projectId }).catch(error => console.error("Audit log:", error.message));
+    return send(res, 200, restored);
   }
 
   const projectDeleteMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)$/i) : null;
   if (projectDeleteMatch && req.method === "DELETE") {
     if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
     const deleted = await saasStore.deleteProject(actor.userId, projectDeleteMatch[1]);
-    if (deleted) {
-      await projectStateStore.remove(actor.userId, projectDeleteMatch[1]);
-      await deleteProjectAssets(actor.userId, projectDeleteMatch[1]);
+    return send(res, deleted ? 200 : 404, deleted ? { archived: true } : { error: "Проект не найден." });
+  }
+
+  const restoreProjectMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)\/restore$/i) : null;
+  if (restoreProjectMatch && req.method === "POST") {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
+    if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для восстановления проекта продлите подписку.");
+    try {
+      const restored = await saasStore.restoreProject(actor.userId, restoreProjectMatch[1]);
+      return send(res, restored ? 200 : 404, restored ? { restored: true } : { error: "Проект не найден." });
+    } catch (error) {
+      return sendError(res, 409, error.message);
     }
-    return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Проект не найден." });
+  }
+
+  if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/billing/payments") {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
+    return send(res, 200, { payments: await saasStore.listPayments(actor.userId), plan: PLAN, subscriptionUntil: actor.user.subscriptionUntil || null });
   }
 
   if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/billing/checkout") {
     if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
-    if (BILLING_MODE !== "freekassa") return sendError(res, 409, LEGAL.email ? `Онлайн-оплата пока не подключена. Для выставления счёта напишите на ${LEGAL.email}.` : "Онлайн-оплата пока не подключена. Обратитесь к администратору сервиса.");
-    if (!freeKassa.configured()) return sendError(res, 503, "FreeKassa ещё не настроена администратором.");
+    if (BILLING_MODE !== "platega") return sendError(res, 409, LEGAL.email ? `Онлайн-оплата пока не подключена. Для выставления счёта напишите на ${LEGAL.email}.` : "Онлайн-оплата пока не подключена. Обратитесь к администратору сервиса.");
+    if (!PLATEGA_CHECKOUT_READY) return sendError(res, 503, ONLINE_RECEIPTS_READY ? "Platega ещё не настроена администратором." : "Онлайн-оплата временно отключена: настройка кассы и фискализации чеков ещё не подтверждена.");
     const payload = await parseBody(req);
     const payment = await saasStore.createPayment(actor.userId, payload.projectCount);
-    return send(res, 201, { orderId: payment.orderId, url: freeKassa.checkoutUrl({ ...payment, email: actor.user.email }) });
+    try {
+      const result = await platega.checkoutUrl({
+        ...payment,
+        email: actor.user.email,
+        returnUrl: PUBLIC_BASE_URL || `https://${req.headers.host}/`,
+        failedUrl: PUBLIC_BASE_URL || `https://${req.headers.host}/`
+      });
+      if (result.transactionId) await saasStore.attachPaymentProviderTransaction(payment.orderId, result.transactionId);
+      return send(res, 201, { orderId: payment.orderId, transactionId: result.transactionId, url: result.url });
+    } catch (error) {
+      await saasStore.setPaymentProviderStatus(payment.orderId, "CANCELED", error.message);
+      throw error;
+    }
   }
 
   if (APP_MODE === "external" && url.pathname === "/api/admin") {
@@ -992,8 +1194,8 @@ async function handleApi(req, res, url) {
     return sendError(res, 403, "Раздел доступен клиентам.");
   }
 
-  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !isSubscriptionActive(actor.user)) {
-    return sendError(res, 402, "Для работы с сервисом оплатите тариф от 7 500 ₽ в месяц.");
+  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !isSubscriptionActive(actor.user) && (!hasSubscriptionReadAccess(actor.user) || req.method !== "GET") && !["/api/billing/payments", "/api/projects"].includes(url.pathname)) {
+    return sendError(res, 402, "Для работы с сервисом оплатите тариф от 5 000 ₽ в месяц.");
   }
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
@@ -1179,7 +1381,7 @@ async function handleRequest(req, res) {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mc.yandex.ru; connect-src 'self' https://mc.yandex.ru https://yandex.ru; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://pay.freekassa.ru");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mc.yandex.ru; connect-src 'self' https://mc.yandex.ru https://yandex.ru https://app.platega.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://app.platega.io https://pay.platega.io");
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.(php|xml)$/i);
@@ -1196,7 +1398,7 @@ async function handleRequest(req, res) {
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res, url);
     return serveStatic(req, res, decodeURIComponent(url.pathname));
   } catch (error) {
-    return sendError(res, 500, error.message || "Server error");
+    return sendError(res, error.status || 500, error.message || "Server error");
   }
 }
 

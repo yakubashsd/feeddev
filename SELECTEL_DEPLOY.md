@@ -27,21 +27,24 @@ TRUST_PROXY=true
 PASSWORD_RESET_MINUTES=30
 BILLING_MODE=manual
 
-LEGAL_NAME=ИП Якубаш С.Д.
+LEGAL_NAME=ИП Якубаш Сергей Дмитриевич
 LEGAL_INN=720326517332
 LEGAL_OGRNIP=326723200087150
-LEGAL_ADDRESS=полный адрес для юридически значимых сообщений
-LEGAL_EMAIL=legal@example.ru
-LEGAL_PHONE=+7...
+LEGAL_ADDRESS=Тюменская область, г. Тюмень
+LEGAL_EMAIL=yakubashsd@gmail.com
+LEGAL_PHONE=
+LEGAL_PROFILE_CONFIRMED=false
+ONLINE_RECEIPTS_READY=false
 
 SAAS_SESSION_SECRET=replace-with-long-random-value
 SAAS_DATA_SECRET=replace-with-another-long-random-value
 EXTERNAL_ADMIN_EMAIL=owner@example.ru
 EXTERNAL_ADMIN_PASSWORD=replace-with-strong-password
 
-FREEKASSA_MERCHANT_ID=
-FREEKASSA_SECRET_1=
-FREEKASSA_SECRET_2=
+PLATEGA_MERCHANT_ID=
+PLATEGA_API_KEY=
+PLATEGA_PAYMENT_METHOD=2
+PLATEGA_API_BASE=https://app.platega.io
 
 TELEGRAM_BOT_TOKEN=
 SMTP_HOST=
@@ -52,7 +55,9 @@ SMTP_PASS=
 EMAIL_FROM=ListingFlow <notifications@example.ru>
 ```
 
-Пока касса не выбрана, оставьте `BILLING_MODE=manual`: кабинет покажет кнопку запроса счёта на `LEGAL_EMAIL`. После подключения FreeKassa заполните три её секрета и смените значение на `freekassa`.
+Пока онлайн-касса и фискализация чеков не настроены и не проверены, оставьте `BILLING_MODE=manual` и `ONLINE_RECEIPTS_READY=false`: кабинет покажет кнопку запроса счёта на `LEGAL_EMAIL`. Настройка Platega сама по себе не заменяет ККТ/чек. После отдельной проверки схемы расчётов, передачи чека и возврата заполните `PLATEGA_MERCHANT_ID`, `PLATEGA_API_KEY`, при необходимости измените `PLATEGA_PAYMENT_METHOD`; установите `BILLING_MODE=platega`. Флаг `ONLINE_RECEIPTS_READY=true` включает checkout и должен выставляться только после фактической настройки фискализации и тестового платежа.
+
+Перед открытием регистрации заполните и проверьте полный адрес для юридических сообщений в `LEGAL_ADDRESS`; сейчас задан только регион и город из предоставленных сведений. После такой проверки установите `LEGAL_PROFILE_CONFIRMED=true` — до этого регистрация будет закрыта. Контакт для обращений: `yakubashsd@gmail.com`. Публичные документы доступны по `/legal.html`. Эта публикация документов не заменяет подачу уведомления оператора в Роскомнадзор, настройку локализации/поручений обработчикам, проверку сроков хранения и юридическую проверку фактических процессов. В кабинете Яндекс Метрики отключите запись всех полей Webvisor и проверьте маскирование тестовым проходом.
 
 Не задавайте `BLOB_READ_WRITE_TOKEN`: на Selectel используется локальный постоянный диск и атомарная запись в `DATA_DIR`.
 
@@ -116,7 +121,7 @@ server {
 }
 ```
 
-Разрешите в облачном firewall и `ufw` только SSH, 80 и 443; порт 3000 наружу не открывайте. Callback FreeKassa: `https://app.example.ru/api/billing/freekassa/callback`.
+Разрешите в облачном firewall и `ufw` только SSH, 80 и 443; порт 3000 наружу не открывайте. Callback Platega: `https://app.example.ru/api/billing/platega/callback`.
 
 ## Резервное копирование
 

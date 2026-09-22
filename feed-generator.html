@@ -114,6 +114,13 @@
     .billing-quantity { display:flex; align-items:end; gap:12px; margin:22px 0; }
     .billing-quantity .field { flex:1; max-width:260px; }
     .billing-total { font-size:20px; font-weight:750; padding-bottom:9px; }
+    .billing-payment-row,.release-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--line); font-size:13px; }
+    .billing-payment-row small,.release-row small { display:block; color:var(--muted); margin-top:3px; }
+    .release-history { margin-top:24px; }
+    .release-history:empty { display:none; }
+    .release-history h3 { font-size:15px; margin:0 0 8px; }
+    .release-row { grid-template-columns:minmax(0,1fr) auto; }
+    .release-preflight{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:13px;line-height:1.5}.release-preflight strong{display:block}.release-preflight.has-errors{border-color:#d92d38;background:#ffebed;color:#92232c}
 
     button, input, textarea, select {
       font: inherit;
@@ -1811,6 +1818,7 @@
       background: #fff0d0;
       color: #a02f27;
     }
+    .feed-status.warning { background:#fff4dc; color:#8a5700; }
 
     .feed-status.pending {
       background: var(--violet);
@@ -4432,10 +4440,10 @@
           <label for="loginPasswordConfirm">Повторите пароль</label>
           <input id="loginPasswordConfirm" type="password" autocomplete="new-password">
         </div>
-        <label id="legalConsentField" hidden style="display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.45;color:var(--muted)">
-          <input id="legalConsent" type="checkbox" style="width:auto;margin-top:3px">
-          <span>Я принимаю <a href="/legal.html#offer" target="_blank">публичную оферту</a>, <a href="/legal.html#privacy" target="_blank">политику обработки данных</a> и даю <a href="/legal.html#consent" target="_blank">согласие на обработку персональных данных</a>.</span>
-        </label>
+        <div id="legalConsentField" hidden style="display:grid;gap:10px;font-size:12px;line-height:1.45;color:var(--muted)">
+          <label style="display:flex;align-items:flex-start;gap:9px"><input id="offerAcceptance" type="checkbox" style="width:auto;margin-top:3px"><span>Принимаю <a href="/legal.html#offer" target="_blank" rel="noopener">публичную оферту</a> и ознакомился(-ась) с <a href="/legal.html#privacy" target="_blank" rel="noopener">политикой конфиденциальности</a>.</span></label>
+          <label style="display:flex;align-items:flex-start;gap:9px"><input id="personalDataConsent" type="checkbox" style="width:auto;margin-top:3px"><span>Отдельно даю <a href="/legal.html#consent" target="_blank" rel="noopener">согласие на обработку персональных данных</a>.</span></label>
+        </div>
         <div class="auth-error" id="loginError" role="alert"></div>
         <button class="primary auth-submit" id="loginButton" type="submit">Войти</button>
       </div>
@@ -4454,7 +4462,7 @@
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Работа с фидом</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
-          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники фидов</span></button>
+          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники видов</span></button>
           <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">2</span><span class="nav-text">Квартиры</span></button>
           <button type="button" class="nav-item" data-nav="branding"><span class="nav-step">3</span><span class="nav-text">Шаблоны планировок</span></button>
           <button type="button" class="nav-item" data-nav="results"><span class="nav-step">4</span><span class="nav-text">Результаты и ссылки</span></button>
@@ -4463,7 +4471,7 @@
       <div class="nav-label nav-label-secondary">Контроль</div>
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
       <div class="sidebar-spacer"></div>
-      <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.</div>
+      <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.<br><a id="sidebarSupport" href="/legal.html" title="Связаться с поддержкой">Поддержка</a><br><a id="manageCookies" href="#cookie-settings">Настройки cookies</a></div>
       <button type="button" class="nav-item" data-nav="billing" id="billingNav" hidden><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span class="nav-text">Тариф и оплата</span></button>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
     </aside>
@@ -4475,8 +4483,15 @@
           <h1>Фиды недвижимости</h1>
           <div class="subtitle">Кастомизация выгрузок Profitbase для ЦИАН, Авито, Яндекс Недвижимости и Домклик</div>
         </div>
-        <div class="top-status">Сервис работает</div>
+        <div class="topbar-actions"><button class="guide-open" id="usageGuideOpen" type="button" aria-haspopup="dialog" title="Как получить результат"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.5 1.5c-.9 1-2.1 1.1-2.1 2.7M12 17h.01"/></svg><span>Как получить результат</span></button><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
+
+      <aside class="usage-hint" id="usageHint" aria-live="polite" aria-atomic="true">
+        <span class="usage-hint-step" id="usageHintStep"></span>
+        <div class="usage-hint-copy"><strong id="usageHintTitle"></strong><p id="usageHintText"></p></div>
+        <button class="usage-hint-action" id="usageHintAction" type="button"></button>
+        <button class="usage-hint-dismiss" id="usageHintDismiss" type="button" aria-label="Скрыть подсказку" title="Скрыть подсказку">×</button>
+      </aside>
 
       <nav class="workflow-nav" data-page="workflow" aria-label="Этапы работы с фидом">
         <button type="button" data-step=".source-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg></span><span class="step-copy"><span class="step-number">01</span><span class="step-title">Источник</span></span></button>
@@ -4497,17 +4512,19 @@
       <section class="billing-page page-hidden" data-page="billing">
         <div class="billing-card">
           <h2 class="panel-title">Тариф по количеству проектов</h2>
-          <div class="billing-price">7 500 ₽ <small>за 1 проект / 30 дней</small></div>
+          <div class="billing-price">5 000 ₽ <small>за 1 проект / 30 дней</small></div>
           <ul class="billing-features"><li>От 1 до 10 проектов в одном аккаунте</li><li>Редактор, проверка и публикация фидов</li><li>Мониторинг и уведомления</li></ul>
-          <div class="billing-quantity"><div class="field"><label for="billingProjectCount">Количество проектов</label><select id="billingProjectCount"><option value="1">1 проект</option><option value="2">2 проекта</option><option value="3">3 проекта</option><option value="4">4 проекта</option><option value="5">5 проектов</option><option value="6">6 проектов</option><option value="7">7 проектов</option><option value="8">8 проектов</option><option value="9">9 проектов</option><option value="10">10 проектов</option></select></div><div class="billing-total" id="billingTotal">7 500 ₽ / мес</div></div>
+          <div class="billing-quantity"><div class="field"><label for="billingProjectCount">Количество проектов</label><select id="billingProjectCount"><option value="1">1 проект</option><option value="2">2 проекта</option><option value="3">3 проекта</option><option value="4">4 проекта</option><option value="5">5 проектов</option><option value="6">6 проектов</option><option value="7">7 проектов</option><option value="8">8 проектов</option><option value="9">9 проектов</option><option value="10">10 проектов</option></select></div><div class="billing-total" id="billingTotal">5 000 ₽ / мес</div></div>
           <div class="billing-status" id="billingStatus">Проверяем статус подписки…</div>
-          <button class="primary" id="checkoutButton" type="button">Оплатить через FreeKassa</button>
+          <button class="primary" id="checkoutButton" type="button">Оплатить через Platega</button>
+          <h3 class="panel-title" style="margin-top:32px">История платежей</h3>
+          <div id="billingPayments" aria-live="polite">Загружаем платежи…</div>
         </div>
       </section>
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>Объедините источник, настройки и результат в одном пространстве.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Подключённые источники</h2>
-        <div class="panel-caption">Добавляйте XML разных площадок. Каждый источник обновляется независимо, а квартиры собираются в общий каталог проекта.</div>
+        <div class="panel-caption">Источники одного проекта должны относиться к одной площадке. Для другой площадки создайте отдельный проект, чтобы формат публикации оставался однозначным.</div>
         <div class="source-grid">
           <div class="field">
             <label for="sourceName">Название</label>
@@ -4519,7 +4536,7 @@
           </div>
           <div class="field compact">
             <label for="sourcePlatform">Тип фида</label>
-            <select id="sourcePlatform"><option value="auto">Определить автоматически</option><option value="cian">ЦИАН</option><option value="avito">Авито</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик</option></select>
+            <select id="sourcePlatform"><option value="auto">Определить автоматически</option><option value="cian">ЦИАН</option><option value="avito">Авито</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик · закрытая beta</option></select>
           </div>
           <div class="field compact">
             <label for="sourceInterval">Обновление</label>
@@ -4583,6 +4600,7 @@
               <select id="monitorStatusFilter">
                 <option value="all">Все</option>
                 <option value="bad">С ошибками</option>
+                <option value="warning">Предупреждения</option>
                 <option value="ok">Работают</option>
                 <option value="pending">Ожидают сервера</option>
               </select>
@@ -4836,6 +4854,7 @@
       <section class="publish-panel" data-page="results">
         <h2 class="panel-title">Финальная выгрузка</h2>
         <div class="panel-caption">Последний шаг после проверки: назовите фид и выберите, что нужно сейчас — постоянная ссылка или обычный XML-файл.</div>
+        <div class="release-preflight" id="releasePreflight" role="status" aria-live="polite"></div>
         <div class="publish-row">
           <div class="field">
             <label for="feedName">Название фида</label>
@@ -4855,8 +4874,22 @@
           <input id="generatedLinkInput" readonly placeholder="Ссылка появится после генерации">
         </div>
         <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.</div>
+        <div class="release-history" id="releaseHistory" aria-live="polite"></div>
       </section>
     </main>
+
+    <dialog class="usage-guide-dialog" id="usageGuideDialog" aria-labelledby="usageGuideTitle">
+      <div class="usage-guide-head"><div><span class="usage-guide-eyebrow">КРАТКОЕ РУКОВОДСТВО</span><h2 id="usageGuideTitle">От исходного XML до публикации</h2><p>Пройдите шаги по порядку. Планировки можно настроить позже — для первой выгрузки это необязательно.</p></div><button class="usage-guide-close" id="usageGuideClose" type="button" aria-label="Закрыть инструкцию">×</button></div>
+      <ol class="usage-guide-steps">
+        <li><span class="usage-guide-number">01</span><div><h3>Создайте проект</h3><p>Проект — отдельная выгрузка для одной площадки и объекта недвижимости. Так настройки и ссылка не смешиваются.</p></div><button type="button" data-guide-go="projects">Открыть проекты <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">02</span><div><h3>Подключите источник</h3><p>Вставьте постоянную ссылку на XML и нажмите «Добавить источник» или загрузите XML-файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="source">К источнику <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">03</span><div><h3>Проверьте квартиры</h3><p>Просмотрите ошибки и обязательные поля, поправьте отдельные объявления или выберите несколько строк для массовых правок.</p></div><button type="button" data-guide-go="apartments">К квартирам <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number optional">04</span><div><h3>При необходимости оформите планировки</h3><p>Загрузите изображение-подложку, настройте макет на примере квартиры и сформируйте брендированное первое фото.</p></div><button type="button" data-guide-go="branding">К редактору <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">05</span><div><h3>Выпустите фид и передайте ссылку площадке</h3><p>На странице результатов проверьте готовность, затем сгенерируйте постоянную ссылку или скачайте XML. Ссылка обновляется вместе с проектом.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">06</span><div><h3>Следите за обновлениями</h3><p>Мониторинг показывает ошибки и состояние фида. Здесь же можно запустить проверку и настроить уведомления.</p></div><button type="button" data-guide-go="feeds">Открыть мониторинг <span aria-hidden="true">→</span></button></li>
+      </ol>
+      <div class="usage-guide-foot"><span>Подсказка: один проект = одна целевая площадка.</span><button id="usageGuideStart" class="primary" type="button">Начать с источника</button></div>
+    </dialog>
 
     <aside class="editor">
       <div class="editor-head">
@@ -5081,6 +5114,9 @@
     let runtimeMode = "internal";
     let authFormMode = "login";
     let sessionState = null;
+    let cloudSaveRevision = 0;
+    let cloudSaveConflict = false;
+    let cloudSavedSnapshot = "";
     const projectIndexKey = "feeddev-projects-v1";
     let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
@@ -5357,16 +5393,23 @@
       runtimeMode = state.mode || "internal";
       window.listingFlowBillingMode = state.billingMode || "manual";
       window.listingFlowSupportEmail = state.supportEmail || "";
+      const supportLink = document.querySelector("#sidebarSupport");
+      if (supportLink && state.supportEmail) supportLink.href = `mailto:${encodeURIComponent(state.supportEmail)}?subject=${encodeURIComponent("Поддержка ListingFlow")}`;
       const external = runtimeMode === "external";
       publicFeedOrigin = external ? location.origin : INTERNAL_FEED_ORIGIN;
       appState.serverBaseUrl = publicFeedOrigin;
       document.querySelector("#authSwitch").hidden = !external;
+      const registerButton = document.querySelector('[data-auth-mode="register"]');
+      if (registerButton) {
+        registerButton.disabled = state.legalReady === false;
+        registerButton.title = state.legalReady === false ? "Регистрация включится после заполнения юридических реквизитов" : "";
+      }
       document.querySelector("#loginUsernameLabel").textContent = external ? "Email" : "Логин";
       document.querySelector("#loginUsername").type = external ? "email" : "text";
       document.querySelector("#loginUsername").autocomplete = external ? "email" : "username";
       document.querySelector("#billingNav").hidden = !external;
       document.querySelector("#projectsStorageCaption").textContent = external
-        ? "Проекты и доступ хранятся в вашем аккаунте. Рабочий черновик автоматически сохраняется в этом браузере."
+        ? "Проекты, выпуски и рабочие черновики хранятся в вашем аккаунте и синхронизируются между устройствами."
         : "Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.";
       document.querySelector(".brand small").textContent = external ? "сервис управления фидами" : "управление фидами";
       const clientName = document.querySelector("#clientName");
@@ -5396,7 +5439,8 @@
       const consentField = document.querySelector("#legalConsentField");
       consentField.hidden = !register;
       consentField.style.display = register ? "flex" : "none";
-      document.querySelector("#legalConsent").required = register;
+      document.querySelector("#offerAcceptance").required = register;
+      document.querySelector("#personalDataConsent").required = register;
       document.querySelector("#loginForm h1").textContent = reset ? "Новый пароль" : forgot ? "Восстановление" : register ? "Создать аккаунт" : "Вход в сервис";
       document.querySelector(".auth-description").textContent = reset ? "Придумайте новый пароль длиной не менее 8 символов." : forgot ? "Укажите email — отправим одноразовую ссылку для смены пароля." : register ? "Зарегистрируйтесь и оплатите доступ к одному проекту." : "Введите данные доступа к рабочей области фидов.";
       loginButton.textContent = reset ? "Сохранить пароль" : forgot ? "Отправить ссылку" : register ? "Создать аккаунт" : "Войти";
@@ -5429,12 +5473,51 @@
 
     async function pushExternalProjectState() {
       if (runtimeMode !== "external" || !currentProject || !sessionState?.subscriptionActive) return;
+      if (cloudSaveConflict) return;
       const state = captureProjectBrowserState();
       if (!Object.keys(state).length) return;
-      await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
+      const snapshot = JSON.stringify(state);
+      if (snapshot === cloudSavedSnapshot) return;
+      const indicator = document.querySelector("#cloudSaveStatus");
+      if (indicator) indicator.textContent = "Сохраняю в облако…";
+      let response;
+      try {
+        response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
         method: "PUT", credentials: "same-origin", keepalive: true,
-        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ state })
-      });
+        headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` }, body: JSON.stringify({ state })
+        });
+      } catch (error) {
+        if (indicator) indicator.textContent = "Нет связи с облаком — повторим автоматически";
+        throw error;
+      }
+      const result = await response.json().catch(() => ({}));
+      if (response.status === 409) {
+        cloudSaveConflict = true;
+        if (indicator) indicator.textContent = "Конфликт сохранения — выберите версию";
+        const useLocal = confirm("Этот проект изменился на другом устройстве. ОК — оставить текущие правки и записать их поверх серверной версии. Отмена — сохранить локальную копию и загрузить серверную версию.");
+        if (useLocal) {
+          cloudSaveRevision = Number(result.current?.revision || 0);
+          cloudSavedSnapshot = JSON.stringify(result.current?.state || {});
+          cloudSaveConflict = false;
+          await pushExternalProjectState();
+        } else if (result.current) {
+          const backupKey = `listingflow-conflict-backup-${currentProject.id}-${Date.now()}`;
+          localStorage.setItem(backupKey, JSON.stringify(state));
+          for (const key of projectStateKeys()) {
+            if (Object.hasOwn(result.current.state || {}, key)) localStorage.setItem(key, result.current.state[key]);
+            else localStorage.removeItem(key);
+          }
+          location.reload();
+        }
+        return;
+      }
+      if (!response.ok) {
+        if (indicator) indicator.textContent = response.status === 402 ? "Тариф истёк — доступен просмотр и оплата" : "Не удалось сохранить — повторим автоматически";
+        throw new Error(result.error || `HTTP ${response.status}`);
+      }
+      cloudSaveRevision = Number(result.revision || cloudSaveRevision);
+      cloudSavedSnapshot = snapshot;
+      if (indicator) indicator.textContent = `Сохранено в облаке в ${new Date(result.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
     }
 
     let projectStateSyncTimer = 0;
@@ -5449,12 +5532,18 @@
       const response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
       if (!response.ok) return false;
       const remote = await response.json();
+      cloudSaveRevision = Number(remote.revision || 0);
+      cloudSavedSnapshot = JSON.stringify(remote.state || {});
       const local = captureProjectBrowserState();
       if (!remote.state) {
         if (Object.keys(local).length) await pushExternalProjectState();
         return false;
       }
       if (JSON.stringify(remote.state) === JSON.stringify(local)) return false;
+      if (Object.keys(local).length && !confirm("На сервере есть сохранённая версия проекта, отличающаяся от этого браузера. ОК загрузит серверную версию; Отмена оставит локальные правки и отправит их как новую версию.")) {
+        await pushExternalProjectState();
+        return false;
+      }
       for (const key of projectStateKeys()) {
         if (Object.hasOwn(remote.state, key)) localStorage.setItem(key, remote.state[key]);
         else localStorage.removeItem(key);
@@ -5462,13 +5551,47 @@
       return true;
     }
 
+    async function renderBillingPayments() {
+      const target = document.querySelector("#billingPayments");
+      if (!target || runtimeMode !== "external") return;
+      try {
+        const response = await fetch("/api/billing/payments", { credentials: "same-origin", cache: "no-store" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось загрузить историю платежей.");
+        const rows = result.payments || [];
+        target.innerHTML = rows.length ? rows.map(payment => {
+          const status = { paid: "Оплачен", pending: "Ожидает оплаты", failed: "Не прошёл", chargebacked: "Оспорен" }[payment.status] || payment.status;
+          const date = new Date(payment.paidAt || payment.createdAt).toLocaleString("ru-RU");
+          const retry = payment.status === "failed" ? `<button type="button" data-payment-retry="${Number(payment.projectCount)}">Оплатить снова</button>` : "";
+          return `<div class="billing-payment-row"><span><strong>${escapeXml(payment.orderId)}</strong><small>${date} · ${payment.projectCount} проектов</small></span><strong>${money(payment.amount)}</strong><span>${escapeXml(status)} ${retry}</span></div>`;
+        }).join("") : '<p class="panel-caption">Платежей пока нет. Созданные заказы и их статусы появятся здесь.</p>';
+      } catch (error) {
+        target.textContent = error.message;
+      }
+    }
+
+    document.querySelector("#billingPayments").addEventListener("click", async event => {
+      const retry = event.target.closest("[data-payment-retry]");
+      if (!retry) return;
+      retry.disabled = true;
+      try {
+        const response = await fetch("/api/billing/checkout", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectCount: Number(retry.dataset.paymentRetry) }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось создать новый заказ.");
+        location.href = result.url;
+      } catch (error) {
+        showToast(error.message);
+        retry.disabled = false;
+      }
+    });
+
     function renderBilling() {
       const status = document.querySelector("#billingStatus");
       const button = document.querySelector("#checkoutButton");
       const count = document.querySelector("#billingProjectCount");
       const total = document.querySelector("#billingTotal");
       if (!status || runtimeMode !== "external") return;
-      const unitAmount = Number(sessionState?.plan?.unitAmount || 7500);
+      const unitAmount = Number(sessionState?.plan?.unitAmount || 5000);
       if (count && !count.dataset.initialized) {
         count.value = String(sessionState?.user?.projectLimit || 1);
         count.dataset.initialized = "true";
@@ -5476,14 +5599,21 @@
       const projectCount = Number(count?.value || 1);
       if (total) total.textContent = `${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ / мес`;
       const until = sessionState?.user?.subscriptionUntil;
-      const onlineBilling = sessionState?.billingMode === "freekassa";
+      const onlineBilling = sessionState?.billingMode === "platega";
+      const receiptsReady = sessionState?.onlineReceiptsReady === true;
+      button.disabled = onlineBilling && !receiptsReady;
       if (sessionState?.subscriptionActive && until) {
         status.textContent = `Доступ к ${sessionState.user.projectLimit || 1} проектам оплачен до ${new Date(until).toLocaleDateString("ru-RU")}. Следующая оплата установит выбранный лимит и продлит срок ещё на 30 дней.`;
         button.textContent = onlineBilling ? "Продлить онлайн" : "Запросить счёт";
+      } else if (sessionState?.subscriptionReadOnly && sessionState?.subscriptionGraceUntil) {
+        status.textContent = `Тариф закончился ${new Date(until).toLocaleDateString("ru-RU")}. До ${new Date(sessionState.subscriptionGraceUntil).toLocaleDateString("ru-RU")} доступен просмотр проектов и выпусков; редактирование отключено.`;
+        button.textContent = onlineBilling ? "Продлить доступ" : "Запросить счёт";
       } else {
         status.textContent = onlineBilling ? "Доступ пока не оплачен. После подтверждения платежа можно создать выбранное количество проектов." : "Онлайн-касса пока не подключена. Мы выставим счёт вручную и активируем доступ после оплаты.";
         button.textContent = onlineBilling ? `Оплатить ${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ онлайн` : "Запросить счёт";
       }
+      if (onlineBilling && !receiptsReady) status.textContent = "Онлайн-оплата временно отключена до настройки и проверки кассы и фискализации чеков.";
+      renderBillingPayments();
     }
 
     async function initializeAuth() {
@@ -5511,7 +5641,7 @@
             return;
           }
           showWorkspace();
-          if (runtimeMode === "external" && !state.subscriptionActive) switchPage("billing");
+          if (runtimeMode === "external" && !state.subscriptionActive) switchPage(state.subscriptionReadOnly ? (currentProject ? "apartments" : "projects") : "billing");
           renderBilling();
         }
         else showLogin(state.configured ? "" : "Вход ещё не настроен на сервере. Проверьте переменные окружения Selectel.");
@@ -5533,7 +5663,8 @@
         const forgot = runtimeMode === "external" && authFormMode === "forgot";
         const reset = runtimeMode === "external" && authFormMode === "reset";
         const password = document.querySelector("#loginPassword").value;
-        if (register && !document.querySelector("#legalConsent").checked) throw new Error("Для регистрации примите оферту и согласие на обработку данных.");
+        if (register && !document.querySelector("#offerAcceptance").checked) throw new Error("Для регистрации необходимо принять публичную оферту.");
+        if (register && !document.querySelector("#personalDataConsent").checked) throw new Error("Для регистрации отдельно подтвердите согласие на обработку персональных данных.");
         if (reset && password !== document.querySelector("#loginPasswordConfirm").value) throw new Error("Пароли не совпадают.");
         const endpoint = reset ? "/api/auth/reset-password" : forgot ? "/api/auth/forgot-password" : register ? "/api/auth-register" : "/api/auth-login";
         const response = await fetch(endpoint, {
@@ -5545,8 +5676,8 @@
             email: document.querySelector("#loginUsername").value.trim(),
             name: document.querySelector("#loginName").value.trim(),
             password,
-            acceptedLegal: register ? document.querySelector("#legalConsent").checked : false,
-            legalVersion: "2026-09-17",
+            acceptedOffer: register ? document.querySelector("#offerAcceptance").checked : false,
+            acceptedPersonalData: register ? document.querySelector("#personalDataConsent").checked : false,
             token: new URLSearchParams(location.search).get("reset") || ""
           })
         });
@@ -6188,25 +6319,30 @@
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         return JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
       });
-      const published = projectStates.filter(state => state.generatedLink).length;
-      const inProgress = projectStates.filter(state => !state.generatedLink && (state.objects?.length || state.feedUrl)).length;
-      const totalObjects = projectStates.reduce((sum, state) => sum + (state.objects?.length || 0), 0);
+      const activeProjects = projects.filter(project => project.status !== "archived");
+      const published = projectStates.filter((state, index) => projects[index].status !== "archived" && (state.generatedLink || projects[index].summary?.feeds?.length)).length;
+      const inProgress = projectStates.filter((state, index) => projects[index].status !== "archived" && !state.generatedLink && (state.objects?.length || state.feedUrl || projects[index].summary?.objectCount)).length;
+      const totalObjects = projectStates.reduce((sum, state, index) => sum + (state.objects?.length || projects[index].summary?.objectCount || 0), 0);
       document.querySelector("#projectMetrics").innerHTML = `
-        <div class="project-metric"><span class="metric-icon">▤</span><span>Всего проектов</span><strong>${projects.length}</strong><small>Лимит аккаунта: ${Number(sessionState?.user?.projectLimit || Math.max(1, projects.length))}</small></div>
-        <div class="project-metric"><span class="metric-icon success">✓</span><span>Опубликовано</span><strong>${published}</strong><small>${projects.length ? Math.round(published / projects.length * 100) : 0}% проектов готовы</small></div>
-        <div class="project-metric"><span class="metric-icon info">↻</span><span>В работе</span><strong>${inProgress}</strong><small>Требуют продолжения настройки</small></div>
-        <div class="project-metric"><span class="metric-icon neutral">⌂</span><span>Объектов в фидах</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong><small>Во всех проектах</small></div>`;
+        <div class="project-metric"><span class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span>Активные проекты</span><strong>${activeProjects.length}</strong><small>${projects.length - activeProjects.length} в архиве · лимит ${Number(sessionState?.user?.projectLimit || Math.max(1, projects.length))}</small></div>
+        <div class="project-metric"><span class="metric-icon success" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span>Опубликовано</span><strong>${published}</strong><small>${projects.length ? Math.round(published / projects.length * 100) : 0}% проектов готовы</small></div>
+        <div class="project-metric"><span class="metric-icon info" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 17.4 6L20 12M4 12l2.6 6a7 7 0 0 0 11.8-3"/></svg></span><span>В работе</span><strong>${inProgress}</strong><small>Требуют продолжения настройки</small></div>
+        <div class="project-metric"><span class="metric-icon neutral" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 8 9-5 9 5v8l-9 5-9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></span><span>Объектов в фидах</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong><small>Во всех проектах</small></div>`;
       document.querySelector("#projectList").innerHTML = visible.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
         const projectUrl = '?project=' + encodeURIComponent(project.id);
         const projectPlatform = state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
-        return '<article class="project-entry" data-open-project="' + escapeXml(projectUrl) + '" role="link" tabindex="0" aria-label="Открыть проект ' + escapeXml(project.name) + '"><a class="project-entry-main" href="' + projectUrl + '">' + platformMark(projectPlatform) + '<span><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></span></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="' + projectUrl + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
+        const archived = project.status === "archived";
+        const count = state.objects?.length || project.summary?.objectCount || 0;
+        const health = project.summary?.feedHealth;
+        const outputState = archived ? "В архиве · ссылка сохранена" : health === "error" ? "Ошибка обновления" : health === "stale" ? "Данные устарели" : state.generatedLink || project.summary?.feeds?.length ? "Опубликован" : count ? "В работе" : "Настройка";
+        return '<article class="project-entry' + (archived ? ' archived' : '') + '" data-open-project="' + escapeXml(projectUrl) + '" role="link" tabindex="0" aria-label="Открыть проект ' + escapeXml(project.name) + '"><a class="project-entry-main" href="' + projectUrl + '">' + platformMark(projectPlatform) + '<span><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || project.summary?.feeds?.[0]?.url || "Источник ещё не подключён") + '</small></span></a><span>' + count + ' помещений</span><span>' + outputState + '</span><a href="' + projectUrl + '">' + (archived ? "Просмотр →" : "Открыть →") + '</a>' + (archived ? '<button type="button" class="project-delete" data-restore-project="' + escapeXml(project.id) + '">Восстановить</button>' : '<button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">В архив</button>') + '</article>';
       }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
       const createButton = document.querySelector("#newProjectBtn");
       if (runtimeMode === "external") {
         const limit = Number(sessionState?.user?.projectLimit || 1);
-        const limitReached = projects.length >= limit;
+        const limitReached = activeProjects.length >= limit;
         createButton.disabled = limitReached;
         createButton.textContent = limitReached ? `Лимит проектов: ${limit}` : "Создать проект";
       } else {
@@ -6218,37 +6354,41 @@
     async function deleteProject(projectId) {
       const project = projects.find(item => item.id === projectId);
       if (!project) return;
-      if (!confirm(`Удалить проект «${project.name}»? Настройки, источники и черновик будут удалены из этого браузера. Уже опубликованный XML останется доступен по своей ссылке.`)) return;
+      if (!confirm(`Переместить проект «${project.name}» в архив? Опубликованные ссылки и история выпусков продолжат работать. Проект можно будет восстановить.`)) return;
       if (runtimeMode === "external") {
-        await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" }).catch(() => {});
-        await fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] }) }).catch(() => {});
         const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) return showToast(result.error || "Не удалось удалить проект.");
       }
-      const suffix = project.id === "legacy" ? "" : `-${project.id}`;
-      [
-        "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1",
-        "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1",
-        "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"
-      ].forEach(prefix => localStorage.removeItem(prefix + suffix));
-      projects = projects.filter(item => item.id !== projectId);
+      project.status = "archived";
       localStorage.setItem(projectIndexKey, JSON.stringify(projects));
-      await deleteBrandAsset(projectId).catch(() => {});
-      if (runtimeMode !== "external") {
-        await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`,{method:'DELETE'}).catch(()=>{});
-        fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, {
-          method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] })
-        }).catch(() => {});
-      }
       renderProjects();
-      showToast(`Проект «${project.name}» удалён`);
+      showToast(`Проект «${project.name}» в архиве. Опубликованная ссылка сохранена.`);
+    }
+
+    async function restoreProject(projectId) {
+      const project = projects.find(item => item.id === projectId);
+      if (!project) return;
+      if (runtimeMode === "external") {
+        const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/restore`, { method: "POST", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) return showToast(result.error || "Не удалось восстановить проект.");
+      }
+      project.status = "active";
+      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      renderProjects();
+      showToast(`Проект «${project.name}» восстановлен`);
     }
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Проекты фидов", source: "Источники фидов", apartments: "Квартиры", branding: "Шаблоны планировок", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
+      const titles = { projects: "Проекты фидов", source: "Источники видов", apartments: "Квартиры", branding: "Шаблоны планировок", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
       const shell = document.querySelector("#appShell");
+      const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
+      shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
+      const saveIndicator = document.querySelector("#cloudSaveStatus");
+      if (projectReadOnly && saveIndicator) saveIndicator.textContent = currentProject.status === "archived" ? "Архивный проект · просмотр" : sessionState?.subscriptionReadOnly ? "Тариф истёк · льготный просмотр" : "Доступ ограничен · продлите тариф";
+      else if (saveIndicator && runtimeMode === "external" && currentProject && sessionState?.subscriptionActive && !cloudSaveConflict) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Сохраняю проект в облако";
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", false);
       shell.classList.toggle("project-list-mode", activePage === "projects");
@@ -6286,6 +6426,7 @@
         renderFeedValidator();
       }
       if (activePage === "billing") renderBilling();
+      if (activePage === "results") { renderReleasePreflight(); renderReleaseHistory(); }
     }
 
     function switchPage(page) {
@@ -6308,6 +6449,11 @@
       const button = event.target.closest("[data-delete-project]");
       if (button) {
         deleteProject(button.dataset.deleteProject);
+        return;
+      }
+      const restore = event.target.closest("[data-restore-project]");
+      if (restore) {
+        restoreProject(restore.dataset.restoreProject);
         return;
       }
       const card = event.target.closest("[data-open-project]");
@@ -6349,7 +6495,7 @@
     document.querySelector("#billingProjectCount").addEventListener("change", renderBilling);
     document.querySelector("#checkoutButton").addEventListener("click", async () => {
       const button = document.querySelector("#checkoutButton");
-      if (sessionState?.billingMode !== "freekassa") {
+      if (sessionState?.billingMode !== "platega") {
         const email = sessionState?.supportEmail || "";
         if (!email) return showToast("Контакт для выставления счёта ещё не указан администратором.");
         const count = Number(document.querySelector("#billingProjectCount").value);
@@ -6459,6 +6605,7 @@
     function monitorStatus(feed) {
       const labels = {
         ok: "Работает",
+        warning: "Есть предупреждения",
         bad: "Ошибка",
         pending: "Ожидает сервер",
         checking: "Проверяется"
@@ -6499,7 +6646,7 @@
     function renderMonitorSummary() {
       const feeds = readMonitoredFeeds();
       const ok = feeds.filter(feed => feed.status === "ok").length;
-      const bad = feeds.filter(feed => feed.status === "bad").length;
+      const bad = feeds.filter(feed => ["bad", "warning"].includes(feed.status)).length;
       const pending = feeds.filter(feed => !feed.status || feed.status === "pending").length;
       const checked = feeds
         .map(feed => feed.lastChecked ? new Date(feed.lastChecked).getTime() : 0)
@@ -6548,6 +6695,7 @@
           ${feed.telegramNotifiedAt || feed.emailNotifiedAt ? `<div class="feed-telegram-note">Последнее уведомление: ${escapeXml(formatCheckDate([feed.telegramNotifiedAt, feed.emailNotifiedAt].filter(Boolean).sort().at(-1)))}</div>` : ""}
           ${feed.notificationError ? `<div class="feed-error">Ошибка уведомления: ${escapeXml(feed.notificationError)}</div>` : ""}
           ${feed.error ? `<div class="feed-error">Сообщение ошибки: ${escapeXml(feed.error)}</div>` : ""}
+          ${feed.warnings?.length ? `<div class="feed-error">Проверка состава: ${feed.warnings.map(escapeXml).join(" · ")}</div>` : ""}
         </div>
       `).join("");
       renderMonitorSummary();
@@ -6950,7 +7098,10 @@
         textColor: document.querySelector("#templateTextColor")?.value || "#111111",
         textSize: clamp(document.querySelector("#templateTextSize")?.value, 16, 120, 42),
         textXPercent: clamp(document.querySelector("#templateTextX")?.value, 0, 100, 7),
-        textYPercent: clamp(document.querySelector("#templateTextY")?.value, 0, 100, 10)
+        textYPercent: clamp(document.querySelector("#templateTextY")?.value, 0, 100, 10),
+        canvasColor: document.querySelector("#templateCanvasColor")?.value || "#ffffff",
+        canvasOpacity: clamp(document.querySelector("#templateCanvasOpacity")?.value, 0, 100, 100),
+        canvasLayers: (() => { try { const value = JSON.parse(document.querySelector("#templateCanvasLayers")?.value || "[]"); return Array.isArray(value) ? value.slice(0, 40) : []; } catch { return []; } })()
       };
     }
 
@@ -6981,7 +7132,10 @@
         textColor: config.textColor,
         textSize: config.textSize,
         textXPercent: config.textXPercent,
-        textYPercent: config.textYPercent
+        textYPercent: config.textYPercent,
+        canvasLayers: config.canvasLayers,
+        canvasColor: config.canvasColor,
+        canvasOpacity: config.canvasOpacity
       };
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
@@ -7009,6 +7163,9 @@
       setValue("#templateTextSize", profile.textSize, 42);
       setValue("#templateTextX", profile.textXPercent, 7);
       setValue("#templateTextY", profile.textYPercent, 10);
+      setValue("#templateCanvasColor", profile.canvasColor, "#ffffff");
+      setValue("#templateCanvasOpacity", profile.canvasOpacity, 100);
+      setValue("#templateCanvasLayers", JSON.stringify(Array.isArray(profile.canvasLayers) ? profile.canvasLayers : []), "[]");
       document.querySelector("#brandBadgeFileInput").value = "";
 
       try {
@@ -7126,17 +7283,58 @@
       return String(value || "").replace(/{{\s*(price|area|rooms|complex)\s*}}/gi, (_, field) => ({ price: moneyText, area: item.totalArea || "—", rooms: item.rooms || "—", complex: item.complexName || "" })[field.toLowerCase()] || "");
     }
 
+    function drawCanvasLayers(context, width, height, layers, item = {}) {
+      for (const layer of layers || []) {
+        const x = width * (Number(layer.x) || 0) / 100;
+        const y = height * (Number(layer.y) || 0) / 100;
+        const layerWidth = width * Math.max(1, Number(layer.width) || 30) / 100;
+        const layerHeight = height * Math.max(1, Number(layer.height) || 12) / 100;
+        context.save();
+        context.globalAlpha = Math.max(0, Math.min(1, Number(layer.opacity ?? 100) / 100));
+        if (layer.type === "rect") {
+          context.fillStyle = layer.fill || "#d5ff19";
+          context.fillRect(x, y, layerWidth, layerHeight);
+        } else if (layer.type === "text") {
+          context.fillStyle = layer.color || "#11151a";
+          context.textBaseline = "top";
+          context.font = `${layer.weight || 700} ${Math.max(10, Number(layer.fontSize) || 36)}px Circe, Arial, sans-serif`;
+          templateText(layer.text || "Текст", item).split(/\r?\n/).forEach((line, index) => context.fillText(line, x, y + index * (Number(layer.fontSize) || 36) * 1.2, layerWidth));
+        }
+        context.restore();
+      }
+    }
+
     function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig(), item = brandPreviewImages?.target || {}) {
       const context = canvas.getContext("2d");
-      const width = badgeImage.naturalWidth || badgeImage.width;
-      const height = badgeImage.naturalHeight || badgeImage.height;
+      const width = badgeImage?.naturalWidth || badgeImage?.width || baseImage?.naturalWidth || baseImage?.width || 1200;
+      const height = badgeImage?.naturalHeight || badgeImage?.height || baseImage?.naturalHeight || baseImage?.height || 800;
       canvas.width = width;
       canvas.height = height;
       context.clearRect(0, 0, width, height);
-      context.drawImage(badgeImage, 0, 0, width, height);
-
-      const placement = brandedLayoutPlacement(baseImage, badgeImage, config);
-      context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
+      context.save();
+      context.globalAlpha = Math.max(0, Math.min(1, Number(config.canvasOpacity ?? (badgeImage ? 0 : 100)) / 100));
+      context.fillStyle = config.canvasColor || "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.restore();
+      if (badgeImage) context.drawImage(badgeImage, 0, 0, width, height);
+      if (baseImage && badgeImage) {
+        const placement = brandedLayoutPlacement(baseImage, badgeImage, config);
+        context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
+      } else if (baseImage) {
+        const source = visibleImageBounds(baseImage);
+        const ratio = Math.min(width * .78 / source.sw, height * .78 / source.sh);
+        const drawWidth = source.sw * ratio;
+        const drawHeight = source.sh * ratio;
+        const x = (width - drawWidth) / 2 + width * config.offsetXPercent / 100;
+        const y = (height - drawHeight) / 2 + height * config.offsetYPercent / 100;
+        context.drawImage(baseImage, source.sx, source.sy, source.sw, source.sh, x, y, drawWidth, drawHeight);
+      } else if (!badgeImage) {
+        context.fillStyle = "#8a919e";
+        context.font = "500 22px Circe, Arial, sans-serif";
+        context.textAlign = "center";
+        context.fillText("Загрузите планировку или добавьте элемент", width / 2, height / 2);
+        context.textAlign = "start";
+      }
       const headline = templateText(config.headline, item);
       const subline = templateText(config.subline, item);
       if (headline || subline) {
@@ -7151,6 +7349,7 @@
           context.fillText(subline, x, y + config.textSize * 1.3, width - x * 2);
         }
       }
+      drawCanvasLayers(context, width, height, config.canvasLayers, item);
       return canvas;
     }
 
@@ -7169,7 +7368,13 @@
       canvas.height = height;
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, width, height);
+      context.save();
+      context.globalAlpha = Number(document.querySelector("#templateCanvasOpacity")?.value || 0) / 100;
+      context.fillStyle = document.querySelector("#templateCanvasColor")?.value || "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.restore();
       context.drawImage(badgeImage, 0, 0, width, height);
+      drawCanvasLayers(context, width, height, brandConfig().canvasLayers, brandPreviewImages?.target || {});
       return true;
     }
 
@@ -7180,15 +7385,26 @@
       brandPreviewImages = null;
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, canvas.width, canvas.height);
+      const target = brandPreviewTarget();
       if (!brandBadgeDataUrl) {
-        brandStatus("Выберите подложку для текущего фида. Если у вас файл AI, экспортируйте его в PNG или SVG и загрузите сюда.");
+        try {
+          const baseImage = target ? await loadImageForCanvas(proxyImageUrl(target.layoutPhoto)) : null;
+          if (requestId !== brandPreviewRequestId) return;
+          brandPreviewImages = { baseImage, badgeImage: null, target, targetId: target?.externalId || "" };
+          drawBrandPreviewFrame();
+          brandStatus(target ? `Редактирование планировки · объект ${target.externalId || "без ID"}. При желании загрузите графическую подложку.` : "Пустой холст. Добавьте текст или фигуру либо загрузите планировку.");
+        } catch (error) {
+          brandPreviewImages = { baseImage: null, badgeImage: null, target: null, targetId: "" };
+          drawBrandPreviewFrame();
+          brandStatus(`${error.message} Можно продолжить оформление и загрузить изображение позже.`);
+        }
         return;
       }
-      const target = brandPreviewTarget();
       if (!target) {
         try {
           const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
           if (requestId !== brandPreviewRequestId) return;
+          brandPreviewImages = { baseImage: null, badgeImage, target: null, targetId: "" };
           drawBrandBadgePreview(badgeImage, canvas);
           brandStatus("Подложка загружена. Добавьте ссылку на планировку в объект, чтобы увидеть итоговое наложение.");
         } catch (error) {
@@ -8642,6 +8858,8 @@ ${photos}
         const requestedPlatform = existingSource?.requestedPlatform || document.querySelector("#sourcePlatform").value;
         if (!parsed.objects.length) throw new Error("В XML не найдено объектов");
         const id = existingSource?.id || crypto.randomUUID();
+        const otherSources = projectSources.filter(source => source.id !== id);
+        if (otherSources.some(source => source.platform !== parsed.platform)) throw new Error("В одном проекте можно объединять источники только одной площадки. Для другого формата создайте отдельный проект.");
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
         const sourceOverrides = new Map();
@@ -8843,8 +9061,24 @@ ${photos}
     async function generateFeedLink() {
       validated = true;
       renderValidation();
+      renderReleasePreflight();
+      if (!objects.length) {
+        showToast("Сначала загрузите объекты в проект, затем создавайте выпуск");
+        switchPage("sources");
+        return;
+      }
+      if (activePlatform === "domclick") {
+        showToast("Постоянная публикация Домклик закрыта до подтверждения схемы агрегатором. Можно скачать тестовый XML.");
+        return;
+      }
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
       const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      if (platformErrors.length || bad.length) {
+        const examples = [...platformErrors.map(item => item.message || item.title), ...bad].filter(Boolean).slice(0, 3);
+        showToast(`Публикация остановлена: исправьте ${platformErrors.length + bad.length} критических ошибок. ${examples.join("; ")}`);
+        switchPage("apartments");
+        return;
+      }
       const feedName = currentFeedName();
       if (!feedName) {
         const input = document.querySelector("#feedName");
@@ -8880,10 +9114,8 @@ ${photos}
         save();
         renderQualitySummary();
         renderDetectedSource();
-        const warningCount = platformErrors.length + bad.length;
-        showToast(warningCount
-          ? `${hadPublishedId ? "Ссылка обновлена" : "Фид опубликован"} с предупреждениями: ${warningCount}`
-          : hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
+        showToast(hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
+        renderReleaseHistory();
         return;
       } catch (error) {
         console.warn("Server publish failed:", error);
@@ -8916,6 +9148,67 @@ ${photos}
         prompt("Скопируйте ссылку:", url);
       }
     }
+
+    function renderReleasePreflight() {
+      const target = document.querySelector("#releasePreflight");
+      if (!target) return;
+      const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
+      const missingFields = objects.flatMap(item => requiredIssues(item));
+      const errors = platformErrors.length + missingFields.length;
+      const complexes = [...new Set(objects.map(item => String(item.complexName || "").trim()).filter(Boolean))];
+      const empty = objects.length === 0;
+      const blocked = empty || errors > 0 || activePlatform === "domclick";
+      const linkButton = document.querySelector("#generateLinkBtn");
+      const downloadButton = document.querySelector("#downloadBtn");
+      if (linkButton) linkButton.disabled = blocked;
+      if (downloadButton) downloadButton.disabled = empty;
+      target.classList.toggle("has-errors", errors > 0 || activePlatform === "domclick");
+      target.classList.toggle("is-empty", empty);
+      target.classList.toggle("is-ready", !blocked);
+      if (empty) {
+        target.innerHTML = "<strong>Нет объектов для выпуска</strong>Подключите источник в разделе «Источники видов» и импортируйте квартиры. После загрузки здесь появится проверка фида.";
+        return;
+      }
+      if (activePlatform === "domclick") {
+        target.innerHTML = `<strong>Тестовый XML · ${objects.length.toLocaleString("ru-RU")} объектов</strong>Домклик закрыт для постоянной публикации до подтверждения схемы.`;
+        return;
+      }
+      target.innerHTML = `<strong>${objects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `ЖК: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `К публикации не готово: ${errors} блокирующих ошибок.` : "Ошибок блокирующего уровня нет. Можно создать выпуск."}`;
+    }
+
+    async function renderReleaseHistory() {
+      const target = document.querySelector("#releaseHistory");
+      if (!target || runtimeMode !== "external" || !appState.generatedFeedId) return;
+      const response = await fetch(`/api/feeds/${encodeURIComponent(appState.generatedFeedId)}/releases`, { credentials: "same-origin", cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        target.innerHTML = `<small>${escapeXml(result.error || "Не удалось загрузить историю выпусков")}</small>`;
+        return;
+      }
+      const releases = result.releases || [];
+      target.innerHTML = releases.length ? `<h3>История выпусков</h3>${releases.map(release => `<div class="release-row"><span><strong>Выпуск ${release.version}</strong><small>${new Date(release.createdAt).toLocaleString("ru-RU")} · ${escapeXml(platformProfiles[release.platform]?.name || release.platform)} · ${Number(release.objectCount || 0).toLocaleString("ru-RU")} объектов</small></span><button type="button" data-release-rollback="${escapeXml(release.id)}" ${release.version === releases[0].version ? "disabled" : ""}>Откатить</button></div>`).join("")}` : "";
+    }
+
+    document.querySelector("#releaseHistory").addEventListener("click", async event => {
+      const button = event.target.closest("[data-release-rollback]");
+      if (!button || !appState.generatedFeedId || !confirm("Восстановить этот выпуск? Текущая версия останется в истории.")) return;
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/feeds/${encodeURIComponent(appState.generatedFeedId)}/releases/${encodeURIComponent(button.dataset.releaseRollback)}/rollback`, { method: "POST", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось откатить выпуск.");
+        appState.generatedLink = result.url;
+        document.querySelector("#generatedLinkInput").value = result.url;
+        renderGeneratedLink();
+        save();
+        await renderReleaseHistory();
+        showToast("Выпуск восстановлен. Предыдущая версия сохранена в истории.");
+      } catch (error) {
+        showToast(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    });
 
     function textOf(node, selectors, fallback = "") {
       for (const selector of selectors) {
@@ -9380,8 +9673,12 @@ ${photos}
         const parsed = file.name.endsWith(".xml") ? parseXmlFile(text, file.name) : { platform: "cian", objects: file.name.endsWith(".json") ? JSON.parse(text) : parseCsvFile(text) };
         const next = parsed.objects;
         if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
+        const incomingPlatform = parsed.platform || "cian";
+        if (projectSources.some(source => source.platform !== incomingPlatform)) {
+          throw new Error("В одном проекте можно объединять источники только одной площадки. Для другого формата создайте отдельный проект.");
+        }
         const sourceId = crypto.randomUUID();
-        activePlatform = parsed.platform || "cian";
+        activePlatform = incomingPlatform;
         activeMonitorPlatform = activePlatform;
         next.forEach(item => {
           const duplicate = objects.find(candidate => candidate.externalId === item.externalId);
@@ -9437,6 +9734,19 @@ ${photos}
       });
     });
 
+    const themeButton = document.querySelector("#themeToggle");
+    const savedTheme = localStorage.getItem("listingflow-theme") || "light";
+    document.body.dataset.theme = savedTheme;
+    themeButton.setAttribute("aria-pressed", String(savedTheme === "dark"));
+    themeButton.setAttribute("aria-label", savedTheme === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
+    themeButton.addEventListener("click", () => {
+      const next = document.body.dataset.theme === "dark" ? "light" : "dark";
+      document.body.dataset.theme = next;
+      localStorage.setItem("listingflow-theme", next);
+      themeButton.setAttribute("aria-pressed", String(next === "dark"));
+      themeButton.setAttribute("aria-label", next === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
+    });
+
     loginForm.addEventListener("submit", submitLogin);
     document.querySelector("#logoutButton").addEventListener("click", logout);
     window.setInterval(() => {
@@ -9445,16 +9755,19 @@ ${photos}
     }, 30000);
     initializeAuth();
   </script>
+  <link rel="stylesheet" href="cookie-consent.css">
   <link rel="stylesheet" href="layout-editor.css">
   <link rel="stylesheet" href="listingflow-ui.css">
+  <link rel="stylesheet" href="usage-guide.css">
   <script src="layout-editor.js"></script>
   <script src="monitor-client.js"></script>
-  <div id="cookieNotice" hidden style="position:fixed;z-index:10000;left:16px;right:16px;bottom:16px;max-width:720px;margin:auto;padding:16px 18px;border:1px solid #fff;background:#f4f5f4;box-shadow:0 18px 50px #0003;border-radius:14px;color:#202121;font:14px/1.45 Circe,system-ui,sans-serif">
+  <script src="usage-guide.js"></script>
+  <div id="cookieNotice" hidden>
     ListingFlow использует обязательные cookies для входа. Яндекс Метрика и Webvisor включатся только с вашего согласия. <a href="/legal.html#cookies">Подробнее</a>
-    <div style="display:flex;gap:8px;margin-top:12px"><button type="button" id="acceptAnalytics" style="padding:9px 14px;border:0;border-radius:8px;background:#202121;color:white">Разрешить аналитику</button><button type="button" id="declineAnalytics" style="padding:9px 14px;border:1px solid #aaa;border-radius:8px;background:white">Только необходимые</button></div>
+    <div><button type="button" id="acceptAnalytics">Разрешить аналитику</button><button type="button" id="declineAnalytics">Только необходимые</button><button type="button" id="openCookiePrefs">Настроить</button></div>
   </div>
-  <script>
-    (()=>{const key="listingflow-analytics-consent-v1";const notice=document.querySelector("#cookieNotice");function load(){if(window.ym)return;(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js?id=112732392","ym");ym(112732392,"init",{ssr:true,webvisor:true,clickmap:true,ecommerce:"dataLayer",referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true})}const saved=localStorage.getItem(key);if(saved==="yes")load();else if(!saved)notice.hidden=false;document.querySelector("#acceptAnalytics").onclick=()=>{localStorage.setItem(key,"yes");notice.hidden=true;load()};document.querySelector("#declineAnalytics").onclick=()=>{localStorage.setItem(key,"no");notice.hidden=true}})();
-  </script>
+  <dialog id="cookiePrefs" aria-labelledby="cookiePrefsTitle"><form method="dialog"><h2 id="cookiePrefsTitle">Настройки cookies</h2><p>Обязательные cookies нужны для входа и всегда включены. Выберите аналитические инструменты отдельно.</p><label><input id="analyticsConsent" type="checkbox"><span><strong>Яндекс Метрика</strong><br>Посещение страниц и карта кликов.</span></label><label><input id="webvisorConsent" type="checkbox"><span><strong>Webvisor</strong><br>Запись взаимодействия с интерфейсом для анализа ошибок.</span></label><div class="cookie-dialog-actions"><button type="button" id="cancelCookiePrefs">Отмена</button><button type="button" id="saveCookiePrefs" class="primary">Сохранить выбор</button></div></form></dialog>
+  <button type="button" id="manageCookiesGlobal" class="cookie-settings-trigger">Настройки cookies</button>
+  <script src="cookie-consent.js" defer></script>
 </body>
 </html>

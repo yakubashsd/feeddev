@@ -1,29 +1,30 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { createSaasStore, verifyPassword } = require("./saas-store");
-const { createFreeKassa } = require("./freekassa");
+const { createPlatega } = require("./platega");
 const { runBackup } = require("./backup");
 
 test("external accounts are isolated, billed per project and limited by purchased quantity", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feeddev-saas-"));
   try {
     const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
-    const user = await store.register({ email: "User@example.ru", password: "long-password", name: "Иван", acceptedLegal: true });
+    const user = await store.register({ email: "User@example.ru", password: "long-password", name: "Иван", acceptedOffer: true, acceptedPersonalData: true });
     assert.equal(user.email, "user@example.ru");
+    const accepted = (await store.adminSnapshot()).audit.find(item => item.action === "register");
+    assert.deepEqual(accepted.details, { offerVersion: "2026-09-22", privacyVersion: "2026-09-22", consentVersion: "2026-09-22" });
     assert.ok(await store.authenticate("USER@example.ru", "long-password"));
     assert.equal(await store.authenticate("user@example.ru", "wrong-password"), null);
     await assert.rejects(store.createProject(user.id, "Первый"), /оплатите/);
 
     const payment = await store.createPayment(user.id, 10);
-    assert.equal(payment.amount, 75000);
-    await assert.rejects(store.completePayment(payment.orderId, "fk-1", 74999), /Сумма/);
-    await store.completePayment(payment.orderId, "fk-1", 75000);
+    assert.equal(payment.amount, 50000);
+    await assert.rejects(store.completePaymentByProviderTransactionId(payment.id, 49999), /Сумма/);
+    await store.completePaymentByProviderTransactionId(payment.id, 50000);
     const firstUntil = (await store.getUser(user.id)).subscriptionUntil;
-    await store.completePayment(payment.orderId, "fk-1", 75000);
+    await store.completePaymentByProviderTransactionId(payment.id, 50000);
     assert.equal((await store.getUser(user.id)).subscriptionUntil, firstUntil, "repeated callback must be idempotent");
 
     const project = await store.createProject(user.id, "Проект 1");
@@ -31,21 +32,45 @@ test("external accounts are isolated, billed per project and limited by purchase
     for (let index = 2; index <= 10; index += 1) await store.createProject(user.id, `Проект ${index}`);
     await assert.rejects(store.createProject(user.id, "Проект 11"), /доступно проектов: 10/);
     const snapshot = await store.adminSnapshot();
-    assert.equal(snapshot.revenue.total, 75000);
-    assert.equal(snapshot.revenue.currentMonth, 75000);
+    assert.equal(snapshot.revenue.total, 50000);
+    assert.equal(snapshot.revenue.currentMonth, 50000);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test("FreeKassa checkout and callback signatures use separate secrets", () => {
-  const fk = createFreeKassa({ merchantId: "123", secret1: "first", secret2: "second" });
-  const url = new URL(fk.checkoutUrl({ orderId: "FD-1", amount: 7500, email: "u@example.ru", userId: "u1" }));
-  assert.equal(url.searchParams.get("oa"), "7500.00");
-  assert.equal(url.searchParams.get("currency"), "RUB");
-  const sign = crypto.createHash("md5").update("123:7500.00:second:FD-1").digest("hex");
-  assert.equal(fk.verifyNotification({ MERCHANT_ID: "123", AMOUNT: "7500.00", MERCHANT_ORDER_ID: "FD-1", SIGN: sign }), true);
-  assert.equal(fk.verifyNotification({ MERCHANT_ID: "123", AMOUNT: "1.00", MERCHANT_ORDER_ID: "FD-1", SIGN: sign }), false);
+test("Platega checkout uses merchant headers and verifies callback headers", async () => {
+  const calls = [];
+  const platega = createPlatega({
+    merchantId: "merchant-1",
+    secret: "secret-1",
+    fetch: async (url, options) => {
+      calls.push({ url, options });
+      return { ok: true, json: async () => ({ redirect: "https://pay.platega.io/checkout/1", transactionId: "tr-1", status: "PENDING" }) };
+    }
+  });
+  const result = await platega.checkoutUrl({ paymentId: "pay-1", orderId: "FD-1", amount: 5000, email: "u@example.ru", projectCount: 1, returnUrl: "https://app.example.ru/" });
+  assert.equal(result.url, "https://pay.platega.io/checkout/1");
+  assert.equal(calls[0].url, "https://app.platega.io/transaction/process");
+  assert.equal(calls[0].options.headers["X-MerchantId"], "merchant-1");
+  assert.equal(calls[0].options.headers["X-Secret"], "secret-1");
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.paymentDetails.amount, 5000);
+  assert.equal(body.id, undefined);
+  assert.equal(JSON.parse(body.payload).orderId, "FD-1");
+  assert.equal(platega.verifyNotification({ "x-merchantid": "merchant-1", "x-secret": "secret-1" }), true);
+  assert.equal(platega.verifyNotification({ "x-merchantid": "merchant-1", "x-secret": "bad" }), false);
+});
+
+test("registration records distinct offer acceptance and personal-data consent", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-consent-"));
+  try {
+    const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
+    await assert.rejects(store.register({ email: "missing@example.ru", password: "long-password", name: "Клиент", acceptedOffer: true }), /отдельное согласие/);
+    await assert.rejects(store.register({ email: "missing@example.ru", password: "long-password", name: "Клиент", acceptedPersonalData: true }), /принять публичную оферту/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("password verifier rejects malformed hashes", () => {
@@ -56,7 +81,7 @@ test("password reset tokens are one-use and expire safely", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-reset-"));
   try {
     const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
-    await store.register({ email: "reset@example.ru", password: "old-password", name: "Клиент", acceptedLegal: true });
+    await store.register({ email: "reset@example.ru", password: "old-password", name: "Клиент", acceptedOffer: true, acceptedPersonalData: true });
     assert.equal(await store.requestPasswordReset("missing@example.ru"), null);
     const reset = await store.requestPasswordReset("reset@example.ru");
     assert.ok(reset.token.length > 30);
@@ -73,10 +98,11 @@ test("payment processing keeps an operator-visible event log", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-payment-log-"));
   try {
     const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
-    const user = await store.register({ email: "payer@example.ru", password: "payer-password", name: "Плательщик", acceptedLegal: true });
+    const user = await store.register({ email: "payer@example.ru", password: "payer-password", name: "Плательщик", acceptedOffer: true, acceptedPersonalData: true });
     const payment = await store.createPayment(user.id, 2);
-    await store.logPaymentEvent("callback_received", { orderId: payment.orderId, amount: payment.amount, source: "freekassa", status: "received" });
-    await store.completePayment(payment.orderId, "provider-1", payment.amount);
+    await store.logPaymentEvent("callback_received", { orderId: payment.orderId, amount: payment.amount, source: "platega", status: "received" });
+    await store.attachPaymentProviderTransaction(payment.orderId, "platega-tr-1");
+    await store.completePaymentByProviderTransactionId("platega-tr-1", payment.amount);
     const events = (await store.adminSnapshot()).paymentLogs;
     assert.ok(events.some(item => item.event === "checkout_created"));
     assert.ok(events.some(item => item.event === "callback_received"));
@@ -109,9 +135,9 @@ test("owner can add a manager and archived projects stop consuming the paid limi
     assert.equal(manager.role, "manager");
     assert.equal((await store.authenticateStaff("MANAGER@example.ru", "manager-password")).id, manager.id);
 
-    const user = await store.register({ email: "client@example.ru", password: "client-password", name: "Клиент", acceptedLegal: true });
+    const user = await store.register({ email: "client@example.ru", password: "client-password", name: "Клиент", acceptedOffer: true, acceptedPersonalData: true });
     const payment = await store.createPayment(user.id, 1);
-    await store.completePayment(payment.orderId, "fk-manager-test", payment.amount);
+    await store.completePaymentByProviderTransactionId(payment.id, payment.amount);
     const first = await store.createProject(user.id, "Первый проект");
     await assert.rejects(store.createProject(user.id, "Второй проект"), /доступно проектов: 1/);
     await store.updateProject(first.id, { status: "archived" }, manager.id);

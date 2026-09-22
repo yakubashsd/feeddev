@@ -8,9 +8,18 @@
   --lf-line-strong:#cdd2da;--lf-accent:#d5ff19;--lf-accent-hover:#c3ed0c;
   --lf-green:#20a35a;--lf-green-bg:#e8f7ee;--lf-blue:#2168e8;--lf-blue-bg:#eaf1ff;
   --lf-amber:#b86b05;--lf-amber-bg:#fff4dc;--lf-red:#d92d38;--lf-red-bg:#ffebed;
+  --lf-success:#16834a;--lf-warning:#8a5700;--lf-blocked:#c52232;--lf-info:#2168e8;--lf-neutral:#697080;
+  --lf-space-1:4px;--lf-space-2:8px;--lf-space-3:12px;--lf-space-4:16px;--lf-space-6:24px;--lf-space-8:32px;
+  --lf-duration-fast:150ms;--lf-duration-normal:220ms;
   --lf-radius:10px;--lf-radius-sm:7px;--lf-shadow:0 1px 2px rgba(16,24,40,.04);
   --lf-font:"Circe","SF Pro Text","Segoe UI",Arial,sans-serif;
 }
+body.client-ui[data-theme="dark"],body.admin-ui[data-theme="dark"]{
+  --lf-bg:#111318;--lf-surface:#191c22;--lf-surface-2:#20242c;--lf-text:#f0f2f5;--lf-muted:#a1a8b4;
+  --lf-line:#333944;--lf-line-strong:#454d5a;--lf-green-bg:#173524;--lf-blue-bg:#1a2b48;
+  --lf-amber-bg:#382d19;--lf-red-bg:#3b2024;--lf-shadow:0 1px 3px rgba(0,0,0,.24);
+}
+body.client-ui[data-theme="dark"],body.admin-ui[data-theme="dark"]{background:var(--lf-bg)!important;color:var(--lf-text)!important}
 *{box-sizing:border-box}
 body.client-ui,body.admin-ui{margin:0;background:var(--lf-bg);color:var(--lf-text);font-family:var(--lf-font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 body.client-ui [hidden],body.admin-ui [hidden]{display:none!important}
@@ -19,6 +28,18 @@ body.admin-ui button,body.admin-ui input,body.admin-ui select,body.admin-ui text
 body.client-ui button,body.client-ui a,body.admin-ui button,body.admin-ui a{touch-action:manipulation}
 body.client-ui button:not(:disabled),body.client-ui a[href],body.admin-ui button:not(:disabled),body.admin-ui a[href]{cursor:pointer}
 body.client-ui :focus-visible,body.admin-ui :focus-visible{outline:3px solid rgba(33,104,232,.28)!important;outline-offset:2px}
+.topbar-actions{display:flex;align-items:center;gap:14px}.theme-toggle{display:grid;place-items:center;width:40px;min-width:40px;height:40px;min-height:40px;padding:0;border:1px solid var(--lf-line)!important;border-radius:8px!important;background:var(--lf-surface)!important;color:var(--lf-text)!important}.theme-toggle svg{width:18px;height:18px}
+body.client-ui[data-theme="dark"] .main,body.client-ui[data-theme="dark"] .app{background:var(--lf-bg)!important;color:var(--lf-text)!important}
+body.client-ui[data-theme="dark"] .topbar,body.client-ui[data-theme="dark"] .source-panel,body.client-ui[data-theme="dark"] .feeds-panel,body.client-ui[data-theme="dark"] .validator-panel,body.client-ui[data-theme="dark"] .complexes-panel,body.client-ui[data-theme="dark"] .table-wrap,body.client-ui[data-theme="dark"] .bulk-panel,body.client-ui[data-theme="dark"] .layouts-panel,body.client-ui[data-theme="dark"] .change-log-panel,body.client-ui[data-theme="dark"] .quality-panel,body.client-ui[data-theme="dark"] .publish-panel,body.client-ui[data-theme="dark"] .billing-card,body.client-ui[data-theme="dark"] .detected-card,body.client-ui[data-theme="dark"] .source-record,body.client-ui[data-theme="dark"] .monitor-card,body.client-ui[data-theme="dark"] .monitor-feed,body.client-ui[data-theme="dark"] .validator-stat,body.client-ui[data-theme="dark"] .validator-result,body.client-ui[data-theme="dark"] .complex-row,body.client-ui[data-theme="dark"] .layout-card,body.client-ui[data-theme="dark"] .change-log-item,body.client-ui[data-theme="dark"] table,body.client-ui[data-theme="dark"] td{background:var(--lf-surface)!important;color:var(--lf-text)!important;border-color:var(--lf-line)!important}
+body.client-ui[data-theme="dark"] .field input,body.client-ui[data-theme="dark"] .field select,body.client-ui[data-theme="dark"] .field textarea,body.client-ui[data-theme="dark"] input:not([type=checkbox]):not([type=range]):not([type=color]),body.client-ui[data-theme="dark"] select,body.client-ui[data-theme="dark"] textarea{background:var(--lf-surface-2)!important;color:var(--lf-text)!important;border-color:var(--lf-line-strong)!important}
+body.client-ui[data-theme="dark"] .source-grid,body.client-ui[data-theme="dark"] .object-filter-panel,body.client-ui[data-theme="dark"] .monitor-add,body.client-ui[data-theme="dark"] .monitor-notification-settings,body.client-ui[data-theme="dark"] .feeds-toolbar,body.client-ui[data-theme="dark"] .validator-toolbar,body.client-ui[data-theme="dark"] .layout-branding,body.client-ui[data-theme="dark"] .publish-row,body.client-ui[data-theme="dark"] th{background:var(--lf-surface-2)!important;color:var(--lf-text)!important;border-color:var(--lf-line)!important}
+body.client-ui[data-theme="dark"] .subtitle,body.client-ui[data-theme="dark"] .panel-caption,body.client-ui[data-theme="dark"] .feed-url,body.client-ui[data-theme="dark"] .source-record small{color:var(--lf-muted)!important}
+body.client-ui .app.project-read-only .main>[data-page]{pointer-events:none;opacity:.82}
+body.client-ui .app.project-read-only .main>[data-page="results"] #downloadBtn,body.client-ui .app.project-read-only .main>[data-page="results"] #copyGeneratedLinkBtn{pointer-events:auto;opacity:1}
+body.admin-ui[data-theme="dark"] .main,body.admin-ui[data-theme="dark"] .top,body.admin-ui[data-theme="dark"] .view,body.admin-ui[data-theme="dark"] .table-wrap,body.admin-ui[data-theme="dark"] .metric,body.admin-ui[data-theme="dark"] .chart,body.admin-ui[data-theme="dark"] .drawer{background:var(--lf-bg)!important;color:var(--lf-text)!important;border-color:var(--lf-line)!important}
+body.admin-ui[data-theme="dark"] table,body.admin-ui[data-theme="dark"] td,body.admin-ui[data-theme="dark"] input,body.admin-ui[data-theme="dark"] select,body.admin-ui[data-theme="dark"] textarea{background:var(--lf-surface)!important;color:var(--lf-text)!important;border-color:var(--lf-line)!important}
+body.admin-ui[data-theme="dark"] th{background:var(--lf-surface-2)!important;color:var(--lf-muted)!important}
+@media(prefers-reduced-motion:reduce){body.client-ui *,body.admin-ui *{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* Shared brand */
 .lf-brand-lockup{display:flex;align-items:center;gap:10px;min-width:0}
@@ -173,3 +194,167 @@ body.admin-ui .dialog{border:1px solid var(--lf-line)!important;border-radius:12
 }
 @media(max-width:430px){.client-ui .project-metrics,.admin-ui .metrics{grid-template-columns:1fr!important}.client-ui .project-metric,.admin-ui .metric{min-height:92px!important}.admin-ui .top h1{font-size:15px!important}.admin-ui .top select{max-width:132px!important}.client-ui .topbar .subtitle{display:none!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* Final consistency pass: semantic release states and complete dark surfaces. */
+body.client-ui .project-metric .metric-icon svg{display:block;width:16px;height:16px;stroke-width:1.8}
+body.client-ui .release-preflight{padding:14px 16px!important;border:1px solid var(--lf-line)!important;border-radius:8px!important;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;line-height:1.5!important}
+body.client-ui .release-preflight strong{display:block;margin-bottom:3px;color:var(--lf-text)!important;font-size:13px!important}
+body.client-ui .release-preflight.is-ready{border-color:#b8dfc7!important;background:var(--lf-green-bg)!important;color:var(--lf-success)!important}
+body.client-ui .release-preflight.has-errors,body.client-ui .release-preflight.is-empty{border-color:#eccb8c!important;background:var(--lf-amber-bg)!important;color:var(--lf-warning)!important}
+body.client-ui .release-preflight.is-empty strong{color:var(--lf-text)!important}
+
+body.client-ui[data-theme="dark"]{color-scheme:dark}
+body.client-ui[data-theme="dark"] .topbar,
+body.client-ui[data-theme="dark"] .editor,
+body.client-ui[data-theme="dark"] .editor-head,
+body.client-ui[data-theme="dark"] .editor-section-nav,
+body.client-ui[data-theme="dark"] .source-panel,
+body.client-ui[data-theme="dark"] .feeds-panel,
+body.client-ui[data-theme="dark"] .validator-panel,
+body.client-ui[data-theme="dark"] .complexes-panel,
+body.client-ui[data-theme="dark"] .table-wrap,
+body.client-ui[data-theme="dark"] .bulk-panel,
+body.client-ui[data-theme="dark"] .layouts-panel,
+body.client-ui[data-theme="dark"] .change-log-panel,
+body.client-ui[data-theme="dark"] .quality-panel,
+body.client-ui[data-theme="dark"] .publish-panel,
+body.client-ui[data-theme="dark"] .billing-page,
+body.client-ui[data-theme="dark"] .billing-card,
+body.client-ui[data-theme="dark"] .projects-page,
+body.client-ui[data-theme="dark"] #projectList,
+body.client-ui[data-theme="dark"] .project-entry,
+body.client-ui[data-theme="dark"] .project-empty,
+body.client-ui[data-theme="dark"] .project-metric,
+body.client-ui[data-theme="dark"] .table-scroll,
+body.client-ui[data-theme="dark"] .layouts-table,
+body.client-ui[data-theme="dark"] .layout-card,
+body.client-ui[data-theme="dark"] .change-log-item,
+body.client-ui[data-theme="dark"] .detected-card,
+body.client-ui[data-theme="dark"] .source-record,
+body.client-ui[data-theme="dark"] .monitor-card,
+body.client-ui[data-theme="dark"] .monitor-feed,
+body.client-ui[data-theme="dark"] .complex-row,
+body.client-ui[data-theme="dark"] .editor-empty,
+body.client-ui[data-theme="dark"] .generated-link,
+body.client-ui[data-theme="dark"] .source-empty,
+body.client-ui[data-theme="dark"] .monitor-note{background-color:var(--lf-surface)!important;color:var(--lf-text)!important;border-color:var(--lf-line)!important}
+body.client-ui[data-theme="dark"] .project-list-head,
+body.client-ui[data-theme="dark"] .source-grid,
+body.client-ui[data-theme="dark"] .object-filter-panel,
+body.client-ui[data-theme="dark"] .monitor-add,
+body.client-ui[data-theme="dark"] .monitor-notification-settings,
+body.client-ui[data-theme="dark"] .feeds-toolbar,
+body.client-ui[data-theme="dark"] .validator-toolbar,
+body.client-ui[data-theme="dark"] .layout-branding,
+body.client-ui[data-theme="dark"] .publish-row,
+body.client-ui[data-theme="dark"] .field input,
+body.client-ui[data-theme="dark"] .field select,
+body.client-ui[data-theme="dark"] .field textarea,
+body.client-ui[data-theme="dark"] input:not([type=checkbox]):not([type=range]):not([type=color]),
+body.client-ui[data-theme="dark"] select,
+body.client-ui[data-theme="dark"] textarea,
+body.client-ui[data-theme="dark"] th{background-color:var(--lf-surface-2)!important;color:var(--lf-text)!important;border-color:var(--lf-line-strong)!important}
+body.client-ui[data-theme="dark"] table,
+body.client-ui[data-theme="dark"] td{background-color:var(--lf-surface)!important;color:var(--lf-text)!important;border-color:var(--lf-line)!important}
+body.client-ui[data-theme="dark"] tbody tr:hover td,
+body.client-ui[data-theme="dark"] .project-entry:hover{background-color:#252a33!important}
+body.client-ui[data-theme="dark"] .projects-heading h2,
+body.client-ui[data-theme="dark"] .panel-title,
+body.client-ui[data-theme="dark"] .project-metric strong,
+body.client-ui[data-theme="dark"] .project-entry strong,
+body.client-ui[data-theme="dark"] .field label,
+body.client-ui[data-theme="dark"] .editor .section-title{color:var(--lf-text)!important}
+body.client-ui[data-theme="dark"] .projects-heading p,
+body.client-ui[data-theme="dark"] .panel-caption,
+body.client-ui[data-theme="dark"] .project-entry small,
+body.client-ui[data-theme="dark"] .project-metric span,
+body.client-ui[data-theme="dark"] .project-metric small,
+body.client-ui[data-theme="dark"] .source-record small,
+body.client-ui[data-theme="dark"] .subtitle,
+body.client-ui[data-theme="dark"] .editor-section-nav button{color:var(--lf-muted)!important}
+body.client-ui[data-theme="dark"] .mobile-menu-toggle,
+body.client-ui[data-theme="dark"] .theme-toggle,
+body.client-ui[data-theme="dark"] button:not(.primary):not(#generateLinkBtn):not(#loadUrlBtn):not(#applyBulkBtn){background-color:var(--lf-surface-2)!important;color:var(--lf-text)!important;border-color:var(--lf-line-strong)!important}
+body.client-ui[data-theme="dark"] button:disabled{opacity:.42!important}
+body.client-ui[data-theme="dark"] .release-preflight{background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;border-color:var(--lf-line)!important}
+body.client-ui[data-theme="dark"] .release-preflight strong{color:var(--lf-text)!important}
+body.client-ui[data-theme="dark"] .release-preflight.is-ready{background:#183326!important;border-color:#28553b!important;color:#a5dfb9!important}
+body.client-ui[data-theme="dark"] .release-preflight.has-errors,
+body.client-ui[data-theme="dark"] .release-preflight.is-empty{background:#382d19!important;border-color:#5e4924!important;color:#e3c27f!important}
+body.client-ui[data-theme="dark"] .top-status{color:#a5dfb9!important}
+body.client-ui[data-theme="dark"] .project-metric .metric-icon{background:#2b3039!important;color:#c6ccd5!important}
+body.client-ui[data-theme="dark"] .project-metric .metric-icon.success{background:#173524!important;color:#66cf91!important}
+body.client-ui[data-theme="dark"] .project-metric .metric-icon.info{background:#1a2b48!important;color:#8bb5ff!important}
+body.client-ui[data-theme="dark"] .project-metric .metric-icon.neutral{background:#2b3039!important;color:#c6ccd5!important}
+
+/* Plan layout workbench */
+body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 330px;gap:12px}
+body.client-ui #layoutsPanel .le-toolbar{position:sticky;top:0;z-index:5;min-height:48px;padding:7px 9px;border:1px solid var(--lf-line);border-radius:9px;background:var(--lf-surface);box-shadow:var(--lf-shadow)}
+body.client-ui #layoutsPanel .le-toolbar strong{margin:0 10px 0 4px;color:var(--lf-text);font-size:14px}
+body.client-ui #layoutsPanel .le-toolbar button{min-height:32px;padding:5px 9px;border:1px solid var(--lf-line)!important;border-radius:6px!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important;font-size:11px;font-weight:650}
+body.client-ui #layoutsPanel .le-toolbar button:hover{border-color:var(--lf-line-strong)!important;background:var(--lf-bg)!important}
+body.client-ui #layoutsPanel .le-toolbar button:disabled{opacity:.4}
+body.client-ui #layoutsPanel .le-save-state{margin-right:auto;color:var(--lf-muted);font-size:11px}
+body.client-ui #layoutsPanel .le-zoom-value{min-width:36px;color:var(--lf-muted);font-size:11px;text-align:center;font-variant-numeric:tabular-nums}
+body.client-ui #layoutsPanel .le-toolbar-divider{width:1px;height:22px;background:var(--lf-line);margin:0 2px}
+body.client-ui #layoutsPanel .brand-preview{min-height:570px;padding:12px;border:1px solid var(--lf-line);border-radius:9px;background:#17191f;box-shadow:none}
+body.client-ui #layoutsPanel .brand-preview-help{align-self:stretch;margin-top:10px;padding:8px 10px;border:1px solid #30343e;border-radius:7px;background:#20232b;color:#aeb4bf;font-size:11px}
+body.client-ui #layoutsPanel .brand-preview-help strong{display:block;margin-bottom:4px;color:#eff1f5}
+body.client-ui #layoutsPanel .brand-preview-help #brandStatus{color:#aeb4bf}
+body.client-ui #layoutsPanel .le-stage{position:relative;align-self:stretch;justify-content:flex-start;min-height:420px;height:100%;margin:0;padding:20px;overflow:auto;border:1px solid #30343e;border-radius:7px;background-color:#1d2027;background-image:radial-gradient(#3b404a .8px,transparent .8px);background-size:16px 16px}
+body.client-ui #layoutsPanel .le-stage.show-grid{background-image:linear-gradient(#353a44 1px,transparent 1px),linear-gradient(90deg,#353a44 1px,transparent 1px),radial-gradient(#515763 .8px,transparent .8px);background-size:80px 80px,80px 80px,16px 16px}
+body.client-ui #layoutsPanel #brandPreviewCanvas{position:relative;z-index:1;flex:0 0 auto;max-width:none;max-height:none;width:auto;height:auto;box-shadow:0 10px 34px rgba(0,0,0,.32);touch-action:none;cursor:crosshair}
+body.client-ui #layoutsPanel .le-selection{z-index:2;border:1px solid #5488ff;box-shadow:0 0 0 1px rgba(84,136,255,.18)}
+body.client-ui #layoutsPanel .le-selection:after{width:9px;height:9px;right:-5px;bottom:-5px;border:1px solid #fff;border-radius:2px;background:#5488ff}
+body.client-ui #layoutsPanel .le-grid-overlay{position:absolute;inset:20px;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(82,132,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(82,132,255,.12) 1px,transparent 1px);background-size:80px 80px}
+body.client-ui #layoutsPanel .le-selection{z-index:3}
+body.client-ui #layoutsPanel .le-stage.panning{cursor:grabbing}
+body.client-ui #layoutsPanel .le-properties .layout-file-control #le-remove-backdrop{min-height:31px;padding:5px 8px;border:1px solid var(--lf-line)!important;background:transparent!important;color:var(--lf-muted)!important;font-size:10px}
+body.client-ui #layoutsPanel .le-properties .layout-file-control #le-remove-backdrop:hover{border-color:var(--lf-red)!important;color:var(--lf-red)!important}
+body.client-ui #layoutsPanel .le-token-fields{display:flex;flex-wrap:wrap;gap:5px}
+body.client-ui #layoutsPanel .le-token-fields button{min-height:27px;padding:3px 7px;border:1px solid var(--lf-line)!important;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;font-size:10px}
+body.client-ui #layoutsPanel .le-properties{grid-column:2;grid-row:2/4;position:sticky;top:62px;align-self:start;max-height:calc(100dvh - 86px);overflow:auto;padding:14px;border:1px solid var(--lf-line);border-radius:9px;background:var(--lf-surface);color:var(--lf-text);box-shadow:var(--lf-shadow)}
+body.client-ui #layoutsPanel .le-section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+body.client-ui #layoutsPanel .le-section-title h3,body.client-ui #layoutsPanel #le-property-title{margin:0;color:var(--lf-text);font-size:13px;font-weight:750}
+body.client-ui #layoutsPanel .le-layer-count{color:var(--lf-muted);font-size:10px}
+body.client-ui #layoutsPanel .le-layers{display:grid;gap:3px;margin:0 0 8px}
+body.client-ui #layoutsPanel .le-layers>button,body.client-ui #layoutsPanel .le-user-layer>button:first-child{display:flex;align-items:center;gap:9px;min-height:35px;padding:6px 8px;border:1px solid transparent!important;border-radius:6px!important;background:transparent!important;color:var(--lf-muted)!important;font-size:11px;text-align:left}
+body.client-ui #layoutsPanel .le-layers>button[aria-pressed=true],body.client-ui #layoutsPanel .le-user-layer.selected>button:first-child{border-color:var(--lf-line)!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important}
+body.client-ui #layoutsPanel .le-layer-icon{display:grid;place-items:center;width:21px;height:21px;flex:0 0 21px;border:1px solid var(--lf-line);border-radius:4px;color:var(--lf-muted);font-size:11px;font-weight:750}
+body.client-ui #layoutsPanel .le-user-layers{display:grid;gap:2px;margin:0 0 14px;padding:5px 0;border-block:1px solid var(--lf-line)}
+body.client-ui #layoutsPanel .le-user-layer{display:flex;align-items:center;gap:4px;min-width:0}
+body.client-ui #layoutsPanel .le-user-layer>button:first-child{flex:1;min-width:0}
+body.client-ui #layoutsPanel .le-user-layer>button:first-child>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.client-ui #layoutsPanel .le-layer-actions{display:flex;gap:1px}
+body.client-ui #layoutsPanel .le-layer-actions button{width:23px;min-height:25px;padding:0;border:0!important;background:transparent!important;color:var(--lf-muted)!important;font-size:12px}
+body.client-ui #layoutsPanel .le-layer-actions button:hover{background:var(--lf-surface-2)!important;color:var(--lf-text)!important}
+body.client-ui #layoutsPanel .le-layer-actions button:disabled{opacity:.3}
+body.client-ui #layoutsPanel #le-property-title{margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--lf-line)}
+body.client-ui #layoutsPanel .le-properties>.le-hint{margin:0 0 10px;color:var(--lf-muted);font-size:10px;line-height:1.5}
+body.client-ui #layoutsPanel .le-inspector{display:grid;gap:10px}
+body.client-ui #layoutsPanel .le-field{display:grid;gap:5px;color:var(--lf-muted);font-size:10px;font-weight:650}
+body.client-ui #layoutsPanel .le-field input:not([type=color]):not([type=range]),body.client-ui #layoutsPanel .le-field textarea{width:100%;min-height:34px!important;padding:7px 9px!important;border:1px solid var(--lf-line-strong)!important;border-radius:6px!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important;font-size:12px!important}
+body.client-ui #layoutsPanel .le-field input[type=color]{width:100%;height:34px;padding:3px;border:1px solid var(--lf-line-strong);border-radius:6px;background:var(--lf-surface-2)}
+body.client-ui #layoutsPanel .le-field input[type=range]{width:100%;accent-color:#5488ff}
+body.client-ui #layoutsPanel .le-property-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+body.client-ui #layoutsPanel .le-properties .brand-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0;border:0;background:transparent}
+body.client-ui #layoutsPanel .le-properties .brand-controls>.layout-file-control{grid-column:1/-1}
+body.client-ui #layoutsPanel .le-properties .brand-controls>.field,body.client-ui #layoutsPanel .le-properties .brand-controls>button{grid-column:1/-1;margin:0}
+body.client-ui #layoutsPanel .le-properties .template-layer-editor{display:grid;gap:9px;padding:0;border:0;background:transparent}
+body.client-ui #layoutsPanel .le-properties .template-text-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0;border:0;background:transparent}
+body.client-ui #layoutsPanel .le-properties .template-text-controls>.field{grid-column:1/-1}
+body.client-ui #layoutsPanel .le-properties .template-text-controls>.field.compact{grid-column:auto}
+body.client-ui #layoutsPanel .le-properties .le-fields button{min-height:28px;padding:4px 7px;border:1px solid var(--lf-line)!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important;font-size:10px}
+body.client-ui #layoutsPanel #le-search{margin:8px 0;width:100%;min-height:36px!important}
+body.client-ui #layoutsPanel .brand-source-panel{padding:11px;border:1px solid var(--lf-line);border-radius:8px;background:var(--lf-surface)}
+body.client-ui #layoutsPanel .brand-source-head strong{color:var(--lf-text);font-size:11px}
+body.client-ui #layoutsPanel .brand-layout-picker{max-height:125px}
+body.client-ui #layoutsPanel .brand-layout-option{background:var(--lf-surface-2);border-color:var(--lf-line)}
+body.client-ui #layoutsPanel .le-footer{padding:11px;border-color:var(--lf-line);border-radius:8px;background:var(--lf-surface)}
+body.client-ui #layoutsPanel .le-footer p{color:var(--lf-muted);font-size:10px}
+body.client-ui #layoutsPanel .le-check-dialog{border:1px solid var(--lf-line);border-radius:10px;background:var(--lf-surface);color:var(--lf-text)}
+body.client-ui #layoutsPanel .le-check-dialog figure{border-color:var(--lf-line);background:var(--lf-surface-2)}
+body.client-ui[data-theme="dark"] #layoutsPanel .brand-preview{background:#17191f}
+body.client-ui[data-theme="dark"] #layoutsPanel .le-properties{background:var(--lf-surface)!important;color:var(--lf-text)!important}
+@media(max-width:1050px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 290px}body.client-ui #layoutsPanel .le-toolbar .le-save-state{display:none}}
+@media(max-width:760px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr)}body.client-ui #layoutsPanel .brand-preview{grid-column:1;grid-row:2;min-height:410px}body.client-ui #layoutsPanel .le-stage{min-height:300px;padding:12px}body.client-ui #layoutsPanel .le-properties{position:relative;top:auto;grid-column:1;grid-row:4;max-height:none}body.client-ui #layoutsPanel .brand-source-panel{grid-column:1;grid-row:3}body.client-ui #layoutsPanel .le-footer{grid-row:5}body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto}body.client-ui #layoutsPanel .le-toolbar button{min-height:34px}}

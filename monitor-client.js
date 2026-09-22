@@ -3,6 +3,11 @@
   let ready=false,queue=Promise.resolve();
   const endpoint=()=>'/api/monitor?project='+encodeURIComponent(currentProject?.id||'default');
   const note=document.querySelector('.monitor-note');
+  let serviceHealthNote='';
+  async function refreshServiceHealth(){
+    try{const response=await fetch('/api/health',{cache:'no-store'});const health=await response.json();serviceHealthNote=health.backgroundSyncReady?'Серверная проверка работает без открытой вкладки. Следующий запуск источников виден в их карточках.':'Автоматическая синхронизация недоступна в текущей конфигурации хранилища.';}
+    catch{serviceHealthNote='Не удалось получить состояние фоновых задач сервера.';}
+  }
   const tgStatus=document.querySelector('#telegramConnectionStatus');
   const tgConnect=document.querySelector('#connectTelegram');
   const tgConfirm=document.querySelector('#confirmTelegram');
@@ -50,7 +55,7 @@
       let result=await request();
       if(!ready&& !result.feeds.length && readMonitoredFeeds().length)result=await request('PUT',{feeds:readMonitoredFeeds()});
       ready=true;localSave(result.feeds);renderFeedsList();
-      note.textContent='';
+      await refreshServiceHealth();note.textContent=serviceHealthNote;
     }catch(error){note.textContent=error.message;}
   }
   saveMonitoredFeeds=function(feeds){
@@ -65,6 +70,6 @@
     catch(error){showToast(error.message);}finally{button.disabled=false;}
   };
   document.querySelector('[data-nav="feeds"]').addEventListener('click',refresh);
-  document.querySelector('#feedsPanel .panel-caption').textContent='Добавьте ссылки: сервер будет проверять все фиды проекта каждые 12 часов и сообщать о новых ошибках.';
+  document.querySelector('#feedsPanel .panel-caption').textContent='Добавьте постоянные ссылки: сервер проверяет XML, изменения состава и доступность изображений по расписанию, а о новых ошибках отправляет уведомление.';
   setInterval(()=>{if(activePage==='feeds')refresh();},30000);
 })();

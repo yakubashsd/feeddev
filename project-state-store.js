@@ -26,21 +26,29 @@ function createProjectStateStore({ dataDir, secret }) {
   }
   async function get(userId, projectId) {
     const target = file(userId, projectId);
-    if (!fs.existsSync(target)) return { state: null, updatedAt: null };
+    if (!fs.existsSync(target)) return { state: null, updatedAt: null, revision: 0 };
     const record = decrypt(fs.readFileSync(target, "utf8"));
-    return { state: record.state || {}, updatedAt: record.updatedAt || null };
+    return { state: record.state || {}, updatedAt: record.updatedAt || null, revision: Number(record.revision || 1) };
   }
-  function put(userId, projectId, state) {
+  function put(userId, projectId, state, expectedRevision) {
     if (!state || typeof state !== "object" || Array.isArray(state)) throw new Error("Некорректное состояние проекта.");
     const target = file(userId, projectId);
     const previous = queues.get(target) || Promise.resolve();
     const operation = previous.then(async () => {
       fs.mkdirSync(root, { recursive: true });
-      const record = { version: 1, userId, projectId, state, updatedAt: new Date().toISOString() };
+      const current = fs.existsSync(target) ? decrypt(fs.readFileSync(target, "utf8")) : null;
+      const currentRevision = Number(current?.revision || 0);
+      if (expectedRevision !== undefined && Number(expectedRevision) !== currentRevision) {
+        const conflict = new Error("Состояние проекта уже изменилось на другом устройстве.");
+        conflict.code = "REVISION_CONFLICT";
+        conflict.current = { state: current?.state || null, updatedAt: current?.updatedAt || null, revision: currentRevision };
+        throw conflict;
+      }
+      const record = { version: 2, revision: currentRevision + 1, userId, projectId, state, updatedAt: new Date().toISOString() };
       const temp = `${target}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
       fs.writeFileSync(temp, `${encrypt(record)}\n`, { mode: 0o600 });
       fs.renameSync(temp, target);
-      return { updatedAt: record.updatedAt };
+      return { updatedAt: record.updatedAt, revision: record.revision };
     });
     queues.set(target, operation.catch(() => {}));
     return operation;

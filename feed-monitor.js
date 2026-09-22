@@ -5,6 +5,27 @@ const http = require('node:http');
 const https = require('node:https');
 const net = require('node:net');
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
+const imageUrls = value => {
+  const found = [];
+  const visit = (node, key = '') => {
+    if (Array.isArray(node)) return node.forEach(item => visit(item, key));
+    if (!node || typeof node !== 'object') {
+      if (/image|photo|картин|изображ/i.test(key)) {
+        const match = String(node || '').match(/https?:\/\/[^\s<>"']+/i);
+        if (match) found.push(match[0]);
+      }
+      return;
+    }
+    for (const [childKey, child] of Object.entries(node)) visit(child, `${key}.${childKey}`);
+  };
+  visit(value);
+  return [...new Set(found)].slice(0, 3);
+};
+function listingCount(parsed) {
+  const values = [parsed?.Ads?.Ad, parsed?.['realty-feed']?.offer, parsed?.feed?.object, parsed?.DomclickFeed?.Offer, parsed?.Feed?.Offer];
+  const listing = values.find(value => value !== undefined);
+  return listing === undefined ? 0 : Array.isArray(listing) ? listing.length : 1;
+}
 
 function validateContent(xml) {
   const parsed=new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);
@@ -48,7 +69,7 @@ async function downloadResource(url, { redirects=0, maxBytes=20*1024*1024, binar
 }
 const download=url=>downloadResource(url);
 const downloadBuffer=(url,maxBytes)=>downloadResource(url,{maxBytes,binary:true});
-function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000}) {
+function createMonitor({file,notify=async()=>{},load=download,loadImage=downloadBuffer,intervalMs=3600000}) {
   let busy=false;
   const read=()=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{};
   const write=data=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(data));fs.renameSync(file+'.tmp',file);};
@@ -70,11 +91,21 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
         for(const feed of feeds){
           if(id&&feed.id!==id)continue;
           if(!force&&Date.now()-Date.parse(feed.lastChecked||0)<intervalMs)continue;
-          const checked={...feed,lastChecked:new Date().toISOString(),status:'ok',error:''};
-          try{const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');validateContent(xml);}
+          const checked={...feed,lastChecked:new Date().toISOString(),status:'ok',error:'',warnings:[]};
+          try{
+            const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');validateContent(xml);
+            const parsed=new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);const count=listingCount(parsed);
+            checked.objectCount=count;checked.baselineObjectCount=Number(feed.baselineObjectCount||count);
+            if(feed.baselineObjectCount&&count>0&&count<Number(feed.baselineObjectCount)*0.5)checked.warnings.push(`Количество объявлений снизилось с ${feed.baselineObjectCount} до ${count}`);
+            const urls=imageUrls(parsed);const failed=[];
+            await Promise.all(urls.map(async url=>{try{const image=await loadImage(url,5*1024*1024);if(!String(image.contentType||'').toLowerCase().startsWith('image/'))failed.push(url);}catch{failed.push(url);}}));
+            if(failed.length)checked.warnings.push(`Не удалось проверить изображения: ${failed.length} из ${urls.length}`);
+            checked.status=checked.warnings.length?'warning':'ok';checked.lastSuccessAt=checked.lastChecked;
+          }
           catch(error){checked.status='bad';checked.error=error.message;}
           const latest=read(),record=latest[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
-          if(checked.status==='bad'&&(record.telegramEnabled||record.emailEnabled)&&(record.status!=='bad'||record.error!==checked.error)){
+          const changed=checked.status!==record.status||checked.error!==record.error||JSON.stringify(checked.warnings)!==JSON.stringify(record.warnings||[]);
+          if(checked.status!=='ok'&&(record.telegramEnabled||record.emailEnabled)&&changed){
             try{
               const notification=await notify({...checked,...record,status:checked.status,error:checked.error,projectId:key});
               if(notification?.telegramSent)checked.telegramNotifiedAt=new Date().toISOString();
@@ -82,7 +113,7 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
               checked.notificationError=notification?.errors?.join(' ')||'';
             }catch(error){checked.notificationError=error.message;}
           }
-          Object.assign(record,{status:checked.status,error:checked.error,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,emailNotifiedAt:checked.emailNotifiedAt,notificationError:checked.notificationError});write(latest);
+          Object.assign(record,{status:checked.status,error:checked.error,warnings:checked.warnings,objectCount:checked.objectCount||record.objectCount,baselineObjectCount:checked.baselineObjectCount||record.baselineObjectCount,lastSuccessAt:checked.lastSuccessAt||record.lastSuccessAt,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,emailNotifiedAt:checked.emailNotifiedAt,notificationError:checked.notificationError});write(latest);
         }
       }
     }finally{busy=false;}
