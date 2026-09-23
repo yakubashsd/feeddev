@@ -4323,12 +4323,14 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) 110px minmax(190px,auto) auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record { display:grid; grid-template-columns:110px minmax(180px,1.2fr) minmax(220px,1.5fr) 110px minmax(190px,auto) auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
     .source-record strong, .source-record small { display:block; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .source-record .source-next small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.35; }
     .source-record.is-selected { border-color:#171717; box-shadow:0 0 0 2px #171717 inset; }
     .source-record[data-source-select] { cursor:pointer; }
+    .source-select-control { display:flex; align-items:center; gap:7px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .source-select-control input { width:16px; height:16px; margin:0; accent-color:#171717; }
     .source-selection { display:grid; grid-template-columns:auto minmax(220px, 360px); align-items:center; gap:8px 12px; margin-top:14px; padding:12px 14px; border:1px solid var(--line); border-radius:9px; background:#fafafa; }
     .source-selection label { font-size:12px; font-weight:700; }
     .source-selection select { min-height:34px; }
@@ -4847,7 +4849,7 @@
             <input id="serverBaseUrl" type="url" value="https://feeds.sozdateli.ru" readonly aria-describedby="serverBaseUrlHint">
             <small id="serverBaseUrlHint">Закреплённый домен публикации</small>
           </div>
-          <button id="generateLinkBtn" type="button" class="primary">Сгенерировать ссылку</button>
+          <button id="generateLinkBtn" type="button" class="primary">Сохранить фид</button>
           <button id="downloadBtn">Скачать XML</button>
           <button id="copyGeneratedLinkBtn" type="button">Копировать</button>
         </div>
@@ -5064,7 +5066,6 @@
       <div class="feed-error-actions">
         <button type="button" id="feedErrorOpenApartments">Исправить</button>
         <button type="button" class="primary" id="feedErrorOpenValidator">Валидатор</button>
-        <button type="button" class="primary" id="feedErrorSaveFeed">Сохранить фид</button>
       </div>
     </aside>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -6109,6 +6110,7 @@
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
+          <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Рабочий фид: ${escapeXml(source.name || platform)}"><span>Рабочий фид</span></label>
           <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
@@ -7703,7 +7705,7 @@
       if (box) {
         box.dataset.url = appState.generatedLink;
         box.classList.add("ready");
-        box.textContent = `${appState.generatedLink} — в фиде есть несохраненные изменения. Нажмите «Сгенерировать ссылку», чтобы обновить XML по этому же адресу.`;
+        box.textContent = `${appState.generatedLink} — в фиде есть несохраненные изменения. Нажмите «Сохранить фид», чтобы обновить XML по этому же адресу.`;
       }
       const input = document.querySelector("#generatedLinkInput");
       if (input) input.value = appState.generatedLink;
@@ -8907,7 +8909,7 @@ ${photos}
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
-        button.textContent = "Сгенерировать ссылку";
+        button.textContent = "Сохранить фид";
       }
     }
 
@@ -9328,6 +9330,12 @@ ${photos}
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const syncButton = event.target.closest("[data-source-sync]");
       const removeButton = event.target.closest("[data-source-remove]");
+      const check = event.target.closest("[data-source-check]");
+      if (check) {
+        event.preventDefault();
+        selectSource(check.dataset.sourceCheck);
+        return;
+      }
       const sourceCard = event.target.closest("[data-source-select]");
       if (sourceCard && !syncButton && !removeButton) {
         selectSource(sourceCard.dataset.sourceSelect);
@@ -9355,7 +9363,6 @@ ${photos}
     });
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
     document.querySelector("#copyGeneratedLinkBtn").addEventListener("click", copyGeneratedLink);
-    document.querySelector("#feedErrorSaveFeed").addEventListener("click", generateFeedLink);
     document.querySelector("#publishedHistory").addEventListener("click", event => {
       const button = event.target.closest("[data-delete-published-history]");
       if (button) deletePublishedHistory(button.dataset.deletePublishedHistory);
