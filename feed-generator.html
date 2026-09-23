@@ -4327,6 +4327,13 @@
     .source-record strong, .source-record small { display:block; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .source-record .source-next small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.35; }
+    .source-record.is-selected { border-color:#171717; box-shadow:0 0 0 2px #171717 inset; }
+    .source-record[data-source-select] { cursor:pointer; }
+    .source-selection { display:grid; grid-template-columns:auto minmax(220px, 360px); align-items:center; gap:8px 12px; margin-top:14px; padding:12px 14px; border:1px solid var(--line); border-radius:9px; background:#fafafa; }
+    .source-selection label { font-size:12px; font-weight:700; }
+    .source-selection select { min-height:34px; }
+    .source-selection small { grid-column:2; color:var(--muted); font-size:11px; }
+    .published-history-item button { flex:0 0 auto; min-height:28px; padding:0 9px; }
     .source-record .source-health { font-size:11px; color:#444; }
     .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
     .source-empty { padding:24px; border:1px dashed var(--line-strong); border-radius:9px; color:var(--muted); text-align:center; }
@@ -4347,7 +4354,7 @@
     .template-text-controls .span-2 { grid-column:span 2; }
     .template-text-controls input[type="color"] { min-height:42px; padding:5px; }
     @media(max-width:780px) { .layer-list, .template-text-controls { grid-template-columns:1fr; } .layer-list>div { border-right:0; border-bottom:1px solid var(--line); } .template-text-controls .span-2 { grid-column:auto; } }
-    @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } }
+    @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } .source-selection { grid-template-columns:1fr; } .source-selection small { grid-column:auto; } }
     @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } }
     /* One page title and one navigation; technical guidance stays contextual. */
     .main > section > .panel-title,
@@ -4529,6 +4536,7 @@
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
+        <div class="source-selection"><label for="activeSourceSelect">Рабочий фид</label><select id="activeSourceSelect"><option value="all">Все фиды проекта</option></select><small>Выберите источник, с которым сейчас работаете. Фильтр влияет на список квартир и проверку.</small></div>
         <div class="source-schedule-note">Новые источники обновляются каждые 12 часов. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
@@ -5056,6 +5064,7 @@
       <div class="feed-error-actions">
         <button type="button" id="feedErrorOpenApartments">Исправить</button>
         <button type="button" class="primary" id="feedErrorOpenValidator">Валидатор</button>
+        <button type="button" class="primary" id="feedErrorSaveFeed">Сохранить фид</button>
       </div>
     </aside>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -5309,6 +5318,27 @@
       objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
       originalObjects = structuredClone(objects);
     }
+    let activeSourceId = appState.activeSourceId || projectSources[0]?.id || "all";
+
+    function activePublicationKey() {
+      return activeSourceId !== "all" ? activeSourceId : (appState.feedUrl || "default-feed");
+    }
+
+    function selectSource(sourceId) {
+      activeSourceId = sourceId || "all";
+      const source = projectSources.find(item => item.id === activeSourceId);
+      const publication = appState.publishedFeeds?.[activePublicationKey()] || {};
+      if (source) {
+        activePlatform = source.platform || activePlatform;
+        appState.feedUrl = source.url;
+      }
+      appState.generatedFeedId = publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
+      appState.generatedLink = publication.url || (activeSourceId === "all" ? appState.generatedLink : "");
+      appState.publishedHistory = publication.history || (activeSourceId === "all" ? appState.publishedHistory : []);
+      save();
+      renderAll();
+      showToast(source ? `Выбран фид «${source.name || source.url}»` : "Показаны все фиды проекта");
+    }
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -5482,7 +5512,9 @@
           serverBaseUrl: saved.serverBaseUrl || "",
           generatedLink: saved.generatedLink || "",
           generatedFeedId: saved.generatedFeedId || "",
-          publishedHistory: Array.isArray(saved.publishedHistory) ? saved.publishedHistory : []
+          publishedHistory: Array.isArray(saved.publishedHistory) ? saved.publishedHistory : [],
+          activeSourceId: saved.activeSourceId || "all",
+          publishedFeeds: saved.publishedFeeds && typeof saved.publishedFeeds === "object" ? saved.publishedFeeds : {}
         };
         if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
         const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
@@ -5498,7 +5530,7 @@
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
-      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [] }));
+      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} }));
     }
 
     function loadChangeLog() {
@@ -5887,6 +5919,8 @@
       const areaTo = numberValue(document.querySelector("#areaTo").value);
       const issue = document.querySelector("#issueFilter").value;
       const filtered = objects.filter(item => {
+        const sourceIds = item._sourceIds || (item._sourceId ? [item._sourceId] : []);
+        const matchesSource = activeSourceId === "all" || sourceIds.includes(activeSourceId);
         const joined = [item.externalId, item.flatNumber, item.sectionNumber, item.complexName, item.buildingName].join(" ").toLowerCase();
         const matchesTerm = !term || joined.includes(term);
         const st = itemStatus(item).type;
@@ -5902,9 +5936,14 @@
         const matchesArea = (!areaFrom || itemArea >= areaFrom) && (!areaTo || itemArea <= areaTo);
         const keys = issueKeys(item);
         const matchesIssue = issue === "all" || (issue === "__errors__" ? keys.length > 0 : keys.includes(issue));
-        return matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
+        return matchesSource && matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
       });
       return sortObjects(filtered);
+    }
+
+    function workingObjects() {
+      if (activeSourceId === "all") return objects;
+      return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(activeSourceId));
     }
 
     function sortObjects(items) {
@@ -6004,7 +6043,7 @@
 
     function complexGroups() {
       const groups = new Map();
-      objects.forEach(item => {
+      workingObjects().forEach(item => {
         const name = String(item.complexName || item.buildingName || (item.avitoNewDevelopmentId ? `Новостройка Avito ${item.avitoNewDevelopmentId}` : item.address) || "Без названия").trim();
         const key = normalizeProjectName(name);
         if (!groups.has(key)) groups.set(key, { key, name, items: [], houses: new Set() });
@@ -6060,11 +6099,16 @@
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
+      const selector = document.querySelector("#activeSourceSelect");
+      if (selector) {
+        selector.innerHTML = `<option value="all">Все фиды проекта</option>${projectSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || source.url)}</option>`).join("")}`;
+        selector.value = projectSources.some(source => source.id === activeSourceId) ? activeSourceId : "all";
+      }
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
-        return `<article class="source-record">
+        return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
           <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
@@ -7609,24 +7653,48 @@
       if (!history.length) { node.innerHTML = ""; return; }
       node.innerHTML = `<div class="published-history-head">История публикаций · ссылка проекта не меняется</div>${history.slice(0, 8).map(item => {
         const date = item.updatedAt ? new Date(item.updatedAt).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" }) : "";
-        return `<div class="published-history-item"><a href="${escapeXml(item.url || appState.generatedLink)}" target="_blank" rel="noreferrer">Версия ${escapeXml(String(item.version || ""))} · ${escapeXml(item.url || appState.generatedLink)}</a><span>${escapeXml(date)} · ${escapeXml(String(item.objectCount || 0))} объектов</span></div>`;
+        return `<div class="published-history-item"><a href="${escapeXml(item.url || appState.generatedLink)}" target="_blank" rel="noreferrer">Версия ${escapeXml(String(item.version || ""))} · ${escapeXml(item.url || appState.generatedLink)}</a><span>${escapeXml(date)} · ${escapeXml(String(item.objectCount || 0))} объектов</span><button type="button" data-delete-published-history="${escapeXml(String(item.version || ""))}" title="Удалить запись из истории">Удалить</button></div>`;
       }).join("")}`;
     }
 
     async function hydratePublishedFeedState() {
-      if (!currentProject?.id || appState.generatedFeedId) return;
+      if (!currentProject?.id) return;
       try {
         const response = await fetch(`/api/feeds?projectId=${encodeURIComponent(currentProject.id)}`, { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) return;
         const result = await response.json();
-        const record = result.feeds?.[0];
+        const records = Array.isArray(result.feeds) ? result.feeds : [];
+        const matched = records.filter(record => projectSources.some(source => source.url === record.sourceUrl));
+        const record = matched[0] || records[0];
         if (!record) return;
+        const mapped = {};
+        matched.forEach(item => {
+          const source = projectSources.find(candidate => candidate.url === item.sourceUrl);
+          if (source) mapped[source.id] = { id: item.id, url: item.url, history: item.history || [] };
+        });
+        if (record && !matched.length) mapped["default-feed"] = { id: record.id, url: record.url, history: record.history || [] };
+        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), ...mapped };
         appState.generatedFeedId = record.id || record.slug || "";
         appState.generatedLink = record.url || "";
         appState.publishedHistory = Array.isArray(record.history) ? record.history : [];
         save();
         renderAll();
       } catch { /* server may be unavailable in static prototype */ }
+    }
+
+    async function deletePublishedHistory(version) {
+      if (!version || !confirm(`Удалить версию ${version} из истории публикаций?`)) return;
+      try {
+        const response = await fetch(`/api/feeds/${encodeURIComponent(appState.generatedFeedId)}/history/${encodeURIComponent(version)}`, { method: "DELETE", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+        appState.publishedHistory = Array.isArray(result.history) ? result.history : (appState.publishedHistory || []).filter(item => String(item.version) !== String(version));
+        save();
+        renderPublishedHistory();
+        showToast("Запись удалена из истории");
+      } catch (error) {
+        showToast(`Не удалось удалить запись: ${error.message}`);
+      }
     }
 
     function invalidateGeneratedLink() {
@@ -8187,12 +8255,13 @@ ${photos}
     function validateFeedForPlatform(platform = activePlatform) {
       const findings = [];
       const add = (severity, title, message, ids = []) => findings.push({ severity, title, message, ids });
-      if (!objects.length) {
+      const currentObjects = workingObjects();
+      if (!currentObjects.length) {
         add("warning", "Фид не загружен", "Сначала загрузите ссылку или XML-файл в рабочей области.");
         return findings;
       }
 
-      const xmlText = buildXml(objects, platform);
+      const xmlText = buildXml(currentObjects, platform);
       const parsed = new DOMParser().parseFromString(xmlText, "application/xml");
       if (parsed.querySelector("parsererror")) {
         add("error", "XML содержит синтаксическую ошибку", "Исправьте структуру XML перед передачей агрегатору.");
@@ -8275,18 +8344,18 @@ ${photos}
       }
 
       if (platform === "cian") {
-        const badDescriptions = objects.filter(item => String(item.description || "").trim().length < 15 || String(item.description || "").trim().length > 3000);
+        const badDescriptions = currentObjects.filter(item => String(item.description || "").trim().length < 15 || String(item.description || "").trim().length > 3000);
         if (badDescriptions.length) add("error", "ЦИАН: длина Description", "Описание должно содержать от 15 до 3000 символов.", badDescriptions.map(item => item.externalId || "без ID"));
-        const badRooms = objects.filter(item => ![1, 2, 3, 4, 5, 6, 7, 9].includes(Number(item.rooms)));
+        const badRooms = currentObjects.filter(item => ![1, 2, 3, 4, 5, 6, 7, 9].includes(Number(item.rooms)));
         if (badRooms.length) add("error", "ЦИАН: неверный FlatRoomsCount", "Допустимы значения 1–7 и 9 для студии.", badRooms.map(item => item.externalId || "без ID"));
       }
 
       if (platform === "yandex") {
-        const badQuarters = objects.filter(item => !["first", "second", "third", "fourth", "1", "2", "3", "4"].includes(String(item.quarter || "")));
+        const badQuarters = currentObjects.filter(item => !["first", "second", "third", "fourth", "1", "2", "3", "4"].includes(String(item.quarter || "")));
         if (badQuarters.length) add("error", "Яндекс: неверный ready-quarter", "Квартал сдачи должен быть от 1 до 4.", badQuarters.map(item => item.externalId || "без ID"));
-        const badYears = objects.filter(item => !/^\d{4}$/.test(String(item.year || "")));
+        const badYears = currentObjects.filter(item => !/^\d{4}$/.test(String(item.year || "")));
         if (badYears.length) add("error", "Яндекс: неверный built-year", "Год сдачи указывается четырьмя цифрами.", badYears.map(item => item.externalId || "без ID"));
-        const badPhones = objects.filter(item => !/^7\d{10}$/.test(String(item.phone || "").replace(/\D/g, "").replace(/^8/, "7")));
+        const badPhones = currentObjects.filter(item => !/^7\d{10}$/.test(String(item.phone || "").replace(/\D/g, "").replace(/^8/, "7")));
         if (badPhones.length) add("error", "Яндекс: неверный телефон", "Номер продавца должен соответствовать формату +7XXXXXXXXXX.", badPhones.map(item => item.externalId || "без ID"));
       }
 
@@ -8380,7 +8449,7 @@ ${photos}
 
     function issueGroups() {
       const groups = new Map();
-      objects.forEach(item => {
+      workingObjects().forEach(item => {
         requiredIssues(item).forEach(label => {
           const key = issueKeyFromLabel(label);
           const guide = issueGuides[key] || {
@@ -8420,15 +8489,14 @@ ${photos}
     function renderFeedErrorPopover() {
       const panel = document.querySelector("#feedErrorPopover");
       if (!panel) return;
-      const shouldShow = Boolean(currentProject && feedErrorPanelActivated && activePage !== "projects");
-      panel.hidden = !shouldShow;
-      if (!shouldShow) return;
-
       const groups = issueGroups();
       const platformErrors = platformErrorFindings();
       const issueTotal = groups.reduce((sum, group) => sum + group.count, 0);
-      const objectsWithIssues = objects.filter(item => requiredIssues(item).length).length;
+      const objectsWithIssues = workingObjects().filter(item => requiredIssues(item).length).length;
       const hasErrors = Boolean(issueTotal || platformErrors.length);
+      const shouldShow = Boolean(currentProject && feedErrorPanelActivated && activePage !== "projects" && hasErrors);
+      panel.hidden = !shouldShow;
+      if (!shouldShow) return;
       panel.classList.toggle("is-clean", !hasErrors);
       panel.classList.toggle("minimized", feedErrorPanelMinimized);
 
@@ -8567,6 +8635,7 @@ ${photos}
         const requestedPlatform = existingSource?.requestedPlatform || document.querySelector("#sourcePlatform").value;
         if (!parsed.objects.length) throw new Error("В XML не найдено объектов");
         const id = existingSource?.id || crypto.randomUUID();
+        activeSourceId = id;
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
         const sourceOverrides = new Map();
@@ -8664,8 +8733,9 @@ ${photos}
       validated = true;
       renderValidation();
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
-      const blob = new Blob([buildXml(objects, activePlatform)], { type: "application/xml;charset=utf-8" });
+      const currentObjects = workingObjects();
+      const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      const blob = new Blob([buildXml(workingObjects(), activePlatform)], { type: "application/xml;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `${platformProfiles[activePlatform].downloadPrefix}-${new Date().toISOString().slice(0, 10)}.xml`;
@@ -8767,7 +8837,8 @@ ${photos}
       validated = true;
       renderValidation();
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      const currentObjects = workingObjects();
+      const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       const feedName = currentFeedName();
       if (!feedName) {
         const input = document.querySelector("#feedName");
@@ -8776,21 +8847,24 @@ ${photos}
         showToast("Проверьте название фида перед генерацией ссылки");
         return;
       }
-      const xml = buildXml(objects, activePlatform);
+      const xml = buildXml(currentObjects, activePlatform);
       const button = document.querySelector("#generateLinkBtn");
-      const hadPublishedId = Boolean(appState.generatedFeedId);
+      const publicationKey = activePublicationKey();
+      const publication = appState.publishedFeeds?.[publicationKey] || {};
+      const publicationId = publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
+      const hadPublishedId = Boolean(publicationId);
       button.disabled = true;
       button.classList.add("loading");
       button.textContent = "Публикую...";
 
       try {
         const publishedFeed = await publishFeedToServer({
-          id: appState.generatedFeedId,
+          id: publicationId,
           platform: activePlatform,
           sourceUrl: appState.feedUrl || document.querySelector("#feedUrl").value,
           sourceType: /^https?:\/\//i.test(appState.feedUrl || "") ? "url" : "file",
           xml,
-          objectCount: objects.length,
+          objectCount: currentObjects.length,
           name: feedName,
           slug: generatedFeedId(feedName)
         });
@@ -8802,11 +8876,12 @@ ${photos}
           version: serverHistory[0]?.version || ((appState.publishedHistory?.[0]?.version || 0) + 1),
           updatedAt: publishedFeed.updatedAt || new Date().toISOString(),
           url: publishedFeed.url,
-          objectCount: objects.length,
+          objectCount: currentObjects.length,
           sourceUrl: appState.feedUrl || "",
           platform: activePlatform
         };
         appState.publishedHistory = serverHistory.length ? serverHistory : [localEntry, ...(appState.publishedHistory || [])].slice(0, 30);
+        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, history: appState.publishedHistory } };
         document.querySelector("#serverBaseUrl").value = PUBLIC_FEED_ORIGIN;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
@@ -9247,9 +9322,17 @@ ${photos}
     document.querySelector("#clearChangeLogBtn").addEventListener("click", clearChangeLog);
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
+    document.querySelector("#activeSourceSelect").addEventListener("change", event => {
+      selectSource(event.target.value);
+    });
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const syncButton = event.target.closest("[data-source-sync]");
       const removeButton = event.target.closest("[data-source-remove]");
+      const sourceCard = event.target.closest("[data-source-select]");
+      if (sourceCard && !syncButton && !removeButton) {
+        selectSource(sourceCard.dataset.sourceSelect);
+        return;
+      }
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
       if (removeButton) {
         const id = removeButton.dataset.sourceRemove;
@@ -9272,6 +9355,11 @@ ${photos}
     });
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
     document.querySelector("#copyGeneratedLinkBtn").addEventListener("click", copyGeneratedLink);
+    document.querySelector("#feedErrorSaveFeed").addEventListener("click", generateFeedLink);
+    document.querySelector("#publishedHistory").addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-published-history]");
+      if (button) deletePublishedHistory(button.dataset.deletePublishedHistory);
+    });
     document.querySelector("#chooseLayoutForObjectBtn").addEventListener("click", chooseLayoutForObject);
     document.querySelector("#addMonitorFeedBtn").addEventListener("click", addManualMonitoredFeed);
     document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
@@ -9302,6 +9390,7 @@ ${photos}
         const next = parsed.objects;
         if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
         const sourceId = crypto.randomUUID();
+        activeSourceId = sourceId;
         activePlatform = parsed.platform || "cian";
         activeMonitorPlatform = activePlatform;
         next.forEach(item => {

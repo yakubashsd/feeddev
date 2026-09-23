@@ -943,6 +943,17 @@ async function handleApi(req, res, url) {
     return send(res, 200, record);
   }
 
+  const historyDeleteMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/history\/(\d+)$/i);
+  if (req.method === "DELETE" && historyDeleteMatch) {
+    const feeds = await readFeeds();
+    const record = feeds.find(feed => feed.slug === historyDeleteMatch[1]);
+    if (!record || (APP_MODE === "external" && record.ownerId !== actor?.userId)) return sendError(res, 404, "Публикация не найдена.");
+    const version = Number(historyDeleteMatch[2]);
+    record.history = (Array.isArray(record.history) ? record.history : []).filter(item => Number(item.version) !== version);
+    await persistFeedRecord(record);
+    return send(res, 200, { history: record.history });
+  }
+
   const updateMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)$/i);
   if (req.method === "PUT" && updateMatch) {
     const payload = await parseBody(req);
