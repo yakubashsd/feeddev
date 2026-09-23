@@ -3153,6 +3153,13 @@
 
     .generated-link.ready { background: var(--brand-soft); color: var(--brand); }
 
+    .published-history { margin-top: 14px; display: grid; gap: 8px; }
+    .published-history:empty { display: none; }
+    .published-history-head { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .published-history-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 13px; }
+    .published-history-item a { color: var(--brand); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .published-history-item span { color: var(--muted); white-space: nowrap; }
+
     .editor {
       position: relative;
       top: auto;
@@ -4839,6 +4846,7 @@
           <input id="generatedLinkInput" readonly placeholder="Ссылка появится после генерации">
         </div>
         <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.</div>
+        <div class="published-history" id="publishedHistory" aria-live="polite"></div>
       </section>
     </main>
 
@@ -5404,6 +5412,7 @@
             return;
           }
           showWorkspace();
+          await hydratePublishedFeedState();
           if (runtimeMode === "external" && !state.subscriptionActive) switchPage("billing");
           renderBilling();
         }
@@ -5470,14 +5479,15 @@
           feedName: saved.feedName || "",
           serverBaseUrl: saved.serverBaseUrl || "",
           generatedLink: saved.generatedLink || "",
-          generatedFeedId: saved.generatedFeedId || ""
+          generatedFeedId: saved.generatedFeedId || "",
+          publishedHistory: Array.isArray(saved.publishedHistory) ? saved.publishedHistory : []
         };
-        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
         const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
-        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
       } catch {
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
       }
     }
 
@@ -5486,7 +5496,7 @@
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
-      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [] }));
     }
 
     function loadChangeLog() {
@@ -7586,6 +7596,34 @@
         box.textContent = "Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.";
         box.classList.remove("ready");
       }
+      renderPublishedHistory();
+    }
+
+    function renderPublishedHistory() {
+      const node = document.querySelector("#publishedHistory");
+      if (!node) return;
+      const history = Array.isArray(appState.publishedHistory) ? appState.publishedHistory : [];
+      if (!history.length) { node.innerHTML = ""; return; }
+      node.innerHTML = `<div class="published-history-head">История публикаций · ссылка проекта не меняется</div>${history.slice(0, 8).map(item => {
+        const date = item.updatedAt ? new Date(item.updatedAt).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" }) : "";
+        return `<div class="published-history-item"><a href="${escapeXml(item.url || appState.generatedLink)}" target="_blank" rel="noreferrer">Версия ${escapeXml(String(item.version || ""))} · ${escapeXml(item.url || appState.generatedLink)}</a><span>${escapeXml(date)} · ${escapeXml(String(item.objectCount || 0))} объектов</span></div>`;
+      }).join("")}`;
+    }
+
+    async function hydratePublishedFeedState() {
+      if (!currentProject?.id || appState.generatedFeedId) return;
+      try {
+        const response = await fetch(`/api/feeds?projectId=${encodeURIComponent(currentProject.id)}`, { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json();
+        const record = result.feeds?.[0];
+        if (!record) return;
+        appState.generatedFeedId = record.id || record.slug || "";
+        appState.generatedLink = record.url || "";
+        appState.publishedHistory = Array.isArray(record.history) ? record.history : [];
+        save();
+        renderAll();
+      } catch { /* server may be unavailable in static prototype */ }
     }
 
     function invalidateGeneratedLink() {
@@ -8503,7 +8541,7 @@ ${photos}
       if (loadFeedFromUrl.running) return;
       const input = document.querySelector("#feedUrl");
       const existingSource = projectSources.find(source => source.id === sourceId);
-      const publishedFeedIdBeforeSync = existingSource ? appState.generatedFeedId : "";
+      const publishedFeedIdBeforeSync = appState.generatedFeedId || "";
       const url = (existingSource?.url || input.value).trim();
       if (!url) {
         setLoadStatus("Вставьте ссылку на XML-фид.", "bad");
@@ -8566,10 +8604,8 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || url;
         appState.feedName = currentProject?.name || defaultFeedName(url);
-        if (!existingSource) {
-          appState.generatedLink = "";
-          appState.generatedFeedId = "";
-        }
+        // У проекта одна постоянная публикация. При повторной загрузке источника
+        // сохраняем её идентификатор, чтобы агрегатор продолжал читать тот же URL.
         const sourceRecord = {
           id,
           name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
@@ -8758,6 +8794,16 @@ ${photos}
         appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
         appState.generatedFeedId = publishedFeed.id;
         appState.generatedLink = publishedFeed.url;
+        const serverHistory = Array.isArray(publishedFeed.history) ? publishedFeed.history : [];
+        const localEntry = {
+          version: serverHistory[0]?.version || ((appState.publishedHistory?.[0]?.version || 0) + 1),
+          updatedAt: publishedFeed.updatedAt || new Date().toISOString(),
+          url: publishedFeed.url,
+          objectCount: objects.length,
+          sourceUrl: appState.feedUrl || "",
+          platform: activePlatform
+        };
+        appState.publishedHistory = serverHistory.length ? serverHistory : [localEntry, ...(appState.publishedHistory || [])].slice(0, 30);
         document.querySelector("#serverBaseUrl").value = PUBLIC_FEED_ORIGIN;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
@@ -9267,8 +9313,7 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || file.name;
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
-        appState.generatedLink = "";
-        appState.generatedFeedId = "";
+        // Повторный импорт обновляет текущую публикацию, если она уже была создана.
         projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;

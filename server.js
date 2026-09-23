@@ -471,11 +471,22 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
 
   const blob = await persistFeedXml(slug, data.xml);
 
+  const history = Array.isArray(existing?.history) ? existing.history : [];
+  const version = (history[0]?.version || 0) + 1;
+  const historyEntry = {
+    version,
+    updatedAt: now,
+    url: feedUrl(req, slug),
+    objectCount: Number(payload.objectCount || 0),
+    sourceUrl: data.sourceUrl,
+    platform: data.platform
+  };
+
   const record = {
     id: slug,
     slug,
     ownerId: APP_MODE === "external" ? actor?.userId : undefined,
-    projectId: APP_MODE === "external" ? String(payload.projectId || "") : undefined,
+    projectId: String(payload.projectId || existing?.projectId || ""),
     platform: data.platform,
     sourceUrl: data.sourceUrl,
     sourceType: data.sourceType,
@@ -489,7 +500,8 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     blobUrl: blob?.url || "",
     url: feedUrl(req, slug),
     updatedAt: now,
-    createdAt: existing?.createdAt || now
+    createdAt: existing?.createdAt || now,
+    history: [historyEntry, ...history].slice(0, 30)
   };
 
   await persistFeedRecord(record);
@@ -844,7 +856,9 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
     const feeds = await readFeeds();
-    return send(res, 200, { feeds: APP_MODE === "external" ? feeds.filter(feed => feed.ownerId === actor.userId) : feeds });
+    const ownedFeeds = APP_MODE === "external" ? feeds.filter(feed => feed.ownerId === actor.userId) : feeds;
+    const projectId = String(url.searchParams.get("projectId") || "").trim();
+    return send(res, 200, { feeds: projectId ? ownedFeeds.filter(feed => feed.projectId === projectId) : ownedFeeds });
   }
 
   if (url.pathname === '/api/monitor') {
