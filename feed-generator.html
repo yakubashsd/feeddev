@@ -4193,9 +4193,10 @@
     .main { background: var(--bg); }
     .sidebar { background: #fff; border-right: 1px solid var(--line); }
     .brand-logo, .auth-mark { filter: grayscale(1); }
-    .workspace-switcher { margin: 8px 0 25px; padding: 15px; border: 1px solid var(--line); border-radius: 10px; }
-    .workspace-switcher span { display: block; font-size: 11px; color: #737373; margin-bottom: 5px; }
-    .workspace-switcher strong { font-size: 14px; font-weight: 600; }
+    .workspace-switcher { margin: 8px 0 25px; padding: 15px; border: 1px solid var(--line); border-radius: 10px; background: #fafafa; }
+    .workspace-switcher span { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #737373; margin-bottom: 6px; }
+    .workspace-switcher strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 15px; font-weight: 750; }
+    .workspace-switcher small { display:block; margin-top:5px; color:#737373; font-size:11px; }
     .nav-label { padding: 0 14px; margin: 0 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: #737373; }
     .nav-item { position:relative; display:grid; grid-template-columns:18px minmax(0,1fr); align-items:center; gap:10px; border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; transition:background .22s ease, color .22s ease, transform .22s ease; }
     .nav-item[data-nav]::before { content:""; position:absolute; left:22px; top:-8px; width:2px; height:16px; border-radius:999px; background:#e2e2e2; transform:scaleY(.75); transform-origin:center; transition:background .22s ease, transform .22s ease; }
@@ -4447,7 +4448,7 @@
         <img class="brand-logo" src="assets/sozdateli-logo.png" alt="Создатели">
         <small>управление фидами</small>
       </div>
-      <div class="workspace-switcher"><span>Рабочая область</span><strong>Создатели</strong></div>
+      <div class="workspace-switcher" aria-label="Текущий проект"><span>Текущий проект</span><strong id="currentProjectName">Все проекты</strong><small id="currentProjectMeta">Выберите проект для работы</small></div>
       <div class="nav-label">Управление</div>
       <a class="nav-item" href="/"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7.5h16M6 4h12a2 2 0 0 1 2 2v12.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5V6a2 2 0 0 1 2-2Z"/><path d="M8 11h8M8 15h5"/></svg><span class="nav-text">Все проекты</span></a>
       <button type="button" class="nav-item" data-nav="source"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Источники</span></button>
@@ -6154,7 +6155,8 @@
         if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
-      document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
+      document.querySelector("#currentProjectName").textContent = currentProject?.name || "Все проекты";
+      document.querySelector("#currentProjectMeta").textContent = currentProject ? "Проект открыт" : "Выберите проект для работы";
       if (activePage === "projects") renderProjects();
       if (activePage === "feeds") renderMonitorNotificationSettings();
       if (activePage === "billing") renderBilling();
