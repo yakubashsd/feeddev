@@ -4538,7 +4538,7 @@
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
-        <div class="source-selection"><label for="activeSourceSelect">Рабочий фид</label><select id="activeSourceSelect"><option value="all">Все фиды проекта</option></select><small>Выберите источник, с которым сейчас работаете. Фильтр влияет на список квартир и проверку.</small></div>
+        <div class="source-selection"><label for="activeSourceSelect">Фид для работы</label><select id="activeSourceSelect"><option value="all">Все фиды проекта</option></select><small>Выберите источник, с которым сейчас работаете. Фильтр влияет на список квартир и проверку.</small></div>
         <div class="source-schedule-note">Новые источники обновляются каждые 12 часов. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
@@ -6110,7 +6110,7 @@
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
-          <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Рабочий фид: ${escapeXml(source.name || platform)}"><span>Рабочий фид</span></label>
+          <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
           <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
