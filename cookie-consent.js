@@ -71,7 +71,6 @@
   document.querySelector("#declineAnalytics").addEventListener("click", () => save({ analytics: false, webvisor: false }));
   document.querySelector("#openCookiePrefs").addEventListener("click", openPrefs);
   document.querySelector("#manageCookies").addEventListener("click", openPrefs);
-  document.querySelector("#manageCookiesGlobal").addEventListener("click", openPrefs);
   document.querySelector("#cancelCookiePrefs").addEventListener("click", () => dialog.close());
   document.querySelector("#saveCookiePrefs").addEventListener("click", () => save({ analytics: analytics.checked, webvisor: analytics.checked && webvisor.checked }));
 })();

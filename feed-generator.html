@@ -7,6 +7,7 @@
   <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
   <title>Генератор фидов недвижимости</title>
   <link rel="icon" type="image/png" href="/assets/listingflow-logo.png">
+  <link rel="preload" href="/assets/fonts/Circe-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <style>
     :root {
       --bg: #f5f7f8;
@@ -3161,6 +3162,13 @@
 
     .generated-link.ready { background: var(--brand-soft); color: var(--brand); }
 
+    .published-history { margin-top: 14px; display: grid; gap: 8px; }
+    .published-history:empty { display: none; }
+    .published-history-head { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .published-history-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 13px; }
+    .published-history-item a { color: var(--brand); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .published-history-item span { color: var(--muted); white-space: nowrap; }
+
     .editor {
       position: relative;
       top: auto;
@@ -4194,9 +4202,10 @@
     .main { background: var(--bg); }
     .sidebar { background: #fff; border-right: 1px solid var(--line); }
     .brand-logo, .auth-mark { filter: grayscale(1); }
-    .workspace-switcher { margin: 8px 0 25px; padding: 15px; border: 1px solid var(--line); border-radius: 10px; }
-    .workspace-switcher span { display: block; font-size: 11px; color: #737373; margin-bottom: 5px; }
-    .workspace-switcher strong { font-size: 14px; font-weight: 600; }
+    .workspace-switcher { margin: 8px 0 25px; padding: 15px; border: 1px solid var(--line); border-radius: 10px; background: #fafafa; }
+    .workspace-switcher span { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #737373; margin-bottom: 6px; }
+    .workspace-switcher strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 15px; font-weight: 750; }
+    .workspace-switcher small { display:block; margin-top:5px; color:#737373; font-size:11px; }
     .nav-label { padding: 0 14px; margin: 0 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: #737373; }
     .nav-item { position:relative; display:grid; grid-template-columns:18px minmax(0,1fr); align-items:center; gap:10px; border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; transition:background .22s ease, color .22s ease, transform .22s ease; }
     .nav-item[data-nav]::before { content:""; position:absolute; left:22px; top:-8px; width:2px; height:16px; border-radius:999px; background:#e2e2e2; transform:scaleY(.75); transform-origin:center; transition:background .22s ease, transform .22s ease; }
@@ -4234,12 +4243,7 @@
       border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: none;
       scroll-margin-top: 20px;
     }
-    .main > section:not(.page-hidden) { animation: sectionEnter .26s ease both; }
-    @keyframes sectionEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    ::view-transition-old(root) { animation: fadeOut .16s ease both; }
-    ::view-transition-new(root) { animation: fadeIn .22s ease both; }
-    @keyframes fadeOut { from { opacity:1; } to { opacity:.92; } }
-    @keyframes fadeIn { from { opacity:.88; } to { opacity:1; } }
+    /* Keep page geometry stable when switching workspace sections. */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration:.001ms !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
     }
@@ -4323,9 +4327,19 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) 110px 120px auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record { display:grid; grid-template-columns:110px minmax(180px,1.2fr) minmax(220px,1.5fr) 110px minmax(190px,auto) auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
     .source-record strong, .source-record small { display:block; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .source-record .source-next small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.35; }
+    .source-record.is-selected { border-color:#171717; box-shadow:0 0 0 2px #171717 inset; }
+    .source-record[data-source-select] { cursor:pointer; }
+    .source-select-control { display:flex; align-items:center; gap:7px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .source-select-control input { width:16px; height:16px; margin:0; accent-color:#171717; }
+    .source-selection { display:grid; grid-template-columns:auto minmax(220px, 360px); align-items:center; gap:8px 12px; margin-top:14px; padding:12px 14px; border:1px solid var(--line); border-radius:9px; background:#fafafa; }
+    .source-selection label { font-size:12px; font-weight:700; }
+    .source-selection select { min-height:34px; }
+    .source-selection small { grid-column:2; color:var(--muted); font-size:11px; }
+    .published-history-item button { flex:0 0 auto; min-height:28px; padding:0 9px; }
     .source-record .source-health { font-size:11px; color:#444; }
     .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
     .source-empty { padding:24px; border:1px dashed var(--line-strong); border-radius:9px; color:var(--muted); text-align:center; }
@@ -4346,7 +4360,7 @@
     .template-text-controls .span-2 { grid-column:span 2; }
     .template-text-controls input[type="color"] { min-height:42px; padding:5px; }
     @media(max-width:780px) { .layer-list, .template-text-controls { grid-template-columns:1fr; } .layer-list>div { border-right:0; border-bottom:1px solid var(--line); } .template-text-controls .span-2 { grid-column:auto; } }
-    @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } }
+    @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } .source-selection { grid-template-columns:1fr; } .source-selection small { grid-column:auto; } }
     @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } }
     /* One page title and one navigation; technical guidance stays contextual. */
     .main > section > .panel-title,
@@ -4415,6 +4429,10 @@
     }
 
   </style>
+  <link rel="stylesheet" href="cookie-consent.css">
+  <link rel="stylesheet" href="layout-editor.css">
+  <link rel="stylesheet" href="listingflow-ui.css">
+  <link rel="stylesheet" href="usage-guide.css">
 </head>
 <body class="client-ui">
   <section class="auth-screen" id="authScreen">
@@ -4456,11 +4474,12 @@
         <div class="lf-brand-lockup"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
         <small>управление фидами</small>
       </div>
-      <div class="workspace-switcher"><span>Рабочая область</span><strong>Создатели</strong></div>
-      <div class="nav-label">Управление</div>
-      <a class="nav-item" href="/"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Проекты</span></a>
+      <a class="workspace-switcher" id="workspaceSwitcher" href="/" aria-label="Вернуться ко всем проектам"><span>Рабочая область</span><strong>Все проекты</strong></a>
+      <div class="nav-label">Рабочая область</div>
+      <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
+      <div class="nav-label nav-label-project" id="projectNavLabel">Проект</div>
       <div class="nav-workflow expanded">
-        <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Работа с фидом</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
+        <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настройка фида</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
           <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники видов</span></button>
           <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">2</span><span class="nav-text">Квартиры</span></button>
@@ -4468,10 +4487,15 @@
           <button type="button" class="nav-item" data-nav="results"><span class="nav-step">4</span><span class="nav-text">Результаты и ссылки</span></button>
         </div>
       </div>
-      <div class="nav-label nav-label-secondary">Контроль</div>
+      <div class="nav-label nav-label-secondary" id="projectControlLabel">Контроль проекта</div>
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
       <div class="sidebar-spacer"></div>
-      <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.<br><a id="sidebarSupport" href="/legal.html" title="Связаться с поддержкой">Поддержка</a><br><a id="manageCookies" href="#cookie-settings">Настройки cookies</a></div>
+      <section class="workspace-note sidebar-help" aria-label="Помощь">
+        <strong>Нужна помощь?</strong>
+        <p>Инструкция и ответы на частые вопросы.</p>
+        <button class="guide-open" id="usageGuideOpen" type="button" aria-haspopup="dialog"><span>Открыть гайд</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+        <div class="sidebar-help-links"><a id="sidebarSupport" href="/legal.html" title="Связаться с поддержкой">Поддержка</a><a id="manageCookies" href="#cookie-settings">Настройки cookies</a></div>
+      </section>
       <button type="button" class="nav-item" data-nav="billing" id="billingNav" hidden><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span class="nav-text">Тариф и оплата</span></button>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
     </aside>
@@ -4480,10 +4504,11 @@
       <div class="topbar">
         <div>
           <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать проект"><option value="">Все проекты</option></select></label>
           <h1>Фиды недвижимости</h1>
           <div class="subtitle">Кастомизация выгрузок Profitbase для ЦИАН, Авито, Яндекс Недвижимости и Домклик</div>
         </div>
-        <div class="topbar-actions"><button class="guide-open" id="usageGuideOpen" type="button" aria-haspopup="dialog" title="Как получить результат"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.5 1.5c-.9 1-2.1 1.1-2.1 2.7M12 17h.01"/></svg><span>Как получить результат</span></button><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
+        <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span><svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
 
       <aside class="usage-hint" id="usageHint" aria-live="polite" aria-atomic="true">
@@ -4502,12 +4527,22 @@
       </nav>
 
       <section class="projects-page" data-page="projects">
-        <div class="projects-heading"><div><h2>Проекты фидов</h2><p>Источники, помещения, планировки и готовые ссылки каждого проекта.</p></div><button class="primary" id="newProjectBtn">Создать проект</button></div>
+        <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Создавайте и управляйте XML-фидами для публикации на площадках</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <p class="panel-caption" id="projectsStorageCaption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
         <div class="project-metrics" id="projectMetrics" aria-label="Сводка по проектам"></div>
-        <input id="projectSearch" type="search" placeholder="Найти проект" aria-label="Найти проект">
-        <div class="project-list-head" aria-hidden="true"><span>Проект и источник</span><span>Объекты</span><span>Состояние</span><span>Открыть</span><span>Действия</span></div>
-        <div id="projectList"></div>
+        <div class="project-toolbar" role="search">
+          <label class="project-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="projectSearch" type="search" placeholder="Поиск по названию проекта, источнику или ID…" aria-label="Поиск по проектам"></label>
+          <select id="projectPlatformFilter" aria-label="Фильтр по источнику"><option value="all">Все источники</option><option value="cian">ЦИАН</option><option value="avito">Авито Недвижимость</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик</option><option value="auto">Не выбран</option></select>
+          <select id="projectStatusFilter" aria-label="Фильтр по статусу"><option value="all">Все статусы</option><option value="published">Опубликовано</option><option value="processing">На обработке</option><option value="warning">Есть предупреждения</option><option value="error">Ошибка</option><option value="new">Настройка</option><option value="archived">В архиве</option></select>
+          <select id="projectSort" aria-label="Сортировка проектов"><option value="newest">Сначала новые</option><option value="oldest">Сначала старые</option><option value="name">По названию</option><option value="objects">По числу объектов</option></select>
+        </div>
+        <div class="project-table-wrap">
+          <table class="project-table">
+            <thead><tr><th class="project-select-cell"><input id="selectAllProjects" type="checkbox" aria-label="Выбрать проекты на странице"></th><th>Название проекта</th><th>Источник</th><th>Кол-во объектов</th><th>Состояние публикации</th><th>Последнее обновление</th><th class="project-actions-cell">Действия</th></tr></thead>
+            <tbody id="projectList"></tbody>
+          </table>
+          <footer class="project-table-footer"><div class="project-page-summary"><span id="projectSelectionSummary" hidden></span><span id="projectPaginationSummary"></span></div><nav class="project-pagination" id="projectPagination" aria-label="Страницы проектов"></nav><label class="project-page-size">Показывать по <select id="projectsPageSize" aria-label="Количество проектов на странице"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select></label></footer>
+        </div>
       </section>
       <section class="billing-page page-hidden" data-page="billing">
         <div class="billing-card">
@@ -4865,7 +4900,7 @@
             <input id="serverBaseUrl" type="url" value="https://feeds.sozdateli.ru" readonly aria-describedby="serverBaseUrlHint">
             <small id="serverBaseUrlHint">Закреплённый домен публикации</small>
           </div>
-          <button id="generateLinkBtn" type="button" class="primary">Сгенерировать ссылку</button>
+          <button id="generateLinkBtn" type="button" class="primary">Сохранить фид</button>
           <button id="downloadBtn">Скачать XML</button>
           <button id="copyGeneratedLinkBtn" type="button">Копировать</button>
         </div>
@@ -4874,6 +4909,7 @@
           <input id="generatedLinkInput" readonly placeholder="Ссылка появится после генерации">
         </div>
         <div id="generatedLink" class="generated-link">Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.</div>
+        <div class="published-history" id="publishedHistory" aria-live="polite"></div>
         <div class="release-history" id="releaseHistory" aria-live="polite"></div>
       </section>
     </main>
@@ -5327,7 +5363,10 @@
     let originalObjects = appState.originalObjects;
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
-    let activePage = currentProject ? "source" : "projects";
+    const requestedPage = new URLSearchParams(location.search).get("page");
+    let activePage = currentProject && ["source", "apartments", "branding", "results", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "source" : "projects";
+    let projectPage = 1;
+    const selectedProjectIds = new Set();
     let sortState = { key: "", direction: "asc" };
     let selectedId = "";
     let checkedIds = new Set();
@@ -5357,6 +5396,37 @@
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
       objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
       originalObjects = structuredClone(objects);
+    }
+    let activeSourceId = projectSources.some(source => source.id === appState.activeSourceId) ? appState.activeSourceId : "all";
+    appState.publishedFeeds ||= {};
+    if (appState.generatedFeedId && !appState.publishedFeeds[activeSourceId]) {
+      appState.publishedFeeds[activeSourceId] = { id: appState.generatedFeedId, url: appState.generatedLink, history: appState.publishedHistory || [] };
+      if (activeSourceId === "all" && projectSources.length === 1) appState.publishedFeeds[projectSources[0].id] ||= appState.publishedFeeds.all;
+    }
+
+    function activePublicationKey() {
+      return activeSourceId;
+    }
+
+    function setSourceContext(sourceId) {
+      activeSourceId = projectSources.some(source => source.id === sourceId) ? sourceId : "all";
+      const source = projectSources.find(item => item.id === activeSourceId);
+      const publication = appState.publishedFeeds?.[activePublicationKey()] || {};
+      activePlatform = source?.platform || activePlatform;
+      appState.feedUrl = source?.url || projectSources[0]?.url || "";
+      appState.generatedFeedId = publication.id || "";
+      appState.generatedLink = publication.url || "";
+      appState.publishedHistory = publication.history || [];
+      checkedIds.clear();
+      selectedId = "";
+    }
+
+    function selectSource(sourceId) {
+      setSourceContext(sourceId);
+      save();
+      renderAll();
+      const source = projectSources.find(item => item.id === activeSourceId);
+      showToast(source ? `Выбран фид «${source.name || source.url}»` : "Показаны все фиды проекта");
     }
 
     const form = document.querySelector("#editorForm");
@@ -5641,6 +5711,7 @@
             return;
           }
           showWorkspace();
+          await hydratePublishedFeedState();
           if (runtimeMode === "external" && !state.subscriptionActive) switchPage(state.subscriptionReadOnly ? (currentProject ? "apartments" : "projects") : "billing");
           renderBilling();
         }
@@ -5719,14 +5790,17 @@
           feedName: saved.feedName || "",
           serverBaseUrl: saved.serverBaseUrl || "",
           generatedLink: saved.generatedLink || "",
-          generatedFeedId: saved.generatedFeedId || ""
+          generatedFeedId: saved.generatedFeedId || "",
+          publishedHistory: Array.isArray(saved.publishedHistory) ? saved.publishedHistory : [],
+          activeSourceId: saved.activeSourceId || "all",
+          publishedFeeds: saved.publishedFeeds && typeof saved.publishedFeeds === "object" ? saved.publishedFeeds : {}
         };
-        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
         const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
-        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
       } catch {
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "" };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
       }
     }
 
@@ -5734,8 +5808,8 @@
       appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = publicFeedOrigin;
-      appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
-      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+      appState.generatedLink ||= "";
+      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} }));
       scheduleProjectStateSync();
     }
 
@@ -6125,6 +6199,8 @@
       const areaTo = numberValue(document.querySelector("#areaTo").value);
       const issue = document.querySelector("#issueFilter").value;
       const filtered = objects.filter(item => {
+        const sourceIds = item._sourceIds || (item._sourceId ? [item._sourceId] : []);
+        const matchesSource = activeSourceId === "all" || sourceIds.includes(activeSourceId);
         const joined = [item.externalId, item.flatNumber, item.sectionNumber, item.complexName, item.buildingName].join(" ").toLowerCase();
         const matchesTerm = !term || joined.includes(term);
         const st = itemStatus(item).type;
@@ -6140,9 +6216,14 @@
         const matchesArea = (!areaFrom || itemArea >= areaFrom) && (!areaTo || itemArea <= areaTo);
         const keys = issueKeys(item);
         const matchesIssue = issue === "all" || (issue === "__errors__" ? keys.length > 0 : keys.includes(issue));
-        return matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
+        return matchesSource && matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
       });
       return sortObjects(filtered);
+    }
+
+    function workingObjects() {
+      if (activeSourceId === "all") return objects;
+      return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(activeSourceId));
     }
 
     function sortObjects(items) {
@@ -6195,16 +6276,17 @@
     }
 
     function renderSelectAllState() {
+      const currentObjects = workingObjects();
       const control = document.querySelector("#selectVisible");
       if (!control) return;
-      const selectedCount = objects.reduce((count, item) => count + (checkedIds.has(item.externalId) ? 1 : 0), 0);
-      control.checked = objects.length > 0 && selectedCount === objects.length;
-      control.indeterminate = selectedCount > 0 && selectedCount < objects.length;
+      const selectedCount = currentObjects.reduce((count, item) => count + (checkedIds.has(item.externalId) ? 1 : 0), 0);
+      control.checked = currentObjects.length > 0 && selectedCount === currentObjects.length;
+      control.indeterminate = selectedCount > 0 && selectedCount < currentObjects.length;
       control.title = control.checked
-        ? `Снять выбор со всех ${objects.length} объектов`
+        ? `Снять выбор со всех ${currentObjects.length} объектов`
         : selectedCount
-          ? `Выбрано ${selectedCount} из ${objects.length}. Нажмите, чтобы выбрать все`
-          : `Выбрать все ${objects.length} объектов фида`;
+          ? `Выбрано ${selectedCount} из ${currentObjects.length}. Нажмите, чтобы выбрать все`
+          : `Выбрать все ${currentObjects.length} объектов фида`;
     }
 
     function renderRows() {
@@ -6242,7 +6324,7 @@
 
     function complexGroups() {
       const groups = new Map();
-      objects.forEach(item => {
+      workingObjects().forEach(item => {
         const name = String(item.complexName || item.buildingName || (item.avitoNewDevelopmentId ? `Новостройка Avito ${item.avitoNewDevelopmentId}` : item.address) || "Без названия").trim();
         const key = normalizeProjectName(name);
         if (!groups.has(key)) groups.set(key, { key, name, items: [], houses: new Set() });
@@ -6298,15 +6380,21 @@
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
+      const selector = document.querySelector("#activeSourceSelect");
+      if (selector) {
+        selector.innerHTML = `<option value="all">Все фиды проекта</option>${projectSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || source.url)}</option>`).join("")}`;
+        selector.value = projectSources.some(source => source.id === activeSourceId) ? activeSourceId : "all";
+      }
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
-        return `<article class="source-record">
+        return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
+          <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
           <div class="source-identity"><span><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></span></div>
           <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
-          <span><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
+          <span class="source-next"><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
           <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
@@ -6314,31 +6402,90 @@
 
     function renderProjects() {
       const query = document.querySelector("#projectSearch").value.trim().toLowerCase();
-      const visible = projects.filter(project => project.name.toLowerCase().includes(query));
-      const projectStates = projects.map(project => {
-        const suffix = project.id === "legacy" ? "" : "-" + project.id;
-        return JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
-      });
-      const activeProjects = projects.filter(project => project.status !== "archived");
-      const published = projectStates.filter((state, index) => projects[index].status !== "archived" && (state.generatedLink || projects[index].summary?.feeds?.length)).length;
-      const inProgress = projectStates.filter((state, index) => projects[index].status !== "archived" && !state.generatedLink && (state.objects?.length || state.feedUrl || projects[index].summary?.objectCount)).length;
-      const totalObjects = projectStates.reduce((sum, state, index) => sum + (state.objects?.length || projects[index].summary?.objectCount || 0), 0);
-      document.querySelector("#projectMetrics").innerHTML = `
-        <div class="project-metric"><span class="metric-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span>Активные проекты</span><strong>${activeProjects.length}</strong><small>${projects.length - activeProjects.length} в архиве · лимит ${Number(sessionState?.user?.projectLimit || Math.max(1, projects.length))}</small></div>
-        <div class="project-metric"><span class="metric-icon success" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span>Опубликовано</span><strong>${published}</strong><small>${projects.length ? Math.round(published / projects.length * 100) : 0}% проектов готовы</small></div>
-        <div class="project-metric"><span class="metric-icon info" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 17.4 6L20 12M4 12l2.6 6a7 7 0 0 0 11.8-3"/></svg></span><span>В работе</span><strong>${inProgress}</strong><small>Требуют продолжения настройки</small></div>
-        <div class="project-metric"><span class="metric-icon neutral" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 8 9-5 9 5v8l-9 5-9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></span><span>Объектов в фидах</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong><small>Во всех проектах</small></div>`;
-      document.querySelector("#projectList").innerHTML = visible.map(project => {
+      const platformFilter = document.querySelector("#projectPlatformFilter").value;
+      const statusFilter = document.querySelector("#projectStatusFilter").value;
+      const sortBy = document.querySelector("#projectSort").value;
+      const pageSize = Number(document.querySelector("#projectsPageSize").value) || 10;
+      const platformNames = { cian: "ЦИАН", avito: "Авито Недвижимость", yandex: "Яндекс Недвижимость", domclick: "Домклик", auto: "Источник не выбран" };
+      const entries = projects.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
-        const projectUrl = '?project=' + encodeURIComponent(project.id);
-        const projectPlatform = state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
+        const platform = state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
+        const objectCount = state.objects?.length || project.summary?.objectCount || 0;
         const archived = project.status === "archived";
-        const count = state.objects?.length || project.summary?.objectCount || 0;
-        const health = project.summary?.feedHealth;
-        const outputState = archived ? "В архиве · ссылка сохранена" : health === "error" ? "Ошибка обновления" : health === "stale" ? "Данные устарели" : state.generatedLink || project.summary?.feeds?.length ? "Опубликован" : count ? "В работе" : "Настройка";
-        return '<article class="project-entry' + (archived ? ' archived' : '') + '" data-open-project="' + escapeXml(projectUrl) + '" role="link" tabindex="0" aria-label="Открыть проект ' + escapeXml(project.name) + '"><a class="project-entry-main" href="' + projectUrl + '">' + platformMark(projectPlatform) + '<span><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || project.summary?.feeds?.[0]?.url || "Источник ещё не подключён") + '</small></span></a><span>' + count + ' помещений</span><span>' + outputState + '</span><a href="' + projectUrl + '">' + (archived ? "Просмотр →" : "Открыть →") + '</a>' + (archived ? '<button type="button" class="project-delete" data-restore-project="' + escapeXml(project.id) + '">Восстановить</button>' : '<button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">В архив</button>') + '</article>';
-      }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
+        const hasOutput = Boolean(state.generatedLink || project.summary?.feeds?.length);
+        const health = project.summary?.feedHealth || "";
+        const hasError = !archived && health === "error";
+        const hasWarning = !archived && health === "stale";
+        const status = archived ? "archived" : hasError ? "error" : hasWarning ? "warning" : hasOutput ? "published" : objectCount || state.feedUrl ? "processing" : "new";
+        const updatedAt = state.updatedAt || state.lastUpdatedAt || project.updatedAt || project.createdAt;
+        const updated = updatedAt ? new Date(updatedAt) : null;
+        const searchText = [project.name, project.id, state.feedUrl, project.summary?.feeds?.map(feed => feed.url).join(" "), platformNames[platform]].filter(Boolean).join(" ").toLowerCase();
+        return { project, state, platform, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
+      });
+      const activeProjects = entries.filter(entry => !entry.archived);
+      const published = activeProjects.filter(entry => entry.hasOutput).length;
+      const processing = activeProjects.filter(entry => entry.status === "processing" || entry.status === "new").length;
+      const errors = activeProjects.filter(entry => entry.hasError).length;
+      const projectTotal = projects.length;
+      const pct = value => projectTotal ? Math.round(value / projectTotal * 100) : 0;
+      const statIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg>';
+      document.querySelector("#projectMetrics").innerHTML = [
+        ["Всего проектов", projectTotal, `${activeProjects.length} активных`, "neutral", 100],
+        ["Опубликовано", published, `${pct(published)}% от общего числа`, "success", pct(published)],
+        ["На обработке", processing, `${pct(processing)}% от общего числа`, "info", pct(processing)],
+        ["С ошибками", errors, `${pct(errors)}% от общего числа`, "error", pct(errors)]
+      ].map(([label, value, detail, tone, width]) => `<article class="project-metric ${tone}"><span class="metric-icon" aria-hidden="true">${statIcon}</span><span class="metric-copy"><span>${label}</span><strong>${Number(value).toLocaleString("ru-RU")}</strong><small>${detail}</small></span><span class="metric-progress" aria-hidden="true"><i style="width:${Math.max(value ? 4 : 0, width)}%"></i></span></article>`).join("");
+      const filtered = entries.filter(entry => {
+        if (query && !entry.searchText.includes(query)) return false;
+        if (platformFilter !== "all" && entry.platform !== platformFilter) return false;
+        if (statusFilter !== "all" && entry.status !== statusFilter) return false;
+        return true;
+      });
+      filtered.sort((a, b) => {
+        if (sortBy === "name") return a.project.name.localeCompare(b.project.name, "ru");
+        if (sortBy === "objects") return b.objectCount - a.objectCount;
+        const first = a.updated?.getTime() || 0;
+        const second = b.updated?.getTime() || 0;
+        return sortBy === "oldest" ? first - second : second - first;
+      });
+      const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      projectPage = Math.min(projectPage, pages);
+      const pageEntries = filtered.slice((projectPage - 1) * pageSize, projectPage * pageSize);
+      const statusMeta = {
+        published: ["Опубликован", "success"], processing: ["На обработке", "info"], warning: ["Есть предупреждения", "warning"], error: ["Ошибка", "error"], new: ["Настройка", "neutral"], archived: ["В архиве", "neutral"]
+      };
+      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, objectCount, status, updated }) => {
+        const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
+        const monitorUrl = `${projectUrl}&page=feeds`;
+        const [statusLabel, statusTone] = statusMeta[status];
+        const updatedLabel = updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+        const projectIdShort = project.id === "legacy" ? "legacy" : project.id.slice(0, 8).toUpperCase();
+        const actionMenu = status === "archived"
+          ? `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><button type="button" data-restore-project="${escapeXml(project.id)}">Восстановить проект</button></div></details>`
+          : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><a href="${projectUrl}">Открыть проект</a><a href="${monitorUrl}">Открыть мониторинг</a><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
+        return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
+          <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
+          <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
+          <td><span class="project-platform">${platformMark(platform)}<span>${escapeXml(platformNames[platform] || platformNames.auto)}</span></span></td>
+          <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
+          <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${statusLabel}</span></td>
+          <td class="project-updated">${updatedLabel}</td>
+          <td class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
+        </tr>`;
+      }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || platformFilter !== "all" || statusFilter !== "all" ? "Ничего не найдено" : "Проектов пока нет"}</strong><span>${query || platformFilter !== "all" || statusFilter !== "all" ? "Измените запрос или сбросьте фильтры." : "Создайте проект, чтобы подключить источник и сформировать первый фид."}</span></td></tr>`;
+      const firstItem = filtered.length ? (projectPage - 1) * pageSize + 1 : 0;
+      const lastItem = Math.min(projectPage * pageSize, filtered.length);
+      document.querySelector("#projectPaginationSummary").textContent = `Показано ${firstItem}–${lastItem} из ${filtered.length} ${filtered.length === 1 ? "проекта" : "проектов"}`;
+      const pagesWindow = Math.min(pages, 5);
+      const firstPage = Math.max(1, Math.min(projectPage - 2, pages - pagesWindow + 1));
+      document.querySelector("#projectPagination").innerHTML = `<button type="button" data-project-page="${projectPage - 1}" aria-label="Предыдущая страница" ${projectPage <= 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>${Array.from({ length: pagesWindow }, (_, index) => firstPage + index).map(page => `<button type="button" data-project-page="${page}" ${page === projectPage ? 'class="active" aria-current="page"' : ""}>${page}</button>`).join("")}${pages > 5 ? `<span class="pagination-ellipsis">…</span><button type="button" data-project-page="${pages}">${pages}</button>` : ""}<button type="button" data-project-page="${projectPage + 1}" aria-label="Следующая страница" ${projectPage >= pages ? "disabled" : ""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>`;
+      const selectionSummary = document.querySelector("#projectSelectionSummary");
+      selectionSummary.hidden = selectedProjectIds.size === 0;
+      selectionSummary.textContent = selectedProjectIds.size ? `Выбрано: ${selectedProjectIds.size}` : "";
+      const selectAll = document.querySelector("#selectAllProjects");
+      selectAll.checked = pageEntries.length > 0 && pageEntries.every(entry => selectedProjectIds.has(entry.project.id));
+      selectAll.indeterminate = pageEntries.some(entry => selectedProjectIds.has(entry.project.id)) && !selectAll.checked;
       const createButton = document.querySelector("#newProjectBtn");
       if (runtimeMode === "external") {
         const limit = Number(sessionState?.user?.projectLimit || 1);
@@ -6382,7 +6529,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Проекты фидов", source: "Источники видов", apartments: "Квартиры", branding: "Шаблоны планировок", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
+      const titles = { projects: "Все проекты", source: "Источники видов", apartments: "Квартиры", branding: "Шаблоны планировок", results: "Результаты и ссылки", feeds: "Мониторинг проекта", billing: "Тариф и оплата" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -6399,6 +6546,12 @@
       const stepOrder = Object.values(stepPages);
       const activeStepIndex = stepOrder.indexOf(activePage);
       const workflow = document.querySelector(".nav-workflow");
+      workflow.hidden = !currentProject;
+      document.querySelector("#projectNavLabel").hidden = !currentProject;
+      document.querySelector("#projectControlLabel").hidden = !currentProject;
+      document.querySelector("#projectsNav").classList.toggle("active", activePage === "projects");
+      document.querySelector("#projectsNav").removeAttribute("aria-current");
+      if (activePage === "projects") document.querySelector("#projectsNav").setAttribute("aria-current", "page");
       if (activeStepIndex >= 0) workflow.classList.add("expanded");
       workflow.querySelector(".nav-workflow-toggle").setAttribute("aria-expanded", String(workflow.classList.contains("expanded")));
       document.querySelectorAll("[data-nav]").forEach(item => {
@@ -6410,7 +6563,7 @@
         item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : !currentProject;
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
-      document.querySelector(".subtitle").textContent = currentProject?.name || "Управляйте источниками и выгрузками";
+      document.querySelector(".subtitle").textContent = activePage === "projects" ? "Обзор и управление рабочими пространствами" : currentProject ? `Проект / ${currentProject.name}` : "Управляйте источниками и выгрузками";
       document.querySelectorAll("[data-step]").forEach(button => {
         const page = stepPages[button.dataset.step];
         const stepIndex = stepOrder.indexOf(page);
@@ -6419,7 +6572,17 @@
         if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
+      document.querySelector(".workspace-switcher span").textContent = currentProject ? "ТЕКУЩИЙ ПРОЕКТ · НАЗАД К СПИСКУ" : "РАБОЧАЯ ОБЛАСТЬ";
       document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
+      const projectPicker = document.querySelector("#projectSwitcherSelect");
+      const pickerProjects = projects.filter(project => project.status !== "archived" || project.id === currentProject?.id);
+      projectPicker.innerHTML = `<option value="">Все проекты</option>${pickerProjects.map(project => `<option value="${escapeXml(project.id)}">${escapeXml(project.name)}</option>`).join("")}`;
+      projectPicker.value = currentProject?.id || "";
+      const account = sessionState?.user || {};
+      const accountName = account.name || account.company || account.email?.split("@")[0] || "Личный кабинет";
+      document.querySelector("#accountName").textContent = accountName;
+      document.querySelector("#accountEmail").textContent = account.email || "ListingFlow";
+      document.querySelector("#accountAvatar").textContent = accountName.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toLocaleUpperCase("ru-RU") || "LF";
       if (activePage === "projects") renderProjects();
       if (activePage === "feeds") {
         renderMonitorNotificationSettings();
@@ -6432,8 +6595,7 @@
     function switchPage(page) {
       if (page === activePage) return;
       activePage = page;
-      if (document.startViewTransition) document.startViewTransition(() => renderPage());
-      else renderPage();
+      renderPage();
       document.querySelector(".main").scrollTop = 0;
       window.scrollTo(0, 0);
     }
@@ -6444,7 +6606,34 @@
     });
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
-    document.querySelector("#projectSearch").addEventListener("input", renderProjects);
+    document.querySelector("#projectSearch").addEventListener("input", () => { projectPage = 1; renderProjects(); });
+    ["#projectPlatformFilter", "#projectStatusFilter", "#projectSort", "#projectsPageSize"].forEach(selector => {
+      document.querySelector(selector).addEventListener("change", () => { projectPage = 1; renderProjects(); });
+    });
+    document.querySelector("#projectPagination").addEventListener("click", event => {
+      const button = event.target.closest("[data-project-page]");
+      if (!button || button.disabled) return;
+      projectPage = Number(button.dataset.projectPage) || 1;
+      renderProjects();
+    });
+    document.querySelector("#projectList").addEventListener("change", event => {
+      const checkbox = event.target.closest("[data-project-select]");
+      if (!checkbox) return;
+      checkbox.checked ? selectedProjectIds.add(checkbox.dataset.projectSelect) : selectedProjectIds.delete(checkbox.dataset.projectSelect);
+      renderProjects();
+    });
+    document.querySelector("#selectAllProjects").addEventListener("change", event => {
+      document.querySelectorAll("#projectList [data-project-select]").forEach(checkbox => {
+        if (event.target.checked) selectedProjectIds.add(checkbox.dataset.projectSelect);
+        else selectedProjectIds.delete(checkbox.dataset.projectSelect);
+      });
+      renderProjects();
+    });
+    document.querySelector("#projectSwitcherSelect").addEventListener("change", event => {
+      const projectId = event.target.value;
+      location.href = projectId ? `/?project=${encodeURIComponent(projectId)}` : "/";
+    });
+    document.querySelector("#notificationsButton").addEventListener("click", () => showToast("Новых уведомлений пока нет"));
     document.querySelector("#projectList").addEventListener("click", event => {
       const button = event.target.closest("[data-delete-project]");
       if (button) {
@@ -7535,14 +7724,36 @@
       });
     }
 
+    function feedSafeLayoutCanvas(sourceCanvas) {
+      const targetSize = 1024;
+      const safeSize = Math.round(targetSize * .88);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, targetSize, targetSize);
+
+      const sourceWidth = sourceCanvas.width || targetSize;
+      const sourceHeight = sourceCanvas.height || targetSize;
+      const ratio = Math.min(safeSize / sourceWidth, safeSize / sourceHeight);
+      const width = Math.round(sourceWidth * ratio);
+      const height = Math.round(sourceHeight * ratio);
+      const x = Math.round((targetSize - width) / 2);
+      const y = Math.round((targetSize - height) / 2);
+      context.drawImage(sourceCanvas, x, y, width, height);
+      return canvas;
+    }
+
     async function brandedLayoutBlob(canvas) {
+      const exportCanvas = feedSafeLayoutCanvas(canvas);
       const variants = [
         ["image/jpeg", .86, "jpg"],
         ["image/jpeg", .74, "jpg"],
         ["image/jpeg", .62, "jpg"]
       ];
       for (const [contentType, quality, ext] of variants) {
-        const blob = await canvasToBlob(canvas, contentType, quality);
+        const blob = await canvasToBlob(exportCanvas, contentType, quality);
         if (blob.size <= 9 * 1024 * 1024) return { blob, contentType, ext };
       }
       throw new Error("Итоговая планировка слишком большая. Попробуйте уменьшить исходную картинку или подложку.");
@@ -7926,6 +8137,62 @@
         box.textContent = "Ссылка появится после генерации. Если сервис запущен на сервере, она сразу будет отдавать обновленный XML.";
         box.classList.remove("ready");
       }
+      renderPublishedHistory();
+    }
+
+    function renderPublishedHistory() {
+      const node = document.querySelector("#publishedHistory");
+      if (!node) return;
+      const history = Array.isArray(appState.publishedHistory) ? appState.publishedHistory : [];
+      if (!history.length) { node.innerHTML = ""; return; }
+      node.innerHTML = `<div class="published-history-head">История сохранений · ссылка фида не меняется</div>${history.slice(0, 8).map(item => {
+        const date = item.updatedAt ? new Date(item.updatedAt).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" }) : "";
+        return `<div class="published-history-item"><a href="${escapeXml(item.url || appState.generatedLink)}" target="_blank" rel="noreferrer">Версия ${escapeXml(String(item.version || ""))} · ${escapeXml(item.url || appState.generatedLink)}</a><span>${escapeXml(date)} · ${escapeXml(String(item.objectCount || 0))} объектов</span><button type="button" data-delete-published-history="${escapeXml(String(item.version || ""))}" title="Удалить запись из истории">Удалить</button></div>`;
+      }).join("")}`;
+    }
+
+    async function hydratePublishedFeedState() {
+      if (!currentProject?.id) return;
+      try {
+        const response = await fetch(`/api/feeds?projectId=${encodeURIComponent(currentProject.id)}`, { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json();
+        const records = Array.isArray(result.feeds) ? result.feeds : [];
+        if (!records.length) return;
+        const mapped = { ...(appState.publishedFeeds || {}) };
+        records.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt)).forEach(record => {
+          const publication = { id: record.id || record.slug, url: record.url, history: record.history || [] };
+          const rememberedKey = Object.keys(mapped).find(key => mapped[key]?.id === publication.id);
+          const key = record.sourceId || rememberedKey || "all";
+          mapped[key] = publication;
+          if (key === "all" && projectSources.length === 1 && projectSources[0].url === record.sourceUrl) mapped[projectSources[0].id] = publication;
+        });
+        appState.publishedFeeds = mapped;
+        const publication = mapped[activePublicationKey()] || {};
+        appState.generatedFeedId = publication.id || "";
+        appState.generatedLink = publication.url || "";
+        appState.publishedHistory = publication.history || [];
+        save();
+        renderAll();
+      } catch { /* server may be unavailable in static prototype */ }
+    }
+
+    async function deletePublishedHistory(version) {
+      if (!version || !confirm(`Удалить версию ${version} из истории публикаций?`)) return;
+      try {
+        const response = await fetch(`/api/feeds/${encodeURIComponent(appState.generatedFeedId)}/history/${encodeURIComponent(version)}`, { method: "DELETE", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
+        appState.publishedHistory = Array.isArray(result.history) ? result.history : (appState.publishedHistory || []).filter(item => String(item.version) !== String(version));
+        for (const publication of Object.values(appState.publishedFeeds || {})) {
+          if (publication.id === appState.generatedFeedId) publication.history = appState.publishedHistory;
+        }
+        save();
+        renderPublishedHistory();
+        showToast("Запись удалена из истории");
+      } catch (error) {
+        showToast(`Не удалось удалить запись: ${error.message}`);
+      }
     }
 
     function invalidateGeneratedLink() {
@@ -7934,7 +8201,7 @@
       if (box) {
         box.dataset.url = appState.generatedLink;
         box.classList.add("ready");
-        box.textContent = `${appState.generatedLink} — в фиде есть несохраненные изменения. Нажмите «Сгенерировать ссылку», чтобы обновить XML по этому же адресу.`;
+        box.textContent = `${appState.generatedLink} — в фиде есть несохраненные изменения. Нажмите «Сохранить фид», чтобы обновить XML по этому же адресу.`;
       }
       const input = document.querySelector("#generatedLinkInput");
       if (input) input.value = appState.generatedLink;
@@ -8284,10 +8551,18 @@
 
     function buildCianXml(items = objects) {
       const body = items.map(item => {
-        const photos = feedImageList(item);
+        const originalLayout = String(item.layoutPhoto || "").trim();
+        const allPhotos = photoList(item).filter(Boolean);
+        const brandedLayout = allPhotos.find(isBrandedLayoutUrl) || "";
+        const layout = brandedLayout || originalLayout;
+        const photos = [
+          brandedLayout ? originalLayout : "",
+          ...allPhotos.filter(url => url !== layout && url !== originalLayout && !isBrandedLayoutUrl(url))
+        ].filter(Boolean);
+        const hasLayoutDefault = Boolean(layout);
         const photoXml = photos.map((url, index) => `      <PhotoSchema>
         <FullUrl>${escapeXml(url)}</FullUrl>
-        <IsDefault>${index === 0 ? 1 : 0}</IsDefault>
+        <IsDefault>${hasLayoutDefault ? 0 : index === 0 ? 1 : 0}</IsDefault>
       </PhotoSchema>`).join("\n");
         return `  <object>
     <Category>newBuildingFlatSale</Category>
@@ -8302,8 +8577,8 @@
     </Phones>
     <TotalArea>${escapeXml(item.totalArea || "")}</TotalArea>
     <LayoutPhoto>
-      <FullUrl>${escapeXml(item.layoutPhoto || "")}</FullUrl>
-      <IsDefault>1</IsDefault>
+      <FullUrl>${escapeXml(layout)}</FullUrl>
+      <IsDefault>${hasLayoutDefault ? 1 : 0}</IsDefault>
     </LayoutPhoto>
     <Photos>
 ${photoXml}
@@ -8478,12 +8753,13 @@ ${photos}
     function validateFeedForPlatform(platform = activePlatform) {
       const findings = [];
       const add = (severity, title, message, ids = []) => findings.push({ severity, title, message, ids });
-      if (!objects.length) {
+      const currentObjects = workingObjects();
+      if (!currentObjects.length) {
         add("warning", "Фид не загружен", "Сначала загрузите ссылку или XML-файл в рабочей области.");
         return findings;
       }
 
-      const xmlText = buildXml(objects, platform);
+      const xmlText = buildXml(currentObjects, platform);
       const parsed = new DOMParser().parseFromString(xmlText, "application/xml");
       if (parsed.querySelector("parsererror")) {
         add("error", "XML содержит синтаксическую ошибку", "Исправьте структуру XML перед передачей агрегатору.");
@@ -8523,18 +8799,18 @@ ${photos}
       const required = requiredByPlatform[platform] || requiredByPlatform.cian;
 
       required.forEach(([key, label]) => {
-        const ids = objects.filter(item => !String(item[key] ?? "").trim()).map(item => item.externalId || "без ID");
+        const ids = currentObjects.filter(item => !String(item[key] ?? "").trim()).map(item => item.externalId || "без ID");
         if (ids.length) add("error", `Не заполнено поле ${label}`, `Заполните обязательный параметр у ${ids.length} объектов.`, ids);
       });
 
-      const imageIds = objects.filter(item => !feedImageList(item).length).map(item => item.externalId || "без ID");
+      const imageIds = currentObjects.filter(item => !feedImageList(item).length).map(item => item.externalId || "без ID");
       if (imageIds.length) add("error", "Нет изображений", `Добавьте хотя бы одно доступное изображение у ${imageIds.length} объектов.`, imageIds);
 
-      const duplicateIds = [...new Set(objects.map(item => String(item.externalId || "").trim()).filter((id, index, all) => id && all.indexOf(id) !== index))];
+      const duplicateIds = [...new Set(currentObjects.map(item => String(item.externalId || "").trim()).filter((id, index, all) => id && all.indexOf(id) !== index))];
       if (duplicateIds.length) add("error", "Повторяются ID объектов", "Идентификатор объявления должен быть уникальным внутри фида.", duplicateIds);
-      const badNumbers = objects.filter(item => !(Number(item.price) > 0) || !(Number(item.totalArea) > 0));
+      const badNumbers = currentObjects.filter(item => !(Number(item.price) > 0) || !(Number(item.totalArea) > 0));
       if (badNumbers.length) add("error", "Некорректная цена или площадь", "Цена и площадь должны быть положительными числами.", badNumbers.map(item => item.externalId || "без ID"));
-      const badFloors = objects.filter(item => Number(item.floor) < 1 || Number(item.floorsCount) < Number(item.floor));
+      const badFloors = currentObjects.filter(item => Number(item.floor) < 1 || Number(item.floorsCount) < Number(item.floor));
       if (badFloors.length) add("error", "Некорректный этаж", "Этаж должен быть положительным и не превышать этажность дома.", badFloors.map(item => item.externalId || "без ID"));
 
       if (platform === "avito") {
@@ -8555,10 +8831,10 @@ ${photos}
           bathroomType: ["Совмещенный", "Раздельный", "Совмещенный, Раздельный"]
         };
         Object.entries(optionalLists).forEach(([field, values]) => {
-          const invalid = objects.filter(item => item[field] && !values.includes(item[field]));
+          const invalid = currentObjects.filter(item => item[field] && !values.includes(item[field]));
           if (invalid.length) add("error", `Авито: неверный ${field === "balconyOrLoggia" ? "BalconyOrLoggiaMulti" : "BathroomMulti"}`, `Допустимые значения: ${values.join(", ")}.`, invalid.map(item => item.externalId || "без ID"));
         });
-        const badPhones = objects.filter(item => {
+        const badPhones = currentObjects.filter(item => {
           const digits = String(item.phone || "").replace(/\D/g, "");
           return !(/^7\d{10}$/.test(digits) || /^8\d{10}$/.test(digits) || /^\d{10}$/.test(digits));
         });
@@ -8566,18 +8842,18 @@ ${photos}
       }
 
       if (platform === "cian") {
-        const badDescriptions = objects.filter(item => String(item.description || "").trim().length < 15 || String(item.description || "").trim().length > 3000);
+        const badDescriptions = currentObjects.filter(item => String(item.description || "").trim().length < 15 || String(item.description || "").trim().length > 3000);
         if (badDescriptions.length) add("error", "ЦИАН: длина Description", "Описание должно содержать от 15 до 3000 символов.", badDescriptions.map(item => item.externalId || "без ID"));
-        const badRooms = objects.filter(item => ![1, 2, 3, 4, 5, 6, 7, 9].includes(Number(item.rooms)));
+        const badRooms = currentObjects.filter(item => ![1, 2, 3, 4, 5, 6, 7, 9].includes(Number(item.rooms)));
         if (badRooms.length) add("error", "ЦИАН: неверный FlatRoomsCount", "Допустимы значения 1–7 и 9 для студии.", badRooms.map(item => item.externalId || "без ID"));
       }
 
       if (platform === "yandex") {
-        const badQuarters = objects.filter(item => !["first", "second", "third", "fourth", "1", "2", "3", "4"].includes(String(item.quarter || "")));
+        const badQuarters = currentObjects.filter(item => !["first", "second", "third", "fourth", "1", "2", "3", "4"].includes(String(item.quarter || "")));
         if (badQuarters.length) add("error", "Яндекс: неверный ready-quarter", "Квартал сдачи должен быть от 1 до 4.", badQuarters.map(item => item.externalId || "без ID"));
-        const badYears = objects.filter(item => !/^\d{4}$/.test(String(item.year || "")));
+        const badYears = currentObjects.filter(item => !/^\d{4}$/.test(String(item.year || "")));
         if (badYears.length) add("error", "Яндекс: неверный built-year", "Год сдачи указывается четырьмя цифрами.", badYears.map(item => item.externalId || "без ID"));
-        const badPhones = objects.filter(item => !/^7\d{10}$/.test(String(item.phone || "").replace(/\D/g, "").replace(/^8/, "7")));
+        const badPhones = currentObjects.filter(item => !/^7\d{10}$/.test(String(item.phone || "").replace(/\D/g, "").replace(/^8/, "7")));
         if (badPhones.length) add("error", "Яндекс: неверный телефон", "Номер продавца должен соответствовать формату +7XXXXXXXXXX.", badPhones.map(item => item.externalId || "без ID"));
       }
 
@@ -8597,7 +8873,7 @@ ${photos}
       const errors = findings.filter(item => item.severity === "error").length;
       const warnings = findings.filter(item => item.severity === "warning").length;
       summary.innerHTML = `
-        <div class="validator-stat"><span>Объекты</span><strong>${objects.length}</strong></div>
+        <div class="validator-stat"><span>Объекты</span><strong>${workingObjects().length}</strong></div>
         <div class="validator-stat"><span>Критические ошибки</span><strong>${errors}</strong></div>
         <div class="validator-stat"><span>Предупреждения</span><strong>${warnings}</strong></div>`;
       results.innerHTML = findings.map(item => `
@@ -8671,7 +8947,7 @@ ${photos}
 
     function issueGroups() {
       const groups = new Map();
-      objects.forEach(item => {
+      workingObjects().forEach(item => {
         requiredIssues(item).forEach(label => {
           const key = issueKeyFromLabel(label);
           const guide = issueGuides[key] || {
@@ -8711,15 +8987,14 @@ ${photos}
     function renderFeedErrorPopover() {
       const panel = document.querySelector("#feedErrorPopover");
       if (!panel) return;
-      const shouldShow = Boolean(currentProject && feedErrorPanelActivated && activePage !== "projects");
-      panel.hidden = !shouldShow;
-      if (!shouldShow) return;
-
       const groups = issueGroups();
       const platformErrors = platformErrorFindings();
       const issueTotal = groups.reduce((sum, group) => sum + group.count, 0);
-      const objectsWithIssues = objects.filter(item => requiredIssues(item).length).length;
+      const objectsWithIssues = workingObjects().filter(item => requiredIssues(item).length).length;
       const hasErrors = Boolean(issueTotal || platformErrors.length);
+      const shouldShow = Boolean(currentProject && feedErrorPanelActivated && activePage !== "projects" && hasErrors);
+      panel.hidden = !shouldShow;
+      if (!shouldShow) return;
       panel.classList.toggle("is-clean", !hasErrors);
       panel.classList.toggle("minimized", feedErrorPanelMinimized);
 
@@ -8789,13 +9064,14 @@ ${photos}
     }
 
     function renderQualitySummary() {
+      const currentObjects = workingObjects();
       const groups = issueGroups();
       const issues = groups.reduce((sum, group) => sum + group.count, 0);
-      const ready = objects.filter(item => itemStatus(item).type === "ok").length;
+      const ready = currentObjects.filter(item => itemStatus(item).type === "ok").length;
       const panel = document.querySelector(".quality-panel");
       const title = document.querySelector("#qualityTitle");
       const meta = document.querySelector("#qualityMeta");
-      if (!objects.length) {
+      if (!currentObjects.length) {
         panel.classList.add("resolved-hidden");
         title.textContent = "Загрузите фид";
         meta.textContent = "После загрузки здесь появится сводка по объектам и ошибкам.";
@@ -8805,7 +9081,7 @@ ${photos}
       if (issues) {
         panel.classList.remove("resolved-hidden");
         title.textContent = `Нужно исправить: ${issues}`;
-        meta.textContent = `Готово к выгрузке: ${ready} из ${objects.length}. Ниже журнал ошибок, причины и рекомендуемые действия. Для точечной работы используйте фильтр «Ошибка».`;
+        meta.textContent = `Готово к выгрузке: ${ready} из ${currentObjects.length}. Ниже журнал ошибок, причины и рекомендуемые действия. Для точечной работы используйте фильтр «Ошибка».`;
       } else {
         panel.classList.add("resolved-hidden");
       }
@@ -8835,7 +9111,7 @@ ${photos}
       if (loadFeedFromUrl.running) return;
       const input = document.querySelector("#feedUrl");
       const existingSource = projectSources.find(source => source.id === sourceId);
-      const publishedFeedIdBeforeSync = existingSource ? appState.generatedFeedId : "";
+      const publishedFeedIdBeforeSync = existingSource ? appState.publishedFeeds?.[existingSource.id]?.id : "";
       const url = (existingSource?.url || input.value).trim();
       if (!url) {
         setLoadStatus("Вставьте ссылку на XML-фид.", "bad");
@@ -8860,6 +9136,7 @@ ${photos}
         const id = existingSource?.id || crypto.randomUUID();
         const otherSources = projectSources.filter(source => source.id !== id);
         if (otherSources.some(source => source.platform !== parsed.platform)) throw new Error("В одном проекте можно объединять источники только одной площадки. Для другого формата создайте отдельный проект.");
+        activeSourceId = id;
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
         const sourceOverrides = new Map();
@@ -8900,10 +9177,6 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || url;
         appState.feedName = currentProject?.name || defaultFeedName(url);
-        if (!existingSource) {
-          appState.generatedLink = "";
-          appState.generatedFeedId = "";
-        }
         const sourceRecord = {
           id,
           name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
@@ -8918,6 +9191,7 @@ ${photos}
         const sourceIndex = projectSources.findIndex(source => source.id === id);
         if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
         else projectSources.push(sourceRecord);
+        setSourceContext(id);
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
@@ -8928,10 +9202,10 @@ ${photos}
         if (!existingSource) input.value = "";
         const correction = requestedPlatform !== "auto" && requestedPlatform !== parsed.platform ? ` Выбранный тип скорректирован на ${platformProfiles[parsed.platform].name}.` : "";
         const autoPublish = Boolean(publishedFeedIdBeforeSync);
-        if (autoPublish) await generateFeedLink();
-        const published = autoPublish ? " Постоянная ссылка обновлена." : "";
+        const didPublish = autoPublish && await generateFeedLink();
+        const published = didPublish ? " Постоянная ссылка обновлена." : autoPublish ? " Публикация не обновлена — проверьте ошибки." : "";
         setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}${published}`, "ok");
-        showToast(autoPublish ? `Источник и опубликованный фид обновлены: ${parsed.objects.length} квартир` : `Источник обновлён: ${parsed.objects.length} квартир`);
+        showToast(didPublish ? `Источник и опубликованный фид обновлены: ${parsed.objects.length} квартир` : `Источник обновлён: ${parsed.objects.length} квартир${autoPublish ? ". Публикация требует проверки" : ""}`);
       } catch (error) {
         if (existingSource) {
           existingSource.error = error.message;
@@ -8959,8 +9233,9 @@ ${photos}
       validated = true;
       renderValidation();
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
-      const blob = new Blob([buildXml(objects, activePlatform)], { type: "application/xml;charset=utf-8" });
+      const currentObjects = workingObjects();
+      const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      const blob = new Blob([buildXml(workingObjects(), activePlatform)], { type: "application/xml;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `${platformProfiles[activePlatform].downloadPrefix}-${new Date().toISOString().slice(0, 10)}.xml`;
@@ -9037,6 +9312,7 @@ ${photos}
       const payload = {
         platform,
         projectId: currentProject?.id || "",
+        sourceId: activeSourceId,
         sourceUrl,
         sourceType,
         autoSyncIntervalMinutes,
@@ -9062,9 +9338,9 @@ ${photos}
       validated = true;
       renderValidation();
       renderReleasePreflight();
-      if (!objects.length) {
+      if (!workingObjects().length) {
         showToast("Сначала загрузите объекты в проект, затем создавайте выпуск");
-        switchPage("sources");
+        switchPage("source");
         return;
       }
       if (activePlatform === "domclick") {
@@ -9072,7 +9348,8 @@ ${photos}
         return;
       }
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const bad = objects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
+      const currentObjects = workingObjects();
+      const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       if (platformErrors.length || bad.length) {
         const examples = [...platformErrors.map(item => item.message || item.title), ...bad].filter(Boolean).slice(0, 3);
         showToast(`Публикация остановлена: исправьте ${platformErrors.length + bad.length} критических ошибок. ${examples.join("; ")}`);
@@ -9087,27 +9364,41 @@ ${photos}
         showToast("Проверьте название фида перед генерацией ссылки");
         return;
       }
-      const xml = buildXml(objects, activePlatform);
+      const xml = buildXml(currentObjects, activePlatform);
       const button = document.querySelector("#generateLinkBtn");
-      const hadPublishedId = Boolean(appState.generatedFeedId);
+      const publicationKey = activePublicationKey();
+      const publication = appState.publishedFeeds?.[publicationKey] || {};
+      const publicationId = publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
+      const hadPublishedId = Boolean(publicationId);
       button.disabled = true;
       button.classList.add("loading");
       button.textContent = "Публикую...";
 
       try {
         const publishedFeed = await publishFeedToServer({
-          id: appState.generatedFeedId,
+          id: publicationId,
           platform: activePlatform,
           sourceUrl: appState.feedUrl || document.querySelector("#feedUrl").value,
           sourceType: /^https?:\/\//i.test(appState.feedUrl || "") ? "url" : "file",
           xml,
-          objectCount: objects.length,
+          objectCount: currentObjects.length,
           name: feedName,
           slug: generatedFeedId(feedName)
         });
         appState.serverBaseUrl = publicFeedOrigin;
         appState.generatedFeedId = publishedFeed.id;
         appState.generatedLink = publishedFeed.url;
+        const serverHistory = Array.isArray(publishedFeed.history) ? publishedFeed.history : [];
+        const localEntry = {
+          version: serverHistory[0]?.version || ((appState.publishedHistory?.[0]?.version || 0) + 1),
+          updatedAt: publishedFeed.updatedAt || new Date().toISOString(),
+          url: publishedFeed.url,
+          objectCount: currentObjects.length,
+          sourceUrl: appState.feedUrl || "",
+          platform: activePlatform
+        };
+        appState.publishedHistory = serverHistory.length ? serverHistory : [localEntry, ...(appState.publishedHistory || [])].slice(0, 30);
+        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, history: appState.publishedHistory } };
         document.querySelector("#serverBaseUrl").value = publicFeedOrigin;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
@@ -9116,7 +9407,7 @@ ${photos}
         renderDetectedSource();
         showToast(hadPublishedId ? "Постоянная ссылка обновлена" : "Фид опубликован");
         renderReleaseHistory();
-        return;
+        return true;
       } catch (error) {
         console.warn("Server publish failed:", error);
         const message = error?.message || "Не удалось опубликовать фид";
@@ -9131,7 +9422,7 @@ ${photos}
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
-        button.textContent = "Сгенерировать ссылку";
+        button.textContent = "Сохранить фид";
       }
     }
 
@@ -9150,13 +9441,14 @@ ${photos}
     }
 
     function renderReleasePreflight() {
+      const currentObjects = workingObjects();
       const target = document.querySelector("#releasePreflight");
       if (!target) return;
       const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const missingFields = objects.flatMap(item => requiredIssues(item));
+      const missingFields = currentObjects.flatMap(item => requiredIssues(item));
       const errors = platformErrors.length + missingFields.length;
-      const complexes = [...new Set(objects.map(item => String(item.complexName || "").trim()).filter(Boolean))];
-      const empty = objects.length === 0;
+      const complexes = [...new Set(currentObjects.map(item => String(item.complexName || "").trim()).filter(Boolean))];
+      const empty = currentObjects.length === 0;
       const blocked = empty || errors > 0 || activePlatform === "domclick";
       const linkButton = document.querySelector("#generateLinkBtn");
       const downloadButton = document.querySelector("#downloadBtn");
@@ -9170,16 +9462,21 @@ ${photos}
         return;
       }
       if (activePlatform === "domclick") {
-        target.innerHTML = `<strong>Тестовый XML · ${objects.length.toLocaleString("ru-RU")} объектов</strong>Домклик закрыт для постоянной публикации до подтверждения схемы.`;
+        target.innerHTML = `<strong>Тестовый XML · ${currentObjects.length.toLocaleString("ru-RU")} объектов</strong>Домклик закрыт для постоянной публикации до подтверждения схемы.`;
         return;
       }
-      target.innerHTML = `<strong>${objects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `ЖК: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `К публикации не готово: ${errors} блокирующих ошибок.` : "Ошибок блокирующего уровня нет. Можно создать выпуск."}`;
+      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `ЖК: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `К публикации не готово: ${errors} блокирующих ошибок.` : "Ошибок блокирующего уровня нет. Можно создать выпуск."}`;
     }
 
     async function renderReleaseHistory() {
       const target = document.querySelector("#releaseHistory");
-      if (!target || runtimeMode !== "external" || !appState.generatedFeedId) return;
-      const response = await fetch(`/api/feeds/${encodeURIComponent(appState.generatedFeedId)}/releases`, { credentials: "same-origin", cache: "no-store" });
+      if (!target) return;
+      target.innerHTML = "";
+      if (runtimeMode !== "external" || !appState.generatedFeedId) return;
+      const feedId = appState.generatedFeedId;
+      const response = await fetch(`/api/feeds/${encodeURIComponent(feedId)}/releases`, { credentials: "same-origin", cache: "no-store" }).catch(() => null);
+      if (feedId !== appState.generatedFeedId) return;
+      if (!response) { target.innerHTML = "<small>Не удалось загрузить историю выпусков. Проверьте соединение.</small>"; return; }
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
         target.innerHTML = `<small>${escapeXml(result.error || "Не удалось загрузить историю выпусков")}</small>`;
@@ -9198,6 +9495,8 @@ ${photos}
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Не удалось откатить выпуск.");
         appState.generatedLink = result.url;
+        appState.publishedHistory = result.history || [];
+        appState.publishedFeeds[activePublicationKey()] = { id: result.id, url: result.url, history: appState.publishedHistory };
         document.querySelector("#generatedLinkInput").value = result.url;
         renderGeneratedLink();
         save();
@@ -9568,6 +9867,17 @@ ${photos}
       if (deleteButton) deleteMonitoredFeed(deleteButton.dataset.deleteFeed);
     });
     document.querySelector(".sidebar").addEventListener("click", event => {
+      const projectsLink = event.target.closest("#projectsNav, #workspaceSwitcher");
+      if (projectsLink) {
+        event.preventDefault();
+        if (currentProject) {
+          window.location.assign("/");
+          return;
+        }
+        switchPage("projects");
+        document.querySelector("#appShell").classList.remove("nav-open");
+        return;
+      }
       const item = event.target.closest("[data-nav]");
       if (!item) return;
       switchPage(item.dataset.nav);
@@ -9589,10 +9899,11 @@ ${photos}
     });
     document.querySelector("#selectVisible").addEventListener("change", event => {
       if (event.target.checked) {
-        checkedIds = new Set(objects.map(item => item.externalId));
-        const firstObject = objects[0] || null;
+        const currentObjects = workingObjects();
+        checkedIds = new Set(currentObjects.map(item => item.externalId));
+        const firstObject = currentObjects[0] || null;
         selectedId = firstObject?.externalId || "";
-        const firstWithLayout = objects.find(item => String(item.layoutPhoto || "").trim());
+        const firstWithLayout = currentObjects.find(item => String(item.layoutPhoto || "").trim());
         if (firstWithLayout) selectBrandLayoutFromObject(firstWithLayout);
       } else {
         checkedIds = new Set();
@@ -9622,6 +9933,13 @@ ${photos}
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const syncButton = event.target.closest("[data-source-sync]");
       const removeButton = event.target.closest("[data-source-remove]");
+      const check = event.target.closest("[data-source-check]");
+      if (check || event.target.closest(".source-select-control")) return;
+      const sourceCard = event.target.closest("[data-source-select]");
+      if (sourceCard && !syncButton && !removeButton) {
+        selectSource(sourceCard.dataset.sourceSelect);
+        return;
+      }
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
       if (removeButton) {
         const id = removeButton.dataset.sourceRemove;
@@ -9635,6 +9953,7 @@ ${photos}
           return result;
         }, []);
         originalObjects = structuredClone(objects);
+        if (activeSourceId === id) setSourceContext("all");
         saveProjectSources();
         save();
         if (!objects.length) feedErrorPanelActivated = false;
@@ -9643,7 +9962,21 @@ ${photos}
       }
     });
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
+    document.querySelector("#projectSourceList").addEventListener("change", event => {
+      const check = event.target.closest("[data-source-check]");
+      if (check) selectSource(check.checked ? check.dataset.sourceCheck : "all");
+    });
+    document.querySelector("#projectSourceList").addEventListener("keydown", event => {
+      const card = event.target.closest("[data-source-select]");
+      if (event.target !== card || !["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      selectSource(card.dataset.sourceSelect === activeSourceId ? "all" : card.dataset.sourceSelect);
+    });
     document.querySelector("#copyGeneratedLinkBtn").addEventListener("click", copyGeneratedLink);
+    document.querySelector("#publishedHistory").addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-published-history]");
+      if (button) deletePublishedHistory(button.dataset.deletePublishedHistory);
+    });
     document.querySelector("#chooseLayoutForObjectBtn").addEventListener("click", chooseLayoutForObject);
     document.querySelector("#addMonitorFeedBtn").addEventListener("click", addManualMonitoredFeed);
     document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
@@ -9678,6 +10011,7 @@ ${photos}
           throw new Error("В одном проекте можно объединять источники только одной площадки. Для другого формата создайте отдельный проект.");
         }
         const sourceId = crypto.randomUUID();
+        activeSourceId = sourceId;
         activePlatform = incomingPlatform;
         activeMonitorPlatform = activePlatform;
         next.forEach(item => {
@@ -9692,9 +10026,8 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || file.name;
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
-        appState.generatedLink = "";
-        appState.generatedFeedId = "";
         projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
+        setSourceContext(sourceId);
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
@@ -9755,10 +10088,6 @@ ${photos}
     }, 30000);
     initializeAuth();
   </script>
-  <link rel="stylesheet" href="cookie-consent.css">
-  <link rel="stylesheet" href="layout-editor.css">
-  <link rel="stylesheet" href="listingflow-ui.css">
-  <link rel="stylesheet" href="usage-guide.css">
   <script src="layout-editor.js"></script>
   <script src="monitor-client.js"></script>
   <script src="usage-guide.js"></script>
@@ -9767,7 +10096,6 @@ ${photos}
     <div><button type="button" id="acceptAnalytics">Разрешить аналитику</button><button type="button" id="declineAnalytics">Только необходимые</button><button type="button" id="openCookiePrefs">Настроить</button></div>
   </div>
   <dialog id="cookiePrefs" aria-labelledby="cookiePrefsTitle"><form method="dialog"><h2 id="cookiePrefsTitle">Настройки cookies</h2><p>Обязательные cookies нужны для входа и всегда включены. Выберите аналитические инструменты отдельно.</p><label><input id="analyticsConsent" type="checkbox"><span><strong>Яндекс Метрика</strong><br>Посещение страниц и карта кликов.</span></label><label><input id="webvisorConsent" type="checkbox"><span><strong>Webvisor</strong><br>Запись взаимодействия с интерфейсом для анализа ошибок.</span></label><div class="cookie-dialog-actions"><button type="button" id="cancelCookiePrefs">Отмена</button><button type="button" id="saveCookiePrefs" class="primary">Сохранить выбор</button></div></form></dialog>
-  <button type="button" id="manageCookiesGlobal" class="cookie-settings-trigger">Настройки cookies</button>
   <script src="cookie-consent.js" defer></script>
 </body>
 </html>

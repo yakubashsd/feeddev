@@ -584,12 +584,13 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
   const now = new Date().toISOString();
   const requestedSlug = existingSlug || payload.slug || data.name || `${data.platform}-${new Date().toISOString().slice(0, 10)}-${crypto.randomBytes(3).toString("hex")}`;
   let slug = makeSlug(requestedSlug);
-  const existing = feeds.find(feed => feed.slug === slug);
+  const occupied = feeds.find(feed => feed.slug === slug);
+  const existing = existingSlug ? occupied : undefined;
   if (APP_MODE === "external" && existingSlug && existing?.ownerId !== actor?.userId) {
     throw new Error("Фид не найден в вашем аккаунте.");
   }
 
-  if (!existingSlug && existing) {
+  if (!existingSlug && occupied) {
     slug = `${slug}-${crypto.randomBytes(3).toString("hex")}`;
   }
 
@@ -623,11 +624,23 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     releaseHistory.unshift({ id: releaseId, version: Math.max(0, ...releaseHistory.map(item => Number(item.version) || 0)) + 1, createdAt: now, objectCount: Number(payload.objectCount || 0), platform: data.platform, checksum, ...(releaseRecord?.url ? { url: releaseRecord.url } : {}) });
   }
 
+  const history = Array.isArray(existing?.history) ? existing.history : [];
+  const version = Math.max(Number(existing?.publicationVersion) || 0, ...history.map(item => Number(item.version) || 0)) + 1;
+  const historyEntry = {
+    version,
+    updatedAt: now,
+    url: feedUrl(req, slug),
+    objectCount: Number(payload.objectCount || 0),
+    sourceUrl: data.sourceUrl,
+    platform: data.platform
+  };
+
   const record = {
     id: slug,
     slug,
     ownerId: APP_MODE === "external" ? actor?.userId : undefined,
-    projectId: APP_MODE === "external" ? String(payload.projectId || "") : undefined,
+    projectId: String(payload.projectId || existing?.projectId || ""),
+    sourceId: String(payload.sourceId || existing?.sourceId || "all"),
     platform: data.platform,
     sourceUrl: data.sourceUrl,
     sourceType: data.sourceType,
@@ -646,7 +659,9 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     releases: releaseHistory.slice(0, 100),
     url: feedUrl(req, slug),
     updatedAt: now,
-    createdAt: existing?.createdAt || now
+    createdAt: existing?.createdAt || now,
+    history: [historyEntry, ...history].slice(0, 30),
+    publicationVersion: version
   };
 
   await persistFeedRecord(record);
@@ -1200,7 +1215,9 @@ async function handleApi(req, res, url) {
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
     const feeds = await readFeeds();
-    return send(res, 200, { feeds: APP_MODE === "external" ? feeds.filter(feed => feed.ownerId === actor.userId) : feeds });
+    const ownedFeeds = APP_MODE === "external" ? feeds.filter(feed => feed.ownerId === actor.userId) : feeds;
+    const projectId = String(url.searchParams.get("projectId") || "").trim();
+    return send(res, 200, { feeds: projectId ? ownedFeeds.filter(feed => feed.projectId === projectId) : ownedFeeds });
   }
 
   if (url.pathname === '/api/monitor') {
@@ -1281,6 +1298,17 @@ async function handleApi(req, res, url) {
     if (APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, payload.projectId)) return sendError(res, 403, "Проект недоступен.");
     const record = await saveFeed(req, payload, url.searchParams.get("slug"), actor);
     return send(res, 200, record);
+  }
+
+  const historyDeleteMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/history\/(\d+)$/i);
+  if (req.method === "DELETE" && historyDeleteMatch) {
+    const feeds = await readFeeds();
+    const record = feeds.find(feed => feed.slug === historyDeleteMatch[1]);
+    if (!record || (APP_MODE === "external" && record.ownerId !== actor?.userId)) return sendError(res, 404, "Публикация не найдена.");
+    const version = Number(historyDeleteMatch[2]);
+    record.history = (Array.isArray(record.history) ? record.history : []).filter(item => Number(item.version) !== version);
+    await persistFeedRecord(record);
+    return send(res, 200, { history: record.history });
   }
 
   const updateMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)$/i);

@@ -1,4 +1,13 @@
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+/* Source selection imported from the upstream editor, using ListingFlow tokens. */
+body.client-ui .project-source-list .source-record{grid-template-columns:24px minmax(140px,1fr) minmax(130px,.8fr) 76px minmax(140px,1fr) auto;gap:12px;min-width:0}
+body.client-ui .project-source-list .source-record.is-selected{border-color:var(--lf-blue)!important;box-shadow:inset 3px 0 var(--lf-blue)!important}
+body.client-ui .source-select-control input{accent-color:var(--lf-blue)}
+body.client-ui .source-next{min-width:0}
+body.client-ui .published-history-item{min-width:0;border-color:var(--lf-line);background:var(--lf-surface);border-radius:8px;flex-wrap:wrap}
+body.client-ui .published-history-item a{flex:1 1 220px;min-width:0;color:var(--lf-blue)}
+body.client-ui .published-history-item span{color:var(--lf-muted)}
+@media(max-width:1200px){body.client-ui .project-source-list .source-record{grid-template-columns:24px minmax(0,1fr)}body.client-ui .project-source-list .source-record>:not(.source-select-control){grid-column:2}body.client-ui .source-record .source-actions{justify-content:flex-start;flex-wrap:wrap}}
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Light.woff2") format("woff2");font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-ExtraBold.woff2") format("woff2");font-weight:800;font-style:normal;font-display:swap}
@@ -358,3 +367,375 @@ body.client-ui[data-theme="dark"] #layoutsPanel .brand-preview{background:#17191
 body.client-ui[data-theme="dark"] #layoutsPanel .le-properties{background:var(--lf-surface)!important;color:var(--lf-text)!important}
 @media(max-width:1050px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 290px}body.client-ui #layoutsPanel .le-toolbar .le-save-state{display:none}}
 @media(max-width:760px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr)}body.client-ui #layoutsPanel .brand-preview{grid-column:1;grid-row:2;min-height:410px}body.client-ui #layoutsPanel .le-stage{min-height:300px;padding:12px}body.client-ui #layoutsPanel .le-properties{position:relative;top:auto;grid-column:1;grid-row:4;max-height:none}body.client-ui #layoutsPanel .brand-source-panel{grid-column:1;grid-row:3}body.client-ui #layoutsPanel .le-footer{grid-row:5}body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto}body.client-ui #layoutsPanel .le-toolbar button{min-height:34px}}
+
+/* ListingFlow design system — shared client/admin finish */
+body.client-ui,body.admin-ui{font-family:var(--lf-font)!important;font-size:14px!important;letter-spacing:0!important}
+body.client-ui :is(button,a),body.admin-ui :is(button,a){transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease!important}
+body.client-ui :is(button,input,select,textarea),body.admin-ui :is(button,input,select,textarea){border-radius:7px}
+body.client-ui :is(button,input,select,textarea):disabled,body.admin-ui :is(button,input,select,textarea):disabled{cursor:not-allowed!important;opacity:.55}
+
+/* Projects: clear page hierarchy, compact metrics, working table first */
+body.client-ui .project-list-mode .topbar>div:first-child{display:grid!important}
+body.client-ui .project-list-mode .topbar h1,body.client-ui .project-list-mode .topbar .subtitle{display:none!important}
+body.client-ui .project-list-mode .topbar{padding-left:28px!important}
+body.client-ui .project-list-mode .main{padding-top:82px!important}
+body.client-ui .topbar>div:first-child{min-width:0!important}
+body.client-ui .topbar h1{max-width:min(34vw,320px)!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.client-ui .topbar .subtitle{max-width:min(48vw,520px)!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.client-ui .projects-heading{align-items:center!important;margin:0 0 18px!important}
+body.client-ui .projects-heading h2{font-size:26px!important;font-weight:700!important;letter-spacing:-.45px!important}
+body.client-ui .projects-heading p{margin-top:4px!important;font-size:12px!important}
+body.client-ui .projects-heading #newProjectBtn{width:auto!important;min-width:148px!important;min-height:40px!important;padding:0 15px!important;white-space:nowrap!important}
+body.client-ui .project-metrics{gap:10px!important;margin-bottom:14px!important}
+body.client-ui .project-metric{min-height:90px!important;padding:13px 14px 12px 52px!important;border-radius:8px!important;box-shadow:none!important}
+body.client-ui .project-metric .metric-icon{left:12px!important;top:13px!important;width:28px!important;height:28px!important;border-radius:7px!important}
+body.client-ui .project-metric strong{margin-top:7px!important;font-size:25px!important}
+body.client-ui .project-metric small{margin-top:5px!important}
+body.client-ui #projectSearch{height:38px!important;margin-bottom:9px!important}
+body.client-ui .project-list-head{padding:9px 13px!important;border-radius:7px 7px 0 0!important;font-size:9px!important}
+body.client-ui #projectList{border-radius:0 0 7px 7px!important}
+body.client-ui .project-entry{min-height:56px!important;padding:8px 13px!important;gap:12px!important}
+body.client-ui .project-entry:hover{background:#f4f6f8!important}
+body.client-ui .project-entry:focus-visible{outline:2px solid var(--lf-blue)!important;outline-offset:-2px!important}
+body.client-ui .project-entry .aggregator-mark{width:26px;height:26px;flex-basis:26px}
+body.client-ui .usage-hint{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;margin:0 0 16px!important;padding:9px 11px!important;border:1px solid var(--lf-line)!important;border-left:3px solid var(--lf-accent)!important;border-radius:7px!important;background:var(--lf-surface)!important;box-shadow:none!important}
+body.client-ui .usage-hint{min-height:54px!important}
+body.client-ui .usage-hint-step{width:auto!important;min-width:0!important;padding:4px 7px!important;border-radius:4px!important;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;font-size:9px!important}
+body.client-ui .usage-hint-copy strong{font-size:12px!important;color:var(--lf-text)!important}
+body.client-ui .usage-hint-copy p{margin:1px 0 0!important;color:var(--lf-muted)!important;font-size:10px!important;line-height:1.35!important}
+body.client-ui .usage-hint-action{display:none!important}
+body.client-ui .usage-hint-dismiss{position:static!important;width:27px!important;height:27px!important;min-height:27px!important;padding:0!important;border:1px solid var(--lf-line)!important;border-radius:5px!important;background:var(--lf-surface)!important;color:var(--lf-muted)!important}
+body.client-ui button.primary,body.client-ui .primary,body.client-ui #newProjectBtn{border-color:#c0e900!important;background:var(--lf-accent)!important;color:#14170a!important;box-shadow:none!important;font-weight:700!important}
+body.client-ui button.primary:hover,body.client-ui .primary:hover,body.client-ui #newProjectBtn:hover{background:var(--lf-accent-hover)!important}
+body.client-ui button:not(.primary):not(.nav-item):hover{border-color:var(--lf-line-strong)}
+body.client-ui .source-panel,body.client-ui .feeds-panel,body.client-ui .validator-panel,body.client-ui .complexes-panel,body.client-ui .table-wrap,body.client-ui .bulk-panel,body.client-ui .layouts-panel,body.client-ui .change-log-panel,body.client-ui .quality-panel,body.client-ui .publish-panel,body.client-ui .billing-page{border-radius:8px!important;box-shadow:none!important}
+body.client-ui .panel-title{font-size:21px!important;letter-spacing:-.25px!important}
+body.client-ui .main>section:not(.page-hidden){animation:none!important;transform:none!important}
+body.client-ui ::view-transition-old(root),body.client-ui ::view-transition-new(root){animation:none!important}
+body.client-ui .project-metric strong,body.admin-ui .metric strong{font-variant-numeric:tabular-nums lining-nums!important}
+
+/* Owner console aligns to the same 240px navigation + quiet work canvas */
+body.admin-ui .shell{grid-template-columns:236px minmax(0,1fr)!important;gap:0!important;padding:0!important;background:var(--lf-bg)!important}
+body.admin-ui .dock{display:none!important}
+body.admin-ui .side{width:236px!important;padding:18px 13px!important;background:#17191f!important}
+body.admin-ui .brand{margin:0 5px 25px!important}
+body.admin-ui .brand .lf-brand-lockup{gap:9px!important}
+body.admin-ui .brand .lf-brand-mark{width:30px!important;height:30px!important;flex-basis:30px!important;border-radius:7px!important}
+body.admin-ui .brand .lf-brand-mark img{width:27px!important;height:27px!important}
+body.admin-ui .brand .lf-brand-name{font-size:20px!important}
+body.admin-ui .main{padding:78px 26px 36px!important;background:var(--lf-bg)!important}
+body.admin-ui .top{left:236px!important;min-height:60px!important;height:60px!important;padding:0 26px!important;background:var(--lf-surface)!important;backdrop-filter:none!important}
+body.admin-ui .top h1{font-size:16px!important;font-weight:700!important}
+body.admin-ui .metrics{gap:10px!important;margin-bottom:14px!important}
+body.admin-ui .metric{min-height:96px!important;padding:13px 15px!important;border-radius:8px!important;box-shadow:none!important}
+body.admin-ui .metric strong{margin-top:8px!important;font-size:25px!important;line-height:1.15!important}
+body.admin-ui .metric small{margin-top:4px!important}
+body.admin-ui .view{padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+body.admin-ui .section-head{margin:22px 0 10px!important}
+body.admin-ui .section-head h2{font-size:20px!important;letter-spacing:-.2px!important}
+body.admin-ui .chart,body.admin-ui .table-wrap,body.admin-ui .drawer,body.admin-ui .dialog{border:1px solid var(--lf-line)!important;border-radius:8px!important;background:var(--lf-surface)!important;box-shadow:none!important}
+body.admin-ui .chart{padding:14px 16px!important}
+body.admin-ui table{border-collapse:collapse!important}
+body.admin-ui th{position:sticky;top:0;z-index:1;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important}
+body.admin-ui td,body.admin-ui th{padding:10px 12px!important;border-color:var(--lf-line)!important}
+body.admin-ui tr:hover td{background:var(--lf-surface-2)!important}
+body.admin-ui .button.primary{border-color:#c0e900!important;background:var(--lf-accent)!important;color:#14170a!important;box-shadow:none!important}
+body.admin-ui .button.primary:hover{background:var(--lf-accent-hover)!important}
+body.admin-ui .toolbar{gap:8px!important}
+body.admin-ui :is(input,select,textarea){min-height:38px!important;border:1px solid var(--lf-line-strong)!important;border-radius:7px!important;background:var(--lf-surface)!important;box-shadow:none!important}
+body.admin-ui .status{border-radius:5px!important;font-weight:650!important}
+body.admin-ui .top h1{max-width:min(40vw,360px)!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+@media(max-width:1180px){
+  body.client-ui .project-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.client-ui .project-list-head,body.client-ui .project-entry{grid-template-columns:minmax(180px,1fr) 105px 105px 76px 72px!important;gap:9px!important}
+  body.admin-ui .metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:860px){
+  body.admin-ui .shell{display:block!important}
+  body.admin-ui .side{position:fixed!important;z-index:45!important;top:60px!important;left:0!important;bottom:0!important;width:min(290px,86vw)!important;height:auto!important;transform:translateX(-105%);transition:transform .18s ease!important;box-shadow:8px 0 28px rgba(10,13,20,.12)!important}
+  body.admin-ui .side.open{transform:translateX(0)}
+  body.admin-ui .brand .lf-brand-name,body.admin-ui .nav span,body.admin-ui .identity div,body.admin-ui .logout span{display:block!important}
+  body.admin-ui .nav button,body.admin-ui .logout{justify-content:flex-start!important}
+  body.admin-ui .top{left:0!important;padding:0 16px!important}
+  body.admin-ui .admin-menu-toggle{display:grid!important;place-items:center!important}
+  body.admin-ui .main{padding:78px 18px 28px!important}
+  body.admin-ui .metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.admin-ui .chart{overflow-x:auto}
+}
+@media(max-width:720px){
+  body.client-ui .app{grid-template-columns:minmax(0,1fr)!important}
+  body.client-ui .sidebar{position:fixed!important;z-index:45!important;top:0!important;left:0!important;bottom:0!important;width:min(290px,86vw)!important;height:100dvh!important;transform:translateX(-105%);transition:transform .18s ease!important;box-shadow:8px 0 28px rgba(10,13,20,.12)!important}
+  body.client-ui .sidebar.open{transform:translateX(0)}
+  body.client-ui .main{grid-column:1!important;padding:76px 14px 28px!important}
+  body.client-ui .topbar{left:0!important;padding:0 14px!important}
+  body.client-ui .mobile-menu-toggle{display:grid!important;place-items:center!important}
+  body.client-ui .project-list-mode .topbar{padding-left:14px!important}
+  body.client-ui .project-list-mode .main{padding-top:76px!important}
+  body.client-ui .projects-heading{align-items:flex-start!important;gap:12px!important;margin-bottom:14px!important}
+  body.client-ui .projects-heading h2{font-size:22px!important}
+  body.client-ui .projects-heading p{max-width:240px!important;font-size:11px!important;line-height:1.4!important}
+  body.client-ui .projects-heading #newProjectBtn{min-width:0!important;min-height:36px!important;padding:0 10px!important;font-size:11px!important}
+  body.client-ui .project-metrics{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  body.client-ui .project-metric{min-height:78px!important;padding:11px 10px 10px 43px!important}
+  body.client-ui .project-metric .metric-icon{left:9px!important;top:11px!important;width:25px!important;height:25px!important}
+  body.client-ui .project-metric strong{font-size:21px!important}
+  body.client-ui .project-list-head{display:none!important}
+  body.client-ui .project-entry{grid-template-columns:minmax(0,1fr) auto!important;gap:7px 10px!important;padding:11px!important}
+  body.client-ui .project-entry-main{grid-column:1/-1!important}
+  body.client-ui .project-entry>span:nth-of-type(1){display:block!important;grid-column:1!important;grid-row:2!important}
+  body.client-ui .project-entry>span:nth-of-type(2){grid-column:1!important;grid-row:3!important}
+  body.client-ui .project-entry>a:not(.project-entry-main){grid-column:2!important;grid-row:2!important;justify-self:end!important}
+  body.client-ui .project-entry .project-delete{grid-column:2!important;grid-row:3!important;justify-self:end!important}
+  body.client-ui .usage-hint{grid-template-columns:auto minmax(0,1fr) auto!important;margin-bottom:14px!important}
+  body.client-ui .usage-hint-copy p{display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden!important}
+  body.client-ui #projectSearch{width:100%!important}
+  body.admin-ui .main{padding:72px 13px 22px!important}
+  body.admin-ui .top{padding:0 12px!important}
+  body.admin-ui .metrics{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  body.admin-ui .metric{min-height:82px!important;padding:10px!important}
+  body.admin-ui .metric strong{font-size:21px!important}
+  body.admin-ui .section-head{align-items:flex-start!important;flex-wrap:wrap!important}
+  body.admin-ui .toolbar{width:100%!important;flex-wrap:wrap!important}
+  body.admin-ui .toolbar input{width:100%!important}
+  body.admin-ui .table-wrap{overflow-x:auto!important}
+  body.admin-ui table{min-width:680px!important}
+}
+@media(max-width:390px){
+  body.client-ui .projects-heading{flex-wrap:wrap!important}
+  body.client-ui .projects-heading #newProjectBtn{margin-left:auto!important}
+  body.client-ui .project-metrics{grid-template-columns:1fr!important}
+  body.client-ui .project-metric{padding-left:10px!important}
+  body.client-ui .project-metric .metric-icon{position:static!important;margin-bottom:6px!important}
+  body.client-ui .project-metric strong{margin-top:0!important}
+  body.admin-ui .metrics{grid-template-columns:1fr!important}
+}
+
+/* Workspace hierarchy, typography rhythm, and stable field alignment */
+body.client-ui{--lf-type-xs:11px;--lf-type-sm:12px;--lf-type-md:14px;--lf-type-lg:16px;--lf-type-xl:22px;--lf-type-display:28px}
+body.client-ui .workspace-switcher{display:block!important;text-decoration:none!important;line-height:1.3!important;transition:border-color .15s ease,background-color .15s ease!important}
+body.client-ui .workspace-switcher:hover{border-color:#414752!important;background:#242831!important}
+body.client-ui .workspace-switcher:focus-visible{outline:2px solid var(--lf-accent)!important;outline-offset:2px!important}
+body.client-ui .workspace-switcher span{display:block!important;min-height:14px!important;font-size:10px!important;line-height:14px!important;letter-spacing:.045em!important}
+body.client-ui .workspace-switcher strong{display:block!important;min-width:0!important;margin-top:5px!important;font-size:14px!important;line-height:20px!important;font-weight:700!important}
+body.client-ui .nav-label{min-height:15px!important;font-size:10px!important;line-height:15px!important;letter-spacing:.09em!important}
+body.client-ui .nav-label-project{margin-top:18px!important}
+body.client-ui .nav-workflow-toggle{font-size:13px!important;font-weight:650!important}
+body.client-ui .nav-workflow-items .nav-item{min-height:38px!important;font-size:13px!important;line-height:18px!important}
+body.client-ui .nav-workflow-items .nav-text{white-space:normal!important}
+body.client-ui .sidebar .nav-item,#projectsNav{line-height:20px!important}
+body.client-ui .projects-heading h2{font-size:var(--lf-type-display)!important;line-height:1.18!important;letter-spacing:-.45px!important;font-weight:750!important}
+body.client-ui .projects-heading p{max-width:680px!important;font-size:var(--lf-type-md)!important;line-height:1.5!important}
+body.client-ui .panel-title,body.client-ui .catalog-head .panel-title,body.client-ui .table-headline>.panel-title{font-size:var(--lf-type-xl)!important;line-height:1.25!important;letter-spacing:-.25px!important;font-weight:700!important}
+body.client-ui .projects-page :is(.panel-caption,.project-empty p),body.client-ui .main .subtitle{font-size:var(--lf-type-sm)!important;line-height:1.5!important}
+body.client-ui .project-metric>span:not(.metric-icon){font-size:var(--lf-type-sm)!important;line-height:18px!important;font-weight:600!important}
+body.client-ui .project-metric strong{font-size:25px!important;line-height:1.15!important;font-variant-numeric:tabular-nums!important}
+body.client-ui .project-metric small{font-size:var(--lf-type-xs)!important;line-height:16px!important}
+body.client-ui .project-list-head{font-size:11px!important;line-height:16px!important;font-weight:650!important}
+body.client-ui .project-entry{line-height:20px!important}
+body.client-ui .project-entry-main strong{font-size:14px!important;line-height:19px!important;font-weight:700!important}
+body.client-ui .project-entry-main small,body.client-ui .project-entry>span{font-size:12px!important;line-height:18px!important}
+body.client-ui .main :is(.field,.auth-fields .field){display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-content:start!important;gap:6px!important;min-width:0!important}
+body.client-ui .main .field>label,body.client-ui .main .editor label,body.client-ui .auth-fields .field>label{display:block!important;min-width:0!important;margin:0!important;color:var(--lf-muted)!important;font-size:12px!important;font-weight:650!important;line-height:18px!important;letter-spacing:0!important;overflow-wrap:anywhere!important}
+body.client-ui .main .field :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select),body.client-ui .auth-fields .field :is(input,select,textarea){display:block!important;width:100%!important;min-width:0!important;min-height:40px!important;height:40px!important;margin:0!important;padding:8px 11px!important;border:1px solid var(--lf-line-strong)!important;border-radius:7px!important;font-family:var(--lf-font)!important;font-size:14px!important;line-height:22px!important;letter-spacing:0!important;vertical-align:middle!important}
+body.client-ui .main .field textarea{display:block!important;width:100%!important;min-height:96px!important;height:auto!important;margin:0!important;padding:9px 11px!important;border:1px solid var(--lf-line-strong)!important;border-radius:7px!important;font-family:var(--lf-font)!important;font-size:14px!important;line-height:21px!important;resize:vertical}
+body.client-ui .main .field :is(input,select,textarea)::placeholder{font-size:13px!important;line-height:20px!important;opacity:.72}
+body.client-ui .main :is(th,td){font-size:12px!important;line-height:18px!important;vertical-align:middle!important}
+body.client-ui .usage-hint{display:none!important}
+@media(max-width:720px){
+  body.client-ui .projects-heading h2{font-size:24px!important}
+  body.client-ui .projects-heading p{font-size:14px!important;line-height:1.45!important}
+  body.client-ui .project-entry-main strong{font-size:14px!important}
+  body.client-ui .nav-label-project{margin-top:12px!important}
+  body.client-ui .main .field :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select,textarea){min-height:44px!important;height:44px!important;font-size:16px!important}
+}
+body.client-ui .sidebar :is(.nav-item,.nav-label,.nav-workflow)[hidden]{display:none!important}
+
+/* Projects dashboard: match the approved ListingFlow reference while keeping live workflows intact. */
+@media(min-width:1101px){
+  body.client-ui .app{grid-template-columns:278px minmax(0,1fr) 390px!important}
+  body.client-ui .app.feeds-mode,body.client-ui .app.layouts-mode,body.client-ui .app.validator-mode,body.client-ui .app.project-list-mode{grid-template-columns:278px minmax(0,1fr)!important}
+  body.client-ui .topbar{left:278px!important}
+}
+body.client-ui .sidebar{background:#17191f!important}
+body.client-ui .workspace-note.sidebar-help{margin:24px 2px 10px!important;padding:16px 12px!important;border:1px solid #30343e!important;border-radius:9px!important;background:#1e2027!important;color:#c2c6ce!important}
+body.client-ui .sidebar-help>strong{display:block!important;color:#f2f3f5!important;font-size:14px!important;line-height:20px!important;font-weight:700!important}
+body.client-ui .sidebar-help>p{margin:5px 0 12px!important;color:#9299a5!important;font-size:12px!important;line-height:18px!important}
+body.client-ui .sidebar-help .guide-open{display:flex!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:38px!important;padding:0 11px!important;border:1px solid #3a3f49!important;border-radius:7px!important;background:#2a2d35!important;color:#f6f7f8!important;font-family:var(--lf-font)!important;font-size:12px!important;font-weight:700!important}
+body.client-ui .sidebar-help .guide-open svg{width:15px;height:15px}
+body.client-ui .sidebar-help-links{display:flex!important;justify-content:space-between!important;gap:8px!important;margin-top:12px!important;padding-top:10px!important;border-top:1px solid #30343e!important}
+body.client-ui .sidebar-help-links a{color:#9ca3af!important;font-size:11px!important;text-decoration:none!important}
+body.client-ui .sidebar-help-links a:hover{color:var(--lf-accent)!important}
+body.client-ui .topbar-project-picker{display:none;align-items:center;gap:10px;grid-column:2;grid-row:1;min-width:0;width:max-content;max-width:min(420px,48vw);height:40px;padding:0 12px;border:1px solid var(--lf-line);border-radius:7px;background:var(--lf-surface);color:var(--lf-text)}
+body.client-ui .topbar-project-picker svg{width:17px;height:17px;flex:0 0 17px;color:var(--lf-muted)}
+body.client-ui .topbar-project-picker select{width:auto!important;min-width:140px!important;max-width:340px!important;height:36px!important;min-height:36px!important;padding:0 20px 0 0!important;border:0!important;background:transparent!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:14px!important;line-height:20px!important;box-shadow:none!important}
+body.client-ui .project-list-mode .topbar{padding-right:27px!important}
+body.client-ui .project-list-mode .topbar-project-picker{display:flex!important}
+body.client-ui .project-list-mode .topbar>div:first-child{grid-template-columns:1fr minmax(0,1fr)!important}
+body.client-ui .project-list-mode .topbar-actions{gap:14px!important}
+body.client-ui .topbar-icon-action{display:grid!important;place-items:center!important;width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;border:1px solid transparent!important;border-radius:50%!important;background:transparent!important;color:var(--lf-text)!important}
+body.client-ui .topbar-icon-action:hover{background:#f0f1f3!important}
+body.client-ui .topbar-icon-action svg{width:19px;height:19px}
+body.client-ui .topbar-account{display:flex!important;align-items:center!important;gap:11px!important;min-width:0!important;padding-left:14px!important;border-left:1px solid var(--lf-line)!important}
+body.client-ui .account-avatar{display:grid!important;place-items:center!important;width:38px!important;height:38px!important;flex:0 0 38px!important;border:1px solid var(--lf-line)!important;border-radius:50%!important;background:#eceef2!important;color:#252a32!important;font-size:13px!important;font-weight:700!important}
+body.client-ui .account-copy{display:grid!important;min-width:0!important;gap:0!important}
+body.client-ui .account-copy strong{max-width:180px!important;overflow:hidden!important;color:var(--lf-text)!important;font-size:13px!important;line-height:18px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.client-ui .account-copy small{max-width:180px!important;overflow:hidden!important;color:var(--lf-muted)!important;font-size:11px!important;line-height:15px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.client-ui .account-chevron{width:16px;height:16px;flex:0 0 16px;stroke-width:1.8}
+body.client-ui .project-list-mode .theme-toggle{display:none!important}
+body.client-ui .project-list-mode .main{padding:91px 28px 40px!important}
+body.client-ui .project-list-mode .projects-page{max-width:1460px!important;margin:0 auto!important}
+body.client-ui .project-list-mode .projects-heading{align-items:center!important;gap:24px!important;margin:0 0 22px!important}
+body.client-ui .project-list-mode .projects-heading h1{margin:0!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:36px!important;font-weight:700!important;line-height:1.12!important;letter-spacing:-.6px!important}
+body.client-ui .project-list-mode .projects-heading p{margin:5px 0 0!important;color:var(--lf-muted)!important;font-family:var(--lf-font)!important;font-size:16px!important;line-height:23px!important}
+body.client-ui .project-list-mode #newProjectBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;flex:0 0 auto!important;min-width:182px!important;min-height:46px!important;padding:0 16px!important;border:1px solid #c5eb0a!important;border-radius:7px!important;background:var(--lf-accent)!important;color:#141710!important;font-family:var(--lf-font)!important;font-size:15px!important;font-weight:700!important;line-height:20px!important}
+body.client-ui .project-list-mode #newProjectBtn svg{width:18px;height:18px}
+body.client-ui .project-list-mode #newProjectBtn:hover{background:var(--lf-accent-hover)!important}
+body.client-ui .project-list-mode .project-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;margin:0 0 23px!important}
+body.client-ui .project-list-mode .project-metric{display:grid!important;grid-template-columns:54px minmax(0,1fr)!important;grid-template-rows:auto 1fr!important;align-items:center!important;min-width:0!important;min-height:112px!important;padding:16px 17px!important;border:1px solid var(--lf-line)!important;border-radius:9px!important;background:var(--lf-surface)!important;box-shadow:none!important}
+body.client-ui .project-list-mode .project-metric .metric-icon{position:static!important;grid-column:1!important;grid-row:1/3!important;width:46px!important;height:46px!important;border-radius:10px!important;background:#eaf0ff!important;color:#2168e8!important}
+body.client-ui .project-list-mode .project-metric.success .metric-icon{background:#e8f7ee!important;color:#15934e!important}
+body.client-ui .project-list-mode .project-metric.info .metric-icon{background:#eaf1ff!important;color:#2168e8!important}
+body.client-ui .project-list-mode .project-metric.error .metric-icon{background:#ffebed!important;color:#d92d38!important}
+body.client-ui .project-list-mode .metric-icon svg{width:23px;height:23px}
+body.client-ui .project-list-mode .metric-copy{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:end!important;column-gap:8px!important;min-width:0!important}
+body.client-ui .project-list-mode .metric-copy>span{grid-column:1/-1!important;overflow:hidden!important;color:#687080!important;font-size:13px!important;line-height:18px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .metric-copy strong{margin:4px 0 0!important;color:#171a20!important;font-size:27px!important;line-height:30px!important;font-weight:700!important}
+body.client-ui .project-list-mode .metric-copy small{align-self:end!important;margin:0 0 3px!important;color:#288f55!important;font-size:11px!important;line-height:15px!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-metric.info .metric-copy small{color:#2567ce!important}
+body.client-ui .project-list-mode .project-metric.error .metric-copy small{color:#d92d38!important}
+body.client-ui .project-list-mode .metric-progress{display:block!important;grid-column:2!important;height:5px!important;margin-top:7px!important;overflow:hidden!important;border-radius:5px!important;background:#edf0f3!important}
+body.client-ui .project-list-mode .metric-progress i{display:block!important;height:100%!important;border-radius:inherit!important;background:#24a45a!important}
+body.client-ui .project-list-mode .project-metric.info .metric-progress i{background:#3577d4!important}
+body.client-ui .project-list-mode .project-metric.error .metric-progress i{background:#d92d38!important}
+body.client-ui .project-list-mode .project-toolbar{display:grid!important;grid-template-columns:minmax(220px,1fr) minmax(145px,.32fr) minmax(145px,.34fr) minmax(145px,.32fr)!important;gap:9px!important;margin:0 0 17px!important}
+body.client-ui .project-list-mode .project-toolbar :is(.project-search,select){display:flex!important;align-items:center!important;min-width:0!important;width:100%!important;height:42px!important;min-height:42px!important;margin:0!important;padding:0 12px!important;border:1px solid var(--lf-line-strong)!important;border-radius:7px!important;background:var(--lf-surface)!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:14px!important;line-height:20px!important;box-shadow:none!important}
+body.client-ui .project-list-mode .project-search{gap:10px!important}
+body.client-ui .project-list-mode .project-search svg{width:17px;height:17px;flex:0 0 17px;color:#657080}
+body.client-ui .project-list-mode .project-search input{width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;padding:0!important;border:0!important;background:transparent!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:14px!important;line-height:20px!important;box-shadow:none!important}
+body.client-ui .project-list-mode #projectSearch{width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+body.client-ui .project-list-mode .project-search input::placeholder{color:#7e8797!important;opacity:1!important}
+body.client-ui .project-list-mode .project-toolbar select{appearance:none!important;padding-right:34px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23677080' stroke-width='1.8'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important}
+body.client-ui .project-list-mode .project-toolbar :is(select:focus,.project-search:focus-within){border-color:#98a1ae!important;outline:2px solid rgba(33,104,232,.16)!important;outline-offset:1px!important}
+body.client-ui .project-list-mode .project-table-wrap{width:100%!important;overflow:auto!important;border:1px solid var(--lf-line)!important;border-radius:10px!important;background:var(--lf-surface)!important}
+body.client-ui .project-list-mode .project-table{width:100%!important;min-width:1020px!important;border-collapse:separate!important;border-spacing:0!important;table-layout:auto!important}
+body.client-ui .project-list-mode .project-table th{position:sticky!important;top:0!important;z-index:2!important;height:44px!important;padding:0 13px!important;border-bottom:1px solid var(--lf-line)!important;background:#f7f8fa!important;color:#596171!important;font-size:12px!important;font-weight:700!important;line-height:17px!important;letter-spacing:0!important;text-align:left!important;text-transform:none!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-table td{height:50px!important;padding:5px 13px!important;border-bottom:1px solid var(--lf-line)!important;background:var(--lf-surface)!important;color:var(--lf-text)!important;font-size:13px!important;line-height:18px!important;vertical-align:middle!important}
+body.client-ui .project-list-mode .project-table tbody tr:last-child td{border-bottom:0!important}
+body.client-ui .project-list-mode .project-table tbody tr:hover td{background:#fafbfc!important}
+body.client-ui .project-list-mode .project-table .project-select-cell{width:48px!important;padding-right:4px!important;padding-left:14px!important;text-align:center!important}
+body.client-ui .project-list-mode .project-select-cell input{width:16px!important;height:16px!important;min-height:16px!important;margin:0!important;accent-color:#bfe500!important;vertical-align:middle!important}
+body.client-ui .project-list-mode .project-name-link{display:grid!important;min-width:0!important;color:var(--lf-text)!important;text-decoration:none!important}
+body.client-ui .project-list-mode .project-name-link:hover strong{color:#536d00!important}
+body.client-ui .project-list-mode .project-name-link strong{overflow:hidden!important;font-size:14px!important;font-weight:700!important;line-height:18px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-name-link small{margin-top:1px!important;color:#808898!important;font-size:11px!important;line-height:15px!important}
+body.client-ui .project-list-mode .project-platform{display:flex!important;align-items:center!important;gap:9px!important;min-width:0!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-platform>span:last-child{overflow:hidden!important;text-overflow:ellipsis!important}
+body.client-ui .project-list-mode .project-platform .aggregator-mark{width:25px!important;height:25px!important;flex-basis:25px!important}
+body.client-ui .project-list-mode .project-object-count{font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-status{display:inline-flex!important;align-items:center!important;gap:7px!important;max-width:100%!important;padding:5px 10px!important;border-radius:7px!important;background:#e8f7ee!important;color:#176b3a!important;font-size:12px!important;font-weight:700!important;line-height:17px!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-status i{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#15934e}
+body.client-ui .project-list-mode .project-status.info{background:#eaf1ff!important;color:#185bbd!important}
+body.client-ui .project-list-mode .project-status.info i{background:#2168e8}
+body.client-ui .project-list-mode .project-status.warning{background:#fff4dc!important;color:#895100!important}
+body.client-ui .project-list-mode .project-status.warning i{background:#c77b0c}
+body.client-ui .project-list-mode .project-status.error{background:#ffebed!important;color:#b4232e!important}
+body.client-ui .project-list-mode .project-status.error i{background:#d92d38}
+body.client-ui .project-list-mode .project-status.neutral{background:#eff1f4!important;color:#586171!important}
+body.client-ui .project-list-mode .project-status.neutral i{background:#848c99}
+body.client-ui .project-list-mode .project-updated{color:#6b7483!important;font-size:12px!important;font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-actions-cell{width:142px!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-row-action{display:inline-grid!important;place-items:center!important;width:34px!important;height:34px!important;margin-right:5px!important;border:1px solid transparent!important;border-radius:7px!important;background:#f5f6f8!important;color:#2a3039!important;text-decoration:none!important;vertical-align:middle!important}
+body.client-ui .project-list-mode .project-row-action:hover{border-color:var(--lf-line-strong)!important;background:#eceff3!important}
+body.client-ui .project-list-mode .project-row-action svg{width:17px;height:17px}
+body.client-ui .project-list-mode .project-row-menu{position:relative;display:inline-block!important;vertical-align:middle!important}
+body.client-ui .project-list-mode .project-row-menu summary{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;border-radius:7px!important;cursor:pointer!important;list-style:none!important}
+body.client-ui .project-list-mode .project-row-menu summary::-webkit-details-marker{display:none}
+body.client-ui .project-list-mode .project-row-menu summary:hover{background:#f0f2f5!important}
+body.client-ui .project-list-mode .project-row-menu summary svg{width:18px;height:18px}
+body.client-ui .project-list-mode .project-row-menu-items{position:absolute!important;z-index:10!important;top:calc(100% + 4px)!important;right:0!important;display:grid!important;min-width:184px!important;padding:5px!important;border:1px solid var(--lf-line)!important;border-radius:8px!important;background:var(--lf-surface)!important;box-shadow:0 8px 24px rgba(16,24,40,.14)!important}
+body.client-ui .project-list-mode .project-row-menu-items :is(a,button){display:block!important;width:100%!important;padding:8px 10px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:12px!important;line-height:18px!important;text-align:left!important;text-decoration:none!important}
+body.client-ui .project-list-mode .project-row-menu-items :is(a,button):hover{background:var(--lf-surface-2)!important}
+body.client-ui .project-list-mode .project-row-menu-items button[data-delete-project]{color:#b4232e!important}
+body.client-ui .project-list-mode .project-table-empty td{height:148px!important;text-align:center!important}
+body.client-ui .project-list-mode .project-table-empty strong,body.client-ui .project-list-mode .project-table-empty span{display:block!important}
+body.client-ui .project-list-mode .project-table-empty strong{font-size:15px!important;line-height:22px!important}
+body.client-ui .project-list-mode .project-table-empty span{margin-top:4px!important;color:var(--lf-muted)!important;font-size:13px!important;line-height:19px!important}
+body.client-ui .project-list-mode .project-table-footer{display:flex!important;align-items:center!important;gap:14px!important;min-height:70px!important;padding:12px 16px!important;border-top:1px solid var(--lf-line)!important;background:var(--lf-surface)!important}
+body.client-ui .project-list-mode .project-page-summary{flex:1!important;min-width:140px!important;color:#747d8c!important;font-size:12px!important;line-height:18px!important}
+body.client-ui .project-list-mode #projectSelectionSummary:not([hidden]){display:inline-block!important;margin-right:12px!important;color:#536d00!important;font-weight:700!important}
+body.client-ui .project-list-mode .project-pagination{display:flex!important;align-items:center!important;gap:5px!important}
+body.client-ui .project-list-mode .project-pagination button{display:grid!important;place-items:center!important;min-width:36px!important;height:36px!important;padding:0 8px!important;border:1px solid var(--lf-line)!important;border-radius:7px!important;background:var(--lf-surface)!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:13px!important;line-height:18px!important}
+body.client-ui .project-list-mode .project-pagination button svg{width:16px;height:16px}
+body.client-ui .project-list-mode .project-pagination button:hover:not(:disabled){background:#f4f6f8!important}
+body.client-ui .project-list-mode .project-pagination button.active{border-color:var(--lf-accent)!important;background:var(--lf-accent)!important;color:#161a12!important;font-weight:700!important}
+body.client-ui .project-list-mode .project-pagination button:disabled{cursor:not-allowed!important;opacity:.4!important}
+body.client-ui .project-list-mode .pagination-ellipsis{padding:0 4px;color:var(--lf-muted)!important}
+body.client-ui .project-list-mode .project-page-size{display:flex!important;align-items:center!important;gap:8px!important;color:#747d8c!important;font-size:12px!important;white-space:nowrap!important}
+body.client-ui .project-list-mode .project-page-size select{width:62px!important;height:36px!important;min-height:36px!important;padding:0 8px!important;border:1px solid var(--lf-line)!important;border-radius:7px!important;background:var(--lf-surface)!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:13px!important}
+body.client-ui .project-list-mode .project-row.is-archived td{opacity:.65!important}
+body.client-ui :is(button,a,select,input){font-family:var(--lf-font)!important}
+body.client-ui :is(button,a,select,input):focus-visible{outline:2px solid rgba(33,104,232,.42)!important;outline-offset:2px!important}
+body.client-ui[data-theme="dark"] .project-list-mode .project-metric{background:var(--lf-surface)!important}
+body.client-ui[data-theme="dark"] .project-list-mode .metric-copy strong{color:var(--lf-text)!important}
+body.client-ui[data-theme="dark"] .project-list-mode .project-table th{background:var(--lf-surface-2)!important;color:var(--lf-muted)!important}
+body.client-ui[data-theme="dark"] .project-list-mode .project-table td,body.client-ui[data-theme="dark"] .project-list-mode .project-table-footer{background:var(--lf-surface)!important;color:var(--lf-text)!important}
+body.client-ui[data-theme="dark"] .project-list-mode .project-row-action{background:var(--lf-surface-2)!important;color:var(--lf-text)!important}
+@media(max-width:1100px){
+  body.client-ui .project-list-mode .main{padding:82px 22px 32px!important}
+  body.client-ui .project-list-mode .project-toolbar{grid-template-columns:minmax(220px,1fr) repeat(2,minmax(145px,.5fr))!important}
+  body.client-ui .project-list-mode #projectSort{grid-column:3!important}
+  body.client-ui .project-list-mode .project-metrics{gap:11px!important}
+}
+@media(max-width:760px){
+  body.client-ui .project-list-mode .main{padding:79px 14px 26px!important}
+  body.client-ui .project-list-mode .topbar>div:first-child{grid-template-columns:40px minmax(0,1fr)!important}
+  body.client-ui .project-list-mode .topbar-project-picker{max-width:calc(100vw - 160px)!important;height:38px!important}
+  body.client-ui .project-list-mode .topbar-project-picker select{min-width:0!important;max-width:calc(100vw - 210px)!important;font-size:13px!important}
+  body.client-ui .project-list-mode .topbar-actions{gap:6px!important}
+  body.client-ui .project-list-mode .topbar-account{padding-left:7px!important;border:0!important}
+  body.client-ui .project-list-mode .account-copy,body.client-ui .project-list-mode .account-chevron{display:none!important}
+  body.client-ui .project-list-mode .account-avatar{width:34px!important;height:34px!important;flex-basis:34px!important}
+  body.client-ui .project-list-mode .topbar-icon-action{width:34px!important;height:34px!important;min-width:34px!important}
+  body.client-ui .project-list-mode .projects-heading{align-items:flex-start!important;flex-wrap:wrap!important;gap:13px!important;margin-bottom:17px!important}
+  body.client-ui .project-list-mode .projects-heading h1{font-size:28px!important}
+  body.client-ui .project-list-mode .projects-heading p{max-width:560px!important;font-size:14px!important;line-height:20px!important}
+  body.client-ui .project-list-mode #newProjectBtn{min-height:42px!important}
+  body.client-ui .project-list-mode .project-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;margin-bottom:17px!important}
+  body.client-ui .project-list-mode .project-metric{min-height:96px!important;padding:12px!important;grid-template-columns:42px minmax(0,1fr)!important}
+  body.client-ui .project-list-mode .project-metric .metric-icon{width:34px!important;height:34px!important}
+  body.client-ui .project-list-mode .metric-icon svg{width:19px;height:19px}
+  body.client-ui .project-list-mode .metric-copy strong{font-size:23px!important;line-height:26px!important}
+  body.client-ui .project-list-mode .metric-copy small{font-size:10px!important;white-space:normal!important}
+  body.client-ui .project-list-mode .project-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  body.client-ui .project-list-mode .project-toolbar .project-search{grid-column:1/-1!important}
+  body.client-ui .project-list-mode #projectSort{grid-column:auto!important}
+  body.client-ui .project-list-mode .project-table{min-width:1020px!important}
+  body.client-ui .project-list-mode .project-table-footer{flex-wrap:wrap!important;gap:9px!important;padding:11px!important}
+  body.client-ui .project-list-mode .project-page-summary{flex-basis:100%!important}
+  body.client-ui .project-list-mode .project-pagination{flex:1!important}
+  body.client-ui .project-list-mode .project-pagination button{min-width:32px!important;height:34px!important}
+}
+@media(max-width:390px){
+  body.client-ui .project-list-mode .project-metrics{grid-template-columns:1fr!important}
+  body.client-ui .project-list-mode .project-metric{min-height:84px!important;grid-template-columns:44px minmax(0,1fr)!important}
+  body.client-ui .project-list-mode .project-toolbar{grid-template-columns:1fr!important}
+  body.client-ui .project-list-mode .project-toolbar .project-search{grid-column:auto!important}
+  body.client-ui .project-list-mode .project-table-footer{align-items:flex-start!important}
+  body.client-ui .project-list-mode .project-page-size{margin-left:auto!important}
+}
+@media(min-width:761px) and (max-width:1100px){
+  body.client-ui .app,body.client-ui .app.project-list-mode,body.client-ui .app.feeds-mode,body.client-ui .app.layouts-mode,body.client-ui .app.validator-mode{display:block!important;height:auto!important;min-height:100dvh!important;overflow:visible!important}
+  body.client-ui .sidebar{position:fixed!important;z-index:100!important;left:0!important;top:0!important;width:260px!important;height:100dvh!important;padding-inline:14px!important;transform:translateX(-102%);transition:transform .2s ease!important;box-shadow:20px 0 50px rgba(0,0,0,.28)!important}
+  body.client-ui .app.nav-open .sidebar{transform:none!important}
+  body.client-ui .sidebar .brand{justify-content:flex-start!important}
+  body.client-ui .lf-brand-name,body.client-ui .workspace-switcher,body.client-ui .nav-label,body.client-ui .nav-text,body.client-ui .workspace-note,body.client-ui .logout-btn,body.client-ui .nav-chevron{display:flex!important}
+  body.client-ui .workspace-switcher,body.client-ui .workspace-note{display:block!important}
+  body.client-ui .sidebar .nav-item{justify-content:flex-start!important;padding:9px 11px!important}
+  body.client-ui .nav-workflow-items{margin-left:20px!important;padding-left:13px!important;border-left:1px solid #30343d!important}
+  body.client-ui .nav-workflow-items .nav-item::before{display:block!important}
+  body.client-ui .topbar{left:0!important;padding:0 18px!important}
+  body.client-ui .mobile-menu-toggle{display:grid!important;place-items:center!important}
+  body.client-ui .main{grid-column:1!important;padding:82px 24px 34px!important}
+}
+body.client-ui .sidebar :is(.nav-item,.nav-label,.nav-workflow)[hidden]{display:none!important}
