@@ -4538,7 +4538,6 @@
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
-        <div class="source-selection"><select id="activeSourceSelect" aria-label="Выбор фида"><option value="all">Все фиды проекта</option></select></div>
         <div class="source-schedule-note">Новые источники обновляются каждые 12 часов. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
@@ -9324,9 +9323,6 @@ ${photos}
     document.querySelector("#clearChangeLogBtn").addEventListener("click", clearChangeLog);
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
-    document.querySelector("#activeSourceSelect").addEventListener("change", event => {
-      selectSource(event.target.value);
-    });
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const syncButton = event.target.closest("[data-source-sync]");
       const removeButton = event.target.closest("[data-source-remove]");
