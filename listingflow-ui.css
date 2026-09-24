@@ -670,7 +670,7 @@ body.admin-ui .nav button.active::after{
   content:""!important;position:absolute!important;left:-13px!important;top:8px!important;bottom:8px!important;
   width:3px!important;border-radius:0 3px 3px 0!important;background:var(--lf-accent)!important;
 }
-body.admin-ui .side-foot{margin-top:auto!important;padding:16px 4px 0!important;border-top:1px solid #2b2e35!important}
+body.admin-ui .side-foot{display:block!important;margin-top:auto!important;padding:16px 4px 0!important;border-top:1px solid #2b2e35!important}
 body.admin-ui .identity{display:flex!important;align-items:center!important;gap:10px!important;padding:0 6px 12px!important;color:#f5f6f7!important;font-size:13px!important}
 body.admin-ui .avatar{
   display:grid!important;place-items:center!important;width:34px!important;height:34px!important;flex:0 0 34px!important;
