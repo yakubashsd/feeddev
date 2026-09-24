@@ -17,7 +17,7 @@ const { createProjectStateStore } = require("./project-state-store");
 const { createSupportTicketStore } = require("./support-tickets");
 const { createPlatega } = require("./platega");
 const { inspectLaunchReadiness } = require("./launch-readiness");
-const { synchronizePrices } = require("./feed-sync");
+const { records: feedRecords, synchronizeFeed } = require("./feed-sync");
 const { download: safeDownload, downloadBuffer: safeDownloadBuffer } = require("./feed-monitor");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -576,7 +576,15 @@ function validateFeedPayload(payload) {
     platform,
     sourceUrl: String(payload.sourceUrl || "").trim(),
     name: String(payload.name || "").trim(),
-    sourceType: String(payload.sourceType || "").trim()
+    sourceType: String(payload.sourceType || "").trim(),
+    sourceFeeds: Array.isArray(payload.sourceFeeds) ? payload.sourceFeeds.slice(0, 20).map(source => ({
+      id: String(source?.id || "").slice(0, 120),
+      url: String(source?.url || "").trim(),
+      sourceType: String(source?.sourceType || "").trim() === "url" ? "url" : "file",
+      autoSyncIntervalMinutes: normalizeAutoSyncInterval(source?.autoSyncIntervalMinutes),
+      objectIds: [...new Set(Array.isArray(source?.objectIds) ? source.objectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])],
+      excludedObjectIds: [...new Set(Array.isArray(source?.excludedObjectIds) ? source.excludedObjectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])]
+    })) : []
   };
 }
 
@@ -651,6 +659,7 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     platform: data.platform,
     sourceUrl: data.sourceUrl,
     sourceType: data.sourceType,
+    sourceFeeds: data.sourceFeeds.length ? data.sourceFeeds : existing?.sourceFeeds || [],
     autoSyncIntervalMinutes: normalizeAutoSyncInterval(payload.autoSyncIntervalMinutes),
     lastAutoSyncAt: existing?.lastAutoSyncAt || "",
     nextAutoSyncAt: existing?.nextAutoSyncAt || "",
@@ -679,14 +688,27 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
 let feedSyncRunning = false;
 
 async function syncPublishedFeed(record) {
-  if (!record.sourceUrl || record.sourceType !== "url") return;
-  const sourceXml = await safeDownload(record.sourceUrl);
+  const configuredSources = Array.isArray(record.sourceFeeds) && record.sourceFeeds.length
+    ? record.sourceFeeds.filter(source => source.sourceType === "url" && source.url && normalizeAutoSyncInterval(source.autoSyncIntervalMinutes || record.autoSyncIntervalMinutes))
+    : record.sourceUrl && record.sourceType === "url"
+      ? [{ id: record.sourceId || "legacy-source", url: record.sourceUrl, sourceType: "url", objectIds: [], excludedObjectIds: [] }]
+      : [];
+  if (!configuredSources.length) return;
+  const downloadedSources = await Promise.all(configuredSources.map(async source => ({ source, xml: await safeDownload(source.url) })));
   const filePath = path.join(FEEDS_DIR, `${record.slug}.xml`);
   if (!fs.existsSync(filePath)) throw new Error("Опубликованный XML не найден");
   const publishedXml = fs.readFileSync(filePath, "utf8");
-  const result = synchronizePrices(publishedXml, sourceXml);
+  const managedIds = configuredSources.flatMap(source => Array.isArray(source.objectIds) ? source.objectIds : []);
+  const excludedIds = configuredSources.flatMap(source => Array.isArray(source.excludedObjectIds) ? source.excludedObjectIds : []);
+  const result = synchronizeFeed(publishedXml, downloadedSources.map(item => item.xml), {
+    ...(managedIds.length ? { managedIds } : {}),
+    excludedIds
+  });
   if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
-  if (result.updated) {
+  if (result.invalidSourceRecords) throw new Error(`В источнике есть объявления без ID или цены: ${result.invalidSourceRecords}`);
+  if (result.publishedDuplicateIds.length) throw new Error(`В опубликованном фиде повторяются ID: ${result.publishedDuplicateIds.slice(0, 5).join(", ")}`);
+  validateFeedPayload({ xml: result.xml, platform: record.platform, objectCount: result.outputCount });
+  if (result.updated || result.added || result.removed) {
     const checksum = crypto.createHash("sha256").update(publishedXml).digest("hex");
     const history = Array.isArray(record.releases) ? [...record.releases] : [];
     if (!history.some(item => item.checksum === checksum)) {
@@ -698,14 +720,32 @@ async function syncPublishedFeed(record) {
     if (!history.some(item => item.checksum === nextChecksum)) {
       const id = crypto.randomUUID();
       await persistReleaseXml(record.slug, id, result.xml);
-      history.unshift({ id, version: Math.max(0, ...history.map(item => Number(item.version) || 0)) + 1, createdAt: new Date().toISOString(), objectCount: record.objectCount, platform: record.platform, checksum: nextChecksum });
+      history.unshift({ id, version: Math.max(0, ...history.map(item => Number(item.version) || 0)) + 1, createdAt: new Date().toISOString(), objectCount: result.outputCount, platform: record.platform, checksum: nextChecksum });
     }
     record.releases = history.slice(0, 100);
     const tempPath = `${filePath}.${process.pid}.tmp`;
     fs.writeFileSync(tempPath, result.xml);
     fs.renameSync(tempPath, filePath);
+    const publicationHistory = Array.isArray(record.history) ? record.history : [];
+    const publicationVersion = Math.max(Number(record.publicationVersion) || 0, ...publicationHistory.map(item => Number(item.version) || 0)) + 1;
+    record.history = [{
+      version: publicationVersion,
+      updatedAt: new Date().toISOString(),
+      url: record.url,
+      objectCount: result.outputCount,
+      sourceUrl: record.sourceUrl,
+      platform: record.platform,
+      automatic: true,
+      changes: { prices: result.updated, added: result.added, removed: result.removed }
+    }, ...publicationHistory].slice(0, 30);
+    record.publicationVersion = publicationVersion;
   }
   const now = new Date();
+  record.objectCount = result.outputCount;
+  record.sourceFeeds = (record.sourceFeeds || []).map(source => {
+    const downloaded = downloadedSources.find(item => item.source.id === source.id && item.source.url === source.url);
+    return downloaded ? { ...source, objectIds: feedRecords(downloaded.xml).map(item => item.id).filter(Boolean) } : source;
+  });
   record.lastAutoSyncAt = now.toISOString();
   record.nextAutoSyncAt = new Date(now.getTime() + record.autoSyncIntervalMinutes * 60 * 1000).toISOString();
   record.nextRunAt = record.nextAutoSyncAt;
@@ -715,7 +755,7 @@ async function syncPublishedFeed(record) {
   record.syncFailureCount = 0;
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
-  console.log(`Feed sync: ${record.slug}, prices updated: ${result.updated}/${result.checked}`);
+  console.log(`Feed sync: ${record.slug}, prices: ${result.updated}/${result.checked}, objects: +${result.added}/-${result.removed}`);
 }
 
 async function runScheduledFeedSync() {
@@ -726,7 +766,9 @@ async function runScheduledFeedSync() {
     const feeds = await readFeeds();
     for (const record of feeds) {
       const interval = normalizeAutoSyncInterval(record.autoSyncIntervalMinutes);
-      if (!interval || !record.sourceUrl || record.sourceType !== "url") continue;
+      const hasUrlSource = record.sourceType === "url" && record.sourceUrl
+        || Array.isArray(record.sourceFeeds) && record.sourceFeeds.some(source => source.sourceType === "url" && source.url);
+      if (!interval || !hasUrlSource) continue;
       const dueAt = new Date(record.nextRunAt || record.nextAutoSyncAt || record.updatedAt || 0).getTime();
       if (Number.isFinite(dueAt) && dueAt > now) continue;
       try {

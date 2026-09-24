@@ -54,6 +54,33 @@ test("CIAN uses branded layout as the only default image and retains the origina
   assert.match(xml, /<FullUrl>https:\/\/img.test\/original.jpg<\/FullUrl>/);
 });
 
+test("publication records URL sources, manual objects and explicit exclusions separately", () => {
+  const context = vm.createContext({
+    activeSourceId: "all",
+    projectSources: [
+      { id: "url-a", url: "https://a.test/feed.xml", excludedObjectIds: ["hidden-before"] },
+      { id: "file-b", url: "upload.xml" }
+    ],
+    originalObjects: [
+      { externalId: "one", _sourceId: "url-a", _sourceIds: ["url-a"] },
+      { externalId: "removed", _sourceId: "url-a", _sourceIds: ["url-a"] },
+      { externalId: "file-one", _sourceId: "file-b", _sourceIds: ["file-b"] }
+    ]
+  });
+  vm.runInContext(clientFunction("publicationSourceFeeds"), context);
+  const result = context.publicationSourceFeeds([
+    { externalId: "one", _sourceId: "url-a", _sourceIds: ["url-a"] },
+    { externalId: "file-one", _sourceId: "file-b", _sourceIds: ["file-b"] },
+    { externalId: "manual-copy" }
+  ]);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].sourceType, "url");
+  assert.deepEqual([...result[0].objectIds], ["one"]);
+  assert.deepEqual([...result[0].excludedObjectIds], ["hidden-before", "removed"]);
+  assert.equal(result[1].sourceType, "file");
+  assert.deepEqual([...result[1].objectIds], ["file-one"]);
+});
+
 test("publication URLs stay stable, history versions do not repeat, and project filters isolate records", async t => {
   const os = require("node:os");
   const http = require("node:http");

@@ -42,14 +42,16 @@ function recordPrice(xml) {
 
 function records(xml) {
   const result = [];
-  const tags = ["Ad", "offer", "Offer", "object"];
-  for (const tag of tags) {
-    const matcher = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi");
-    for (const match of String(xml).matchAll(matcher)) {
-      const id = recordId(match[0]);
-      const price = recordPrice(match[0]);
-      if (id && price) result.push({ id, price, block: match[0], index: match.index });
-    }
+  const matcher = /<(Ad|offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi;
+  for (const match of String(xml).matchAll(matcher)) {
+    result.push({
+      id: recordId(match[0]),
+      price: recordPrice(match[0]),
+      block: match[0],
+      tag: match[1],
+      index: match.index,
+      end: match.index + match[0].length
+    });
   }
   return result;
 }
@@ -59,14 +61,104 @@ function replacePrice(block, price) {
   if (/<price\b[^>]*\bvalue=["']/i.test(block)) {
     return block.replace(/(<price\b[^>]*\bvalue=["'])[^"']*(["'][^>]*\/?\s*>)/i, `$1${escaped}$2`);
   }
+  if (/<price\b[^>]*>[\s\S]*?<value\b[^>]*>/i.test(block)) {
+    return block.replace(/(<value\b[^>]*>)[\s\S]*?(<\/value>)/i, `$1${escaped}$2`);
+  }
   return block.replace(/(<(?:Price|price)\b[^>]*>)[\s\S]*?(<\/(?:Price|price)>)/i, `$1${escaped}$2`);
 }
 
-function synchronizePrices(publishedXml, sourceXml) {
-  const sourcePrices = new Map(records(sourceXml).map(item => [item.id, item.price]));
+function duplicateIds(items) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const item of items) {
+    if (!item.id) continue;
+    if (seen.has(item.id)) duplicates.add(item.id);
+    seen.add(item.id);
+  }
+  return [...duplicates];
+}
+
+function insertBeforeRootClose(xml, blocks, tag) {
+  if (!blocks.length) return xml;
+  const closingTag = tag.toLowerCase() === "ad" ? "Ads" : tag.toLowerCase() === "offer" ? "realty-feed" : "feed";
+  const matcher = new RegExp(`</${closingTag}\\s*>`, "i");
+  const match = matcher.exec(xml);
+  if (!match) return xml;
+  const separator = xml.slice(0, match.index).endsWith("\n") ? "" : "\n";
+  return `${xml.slice(0, match.index)}${separator}${blocks.join("\n")}\n${xml.slice(match.index)}`;
+}
+
+/**
+ * Keeps user-edited fields in the published XML, while the source remains
+ * authoritative for prices and for the set of source-managed objects.
+ */
+function synchronizeFeed(publishedXml, sourceXmls, options = {}) {
+  const sources = (Array.isArray(sourceXmls) ? sourceXmls : [sourceXmls]).map(records);
+  const sourceRecords = sources.flat();
+  const publishedRecords = records(publishedXml);
+  const sourceById = new Map(sourceRecords.filter(item => item.id).map(item => [item.id, item]));
+  const publishedById = new Map(publishedRecords.filter(item => item.id).map(item => [item.id, item]));
+  const excludedIds = new Set((options.excludedIds || []).map(normalizeId).filter(Boolean));
+  const managedIds = new Set((options.managedIds || publishedRecords.map(item => item.id)).map(normalizeId).filter(Boolean));
+  const invalidSourceRecords = sourceRecords.filter(item => !item.id || !item.price).length;
+  const sourceDuplicateIds = duplicateIds(sourceRecords);
+  const publishedDuplicateIds = duplicateIds(publishedRecords);
   let checked = 0;
   let updated = 0;
-  const xml = String(publishedXml).replace(/<(Ad|offer|Offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi, block => {
+  let removed = 0;
+  let cursor = 0;
+  const pieces = [];
+
+  for (const item of publishedRecords) {
+    pieces.push(String(publishedXml).slice(cursor, item.index));
+    cursor = item.end;
+    if (!item.id || excludedIds.has(item.id)) {
+      if (item.id && excludedIds.has(item.id)) removed += 1;
+      else pieces.push(item.block);
+      continue;
+    }
+    const source = sourceById.get(item.id);
+    if (!source && managedIds.has(item.id)) {
+      removed += 1;
+      continue;
+    }
+    if (!source) {
+      pieces.push(item.block);
+      continue;
+    }
+    checked += 1;
+    if (source.price !== item.price) {
+      updated += 1;
+      pieces.push(replacePrice(item.block, source.price));
+    } else {
+      pieces.push(item.block);
+    }
+  }
+  pieces.push(String(publishedXml).slice(cursor));
+
+  const addedRecords = [...sourceById.values()].filter(item => item.price && !publishedById.has(item.id) && !excludedIds.has(item.id));
+  const publishedTag = publishedRecords[0]?.tag || sourceRecords[0]?.tag || "";
+  const xml = insertBeforeRootClose(pieces.join(""), addedRecords.map(item => item.block), publishedTag);
+  return {
+    xml,
+    checked,
+    updated,
+    added: addedRecords.length,
+    removed,
+    sourceCount: sourceById.size,
+    outputCount: records(xml).length,
+    invalidSourceRecords,
+    sourceDuplicateIds,
+    publishedDuplicateIds,
+    sourceIds: [...sourceById.keys()]
+  };
+}
+
+function synchronizePrices(publishedXml, sourceXml) {
+  const sourcePrices = new Map(records(sourceXml).filter(item => item.id && item.price).map(item => [item.id, item.price]));
+  let checked = 0;
+  let updated = 0;
+  const xml = String(publishedXml).replace(/<(Ad|offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi, block => {
     const id = recordId(block);
     if (!id) return block;
     checked += 1;
@@ -78,4 +170,4 @@ function synchronizePrices(publishedXml, sourceXml) {
   return { xml, checked, updated, sourceCount: sourcePrices.size };
 }
 
-module.exports = { synchronizePrices };
+module.exports = { records, synchronizeFeed, synchronizePrices };

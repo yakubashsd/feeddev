@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { synchronizePrices } = require("./feed-sync");
+const { synchronizeFeed, synchronizePrices } = require("./feed-sync");
 
 test("synchronizes only matching prices and preserves other published fields", () => {
   const source = `<Ads><Ad><Id>42</Id><BargainTerms><Price>9100000</Price></BargainTerms></Ad></Ads>`;
@@ -12,4 +12,49 @@ test("synchronizes only matching prices and preserves other published fields", (
   assert.match(result.xml, /<Description>Edited by manager<\/Description>/);
   assert.match(result.xml, /<Id>42<\/Id>[\s\S]*?<Price>9100000<\/Price>/);
   assert.match(result.xml, /<Id>77<\/Id>[\s\S]*?<Price>5000000<\/Price>/);
+});
+
+test("synchronizes source prices and object membership without replacing user edits", () => {
+  const source = `<feed>
+    <object><ExternalId>42</ExternalId><Description>Source description</Description><Address>Source address</Address><BargainTerms><Price>9100000</Price></BargainTerms></object>
+    <object><ExternalId>99</ExternalId><Description>New apartment</Description><Address>New address</Address><BargainTerms><Price>6200000</Price></BargainTerms></object>
+  </feed>`;
+  const published = `<feed>
+    <object><ExternalId>42</ExternalId><Description>Edited by manager</Description><Address>Edited address</Address><BargainTerms><Price>8900000</Price></BargainTerms></object>
+    <object><ExternalId>77</ExternalId><Description>Removed upstream</Description><Address>Old address</Address><BargainTerms><Price>5000000</Price></BargainTerms></object>
+    <object><ExternalId>manual-copy</ExternalId><Description>Created in ListingFlow</Description><Address>Manual address</Address><BargainTerms><Price>7000000</Price></BargainTerms></object>
+  </feed>`;
+  const result = synchronizeFeed(published, source, { managedIds: ["42", "77"] });
+  assert.equal(result.updated, 1);
+  assert.equal(result.added, 1);
+  assert.equal(result.removed, 1);
+  assert.equal(result.outputCount, 3);
+  assert.match(result.xml, /<ExternalId>42<\/ExternalId><Description>Edited by manager<\/Description><Address>Edited address<\/Address>[\s\S]*?<Price>9100000<\/Price>/);
+  assert.doesNotMatch(result.xml, /<ExternalId>77<\/ExternalId>/);
+  assert.match(result.xml, /<ExternalId>99<\/ExternalId>/);
+  assert.match(result.xml, /<ExternalId>manual-copy<\/ExternalId>/);
+});
+
+test("excluded source objects stay excluded and additions work for Avito", () => {
+  const source = `<Ads><Ad><Id>one</Id><Description>One</Description><Address>A</Address><Price>10</Price></Ad><Ad><Id>two</Id><Description>Two</Description><Address>B</Address><Price>20</Price></Ad></Ads>`;
+  const published = `<Ads><Ad><Id>one</Id><Description>Edited one</Description><Address>A</Address><Price>9</Price></Ad></Ads>`;
+  const result = synchronizeFeed(published, source, { managedIds: ["one"], excludedIds: ["two"] });
+  assert.equal(result.updated, 1);
+  assert.equal(result.added, 0);
+  assert.equal(result.outputCount, 1);
+  assert.match(result.xml, /<Description>Edited one<\/Description>/);
+  assert.match(result.xml, /<Price>10<\/Price>/);
+  assert.doesNotMatch(result.xml, /<Id>two<\/Id>/);
+});
+
+test("Yandex offers keep edited text while source controls price and membership", () => {
+  const source = `<realty-feed><offer internal-id="a"><description>Source A</description><location><address>A</address></location><price><value>120</value></price></offer><offer internal-id="b"><description>Source B</description><location><address>B</address></location><price><value>200</value></price></offer></realty-feed>`;
+  const published = `<realty-feed><offer internal-id="a"><description>Edited A</description><location><address>Edited address</address></location><price><value>100</value></price></offer><offer internal-id="old"><description>Old</description><location><address>Old</address></location><price><value>50</value></price></offer></realty-feed>`;
+  const result = synchronizeFeed(published, source, { managedIds: ["a", "old"] });
+  assert.equal(result.updated, 1);
+  assert.equal(result.added, 1);
+  assert.equal(result.removed, 1);
+  assert.match(result.xml, /internal-id="a"[\s\S]*?<description>Edited A<\/description>[\s\S]*?<value>120<\/value>/);
+  assert.match(result.xml, /internal-id="b"/);
+  assert.doesNotMatch(result.xml, /internal-id="old"/);
 });

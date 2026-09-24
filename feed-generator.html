@@ -8605,6 +8605,8 @@
       }
       if (!confirm("Сбросить все внесенные правки и вернуться к исходному фиду?")) return;
       objects = structuredClone(originalObjects);
+      projectSources = projectSources.map(source => ({ ...source, excludedObjectIds: [] }));
+      saveProjectSources();
       selectedId = "";
       checkedIds = new Set();
       selectedBrandLayoutUrls = new Set();
@@ -9330,6 +9332,7 @@ ${photos}
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
         const sourceOverrides = new Map();
+        const excludedObjectIds = new Set(existingSource?.excludedObjectIds || []);
         if (existingSource) {
           const originalById = new Map(originalObjects.map(item => [item.externalId, item]));
           objects.forEach(item => {
@@ -9340,6 +9343,7 @@ ${photos}
             Object.keys(item).forEach(field => {
               if (!field.startsWith("_") && String(item[field] ?? "") !== String(original[field] ?? "")) changed[field] = item[field];
             });
+            delete changed.price;
             if (Object.keys(changed).length) sourceOverrides.set(item.externalId, changed);
           });
         }
@@ -9350,6 +9354,7 @@ ${photos}
           return result;
         }, []);
         parsed.objects.forEach(sourceItem => {
+          if (excludedObjectIds.has(sourceItem.externalId)) return;
           const overrides = sourceOverrides.get(sourceItem.externalId) || {};
           const item = { ...sourceItem, ...overrides, ...(Object.keys(overrides).length ? { _overrides: overrides } : {}) };
           const duplicate = withoutSource.find(candidate => candidate.externalId === item.externalId);
@@ -9376,7 +9381,8 @@ ${photos}
           interval: existingSource?.interval || document.querySelector("#sourceInterval").value,
           objectCount: parsed.objects.length,
           updatedAt: new Date().toISOString(),
-          error: ""
+          error: "",
+          excludedObjectIds: [...excludedObjectIds]
         };
         const sourceIndex = projectSources.findIndex(source => source.id === id);
         if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
@@ -9498,15 +9504,40 @@ ${photos}
       }
     }
 
+    function publicationSourceFeeds(currentObjects) {
+      const selectedSources = activeSourceId === "all"
+        ? projectSources
+        : projectSources.filter(source => source.id === activeSourceId);
+      return selectedSources.map(source => {
+        const belongsToSource = item => item._sourceId === source.id || (item._sourceIds || []).includes(source.id);
+        const objectIds = currentObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
+        const originalIds = originalObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
+        const currentIds = new Set(objectIds);
+        return {
+          id: source.id,
+          url: source.url,
+          sourceType: /^https?:\/\//i.test(source.url || "") ? "url" : "file",
+          autoSyncIntervalMinutes: Number(source.interval) || 0,
+          objectIds,
+          excludedObjectIds: [...new Set([...(source.excludedObjectIds || []), ...originalIds.filter(id => !currentIds.has(id))])]
+        };
+      });
+    }
+
     async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
-      const source = projectSources.find(item => item.url === sourceUrl);
-      const autoSyncIntervalMinutes = sourceType === "url" ? Number(source?.interval) || 0 : 0;
+      const sourceFeeds = publicationSourceFeeds(workingObjects());
+      const syncIntervals = sourceFeeds
+        .filter(source => source.sourceType === "url")
+        .map(source => Number(projectSources.find(item => item.id === source.id)?.interval) || 0)
+        .filter(Boolean);
+      const autoSyncIntervalMinutes = syncIntervals.length ? Math.min(...syncIntervals) : 0;
       const payload = {
         platform,
         projectId: currentProject?.id || "",
         sourceId: activeSourceId,
         sourceUrl,
         sourceType,
+        sourceFeeds,
         autoSyncIntervalMinutes,
         xml,
         objectCount,
@@ -9895,6 +9926,9 @@ ${photos}
     document.querySelector("#duplicateBtn").addEventListener("click", () => {
       if (!selectedItem()) return;
       const copy = { ...collectForm(), externalId: `${collectForm().externalId}-copy` };
+      delete copy._sourceId;
+      delete copy._sourceIds;
+      delete copy._overrides;
       objects.unshift(copy);
       selectedId = copy.externalId;
       addChangeLog("Объект создан", `Создана копия объекта с ID ${copy.externalId}.`);
@@ -9905,6 +9939,12 @@ ${photos}
     document.querySelector("#deleteBtn").addEventListener("click", () => {
       if (!selectedItem() || !confirm("Удалить выбранный объект?")) return;
       const deletedId = selectedId;
+      const deleted = selectedItem();
+      const sourceIds = [...new Set([deleted?._sourceId, ...(deleted?._sourceIds || [])].filter(Boolean))];
+      projectSources = projectSources.map(source => sourceIds.includes(source.id)
+        ? { ...source, excludedObjectIds: [...new Set([...(source.excludedObjectIds || []), deletedId])] }
+        : source);
+      saveProjectSources();
       objects = objects.filter(item => item.externalId !== selectedId);
       checkedIds.delete(selectedId);
       selectedId = "";
