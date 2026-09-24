@@ -106,6 +106,23 @@
     .auth-switch { display:flex; gap:8px; margin:0 0 20px; }
     .auth-switch button { flex:1; }
     .auth-switch button.active { border-color:var(--green); background:var(--green-2); color:var(--green); }
+    .auth-forgot-link {
+      justify-self: end;
+      min-height: auto;
+      margin-top: -7px;
+      padding: 2px 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      text-underline-offset: 3px;
+    }
+    .auth-forgot-link:hover { background:transparent; color:var(--text); text-decoration-color:currentColor; }
+    .auth-forgot-link:active { transform:none; }
+    .auth-forgot-link[hidden] { display:none !important; }
     .billing-page { max-width:760px; }
     .billing-card { padding:28px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); }
     .billing-price { margin:18px 0 6px; font-size:38px; font-weight:780; letter-spacing:-1.4px; }
@@ -4445,7 +4462,7 @@
       <div class="lf-brand-lockup" aria-label="ListingFlow"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
       <h1>Вход в сервис</h1>
       <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
-      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Вход</button><button type="button" data-auth-mode="register">Регистрация</button><button type="button" data-auth-mode="forgot">Восстановить</button></div>
+      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Вход</button><button type="button" data-auth-mode="register">Регистрация</button></div>
       <div class="auth-fields">
         <div class="field" id="loginNameField" hidden>
           <label for="loginName">Имя</label>
@@ -4459,6 +4476,7 @@
           <label for="loginPassword">Пароль</label>
           <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
         </div>
+        <button class="auth-forgot-link" id="forgotPasswordLink" type="button" data-auth-mode="forgot" hidden>Забыли пароль?</button>
         <div class="field" id="loginPasswordConfirmField" hidden>
           <label for="loginPasswordConfirm">Повторите пароль</label>
           <input id="loginPasswordConfirm" type="password" autocomplete="new-password">
@@ -5499,6 +5517,7 @@
       publicFeedOrigin = external ? location.origin : INTERNAL_FEED_ORIGIN;
       appState.serverBaseUrl = publicFeedOrigin;
       document.querySelector("#authSwitch").hidden = !external;
+      document.querySelector("#forgotPasswordLink").hidden = !external;
       const registerButton = document.querySelector('[data-auth-mode="register"]');
       if (registerButton) {
         registerButton.disabled = state.legalReady === false;
@@ -5536,6 +5555,10 @@
       document.querySelector("#loginPasswordConfirmField").hidden = !reset;
       document.querySelector("#loginPasswordConfirm").required = reset;
       document.querySelector("#authSwitch").hidden = reset || runtimeMode !== "external";
+      const forgotPasswordLink = document.querySelector("#forgotPasswordLink");
+      forgotPasswordLink.hidden = register || reset || runtimeMode !== "external";
+      forgotPasswordLink.dataset.authMode = forgot ? "login" : "forgot";
+      forgotPasswordLink.textContent = forgot ? "Вернуться ко входу" : "Забыли пароль?";
       const consentField = document.querySelector("#legalConsentField");
       consentField.hidden = !register;
       consentField.style.display = register ? "flex" : "none";

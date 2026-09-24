@@ -117,6 +117,9 @@ body.client-ui .page-hidden{display:none!important}
 body.client-ui .auth-screen{min-height:100dvh!important;padding:32px 18px!important;background:#17191f!important}
 body.client-ui .auth-card{width:min(440px,100%)!important;padding:32px!important;border:1px solid #30343e!important;border-radius:12px!important;background:#fff!important;color:var(--lf-text)!important;box-shadow:0 24px 70px rgba(0,0,0,.28)!important}
 body.client-ui .auth-card .brand{margin:0 0 26px!important;padding:0!important}.client-ui .auth-card .lf-brand-name{color:var(--lf-text)!important}.client-ui .auth-card .lf-brand-name span{color:#9dbd00!important}.client-ui .auth-card h1{font-size:25px!important;letter-spacing:-.6px!important}.client-ui .auth-card p{color:var(--lf-muted)!important}.client-ui .auth-tabs{border-color:var(--lf-line)!important}.client-ui .auth-tab{color:var(--lf-muted)!important}.client-ui .auth-tab.active{border-color:#b9df0a!important;color:var(--lf-text)!important}.client-ui .auth-submit{min-height:44px!important;width:100%!important}
+body.client-ui .auth-forgot-link{justify-self:end!important;min-height:auto!important;margin:-7px 0 0!important;padding:2px 0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#69707c!important;box-shadow:none!important;font-size:13px!important;font-weight:650!important;line-height:1.4!important;text-decoration:none!important}
+body.client-ui .auth-forgot-link:hover{background:transparent!important;color:#171a20!important;text-decoration:underline!important;text-underline-offset:3px!important}
+body.client-ui .auth-forgot-link:focus-visible{outline:2px solid #b9df0a!important;outline-offset:4px!important}
 
 /* Client content */
 body.client-ui .projects-page,body.client-ui .source-panel,body.client-ui .feeds-panel,body.client-ui .validator-panel,
