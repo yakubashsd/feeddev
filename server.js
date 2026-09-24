@@ -14,7 +14,9 @@ const { del, list, put } = require("@vercel/blob");
 const { XMLParser, XMLValidator } = require("fast-xml-parser");
 const { PLAN, createSaasStore, isSubscriptionActive, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail } = require("./saas-store");
 const { createProjectStateStore } = require("./project-state-store");
+const { createSupportTicketStore } = require("./support-tickets");
 const { createPlatega } = require("./platega");
+const { inspectLaunchReadiness } = require("./launch-readiness");
 const { synchronizePrices } = require("./feed-sync");
 const { download: safeDownload, downloadBuffer: safeDownloadBuffer } = require("./feed-monitor");
 
@@ -49,6 +51,7 @@ const SMTP_PASS = String(process.env.SMTP_PASS || "");
 const EMAIL_FROM = String(process.env.EMAIL_FROM || SMTP_USER || "");
 const TRUST_PROXY = String(process.env.TRUST_PROXY || "false").toLowerCase() === "true";
 const PASSWORD_RESET_MINUTES = Math.max(5, Math.min(60, Number(process.env.PASSWORD_RESET_MINUTES || 30)));
+const BACKUP_RETENTION_DAYS = Math.max(1, Number(process.env.BACKUP_RETENTION_DAYS || 30));
 const BILLING_MODE = String(process.env.BILLING_MODE || "manual").toLowerCase() === "platega" ? "platega" : "manual";
 const OFFER_VERSION = "2026-09-22";
 const PRIVACY_VERSION = "2026-09-22";
@@ -76,6 +79,8 @@ const saasStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
 const projectStateStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
   ? createProjectStateStore({ dataDir: DATA_DIR, secret: process.env.SAAS_DATA_SECRET })
   : null;
+const SUPPORT_DATA_SECRET = String(process.env.SAAS_DATA_SECRET || SAAS_SESSION_SECRET || AUTH_SECRET || "");
+const supportTicketStore = SUPPORT_DATA_SECRET ? createSupportTicketStore({ dataDir: DATA_DIR, secret: SUPPORT_DATA_SECRET }) : null;
 const platega = createPlatega({
   merchantId: process.env.PLATEGA_MERCHANT_ID,
   secret: process.env.PLATEGA_API_KEY,
@@ -369,6 +374,8 @@ function protectSensitiveRoute(req, res, pathname) {
     "/api/auth-register": ["register", 5, 60 * 60 * 1000],
     "/api/auth/forgot-password": ["forgot", 4, 30 * 60 * 1000],
     "/api/auth/reset-password": ["reset", 8, 30 * 60 * 1000],
+    "/api/support/tickets": ["support-ticket", 5, 60 * 60 * 1000],
+    "/api/account/deletion-request": ["account-deletion", 2, 24 * 60 * 60 * 1000],
     "/api/billing/checkout": ["checkout", 12, 15 * 60 * 1000],
     "/api/billing/platega/callback": ["platega", 180, 60 * 1000]
   };
@@ -542,10 +549,10 @@ function imageContentTypeFromPath(value = "") {
 
 function validateFeedPayload(payload) {
   const xml = String(payload.xml || "").trim();
-  if (!xml) throw new Error("XML фида пустой.");
-  if (!xml.includes("<") || !xml.includes(">")) throw new Error("Содержимое не похоже на XML.");
-  const platform = String(payload.platform || "cian").trim() || "cian";
   const invalid = message => { const error = new Error(message); error.status = 422; throw error; };
+  if (!xml) invalid("XML фида пустой.");
+  if (!xml.includes("<") || !xml.includes(">")) invalid("Содержимое не похоже на XML.");
+  const platform = String(payload.platform || "cian").trim() || "cian";
   if (platform === "domclick") invalid("Постоянная публикация Домклик закрыта до подтверждения схемы агрегатором.");
   const wellFormed = XMLValidator.validate(xml);
   if (wellFormed !== true) invalid("Публикация остановлена: XML содержит синтаксическую ошибку.");
@@ -886,7 +893,7 @@ async function sendMonitorAlerts(payload = {}) {
 }
 
 function serveStatic(req, res, pathname) {
-  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/grovia-workspace.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : pathname === "/legal.html" ? path.join(ROOT, "legal-documents.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
@@ -906,6 +913,7 @@ function serveStatic(req, res, pathname) {
       .replaceAll("@@OFFER_VERSION@@", OFFER_VERSION)
       .replaceAll("@@PRIVACY_VERSION@@", PRIVACY_VERSION)
       .replaceAll("@@CONSENT_VERSION@@", CONSENT_VERSION)
+      .replaceAll("@@BACKUP_RETENTION_DAYS@@", String(BACKUP_RETENTION_DAYS))
       .replaceAll('<span data-address></span>', escapeHtml(LEGAL.address || "не указан"))
       .replaceAll('<span data-phone></span>', escapeHtml(LEGAL.phone || "не указан"))
       .replaceAll('<a data-email></a>', `<a href="${emailHref}">${email || "не указан"}</a>`)
@@ -925,6 +933,7 @@ async function handleApi(req, res, url) {
   if (protectSensitiveRoute(req, res, url.pathname)) return;
 
   if (req.method === "GET" && url.pathname === "/api/health") {
+    const launch = APP_MODE === "external" ? inspectLaunchReadiness(process.env) : null;
     return send(res, 200, {
       ok: true,
       mode: APP_MODE,
@@ -937,7 +946,10 @@ async function handleApi(req, res, url) {
       billingMode: APP_MODE === "external" ? BILLING_MODE : null,
       billingReady: APP_MODE === "external" ? BILLING_MODE === "manual" || PLATEGA_CHECKOUT_READY : null,
       legalReady: APP_MODE === "external" ? LEGAL_PROFILE_READY : null,
-      onlineReceiptsReady: APP_MODE === "external" ? ONLINE_RECEIPTS_READY : null
+      onlineReceiptsReady: APP_MODE === "external" ? ONLINE_RECEIPTS_READY : null,
+      launchReady: launch?.ready ?? null,
+      launchBlockers: launch?.blockers || [],
+      launchWarnings: launch?.warnings || []
     });
   }
 
@@ -968,9 +980,13 @@ async function handleApi(req, res, url) {
     if (APP_MODE !== "external" || !saasStore) return sendError(res, 404, "Регистрация недоступна.");
     if (!LEGAL_PROFILE_READY) return sendError(res, 503, "Регистрация временно недоступна: заполните реквизиты и контактный email в настройках сервиса.");
     const payload = await parseBody(req);
-    const user = await saasStore.register({ ...payload, offerVersion: OFFER_VERSION, privacyVersion: PRIVACY_VERSION, consentVersion: CONSENT_VERSION });
-    setSessionCookie(req, res, createSessionToken({ role: "client", userId: user.id, sessionVersion: user.sessionVersion }));
-    return send(res, 201, { authenticated: true, user, subscriptionActive: false, plan: PLAN });
+    try {
+      const user = await saasStore.register({ ...payload, offerVersion: OFFER_VERSION, privacyVersion: PRIVACY_VERSION, consentVersion: CONSENT_VERSION });
+      setSessionCookie(req, res, createSessionToken({ role: "client", userId: user.id, sessionVersion: user.sessionVersion }));
+      return send(res, 201, { authenticated: true, user, subscriptionActive: false, plan: PLAN });
+    } catch (error) {
+      return sendError(res, /уже существует/.test(error.message) ? 409 : 400, error.message);
+    }
   }
 
   if (req.method === "POST" && url.pathname === "/api/auth-login") {
@@ -1022,6 +1038,10 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "POST" && url.pathname === "/api/auth-logout") {
+    if (APP_MODE === "external" && saasStore) {
+      const actor = await currentActor(req);
+      if (actor?.userId || actor?.staffId) await saasStore.revokeSessions({ userId: actor.userId, staffId: actor.staffId });
+    }
     setSessionCookie(req, res, "", 0);
     return send(res, 200, { authenticated: false });
   }
@@ -1086,7 +1106,109 @@ async function handleApi(req, res, url) {
   if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/projects") {
     if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
     const payload = await parseBody(req);
-    return send(res, 201, await saasStore.createProject(actor.userId, payload.name));
+    try {
+      return send(res, 201, await saasStore.createProject(actor.userId, payload.name));
+    } catch (error) {
+      const status = /доступно проектов/.test(error.message) ? 409 : /оплатите тариф/.test(error.message) ? 402 : 400;
+      return sendError(res, status, error.message);
+    }
+  }
+
+  if (APP_MODE === "external" && url.pathname === "/api/admin/support-tickets") {
+    if (!["owner", "manager", "admin"].includes(actor.role)) return sendError(res, 403, "Требуются права администратора.");
+    if (!supportTicketStore) return sendError(res, 503, "Хранилище обращений не настроено.");
+    if (req.method === "GET") return send(res, 200, { tickets: await supportTicketStore.listAll() });
+    if (req.method === "PUT") {
+      const payload = await parseBody(req);
+      try {
+        const ticket = await supportTicketStore.update(String(payload.ticketId || ""), { status: String(payload.status || "") });
+        if (ticket && saasStore) await saasStore.recordAudit(actor.email || actor.staffId || actor.role, "support_ticket_status_changed", "support_ticket", ticket.id, { number: ticket.number, status: ticket.status });
+        return ticket ? send(res, 200, { ticket }) : sendError(res, 404, "Обращение не найдено.");
+      } catch (error) { return sendError(res, 400, error.message); }
+    }
+    return sendError(res, 405, "Метод не поддерживается.");
+  }
+
+  if (url.pathname === "/api/support/tickets" && ["GET", "POST"].includes(req.method)) {
+    const permitted = APP_MODE === "external" ? ["client", "customer"].includes(actor.role) : actor.role === "internal";
+    if (!permitted) return sendError(res, 403, "Раздел доступен клиентам сервиса.");
+    if (!supportTicketStore) return sendError(res, 503, "Техподдержка временно недоступна. Напишите на email сервиса.");
+    if (req.method === "GET") return send(res, 200, { tickets: await supportTicketStore.listForUser(actor.userId || AUTH_USERNAME) });
+    const payload = await parseBody(req);
+    let projectName = "";
+    const projectId = String(payload.projectId || "");
+    if (APP_MODE === "external" && projectId) {
+      const projects = await saasStore.listProjects(actor.userId);
+      const project = projects.find(item => item.id === projectId);
+      if (!project) return sendError(res, 403, "Выбранный проект недоступен.");
+      projectName = project.name;
+    } else if (APP_MODE === "internal" && projectId) {
+      projectName = String(payload.projectName || "").trim().slice(0, 120);
+    }
+    try {
+      const ticket = await supportTicketStore.create({
+        userId: actor.userId || AUTH_USERNAME, projectId, projectName,
+        contactName: payload.contactName || actor.user?.name || actor.name || "",
+        contactEmail: payload.contactEmail || actor.user?.email || actor.email || "",
+        category: String(payload.category || ""), title: String(payload.title || ""), description: String(payload.description || "")
+      });
+      if (APP_MODE === "external" && saasStore) await saasStore.recordAudit(actor.userId, "support_ticket_created", "support_ticket", ticket.id, { number: ticket.number, category: ticket.category });
+      let notifiedByEmail = false;
+      if (emailAlertsEnabled()) {
+        try {
+          await createMailer().sendMail({
+            from: EMAIL_FROM, to: LEGAL.email, replyTo: ticket.contactEmail,
+            subject: `ListingFlow · ${ticket.number}: ${ticket.title}`,
+            text: `Новое обращение ${ticket.number}\nКлиент: ${ticket.contactName} <${ticket.contactEmail}>\nКатегория: ${ticket.category}\nПроект: ${ticket.projectName || "не выбран"}\n\n${ticket.description}`
+          });
+          notifiedByEmail = true;
+        } catch { console.error("Support: не удалось отправить уведомление о новом обращении."); }
+      }
+      return send(res, 201, { ticket, notifiedByEmail });
+    } catch (error) { return sendError(res, 400, error.message); }
+  }
+
+  if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/account/export") {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам сервиса.");
+    const projects = await saasStore.listProjects(actor.userId);
+    const projectStates = [];
+    for (const project of projects) {
+      try { projectStates.push({ projectId: project.id, ...(await projectStateStore.get(actor.userId, project.id)) }); }
+      catch (error) { projectStates.push({ projectId: project.id, error: "Состояние проекта временно недоступно для экспорта." }); }
+    }
+    const allFeeds = await readFeeds();
+    const allLayouts = await readLayouts();
+    const exportedAt = new Date().toISOString();
+    const archive = {
+      service: "ListingFlow", exportedAt, account: actor.user, projects, projectStates,
+      payments: await saasStore.listPayments(actor.userId),
+      feeds: allFeeds.filter(feed => feed.ownerId === actor.userId),
+      layouts: allLayouts.filter(layout => layout.ownerId === actor.userId),
+      monitoring: Object.fromEntries(projects.map(project => [project.id, monitor.read()[project.id] || []])),
+      supportTickets: supportTicketStore ? await supportTicketStore.listForUser(actor.userId) : []
+    };
+    await saasStore.recordAudit(actor.userId, "export", "account", actor.userId, { exportedAt });
+    res.setHeader("Content-Disposition", `attachment; filename="listingflow-data-${exportedAt.slice(0, 10)}.json"`);
+    return send(res, 200, archive);
+  }
+
+  if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/account/deletion-request") {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам сервиса.");
+    if (!supportTicketStore) return sendError(res, 503, "Запрос временно нельзя зарегистрировать. Напишите на юридический email сервиса.");
+    const ticket = await supportTicketStore.create({
+      userId: actor.userId, contactName: actor.user.name || actor.user.company || "Пользователь ListingFlow",
+      contactEmail: actor.user.email, category: "account", title: "Удаление аккаунта и персональных данных",
+      description: "Пользователь запросил прекращение аккаунта и удаление персональных данных через личный кабинет. Требуется проверить обязательные сроки хранения платёжных документов и подтвердить исполнение по email."
+    });
+    await saasStore.recordAudit(actor.userId, "request_deletion", "account", actor.userId, { ticketId: ticket.id, number: ticket.number });
+    if (emailAlertsEnabled()) {
+      createMailer().sendMail({
+        from: EMAIL_FROM, to: LEGAL.email, replyTo: actor.user.email,
+        subject: `ListingFlow · ${ticket.number}: запрос на удаление аккаунта`,
+        text: `Клиент ${actor.user.name || actor.user.company || actor.user.email} <${actor.user.email}> запросил удаление аккаунта и персональных данных. Номер обращения: ${ticket.number}.`
+      }).catch(error => console.error("Account deletion email:", error.message));
+    }
+    return send(res, 202, { requested: true, ticket });
   }
 
   const projectStateMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)\/state$/i) : null;
@@ -1209,7 +1331,7 @@ async function handleApi(req, res, url) {
     return sendError(res, 403, "Раздел доступен клиентам.");
   }
 
-  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !isSubscriptionActive(actor.user) && (!hasSubscriptionReadAccess(actor.user) || req.method !== "GET") && !["/api/billing/payments", "/api/projects"].includes(url.pathname)) {
+  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !isSubscriptionActive(actor.user) && (!hasSubscriptionReadAccess(actor.user) || req.method !== "GET") && !["/api/billing/payments", "/api/projects", "/api/support/tickets", "/api/account/export", "/api/account/deletion-request"].includes(url.pathname)) {
     return sendError(res, 402, "Для работы с сервисом оплатите тариф от 5 000 ₽ в месяц.");
   }
 

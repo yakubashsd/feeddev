@@ -7,7 +7,8 @@
     "start": "node server.js",
     "start:local": "node --env-file=.env.local-login server.js",
     "backup": "node backup.js",
-    "check": "node --check server.js && node --check saas-store.js && node --check platega.js && node --check backup.js",
+    "check:launch": "node launch-check.js",
+    "check": "node --check server.js && node --check saas-store.js && node --check platega.js && node --check backup.js && node --check launch-readiness.js && node --check launch-check.js && node --check support-tickets.js",
     "test": "node --test *.test.js"
   },
   "engines": {

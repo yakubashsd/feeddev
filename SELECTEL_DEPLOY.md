@@ -63,6 +63,15 @@ EMAIL_FROM=ListingFlow <notifications@example.ru>
 
 SMTP-параметры обязательны для восстановления пароля. Пользователь получает одноразовую ссылку, действующую 30 минут; в хранилище сохраняется только SHA-256-хеш токена.
 
+До запуска сервиса проверьте конфигурацию без вывода секретов:
+
+```bash
+cd /opt/feeddev-saas
+node --env-file=/etc/feeddev-saas.env launch-check.js
+```
+
+Команда должна завершиться сообщением `ListingFlow готов к коммерческому запуску`. Поле `launchReady` в `/api/health` выполняет ту же проверку на работающем сервере.
+
 ## systemd
 
 Создайте `/etc/systemd/system/feeddev-saas.service`:

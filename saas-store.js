@@ -150,6 +150,16 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
   }
   async function getUser(userId) { const state = await read(); const user = state.users.find(item => item.id === userId); return user ? publicUser(user) : null; }
   async function getStaff(staffId) { const state = await read(); const staff = state.staff.find(item => item.id === staffId); return staff ? publicStaff(staff) : null; }
+  async function revokeSessions({ userId = "", staffId = "" } = {}) {
+    return mutate(async state => {
+      const account = userId ? state.users.find(item => item.id === userId) : state.staff.find(item => item.id === staffId);
+      if (!account) return false;
+      account.sessionVersion = Number(account.sessionVersion || 1) + 1;
+      account.updatedAt = new Date().toISOString();
+      audit(state, userId || staffId, "revoke_sessions", userId ? "client" : "staff", userId || staffId);
+      return true;
+    });
+  }
   async function listProjects(userId) { const state = await read(); return state.projects.filter(project => project.userId === userId).map(({ userId: _, ...project }) => project); }
   async function createProject(userId, name) {
     name = String(name || "").trim(); if (!name) throw new Error("Укажите название проекта.");
@@ -247,7 +257,7 @@ async function deleteProject(userId, projectId) {
   async function listPayments(userId) { const state = await read(); return state.payments.filter(payment => payment.userId === userId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ userId: _, ...payment }) => payment); }
   async function recordAudit(actor, action, entityType, entityId, details = {}) { return mutate(async state => { audit(state, actor, action, entityType, entityId, details); return true; }); }
 
-  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, listProjects, createProject, deleteProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
+  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, revokeSessions, listProjects, createProject, deleteProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
 }
 function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
 const SUBSCRIPTION_GRACE_DAYS = 7;

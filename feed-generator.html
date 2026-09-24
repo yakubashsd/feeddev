@@ -117,6 +117,10 @@
     .billing-total { font-size:20px; font-weight:750; padding-bottom:9px; }
     .billing-payment-row,.release-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--line); font-size:13px; }
     .billing-payment-row small,.release-row small { display:block; color:var(--muted); margin-top:3px; }
+    .billing-data-actions { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); }
+    .billing-data-actions p { max-width:680px; color:var(--muted); }
+    .billing-data-buttons { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+    .billing-data-buttons .danger { color:#a52828; border-color:#e7b8b8; background:#fff7f7; }
     .release-history { margin-top:24px; }
     .release-history:empty { display:none; }
     .release-history h3 { font-size:15px; margin:0 0 8px; }
@@ -4432,6 +4436,7 @@
   <link rel="stylesheet" href="cookie-consent.css">
   <link rel="stylesheet" href="layout-editor.css">
   <link rel="stylesheet" href="listingflow-ui.css">
+  <link rel="stylesheet" href="grovia-workspace.css">
   <link rel="stylesheet" href="usage-guide.css">
 </head>
 <body class="client-ui">
@@ -4475,26 +4480,29 @@
         <small>управление фидами</small>
       </div>
       <a class="workspace-switcher" id="workspaceSwitcher" href="/" aria-label="Вернуться ко всем проектам"><span>Рабочая область</span><strong>Все проекты</strong></a>
-      <div class="nav-label">Рабочая область</div>
+      <div class="nav-label">Проекты</div>
       <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
-      <div class="nav-label nav-label-project" id="projectNavLabel">Проект</div>
+      <div class="nav-label nav-label-project" id="projectNavLabel">Подготовка фида</div>
       <div class="nav-workflow expanded">
-        <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настройка фида</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
+        <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
           <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники видов</span></button>
-          <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">2</span><span class="nav-text">Квартиры</span></button>
-          <button type="button" class="nav-item" data-nav="branding"><span class="nav-step">3</span><span class="nav-text">Шаблоны планировок</span></button>
-          <button type="button" class="nav-item" data-nav="results"><span class="nav-step">4</span><span class="nav-text">Результаты и ссылки</span></button>
+          <button type="button" class="nav-item" data-nav="complexes"><span class="nav-step">2</span><span class="nav-text">ЖК и дома</span></button>
+          <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">3</span><span class="nav-text">Объявления и квартиры</span></button>
+          <button type="button" class="nav-item" data-nav="branding" aria-label="Оформление планировок, необязательный шаг"><span class="nav-step">4</span><span class="nav-text">Оформление планировок <small class="nav-optional">по желанию</small></span></button>
+          <button type="button" class="nav-item" data-nav="results"><span class="nav-step">5</span><span class="nav-text">Проверка и публикация</span></button>
         </div>
       </div>
-      <div class="nav-label nav-label-secondary" id="projectControlLabel">Контроль проекта</div>
-      <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
+      <div class="nav-label nav-label-secondary" id="projectControlLabel">Контроль фида</div>
+      <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг и ошибки</span></button>
+      <div class="nav-label nav-label-secondary">Помощь</div>
+      <button type="button" class="nav-item" data-nav="support"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22a10 10 0 1 0-10-10v4a2 2 0 0 0 2 2h2v-6H4a8 8 0 0 1 16 0h-2v6h2a2 2 0 0 0 2-2v-4"/><path d="M9 18c.7 1.3 1.7 2 3 2h2"/></svg><span class="nav-text">Техподдержка</span></button>
       <div class="sidebar-spacer"></div>
       <section class="workspace-note sidebar-help" aria-label="Помощь">
         <strong>Нужна помощь?</strong>
         <p>Инструкция и ответы на частые вопросы.</p>
         <button class="guide-open" id="usageGuideOpen" type="button" aria-haspopup="dialog"><span>Открыть гайд</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
-        <div class="sidebar-help-links"><a id="sidebarSupport" href="/legal.html" title="Связаться с поддержкой">Поддержка</a><a id="manageCookies" href="#cookie-settings">Настройки cookies</a></div>
+        <div class="sidebar-help-links"><a id="sidebarSupport" href="?page=support" data-nav="support" title="Открыть техническую поддержку">Техническая поддержка</a><a id="manageCookies" href="#cookie-settings">Настройки cookies</a></div>
       </section>
       <button type="button" class="nav-item" data-nav="billing" id="billingNav" hidden><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span class="nav-text">Тариф и оплата</span></button>
       <button class="logout-btn" id="logoutButton" type="button">Выйти</button>
@@ -4506,7 +4514,7 @@
           <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
           <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать проект"><option value="">Все проекты</option></select></label>
           <h1>Фиды недвижимости</h1>
-          <div class="subtitle">Кастомизация выгрузок Profitbase для ЦИАН, Авито, Яндекс Недвижимости и Домклик</div>
+          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span></nav>
         </div>
         <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span><svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
@@ -4519,15 +4527,16 @@
       </aside>
 
       <nav class="workflow-nav" data-page="workflow" aria-label="Этапы работы с фидом">
-        <button type="button" data-step=".source-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg></span><span class="step-copy"><span class="step-number">01</span><span class="step-title">Источник</span></span></button>
-        <button type="button" data-step=".table-wrap"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg></span><span class="step-copy"><span class="step-number">02</span><span class="step-title">Квартиры</span></span></button>
-        <button type="button" data-step=".brand-workflow-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/></svg></span><span class="step-copy"><span class="step-number">03</span><span class="step-title">Планировки</span></span></button>
-        <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Результаты</span></span></button>
+        <button type="button" data-step=".source-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg></span><span class="step-copy"><span class="step-number">01</span><span class="step-title">Источник данных</span></span></button>
+        <button type="button" data-step=".complexes-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4v18m0-12h7v12M8 9v1m0 4v1m0 4v1m7-3v1m3-1v1"/></svg></span><span class="step-copy"><span class="step-number">02</span><span class="step-title">ЖК и дома</span></span></button>
+        <button type="button" data-step=".table-wrap"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg></span><span class="step-copy"><span class="step-number">03</span><span class="step-title">Объявления</span></span></button>
+        <button type="button" data-step=".brand-workflow-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Планировки</span></span></button>
+        <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Проверка и публикация</span></span></button>
         <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
 
       <section class="projects-page" data-page="projects">
-        <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Создавайте и управляйте XML-фидами для публикации на площадках</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
+        <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Отдельный проект — для каждого фида и площадки. Источники, объявления и публикация собраны внутри.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <p class="panel-caption" id="projectsStorageCaption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
         <div class="project-metrics" id="projectMetrics" aria-label="Сводка по проектам"></div>
         <div class="project-toolbar" role="search">
@@ -4554,9 +4563,31 @@
           <button class="primary" id="checkoutButton" type="button">Оплатить через Platega</button>
           <h3 class="panel-title" style="margin-top:32px">История платежей</h3>
           <div id="billingPayments" aria-live="polite">Загружаем платежи…</div>
+          <section class="billing-data-actions" aria-labelledby="accountDataTitle">
+            <h3 class="panel-title" id="accountDataTitle">Данные аккаунта</h3>
+            <p>Скачайте копию данных аккаунта, проектов, публикаций, платежей и обращений. Запрос на удаление зарегистрируется в техподдержке; мы подтвердим его по email после проверки обязательных сроков хранения документов.</p>
+            <div class="billing-data-buttons"><button type="button" id="exportAccountData">Скачать мои данные</button><button type="button" class="danger" id="requestAccountDeletion">Запросить удаление аккаунта</button></div>
+          </section>
         </div>
       </section>
-      <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>Объедините источник, настройки и результат в одном пространстве.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
+      <section class="support-page page-hidden" data-page="support" aria-labelledby="supportPageTitle">
+        <header class="support-page-heading"><div><h2 class="panel-title" id="supportPageTitle">Техническая поддержка</h2><p>Опишите проблему — обращение сохранится в сервисе, а ответ придёт на указанный email. <span id="supportFallbackContact" hidden>Если форма недоступна: <a id="supportFallbackEmail" href="#"></a></span></p></div><span class="support-response-note">Обычно отвечаем в рабочее время</span></header>
+        <div class="support-columns">
+          <form class="support-form" id="supportTicketForm">
+            <h3>Новое обращение</h3>
+            <p class="support-form-caption">Не отправляйте пароли, коды доступа и платёжные данные.</p>
+            <div class="field"><label for="supportCategory">Тема обращения</label><select id="supportCategory" name="category" required><option value="feed">Фид и данные</option><option value="import">Загрузка XML</option><option value="publication">Проверка и публикация</option><option value="billing">Оплата и тариф</option><option value="account">Аккаунт и доступ</option><option value="other">Другой вопрос</option></select></div>
+            <div class="field"><label for="supportTitle">Кратко опишите проблему</label><input id="supportTitle" name="title" required minlength="4" maxlength="160" placeholder="Например, XML не обновляется"></div>
+            <div class="field"><label for="supportDescription">Что произошло и что вы ожидали?</label><textarea id="supportDescription" name="description" required minlength="20" maxlength="5000" rows="6" placeholder="Укажите шаги, проект и текст ошибки. Чем точнее описание, тем быстрее поможем."></textarea></div>
+            <div class="support-form-row"><div class="field"><label for="supportContactName">Ваше имя</label><input id="supportContactName" name="contactName" maxlength="120" autocomplete="name" placeholder="Имя"></div><div class="field"><label for="supportContactEmail">Email для ответа</label><input id="supportContactEmail" name="contactEmail" type="email" required maxlength="254" autocomplete="email" placeholder="name@company.ru"></div></div>
+            <div class="field"><label for="supportProject">Проект <span>необязательно</span></label><select id="supportProject" name="projectId"><option value="">Не привязывать к проекту</option></select></div>
+            <p class="support-form-error" id="supportFormError" role="alert" hidden></p>
+            <button class="primary support-submit" id="supportSubmit" type="submit">Отправить обращение</button>
+          </form>
+          <section class="support-history" aria-labelledby="supportHistoryTitle"><div class="support-history-heading"><div><h3 id="supportHistoryTitle">Мои обращения</h3><p>Статус и номер сохраняются в истории аккаунта.</p></div><button class="support-refresh" id="supportRefresh" type="button" aria-label="Обновить список обращений" title="Обновить список">↻</button></div><div id="supportTicketList" aria-live="polite"><p class="support-loading">Загружаем обращения…</p></div></section>
+        </div>
+      </section>
+      <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте будут источники, данные по ЖК и квартирам, настройки фида и ссылки публикации.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Подключённые источники</h2>
         <div class="panel-caption">Источники одного проекта должны относиться к одной площадке. Для другой площадки создайте отдельный проект, чтобы формат публикации оставался однозначным.</div>
@@ -4567,7 +4598,7 @@
           </div>
           <div class="field">
             <label for="feedUrl">Ссылка на исходный фид</label>
-            <input id="feedUrl" type="url" placeholder="https://site.ru/feed.xml">
+          <input id="feedUrl" type="url" placeholder="https://site.ru/feed.xml" aria-describedby="loadStatus">
           </div>
           <div class="field compact">
             <label for="sourcePlatform">Тип фида</label>
@@ -4577,11 +4608,11 @@
             <label for="sourceInterval">Обновление</label>
             <select id="sourceInterval"><option value="manual">Вручную</option><option value="60">Каждый час</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720" selected>Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
           </div>
-          <button id="loadUrlBtn" type="button" class="primary">Добавить источник</button>
-          <button id="importBtn">Загрузить XML</button>
+          <button id="loadUrlBtn" type="button" class="primary" aria-describedby="loadStatus">Добавить источник</button>
+          <button id="importBtn" type="button" aria-describedby="loadStatus">Загрузить XML</button>
           <input id="fileInput" class="file-input" type="file" accept=".json,.xml,.csv,text/xml,application/xml,application/json,text/csv">
         </div>
-        <div id="loadStatus" class="source-status">Начните с постоянной ссылки или XML-файла. Сервис определит формат фида и подсветит его ниже.</div>
+        <div id="loadStatus" class="source-status" role="status" aria-live="polite" aria-atomic="true">Начните с постоянной ссылки или XML-файла. Сервис определит формат фида и подсветит его ниже.</div>
         <div class="detected-source" id="detectedSource">
           <div class="detected-card primary"><span>Формат</span><strong id="detectedPlatform">Не загружен</strong></div>
           <div class="detected-card"><span>Источник</span><strong id="detectedProvider">-</strong></div>
@@ -4895,7 +4926,7 @@
             <label for="feedName">Название фида</label>
             <input id="feedName" placeholder="Например: Символ ЦИАН июль">
           </div>
-          <div class="field">
+          <div class="field publication-domain">
             <label for="serverBaseUrl">Домен публикации</label>
             <input id="serverBaseUrl" type="url" value="https://feeds.sozdateli.ru" readonly aria-describedby="serverBaseUrlHint">
             <small id="serverBaseUrlHint">Закреплённый домен публикации</small>
@@ -4919,12 +4950,13 @@
       <ol class="usage-guide-steps">
         <li><span class="usage-guide-number">01</span><div><h3>Создайте проект</h3><p>Проект — отдельная выгрузка для одной площадки и объекта недвижимости. Так настройки и ссылка не смешиваются.</p></div><button type="button" data-guide-go="projects">Открыть проекты <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">02</span><div><h3>Подключите источник</h3><p>Вставьте постоянную ссылку на XML и нажмите «Добавить источник» или загрузите XML-файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="source">К источнику <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">03</span><div><h3>Проверьте квартиры</h3><p>Просмотрите ошибки и обязательные поля, поправьте отдельные объявления или выберите несколько строк для массовых правок.</p></div><button type="button" data-guide-go="apartments">К квартирам <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number optional">04</span><div><h3>При необходимости оформите планировки</h3><p>Загрузите изображение-подложку, настройте макет на примере квартиры и сформируйте брендированное первое фото.</p></div><button type="button" data-guide-go="branding">К редактору <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">05</span><div><h3>Выпустите фид и передайте ссылку площадке</h3><p>На странице результатов проверьте готовность, затем сгенерируйте постоянную ссылку или скачайте XML. Ссылка обновляется вместе с проектом.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">06</span><div><h3>Следите за обновлениями</h3><p>Мониторинг показывает ошибки и состояние фида. Здесь же можно запустить проверку и настроить уведомления.</p></div><button type="button" data-guide-go="feeds">Открыть мониторинг <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">03</span><div><h3>Сверьте ЖК и дома</h3><p>Убедитесь, что сервис сгруппировал дома по жилым комплексам и показывает ожидаемое число квартир.</p></div><button type="button" data-guide-go="complexes">К списку ЖК <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">04</span><div><h3>Проверьте объявления</h3><p>Просмотрите ошибки и обязательные поля, поправьте отдельные объявления или выберите несколько строк для массовых правок.</p></div><button type="button" data-guide-go="apartments">К объявлениям <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number optional">05</span><div><h3>При необходимости оформите планировки</h3><p>Загрузите изображение-подложку, настройте макет на примере квартиры и сформируйте брендированное первое фото.</p></div><button type="button" data-guide-go="branding">К редактору <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">06</span><div><h3>Проверьте фид и передайте ссылку площадке</h3><p>На странице публикации исправьте блокирующие замечания, сохраните постоянную ссылку или скачайте XML-файл.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">07</span><div><h3>Следите за обновлениями</h3><p>Мониторинг показывает ошибки и состояние фида. Здесь же можно запустить проверку и настроить уведомления.</p></div><button type="button" data-guide-go="feeds">Открыть мониторинг <span aria-hidden="true">→</span></button></li>
       </ol>
-      <div class="usage-guide-foot"><span>Подсказка: один проект = одна целевая площадка.</span><button id="usageGuideStart" class="primary" type="button">Начать с источника</button></div>
+      <div class="usage-guide-foot"><span>Подсказка: один проект = одна целевая площадка.</span><div><button type="button" data-guide-go="support">Техподдержка</button><button id="usageGuideStart" class="primary" type="button">Начать с источника</button></div></div>
     </dialog>
 
     <aside class="editor">
@@ -5364,7 +5396,7 @@
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     const requestedPage = new URLSearchParams(location.search).get("page");
-    let activePage = currentProject && ["source", "apartments", "branding", "results", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "source" : "projects";
+    let activePage = requestedPage === "support" ? "support" : currentProject && ["source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "source" : "projects";
     let projectPage = 1;
     const selectedProjectIds = new Set();
     let sortState = { key: "", direction: "asc" };
@@ -5463,8 +5495,6 @@
       runtimeMode = state.mode || "internal";
       window.listingFlowBillingMode = state.billingMode || "manual";
       window.listingFlowSupportEmail = state.supportEmail || "";
-      const supportLink = document.querySelector("#sidebarSupport");
-      if (supportLink && state.supportEmail) supportLink.href = `mailto:${encodeURIComponent(state.supportEmail)}?subject=${encodeURIComponent("Поддержка ListingFlow")}`;
       const external = runtimeMode === "external";
       publicFeedOrigin = external ? location.origin : INTERNAL_FEED_ORIGIN;
       appState.serverBaseUrl = publicFeedOrigin;
@@ -5712,7 +5742,9 @@
           }
           showWorkspace();
           await hydratePublishedFeedState();
-          if (runtimeMode === "external" && !state.subscriptionActive) switchPage(state.subscriptionReadOnly ? (currentProject ? "apartments" : "projects") : "billing");
+          if (runtimeMode === "external" && !state.subscriptionActive && activePage !== "support") {
+            switchPage(state.subscriptionReadOnly ? (currentProject ? "apartments" : "projects") : "billing");
+          }
           renderBilling();
         }
         else showLogin(state.configured ? "" : "Вход ещё не настроен на сервере. Проверьте переменные окружения Selectel.");
@@ -6292,9 +6324,10 @@
     function renderRows() {
       const visible = filteredObjects();
       if (!visible.length) {
+        const hasObjects = workingObjects().length > 0;
         rows.innerHTML = `
           <tr>
-            <td class="empty-row" colspan="7">По текущим фильтрам объектов нет. Измените поиск, статус или параметры фильтрации.</td>
+            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : `Объявлений пока нет. Добавьте XML в «Источниках видов». <button type="button" data-open-object-source>Открыть источники видов</button>`}</td>
           </tr>
         `;
         renderSelectAllState();
@@ -6351,7 +6384,7 @@
           <button type="button" data-complex-apartments="${escapeXml(group.name)}">Квартиры</button>
           <button type="button" class="${isPublished ? "" : "primary"}" data-complex-publish="${group.key}">${isPublished ? "Снять с публикации" : "Опубликовать"}</button>
         </article>`;
-      }).join("") || `<div class="project-empty"><h3>${query ? "Ничего не найдено" : "ЖК появятся после загрузки фида"}</h3><p>${query ? "Измените поисковый запрос." : "Подключите XML в разделе «Источники»."}</p></div>`;
+      }).join("") || `<div class="project-empty"><h3>${query ? "Ничего не найдено" : "ЖК появятся после загрузки XML"}</h3><p>${query ? "Измените поисковый запрос или сбросьте фильтр." : "Сначала добавьте ссылку на XML или загрузите файл в источниках."}</p>${query ? `<button type="button" data-clear-complex-search>Сбросить поиск</button>` : `<button type="button" class="primary" data-complex-source>Открыть источники видов</button>`}</div>`;
     }
 
     function saveProjectSources() {
@@ -6429,13 +6462,18 @@
       const errors = activeProjects.filter(entry => entry.hasError).length;
       const projectTotal = projects.length;
       const pct = value => projectTotal ? Math.round(value / projectTotal * 100) : 0;
-      const statIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg>';
+      const metricIcons = {
+        neutral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
+        success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.5 7.8 7.5 4.4 7.5-4.4M12 12.2V21"/></svg>',
+        info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+        error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m10.3 4.2-7 12.1A1.8 1.8 0 0 0 4.9 19h14.2a1.8 1.8 0 0 0 1.6-2.7l-7-12.1a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 3h.01"/></svg>'
+      };
       document.querySelector("#projectMetrics").innerHTML = [
         ["Всего проектов", projectTotal, `${activeProjects.length} активных`, "neutral", 100],
         ["Опубликовано", published, `${pct(published)}% от общего числа`, "success", pct(published)],
         ["На обработке", processing, `${pct(processing)}% от общего числа`, "info", pct(processing)],
         ["С ошибками", errors, `${pct(errors)}% от общего числа`, "error", pct(errors)]
-      ].map(([label, value, detail, tone, width]) => `<article class="project-metric ${tone}"><span class="metric-icon" aria-hidden="true">${statIcon}</span><span class="metric-copy"><span>${label}</span><strong>${Number(value).toLocaleString("ru-RU")}</strong><small>${detail}</small></span><span class="metric-progress" aria-hidden="true"><i style="width:${Math.max(value ? 4 : 0, width)}%"></i></span></article>`).join("");
+      ].map(([label, value, detail, tone, width]) => `<article class="project-metric ${tone}"><span class="metric-icon" aria-hidden="true">${metricIcons[tone]}</span><span class="metric-copy"><span>${label}</span><strong>${Number(value).toLocaleString("ru-RU")}</strong><small>${detail}</small></span><span class="metric-progress" aria-hidden="true"><i style="width:${Math.max(value ? 4 : 0, width)}%"></i></span></article>`).join("");
       const filtered = entries.filter(entry => {
         if (query && !entry.searchText.includes(query)) return false;
         if (platformFilter !== "all" && entry.platform !== platformFilter) return false;
@@ -6529,7 +6567,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Все проекты", source: "Источники видов", apartments: "Квартиры", branding: "Шаблоны планировок", results: "Результаты и ссылки", feeds: "Мониторинг проекта", billing: "Тариф и оплата" };
+      const titles = { projects: "Все проекты", source: "Источники видов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -6543,7 +6581,8 @@
         const isWorkflow = section.classList.contains("workflow-nav");
         section.classList.toggle("page-hidden", isWorkflow ? !currentProject : section.dataset.page !== activePage);
       });
-      const stepOrder = Object.values(stepPages);
+      const stepOrder = ["source", "complexes", "apartments", "branding", "results"];
+      const stepStates = getWorkflowStepStates();
       const activeStepIndex = stepOrder.indexOf(activePage);
       const workflow = document.querySelector(".nav-workflow");
       workflow.hidden = !currentProject;
@@ -6555,20 +6594,26 @@
       if (activeStepIndex >= 0) workflow.classList.add("expanded");
       workflow.querySelector(".nav-workflow-toggle").setAttribute("aria-expanded", String(workflow.classList.contains("expanded")));
       document.querySelectorAll("[data-nav]").forEach(item => {
-        const stepIndex = stepOrder.indexOf(item.dataset.nav);
-        const state = stepIndex < 0 ? "" : stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
+        const state = stepStates[item.dataset.nav] || "";
         item.classList.toggle("active", item.dataset.nav === activePage);
         if (state) item.dataset.state = state;
         else delete item.dataset.state;
-        item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : !currentProject;
+        const stateText = { done: "завершено", todo: "ожидает данных", optional: "необязательный шаг", issue: "требует внимания", active: "текущий раздел" }[state];
+        const itemLabel = item.querySelector(".nav-text")?.textContent.replace(/\s+/g, " ").trim();
+        if (itemLabel && stateText) item.setAttribute("aria-label", `${itemLabel} — ${stateText}`);
+        if (item.dataset.nav === activePage) item.setAttribute("aria-current", "page");
+        else item.removeAttribute("aria-current");
+        item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : !currentProject;
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
-      document.querySelector(".subtitle").textContent = activePage === "projects" ? "Обзор и управление рабочими пространствами" : currentProject ? `Проект / ${currentProject.name}` : "Управляйте источниками и выгрузками";
+      const breadcrumb = document.querySelector("#pageBreadcrumb");
+      breadcrumb.hidden = !currentProject || activePage === "projects";
+      document.querySelector("#breadcrumbProjectName").textContent = currentProject?.name || "";
       document.querySelectorAll("[data-step]").forEach(button => {
         const page = stepPages[button.dataset.step];
-        const stepIndex = stepOrder.indexOf(page);
-        const state = stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
-        button.dataset.state = state;
+        const state = stepStates[page] || "";
+        if (state) button.dataset.state = state;
+        else delete button.dataset.state;
         if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
@@ -6588,19 +6633,100 @@
         renderMonitorNotificationSettings();
         renderFeedValidator();
       }
+      if (activePage === "complexes") renderComplexes();
       if (activePage === "billing") renderBilling();
       if (activePage === "results") { renderReleasePreflight(); renderReleaseHistory(); }
+      if (activePage === "support") renderSupportPage();
+    }
+
+    function getWorkflowStepStates() {
+      const scopedObjects = workingObjects();
+      const hasSourceIssue = projectSources.some(source => source.error);
+      const hasObjectIssues = scopedObjects.some(item => requiredIssues(item).length);
+      const hasBrandProfile = Object.values(brandProfiles || {}).some(profile => profile && Object.keys(profile).length);
+      const hasPublication = Boolean(appState.publishedFeeds?.[activePublicationKey()]?.url || appState.generatedLink);
+      const states = {
+        source: hasSourceIssue ? "issue" : projectSources.length ? "done" : "todo",
+        complexes: complexGroups().length ? "done" : "todo",
+        apartments: scopedObjects.length ? hasObjectIssues ? "issue" : "done" : "todo",
+        branding: hasBrandProfile ? "done" : "optional",
+        results: hasPublication ? "done" : "todo"
+      };
+      if (states[activePage]) states[activePage] = "active";
+      return states;
+    }
+
+    const supportCategoryLabels = { feed: "Фид и данные", import: "Загрузка XML", publication: "Проверка и публикация", billing: "Оплата и тариф", account: "Аккаунт и доступ", other: "Другой вопрос" };
+    const supportStatusLabels = { new: "Новая", in_progress: "В работе", resolved: "Решена" };
+    function renderSupportPage() {
+      const projectSelect = document.querySelector("#supportProject");
+      const selectedProject = currentProject?.id || projectSelect.value;
+      projectSelect.innerHTML = `<option value="">Не привязывать к проекту</option>${projects.filter(project => project.status !== "archived").map(project => `<option value="${escapeXml(project.id)}">${escapeXml(project.name)}</option>`).join("")}`;
+      projectSelect.value = projects.some(project => project.id === selectedProject) ? selectedProject : "";
+      const user = sessionState?.user || {};
+      document.querySelector("#supportContactName").value = user.name || user.company || sessionState?.name || "";
+      document.querySelector("#supportContactEmail").value = user.email || sessionState?.email || "";
+      const fallbackContact = document.querySelector("#supportFallbackContact");
+      const fallbackEmail = document.querySelector("#supportFallbackEmail");
+      if (sessionState?.supportEmail) {
+        fallbackEmail.href = `mailto:${encodeURIComponent(sessionState.supportEmail)}?subject=${encodeURIComponent("Поддержка ListingFlow")}`;
+        fallbackEmail.textContent = sessionState.supportEmail;
+        fallbackContact.hidden = false;
+      } else fallbackContact.hidden = true;
+      document.querySelector("#supportFormError").hidden = true;
+      loadSupportTickets();
+    }
+    async function loadSupportTickets() {
+      const list = document.querySelector("#supportTicketList");
+      list.innerHTML = '<p class="support-loading">Загружаем обращения…</p>';
+      try {
+        const response = await fetch("/api/support/tickets", { credentials: "same-origin", cache: "no-store" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось загрузить историю обращений.");
+        const tickets = Array.isArray(result.tickets) ? result.tickets : [];
+        list.innerHTML = tickets.length ? tickets.map(ticket => `<article class="support-ticket"><div class="support-ticket-top"><span class="support-ticket-number">${escapeXml(ticket.number)}</span><span class="support-ticket-status ${escapeXml(ticket.status)}">${escapeXml(supportStatusLabels[ticket.status] || "Новая")}</span></div><h4>${escapeXml(ticket.title)}</h4><p class="support-ticket-meta">${escapeXml(supportCategoryLabels[ticket.category] || "Другой вопрос")}${ticket.projectName ? ` · ${escapeXml(ticket.projectName)}` : ""} · ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(ticket.createdAt))}</p><p class="support-ticket-description">${escapeXml(ticket.description)}</p></article>`).join("") : '<div class="support-empty"><span class="support-empty-icon" aria-hidden="true">?</span><strong>Обращений пока нет</strong><p>Если понадобится помощь, опишите вопрос в форме — он появится здесь.</p></div>';
+      } catch (error) {
+        list.innerHTML = `<div class="support-load-error"><p>${escapeXml(error.message)}</p><button type="button" id="supportRetry">Попробовать ещё раз</button></div>`;
+        document.querySelector("#supportRetry")?.addEventListener("click", loadSupportTickets, { once: true });
+      }
+    }
+
+    function syncPageUrl(page) {
+      const nextUrl = new URL(window.location.href);
+      if (page === "support") {
+        if (currentProject) nextUrl.searchParams.set("project", currentProject.id);
+        else nextUrl.searchParams.delete("project");
+        nextUrl.searchParams.set("page", "support");
+        if (nextUrl.href !== window.location.href) history.pushState({ listingflowPage: page }, "", nextUrl);
+        return;
+      }
+      if (!currentProject || !["source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(page)) return;
+      nextUrl.searchParams.set("project", currentProject.id);
+      if (page === "source") nextUrl.searchParams.delete("page");
+      else nextUrl.searchParams.set("page", page);
+      if (nextUrl.href !== window.location.href) history.pushState({ listingflowPage: page }, "", nextUrl);
     }
 
     function switchPage(page) {
       if (page === activePage) return;
       activePage = page;
+      syncPageUrl(page);
       renderPage();
       document.querySelector(".main").scrollTop = 0;
       window.scrollTo(0, 0);
     }
 
-    const stepPages = { ".source-panel": "source", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".publish-panel": "results", ".feeds-panel": "feeds" };
+    const stepPages = { ".source-panel": "source", ".complexes-panel": "complexes", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".publish-panel": "results", ".feeds-panel": "feeds" };
+    window.addEventListener("popstate", () => {
+      const url = new URL(window.location.href);
+      if ((url.searchParams.get("project") || "") !== (currentProject?.id || "")) {
+        window.location.reload();
+        return;
+      }
+      const route = url.searchParams.get("page");
+      activePage = route === "support" ? "support" : currentProject && ["source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(route) ? route : currentProject ? "source" : "projects";
+      renderPage();
+    });
     document.querySelectorAll("[data-step]").forEach(button => {
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
     });
@@ -6702,6 +6828,38 @@
       } finally {
         button.disabled = false;
       }
+    });
+
+    document.querySelector("#exportAccountData").addEventListener("click", async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = "Готовим архив…";
+      try {
+        const response = await fetch("/api/account/export", { credentials: "same-origin", cache: "no-store" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось подготовить данные.");
+        const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `listingflow-data-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        showToast("Копия данных скачана");
+      } catch (error) { showToast(error.message); }
+      finally { button.disabled = false; button.textContent = "Скачать мои данные"; }
+    });
+
+    document.querySelector("#requestAccountDeletion").addEventListener("click", async event => {
+      if (!confirm("Отправить запрос на удаление аккаунта и персональных данных? Мы зарегистрируем обращение и подтвердим дальнейшие действия по email.")) return;
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/account/deletion-request", { method: "POST", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось зарегистрировать запрос.");
+        button.textContent = `Запрос ${result.ticket?.number || "зарегистрирован"}`;
+        showToast("Запрос зарегистрирован. Ответ придёт на email аккаунта.");
+      } catch (error) { showToast(error.message); button.disabled = false; }
     });
 
     function providerFromUrl(url = "") {
@@ -8913,6 +9071,11 @@ ${photos}
       const node = document.querySelector("#loadStatus");
       node.textContent = message;
       node.className = `source-status ${type}`;
+      node.setAttribute("role", type === "bad" ? "alert" : "status");
+      node.setAttribute("aria-live", type === "bad" ? "assertive" : "polite");
+      const urlInput = document.querySelector("#feedUrl");
+      if (type === "bad" && /ссылк|url/i.test(message)) urlInput?.setAttribute("aria-invalid", "true");
+      else urlInput?.removeAttribute("aria-invalid");
     }
 
     function showToast(message) {
@@ -9125,9 +9288,14 @@ ${photos}
       }
       setLoadStatus("Загружаю фид по ссылке...");
       loadFeedFromUrl.running = true;
-      document.querySelector("#loadUrlBtn").disabled = true;
-      document.querySelector("#loadUrlBtn").classList.add("loading");
-      document.querySelector("#loadUrlBtn").textContent = "Загружаю...";
+      const loadButton = document.querySelector("#loadUrlBtn");
+      const importButton = document.querySelector("#importBtn");
+      const sourcePanel = document.querySelector('.source-panel[data-page="source"]');
+      loadButton.disabled = true;
+      loadButton.setAttribute("aria-busy", "true");
+      loadButton.classList.add("loading");
+      importButton.disabled = true;
+      sourcePanel?.setAttribute("aria-busy", "true");
       try {
         const text = await fetchFeedXmlByUrl(url);
         const parsed = parseXmlFile(text, url);
@@ -9216,9 +9384,11 @@ ${photos}
         setLoadStatus(`Не удалось загрузить фид: ${error.message}. Проверьте ссылку, доступность XML и права доступа к источнику.`, "bad");
       } finally {
         loadFeedFromUrl.running = false;
-        document.querySelector("#loadUrlBtn").disabled = false;
-        document.querySelector("#loadUrlBtn").classList.remove("loading");
-        document.querySelector("#loadUrlBtn").textContent = "Добавить источник";
+        loadButton.disabled = false;
+        loadButton.removeAttribute("aria-busy");
+        loadButton.classList.remove("loading");
+        importButton.disabled = false;
+        sourcePanel?.removeAttribute("aria-busy");
       }
     }
 
@@ -9641,6 +9811,18 @@ ${photos}
     }
 
     rows.addEventListener("click", event => {
+      if (event.target.closest("[data-open-object-source]")) {
+        switchPage("source");
+        return;
+      }
+      if (event.target.closest("[data-reset-object-filters]")) {
+        document.querySelector("#search").value = "";
+        document.querySelector("#statusFilter").value = "all";
+        document.querySelector("#roomsFilter").value = "all";
+        document.querySelector("#issueFilter").value = "all";
+        renderRows();
+        return;
+      }
       const checkbox = event.target.closest(".row-check");
       if (checkbox) {
         const row = event.target.closest("tr");
@@ -9880,6 +10062,7 @@ ${photos}
       }
       const item = event.target.closest("[data-nav]");
       if (!item) return;
+      if (item.tagName === "A") event.preventDefault();
       switchPage(item.dataset.nav);
       document.querySelector("#appShell").classList.remove("nav-open");
       document.querySelector("#sidebarToggle").setAttribute("aria-expanded", "false");
@@ -9888,6 +10071,35 @@ ${photos}
       const workflow = event.currentTarget.closest(".nav-workflow");
       const expanded = workflow.classList.toggle("expanded");
       event.currentTarget.setAttribute("aria-expanded", String(expanded));
+    });
+    document.querySelector("#supportRefresh").addEventListener("click", loadSupportTickets);
+    document.querySelector("#supportTicketForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = document.querySelector("#supportSubmit");
+      const errorNode = document.querySelector("#supportFormError");
+      const values = Object.fromEntries(new FormData(form));
+      values.projectId ||= "";
+      if (currentProject && values.projectId === currentProject.id) values.projectName = currentProject.name;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.textContent = "Отправляем…";
+      errorNode.hidden = true;
+      try {
+        const response = await fetch("/api/support/tickets", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось отправить обращение.");
+        form.reset();
+        renderSupportPage();
+        showToast(`Обращение ${result.ticket.number} сохранено`);
+      } catch (error) {
+        errorNode.textContent = error.message || "Не удалось отправить обращение.";
+        errorNode.hidden = false;
+      } finally {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        button.textContent = "Отправить обращение";
+      }
     });
     document.querySelector("#sidebarToggle").addEventListener("click", event => {
       const expanded = document.querySelector("#appShell").classList.toggle("nav-open");
@@ -10001,9 +10213,19 @@ ${photos}
     document.querySelector("#fileInput").addEventListener("change", async event => {
       const file = event.target.files[0];
       if (!file) return;
-      const text = await file.text();
+      const importButton = document.querySelector("#importBtn");
+      const sourcePanel = document.querySelector('.source-panel[data-page="source"]');
+      const loadButton = document.querySelector("#loadUrlBtn");
+      importButton.disabled = true;
+      importButton.setAttribute("aria-busy", "true");
+      importButton.classList.add("loading");
+      loadButton.disabled = true;
+      sourcePanel?.setAttribute("aria-busy", "true");
+      setLoadStatus(`Читаю файл «${file.name}»…`);
       try {
-        const parsed = file.name.endsWith(".xml") ? parseXmlFile(text, file.name) : { platform: "cian", objects: file.name.endsWith(".json") ? JSON.parse(text) : parseCsvFile(text) };
+        const text = await file.text();
+        const filename = file.name.toLowerCase();
+        const parsed = filename.endsWith(".xml") ? parseXmlFile(text, file.name) : { platform: "cian", objects: filename.endsWith(".json") ? JSON.parse(text) : parseCsvFile(text) };
         const next = parsed.objects;
         if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
         const incomingPlatform = parsed.platform || "cian";
@@ -10034,18 +10256,31 @@ ${photos}
         feedErrorPanelActivated = true;
         feedErrorPanelMinimized = false;
         renderAll();
+        setLoadStatus(`Файл загружен: ${file.name}. Получено квартир: ${next.length}.`, "ok");
         showToast(`Файл добавлен: ${next.length} квартир`);
       } catch (error) {
-        alert(error.message || "Файл не удалось импортировать");
+        setLoadStatus(`Не удалось загрузить «${file.name}»: ${error.message || "проверьте формат и содержимое файла"}. Выберите корректный XML, JSON или CSV и попробуйте снова.`, "bad");
       } finally {
+        importButton.disabled = false;
+        importButton.removeAttribute("aria-busy");
+        importButton.classList.remove("loading");
+        loadButton.disabled = false;
+        sourcePanel?.removeAttribute("aria-busy");
         event.target.value = "";
       }
     });
 
     document.querySelector("#complexSearch").addEventListener("input", renderComplexes);
     document.querySelector("#complexList").addEventListener("click", event => {
+      const sourceButton = event.target.closest("[data-complex-source]");
+      const clearSearchButton = event.target.closest("[data-clear-complex-search]");
       const apartmentsButton = event.target.closest("[data-complex-apartments]");
       const publishButton = event.target.closest("[data-complex-publish]");
+      if (sourceButton) switchPage("source");
+      if (clearSearchButton) {
+        document.querySelector("#complexSearch").value = "";
+        renderComplexes();
+      }
       if (apartmentsButton) {
         document.querySelector("#search").value = apartmentsButton.dataset.complexApartments === "Без названия" ? "" : apartmentsButton.dataset.complexApartments;
         switchPage("apartments");
