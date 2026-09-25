@@ -4418,6 +4418,8 @@
     .feed-error-actions button { flex:1; min-height:34px; }
     .feed-error-actions .primary { background:#111; color:#fff; border-color:#111; }
     :focus-visible { outline:2px solid #111; outline-offset:3px; }
+    #bootScreen { position:fixed; inset:0; z-index:20; display:grid; place-items:center; background:#f7f7f7; color:#555; font-size:14px; }
+    #bootScreen[hidden] { display:none; }
     @media(max-width:1000px){
       .monitor-notification-settings { grid-template-columns:1fr; }
       #saveMonitorNotifications { justify-self:stretch; }
@@ -4430,7 +4432,8 @@
   </style>
 </head>
 <body>
-  <section class="auth-screen" id="authScreen">
+  <div id="bootScreen">Проверяю доступ…</div>
+  <section class="auth-screen" id="authScreen" hidden>
     <form class="auth-card" id="loginForm">
       <img class="auth-mark" src="assets/sozdateli-logo.png" alt="Создатели">
       <h1>Вход в сервис</h1>
@@ -5358,6 +5361,7 @@
     let appInitialized = false;
 
     function showLogin(message = "") {
+      document.querySelector("#bootScreen").hidden = true;
       authScreen.hidden = false;
       appShell.hidden = true;
       loginError.textContent = message;
@@ -5365,6 +5369,7 @@
     }
 
     function showWorkspace() {
+      document.querySelector("#bootScreen").hidden = true;
       authScreen.hidden = true;
       appShell.hidden = false;
       const repairedLayouts = repairLegacyProfitbaseLayouts();
