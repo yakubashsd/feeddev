@@ -5566,7 +5566,9 @@
         const merged = Object.assign({}, ...((result.states || []).map(item => item.storage || {})));
         if (!Object.keys(merged).length) return;
         const local = workspaceStorageSnapshot();
-        if (JSON.stringify(local) !== JSON.stringify(merged)) { Object.entries(merged).forEach(([key, value]) => localStorage.setItem(key, value)); location.reload(); }
+        const hydrationKey = "feeddev-workspace-hydrated-index";
+        if (sessionStorage.getItem(hydrationKey)) { sessionStorage.removeItem(hydrationKey); return; }
+        if (JSON.stringify(local) !== JSON.stringify(merged)) { Object.entries(merged).forEach(([key, value]) => localStorage.setItem(key, value)); sessionStorage.setItem(hydrationKey, "1"); location.reload(); }
         return;
       }
       const response = await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { credentials: "same-origin", cache: "no-store" });
@@ -5576,8 +5578,11 @@
       const keys = Object.keys(storage);
       if (keys.length) {
         const local = workspaceStorageSnapshot();
+        const hydrationKey = `feeddev-workspace-hydrated-${currentProject.id}`;
+        if (sessionStorage.getItem(hydrationKey)) { sessionStorage.removeItem(hydrationKey); return; }
         if (JSON.stringify(local) !== JSON.stringify(storage)) {
           keys.forEach(key => localStorage.setItem(key, storage[key]));
+          sessionStorage.setItem(hydrationKey, "1");
           location.reload();
         }
         return;
