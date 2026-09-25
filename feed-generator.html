@@ -4348,8 +4348,12 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:110px minmax(180px,1.2fr) minmax(220px,1.5fr) 110px minmax(190px,auto) auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record { display:grid; grid-template-columns:54px minmax(150px,1.05fr) minmax(220px,1.45fr) minmax(180px,1.15fr) 80px minmax(140px,1fr) minmax(250px,auto); gap:12px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record > * { min-width:0; }
     .source-record strong, .source-record small { display:block; }
+    .source-record .source-label { display:block; margin-bottom:4px; color:var(--muted); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .source-record a { display:block; min-width:0; overflow:hidden; color:inherit; text-decoration:none; text-overflow:ellipsis; white-space:nowrap; }
+    .source-record a:hover { text-decoration:underline; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .source-record .source-next small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.35; }
     .source-record.is-selected { border-color:#171717; box-shadow:0 0 0 2px #171717 inset; }
@@ -4362,7 +4366,7 @@
     .source-selection small { grid-column:2; color:var(--muted); font-size:11px; }
     .published-history-item button { flex:0 0 auto; min-height:28px; padding:0 9px; }
     .source-record .source-health { font-size:11px; color:#444; }
-    .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
+    .source-record .source-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
     .source-empty { padding:24px; border:1px dashed var(--line-strong); border-radius:9px; color:var(--muted); text-align:center; }
     .source-schedule-note { margin-top:10px; color:var(--muted); font-size:10px; line-height:1.5; }
     .template-layer-editor { display:grid; gap:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:#fafafa; }
@@ -6416,6 +6420,35 @@
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
     }
 
+    async function renameSourceFeed(sourceId) {
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!source) return;
+      const nextName = prompt("Новое название фида", source.name || "");
+      if (nextName === null) return;
+      const name = nextName.trim().slice(0, 160);
+      if (!name) return showToast("Название не может быть пустым");
+      const oldName = source.name;
+      source.name = name;
+      const publication = appState.publishedFeeds?.[sourceId] || {};
+      const feedId = publication.id || (activeSourceId === sourceId ? appState.generatedFeedId : "");
+      if (feedId) {
+        const response = await fetch(`/api/feeds/${encodeURIComponent(feedId)}/name`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ name })
+        });
+        if (!response.ok) {
+          source.name = oldName;
+          throw new Error((await response.json().catch(() => ({}))).error || "Не удалось переименовать опубликованный фид");
+        }
+      }
+      saveProjectSources();
+      save();
+      renderProjectSources();
+      showToast("Фид переименован");
+    }
+
     function sourceIntervalLabel(value) {
       return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
     }
@@ -6445,15 +6478,18 @@
       }
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
+        const publication = appState.publishedFeeds?.[source.id] || {};
+        const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
-          <div class="source-identity"><span><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></span></div>
+          <div class="source-identity"><span class="source-label">Название фида</span><strong>${escapeXml(source.name || platform)}</strong></div>
+          <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
           <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span class="source-next"><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
-          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
     }
@@ -7938,8 +7974,8 @@
       return canvas;
     }
 
-    async function brandedLayoutBlob(canvas) {
-      const exportCanvas = feedSafeLayoutCanvas(canvas);
+    async function brandedLayoutBlob(canvas, platform = activePlatform) {
+      const exportCanvas = platform === "cian" ? feedSafeLayoutCanvas(canvas) : canvas;
       const variants = [
         ["image/jpeg", .86, "jpg"],
         ["image/jpeg", .74, "jpg"],
@@ -8000,7 +8036,7 @@
           brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
           const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
           drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig, firstItem);
-          const output = await brandedLayoutBlob(canvas);
+          const output = await brandedLayoutBlob(canvas, activePlatform);
           brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
           const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
           urlMap.set(sourceUrl, record.url);
@@ -10318,15 +10354,17 @@ ${photos}
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const syncButton = event.target.closest("[data-source-sync]");
+      const renameButton = event.target.closest("[data-source-rename]");
       const removeButton = event.target.closest("[data-source-remove]");
       const check = event.target.closest("[data-source-check]");
       if (check || event.target.closest(".source-select-control")) return;
       const sourceCard = event.target.closest("[data-source-select]");
-      if (sourceCard && !syncButton && !removeButton) {
+      if (sourceCard && !syncButton && !renameButton && !removeButton && !event.target.closest("a")) {
         selectSource(sourceCard.dataset.sourceSelect);
         return;
       }
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
+      if (renameButton) renameSourceFeed(renameButton.dataset.sourceRename).catch(error => showToast(error.message));
       if (removeButton) {
         const id = removeButton.dataset.sourceRemove;
         const source = projectSources.find(item => item.id === id);

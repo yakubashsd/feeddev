@@ -115,7 +115,10 @@ test("publication URLs stay stable, history versions do not repeat, and project 
   assert.equal(other.history.length, 1);
   assert.equal(other.releases.length, 1);
   assert.equal(other.history[0].version, 1);
+  const renamed = await request(`/api/feeds/${first.id}/name`, "PATCH", { name: "Основной фид ЦИАН" });
+  assert.equal(renamed.name, "Основной фид ЦИАН");
   const filtered = await request("/api/feeds?projectId=project-a");
   assert.deepEqual(filtered.feeds.map(item => item.id), [first.id]);
   assert.equal(filtered.feeds[0].sourceId, "source-a");
+  assert.equal(filtered.feeds[0].name, "Основной фид ЦИАН");
 });

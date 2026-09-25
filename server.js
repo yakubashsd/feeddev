@@ -1475,6 +1475,20 @@ async function handleApi(req, res, url) {
     return send(res, 200, { history: record.history });
   }
 
+  const renameFeedMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/name$/i);
+  if (req.method === "PATCH" && renameFeedMatch) {
+    const payload = await parseBody(req);
+    const name = String(payload.name || "").trim().slice(0, 160);
+    if (!name) return sendError(res, 400, "Название фида не может быть пустым.");
+    const feeds = await readFeeds();
+    const record = feeds.find(feed => feed.slug === renameFeedMatch[1]);
+    if (!record || (APP_MODE === "external" && record.ownerId !== actor?.userId)) return sendError(res, 404, "Фид не найден.");
+    record.name = name;
+    record.updatedAt = new Date().toISOString();
+    await persistFeedRecord(record);
+    return send(res, 200, record);
+  }
+
   const updateMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)$/i);
   if (req.method === "PUT" && updateMatch) {
     const payload = await parseBody(req);
