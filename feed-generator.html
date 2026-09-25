@@ -8914,7 +8914,7 @@ ${photos}
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
         brandSelectionTouched = false;
-        appState.feedUrl = projectSources[0]?.url || url;
+        appState.feedUrl = url;
         appState.feedName = currentProject?.name || defaultFeedName(url);
         // У проекта одна постоянная публикация. При повторной загрузке источника
         // сохраняем её идентификатор, чтобы агрегатор продолжал читать тот же URL.
@@ -9657,7 +9657,7 @@ ${photos}
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
         brandSelectionTouched = false;
-        appState.feedUrl = projectSources[0]?.url || file.name;
+        appState.feedUrl = file.name;
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
         // Повторный импорт обновляет текущую публикацию, если она уже была создана.
         projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
