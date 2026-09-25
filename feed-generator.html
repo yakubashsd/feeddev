@@ -8264,6 +8264,13 @@
       return [layout, ...photos].filter(Boolean);
     }
 
+    function dedupeObjectMedia(item) {
+      const layout = String(item.layoutPhoto || "").trim();
+      if (!layout) return item;
+      const photos = photoList(item).filter(url => url !== layout);
+      return { ...item, photos: photos.join("\n") };
+    }
+
     function renderBeforeAfterPreview() {
       const panel = document.querySelector("#beforeAfterPreview");
       if (!panel) return;
@@ -8925,7 +8932,7 @@ ${photos}
             newObjectIds.push(item.externalId);
           }
         });
-        objects = withoutSource;
+        objects = withoutSource.map(dedupeObjectMedia);
         originalObjects = structuredClone(objects);
         await applyBrandingToNewObjects(newObjectIds);
         selectedId = "";
@@ -9314,7 +9321,7 @@ ${photos}
         year: node.querySelector("Year")?.textContent || "",
         price: textOf(node, ["BargainTerms Price", "Price", "price value"])
       }));
-      return { platform, objects };
+      return { platform, objects: objects.map(dedupeObjectMedia) };
     }
 
     function parseCsvFile(text) {
