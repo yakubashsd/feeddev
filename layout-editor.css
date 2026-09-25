@@ -42,6 +42,21 @@ body:has(#layoutsPanel:not(.page-hidden)) .workflow-nav { display:none!important
 .le-fields { display:flex; gap:5px; flex-wrap:wrap; margin:12px 0; }
 .le-fields button { font-size:12px; padding:6px 9px; }
 .le-hint { font-size:12px; color:#666; line-height:1.5; }
+.le-font-controls { display:grid; gap:10px; margin:10px 0 14px; padding:12px; border:1px solid #e1e5eb; border-radius:8px; background:#f8f9fb; }
+.le-font-upload { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:8px 10px; }
+.le-font-upload button { min-height:34px!important; padding:7px 10px!important; }
+.le-font-requirements { color:#737b89; font-size:10px; line-height:1.4; }
+.le-font-requirements strong { display:block; margin-bottom:3px; color:#505866; font-size:10px; }
+.le-font-requirements ul { margin:0; padding-left:15px; }
+.le-font-requirements li + li { margin-top:2px; }
+.new-object-branding-dialog { width:min(520px,calc(100vw - 28px)); padding:0; border:1px solid #dfe3e9; border-radius:12px; background:#fff; color:#17191d; box-shadow:0 24px 70px #1118272b; }
+.new-object-branding-dialog::backdrop { background:#11182773; backdrop-filter:blur(2px); }
+.new-object-branding-dialog form { display:grid; gap:12px; padding:24px; }
+.new-object-branding-dialog .dialog-eyebrow { color:#697180; font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+.new-object-branding-dialog h2 { margin:0; font-size:23px; line-height:1.2; }
+.new-object-branding-dialog p { margin:0; color:#626b79; font-size:14px; line-height:1.55; }
+.new-object-branding-dialog .dialog-actions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.new-object-branding-dialog .dialog-actions button { min-height:40px; padding:9px 13px; }
 #layoutsPanel .brand-source-panel { grid-column:1; grid-row:3; padding:14px; min-width:0; }
 #layoutsPanel .brand-layout-picker { display:flex; gap:8px; overflow:auto; max-height:165px; }
 #layoutsPanel .brand-layout-option { flex:0 0 210px; padding:10px; }
