@@ -5384,6 +5384,10 @@
       try { return await fetch(input, { ...options, signal: controller.signal }); }
       finally { window.clearTimeout(timer); }
     }
+    function setWorkspaceStorageItem(key, value) {
+      try { localStorage.setItem(key, value); return true; }
+      catch (error) { console.warn(`Не удалось восстановить состояние ${key}: превышена квота браузера.`); return false; }
+    }
 
     function configureExternalMode(state) {
       runtimeMode = state.mode || "internal";
@@ -5585,7 +5589,10 @@
         const local = workspaceStorageSnapshot();
         const hydrationKey = "feeddev-workspace-hydrated-index";
         if (sessionStorage.getItem(hydrationKey)) { sessionStorage.removeItem(hydrationKey); return; }
-        if (JSON.stringify(local) !== JSON.stringify(merged)) { Object.entries(merged).forEach(([key, value]) => localStorage.setItem(key, value)); sessionStorage.setItem(hydrationKey, "1"); location.reload(); }
+        if (JSON.stringify(local) !== JSON.stringify(merged)) {
+          const restored = Object.entries(merged).every(([key, value]) => setWorkspaceStorageItem(key, value));
+          if (restored) { sessionStorage.setItem(hydrationKey, "1"); location.reload(); }
+        }
         return;
       }
       let response;
@@ -5600,9 +5607,8 @@
         const hydrationKey = `feeddev-workspace-hydrated-${currentProject.id}`;
         if (sessionStorage.getItem(hydrationKey)) { sessionStorage.removeItem(hydrationKey); return; }
         if (JSON.stringify(local) !== JSON.stringify(storage)) {
-          keys.forEach(key => localStorage.setItem(key, storage[key]));
-          sessionStorage.setItem(hydrationKey, "1");
-          location.reload();
+          const restored = keys.every(key => setWorkspaceStorageItem(key, storage[key]));
+          if (restored) { sessionStorage.setItem(hydrationKey, "1"); location.reload(); }
         }
         if (Object.keys(storage).length !== Object.keys(rawStorage).length) {
           fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage }) }).catch(() => {});
