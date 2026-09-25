@@ -850,6 +850,22 @@ async function handleApi(req, res, url) {
     return sendError(res, 405, "Метод не поддерживается");
   }
 
+  if (APP_MODE === "internal" && req.method === "PUT" && url.pathname === "/api/workspace-projects") {
+    const payload = await parseBody(req);
+    const projects = Array.isArray(payload.projects) ? payload.projects.filter(item => item && /^[a-zA-Z0-9_-]{1,120}$/.test(String(item.id || "")) && String(item.name || "").trim()).map(item => ({ id: String(item.id), name: String(item.name).trim().slice(0, 100), createdAt: item.createdAt || new Date().toISOString() })) : [];
+    const workspace = AUTH_USERNAME;
+    const all = readWorkspaceState();
+    all[workspace] = all[workspace] || {};
+    for (const state of Object.values(all[workspace])) {
+      state.storage = state.storage || {};
+      state.storage["feeddev-projects-v1"] = JSON.stringify(projects);
+      state.updatedAt = new Date().toISOString();
+      state.updatedBy = actor.user?.username || AUTH_USERNAME;
+    }
+    writeWorkspaceState(all);
+    return send(res, 200, { projects });
+  }
+
   if (APP_MODE === "internal" && url.pathname === "/api/team/users") {
     if (actor.user?.role !== "owner") return sendError(res, 403, "Требуются права администратора.");
     if (req.method === "GET") return send(res, 200, { users: teamStore.list() });
@@ -880,6 +896,12 @@ async function handleApi(req, res, url) {
   }
 
   const projectDeleteMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)$/i) : null;
+  if (projectDeleteMatch && req.method === "PUT") {
+    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+    const payload = await parseBody(req);
+    const project = await saasStore.renameProject(actor.userId, projectDeleteMatch[1], payload.name);
+    return send(res, project ? 200 : 404, project || { error: "Проект не найден." });
+  }
   if (projectDeleteMatch && req.method === "DELETE") {
     if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
     const deleted = await saasStore.deleteProject(actor.userId, projectDeleteMatch[1]);

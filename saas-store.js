@@ -157,6 +157,18 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     return true;
   }
 
+  async function renameProject(userId, projectId, name) {
+    name = String(name || "").trim();
+    if (!name) throw new Error("Укажите название проекта.");
+    const state = await read();
+    const project = state.projects.find(item => item.userId === userId && item.id === projectId);
+    if (!project) return null;
+    project.name = name.slice(0, 100);
+    await write(state);
+    const { userId: _, ...result } = project;
+    return result;
+  }
+
   async function ownsProject(userId, projectId) {
     const state = await read();
     return state.projects.some(project => project.userId === userId && project.id === projectId);
@@ -246,7 +258,7 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     return publicUser(user);
   }
 
-  return { register, authenticate, getUser, listProjects, createProject, deleteProject, ownsProject, createPayment, completePayment, adminSnapshot, updateUser };
+  return { register, authenticate, getUser, listProjects, createProject, deleteProject, renameProject, ownsProject, createPayment, completePayment, adminSnapshot, updateUser };
 }
 
 function isSubscriptionActive(user) {
