@@ -1159,6 +1159,18 @@ async function handleApi(req, res, url) {
     }
   }
 
+  if (APP_MODE === "external" && req.method === "PUT" && /^\/api\/projects\/[a-f0-9-]+$/i.test(url.pathname)) {
+    if (!['client', 'customer'].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
+    const projectId = url.pathname.split("/").pop();
+    const payload = await parseBody(req);
+    try {
+      const project = await saasStore.renameProject(actor.userId, projectId, payload.name);
+      return project ? send(res, 200, project) : sendError(res, 404, "Проект не найден.");
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
   if (APP_MODE === "external" && url.pathname === "/api/admin/support-tickets") {
     if (!["owner", "manager", "admin"].includes(actor.role)) return sendError(res, 403, "Требуются права администратора.");
     if (!supportTicketStore) return sendError(res, 503, "Хранилище обращений не настроено.");

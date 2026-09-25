@@ -245,6 +245,19 @@ async function deleteProject(userId, projectId) {
   async function updateUser(userId, changes, actor = "owner") {
     return mutate(async state => { const user = state.users.find(item => item.id === userId); if (!user) throw new Error("Пользователь не найден."); if (changes.status && ["active", "pending_payment", "blocked"].includes(changes.status)) user.status = changes.status; if (changes.subscriptionUntil !== undefined) user.subscriptionUntil = changes.subscriptionUntil ? new Date(changes.subscriptionUntil).toISOString() : null; if (changes.projectLimit !== undefined) { const limit = Number(changes.projectLimit); if (!Number.isInteger(limit) || limit < PLAN.minProjects || limit > PLAN.maxProjects) throw new Error(`Лимит должен быть от ${PLAN.minProjects} до ${PLAN.maxProjects}.`); user.projectLimit = limit; } for (const key of ["name", "company", "phone"]) if (changes[key] !== undefined) user[key] = String(changes[key]).trim().slice(0, 160); user.updatedAt = new Date().toISOString(); audit(state, actor, "update", "client", user.id, { status: user.status, projectLimit: user.projectLimit }); return publicUser(user); });
   }
+  async function renameProject(userId, projectId, name) {
+    name = String(name || "").trim();
+    if (!name) throw new Error("Укажите название проекта.");
+    return mutate(async state => {
+      const project = state.projects.find(item => item.userId === userId && item.id === projectId);
+      if (!project) return null;
+      project.name = name.slice(0, 100);
+      project.updatedAt = new Date().toISOString();
+      audit(state, userId, "rename", "project", project.id, { name: project.name });
+      const { userId: _, ...result } = project;
+      return result;
+    });
+  }
   async function updateProject(projectId, changes, actor = "owner") {
     return mutate(async state => { const project = state.projects.find(item => item.id === projectId); if (!project) throw new Error("Проект не найден."); if (changes.status && ["active", "archived"].includes(changes.status)) project.status = changes.status; if (changes.name !== undefined && String(changes.name).trim()) project.name = String(changes.name).trim().slice(0, 100); project.updatedAt = new Date().toISOString(); audit(state, actor, "update", "project", project.id, { status: project.status }); return project; });
   }
@@ -257,7 +270,7 @@ async function deleteProject(userId, projectId) {
   async function listPayments(userId) { const state = await read(); return state.payments.filter(payment => payment.userId === userId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ userId: _, ...payment }) => payment); }
   async function recordAudit(actor, action, entityType, entityId, details = {}) { return mutate(async state => { audit(state, actor, action, entityType, entityId, details); return true; }); }
 
-  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, revokeSessions, listProjects, createProject, deleteProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
+  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, revokeSessions, listProjects, createProject, deleteProject, renameProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
 }
 function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
 const SUBSCRIPTION_GRACE_DAYS = 7;

@@ -6733,7 +6733,7 @@
         const projectIdShort = project.id === "legacy" ? "legacy" : project.id.slice(0, 8).toUpperCase();
         const actionMenu = status === "archived"
           ? `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><button type="button" data-restore-project="${escapeXml(project.id)}">Восстановить проект</button></div></details>`
-          : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><a href="${projectUrl}">Открыть проект</a><a href="${monitorUrl}">Открыть мониторинг</a><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
+          : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><a href="${projectUrl}">Открыть проект</a><a href="${monitorUrl}">Открыть мониторинг</a><button type="button" data-rename-project="${escapeXml(project.id)}">Переименовать</button><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
@@ -6781,6 +6781,27 @@
       localStorage.setItem(projectIndexKey, JSON.stringify(projects));
       renderProjects();
       showToast(`Проект «${project.name}» в архиве. Опубликованная ссылка сохранена.`);
+    }
+
+    async function renameProject(projectId) {
+      const project = projects.find(item => item.id === projectId);
+      if (!project) return;
+      const name = prompt("Новое название проекта", project.name)?.trim();
+      if (!name || name === project.name) return;
+      if (runtimeMode === "external") {
+        const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) return showToast(result.error || "Не удалось переименовать проект.");
+        Object.assign(project, result);
+      } else {
+        const next = projects.map(item => item.id === projectId ? { ...item, name } : item);
+        const response = await fetch("/api/workspace-projects", { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projects: next }) });
+        if (!response.ok) return showToast("Не удалось сохранить название проекта.");
+        project.name = name;
+      }
+      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      renderProjects();
+      showToast(`Проект переименован в «${project.name}»`);
     }
 
     async function restoreProject(projectId) {
@@ -7019,6 +7040,11 @@
     });
     document.querySelector("#notificationsButton").addEventListener("click", () => showToast("Новых уведомлений пока нет"));
     document.querySelector("#projectList").addEventListener("click", event => {
+      const renameButton = event.target.closest("[data-rename-project]");
+      if (renameButton) {
+        renameProject(renameButton.dataset.renameProject);
+        return;
+      }
       const button = event.target.closest("[data-delete-project]");
       if (button) {
         deleteProject(button.dataset.deleteProject);
