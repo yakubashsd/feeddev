@@ -4462,6 +4462,68 @@
   <link rel="stylesheet" href="layout-editor.css">
   <link rel="stylesheet" href="listingflow-ui.css">
   <link rel="stylesheet" href="usage-guide.css">
+  <style id="listingflow-product-redesign">
+    /* Hallmark · pre-emit critique: P4 H5 E4 S4 R4 V4 */
+    /* Operate mode: make the product journey visible without adding another menu. */
+    body.client-ui .usage-hint { display:none!important; }
+    body.client-ui .workflow-nav {
+      display:grid!important;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:8px;
+      max-width:1460px;
+      margin:0 auto 18px;
+      padding:8px;
+      border:1px solid var(--lf-line);
+      border-radius:12px;
+      background:var(--lf-surface);
+      box-shadow:var(--lf-shadow);
+    }
+    body.client-ui .workflow-nav button {
+      min-width:0;
+      min-height:54px;
+      display:grid;
+      grid-template-columns:28px minmax(0,1fr);
+      align-items:center;
+      gap:9px;
+      padding:8px 10px;
+      border:1px solid transparent;
+      border-radius:8px;
+      background:transparent;
+      text-align:left;
+      color:var(--lf-muted);
+      box-shadow:none;
+    }
+    body.client-ui .workflow-nav button::after { display:none!important; }
+    body.client-ui .workflow-nav button:hover { background:var(--lf-surface-2); border-color:var(--lf-line); }
+    body.client-ui .workflow-nav button:focus-visible { outline:3px solid rgba(33,104,232,.28)!important; outline-offset:2px; }
+    body.client-ui .workflow-nav button[aria-current="step"],
+    body.client-ui .workflow-nav button[data-state="active"] {
+      background:var(--lf-text); color:var(--lf-surface); border-color:var(--lf-text);
+    }
+    body.client-ui .workflow-nav button[aria-current="step"] .step-icon { background:var(--lf-accent); color:#11151a; }
+    body.client-ui .workflow-nav .step-icon { width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:var(--lf-surface-2);color:var(--lf-muted); }
+    body.client-ui .workflow-nav .step-icon svg { width:15px;height:15px; }
+    body.client-ui .workflow-nav .step-copy { min-width:0; display:grid; gap:2px; }
+    body.client-ui .workflow-nav .step-number { font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--lf-muted); }
+    body.client-ui .workflow-nav button[aria-current="step"] .step-number { color:#c7ccd5; }
+    body.client-ui .workflow-nav .step-title { min-width:0; overflow-wrap:anywhere; font-size:12px; line-height:1.2; font-weight:700; }
+    body.client-ui .topbar-project-picker { min-width:220px; }
+    body.client-ui .topbar-project-picker select { max-width:240px; font-size:13px; font-weight:700; }
+    body.client-ui .projects-page { padding-top:4px; }
+    body.client-ui .projects-heading h1 { font-size:clamp(28px,3vw,40px); line-height:1.05; letter-spacing:-1.2px; }
+    body.client-ui .projects-heading p { max-width:680px; font-size:14px; color:var(--lf-muted); }
+    body.client-ui .panel-caption { max-width:780px; }
+    @media (max-width:1100px) {
+      body.client-ui .workflow-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+    @media (max-width:760px) {
+      body.client-ui .workflow-nav { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:14px; padding:6px; }
+      body.client-ui .workflow-nav button { min-height:48px; padding:7px; }
+      body.client-ui .workflow-nav .step-title { font-size:11px; }
+      body.client-ui .topbar-project-picker { min-width:0; max-width:calc(100vw - 94px); }
+      body.client-ui .topbar-project-picker select { max-width:170px; }
+    }
+  </style>
 </head>
 <body class="client-ui">
   <div id="bootScreen" role="status" aria-live="polite"><span class="boot-status">Проверяю доступ…</span></div>
@@ -4558,7 +4620,7 @@
         <button type="button" data-step=".table-wrap"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg></span><span class="step-copy"><span class="step-number">03</span><span class="step-title">Объявления</span></span></button>
         <button type="button" data-step=".brand-workflow-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Планировки</span></span></button>
         <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Проверка и публикация</span></span></button>
-        <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Мониторинг</span></span></button>
+        <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
 
       <section class="projects-page" data-page="projects">
