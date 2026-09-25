@@ -9236,6 +9236,8 @@ ${photos}
       const isFloorPlan = url => /(?:\/|[_-])(?:floor(?:[\s_-]?plan)?|section|entrance|podjezd|podjezd)(?:\/|[_-])/i.test(url);
       const isApartmentLayout = url => /\/(?:preset|apartment|apartments|flat|flats|unit)\//i.test(url);
       const candidates = [explicit, ...images].filter(url => url && !isFloorPlan(url));
+      const branded = candidates.find(isBrandedLayoutUrl);
+      if (branded) return branded;
       return candidates.find(isApartmentLayout)
         || candidates.find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url))
         || explicit
