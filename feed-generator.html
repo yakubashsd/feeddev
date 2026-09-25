@@ -4510,11 +4510,42 @@
     body.client-ui .topbar-project-picker { min-width:220px; }
     body.client-ui .topbar-project-picker select { max-width:240px; font-size:13px; font-weight:700; }
     body.client-ui .projects-page { padding-top:4px; }
+    body.client-ui .project-overview { max-width:1460px; margin:0 auto 16px; }
+    body.client-ui .overview-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin:0 0 22px; }
+    body.client-ui .overview-heading h1 { margin:4px 0 6px; font-size:clamp(28px,3vw,40px); line-height:1.05; letter-spacing:-1.2px; }
+    body.client-ui .overview-heading p { margin:0; color:var(--lf-muted); font-size:14px; }
+    body.client-ui .eyebrow { display:block; color:var(--lf-muted); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    body.client-ui .overview-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+    body.client-ui .overview-metric { min-height:116px; padding:18px; border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface); box-shadow:var(--lf-shadow); }
+    body.client-ui .overview-metric strong { display:block; margin-top:12px; font-size:29px; line-height:1; letter-spacing:-.7px; font-variant-numeric:tabular-nums; }
+    body.client-ui .overview-metric small { display:block; margin-top:9px; color:var(--lf-muted); font-size:11px; }
+    body.client-ui .overview-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:14px; margin-bottom:14px; }
+    body.client-ui .overview-card { min-width:0; padding:20px; border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface); box-shadow:var(--lf-shadow); }
+    body.client-ui .overview-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+    body.client-ui .overview-card h2 { margin:5px 0 0; font-size:18px; line-height:1.2; letter-spacing:-.3px; }
+    body.client-ui .overview-card p { color:var(--lf-muted); line-height:1.6; }
+    body.client-ui .overview-step { display:grid; place-items:center; width:34px; height:34px; border-radius:9px; background:var(--lf-accent); color:#11151a; font-size:11px; font-weight:800; }
+    body.client-ui .overview-next .primary { margin-top:8px; }
+    body.client-ui .overview-progress { display:grid; gap:12px; margin-top:18px; }
+    body.client-ui .overview-progress-row { display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:9px; font-size:12px; }
+    body.client-ui button.overview-progress-row { width:100%; padding:0; border:0; background:transparent; color:var(--lf-text); text-align:left; }
+    body.client-ui button.overview-progress-row:hover { color:var(--lf-blue); }
+    body.client-ui .overview-progress-row i { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--lf-surface-2); color:var(--lf-muted); font-style:normal; font-size:10px; font-weight:800; }
+    body.client-ui .overview-progress-row.done i { background:var(--lf-green-bg); color:var(--lf-green); }
+    body.client-ui .overview-progress-row.issue i { background:var(--lf-red-bg); color:var(--lf-red); }
+    body.client-ui .overview-progress-row span { min-width:0; overflow-wrap:anywhere; }
+    body.client-ui .overview-progress-row small { color:var(--lf-muted); }
+    body.client-ui .overview-alert { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:48px; padding:10px 0; border-top:1px solid var(--lf-line); font-size:13px; }
+    body.client-ui .overview-alert:first-child { border-top:0; }
+    body.client-ui .overview-alert strong { font-weight:700; }
+    body.client-ui .overview-alert span { color:var(--lf-muted); font-size:12px; }
+    body.client-ui .text-button { padding:4px 0; border:0; background:transparent; color:var(--lf-blue); font-size:12px; font-weight:700; }
     body.client-ui .projects-heading h1 { font-size:clamp(28px,3vw,40px); line-height:1.05; letter-spacing:-1.2px; }
     body.client-ui .projects-heading p { max-width:680px; font-size:14px; color:var(--lf-muted); }
     body.client-ui .panel-caption { max-width:780px; }
     @media (max-width:1100px) {
       body.client-ui .workflow-nav { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      body.client-ui .overview-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
     }
     @media (max-width:760px) {
       body.client-ui .workflow-nav { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:14px; padding:6px; }
@@ -4522,6 +4553,11 @@
       body.client-ui .workflow-nav .step-title { font-size:11px; }
       body.client-ui .topbar-project-picker { min-width:0; max-width:calc(100vw - 94px); }
       body.client-ui .topbar-project-picker select { max-width:170px; }
+      body.client-ui .overview-heading, body.client-ui .overview-grid { display:grid; grid-template-columns:1fr; align-items:start; }
+      body.client-ui .overview-heading .primary { width:100%; }
+      body.client-ui .overview-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      body.client-ui .overview-metric { min-height:98px; padding:14px; }
+      body.client-ui .overview-metric strong { font-size:24px; }
     }
   </style>
 </head>
@@ -4571,6 +4607,7 @@
       <div class="nav-label">Проекты</div>
       <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
       <div class="nav-label nav-label-project" id="projectNavLabel">Подготовка фида</div>
+      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Обзор проекта</span></button>
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
@@ -4623,6 +4660,12 @@
         <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
 
+      <section class="project-overview page-hidden" data-page="overview">
+        <div class="overview-heading"><div><span class="eyebrow">Рабочее пространство</span><h1 id="overviewTitle">Обзор проекта</h1><p>Состояние фида, готовность объектов и следующий шаг в одном месте.</p></div><button class="primary" type="button" data-overview-go="source">Подключить источник</button></div>
+        <div class="overview-metrics" id="overviewMetrics"></div>
+        <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Подключите источник</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть источники</button></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
+        <section class="overview-card overview-recent"><div class="overview-card-head"><div><span class="eyebrow">Контроль</span><h2>Что требует внимания</h2></div><button type="button" class="text-button" data-overview-go="feeds">Открыть мониторинг →</button></div><div id="overviewAlerts"></div></section>
+      </section>
       <section class="projects-page" data-page="projects">
         <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Отдельный проект — для каждого фида и площадки. Источники, объявления и публикация собраны внутри.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <p class="panel-caption" id="projectsStorageCaption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
@@ -5484,7 +5527,7 @@
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     const requestedPage = new URLSearchParams(location.search).get("page");
-    let activePage = requestedPage === "support" ? "support" : currentProject && ["source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "source" : "projects";
+    let activePage = requestedPage === "support" ? "support" : currentProject && ["overview", "source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "overview" : "projects";
     let projectPage = 1;
     const selectedProjectIds = new Set();
     let sortState = { key: "", direction: "asc" };
@@ -6710,7 +6753,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Все проекты", source: "Источники видов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Все проекты", overview: "Обзор проекта", source: "Источники видов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -6772,6 +6815,7 @@
       document.querySelector("#accountEmail").textContent = account.email || "ListingFlow";
       document.querySelector("#accountAvatar").textContent = accountName.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toLocaleUpperCase("ru-RU") || "LF";
       if (activePage === "projects") renderProjects();
+      if (activePage === "overview") renderProjectOverview();
       if (activePage === "feeds") {
         renderMonitorNotificationSettings();
         renderFeedValidator();
@@ -6797,6 +6841,27 @@
       };
       if (states[activePage]) states[activePage] = "active";
       return states;
+    }
+
+    function renderProjectOverview() {
+      if (!currentProject) return;
+      const scopedObjects = workingObjects();
+      const issues = scopedObjects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
+      const sourceCount = projectSources.length;
+      const publicationCount = Object.keys(appState.publishedFeeds || {}).filter(key => appState.publishedFeeds[key]?.url).length;
+      const ready = Math.max(0, scopedObjects.length - issues);
+      document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта";
+      document.querySelector("#overviewMetrics").innerHTML = [["Объекты", scopedObjects.length.toLocaleString("ru-RU"), sourceCount ? "загружены из источника" : "подключите источник"], ["Готовы", ready.toLocaleString("ru-RU"), issues ? `${issues} замечаний` : "ошибок не найдено"], ["Источники", sourceCount, sourceCount ? "подключены" : "ещё не подключены"], ["Публикации", publicationCount, publicationCount ? "активные ссылки" : "фид ещё не опубликован"]].map(([label,value,note]) => `<div class="overview-metric"><span class="eyebrow">${label}</span><strong>${value}</strong><small>${note}</small></div>`).join("");
+      const states = getWorkflowStepStates();
+      const steps = [["01","Источник данных","source"],["02","ЖК и дома","complexes"],["03","Объявления","apartments"],["04","Планировки","branding"],["05","Проверка и публикация","results"]];
+      document.querySelector("#overviewProgress").innerHTML = steps.map(([number,label,key]) => { const state = states[key] || "todo"; const status = state === "done" ? "Готово" : state === "issue" ? "Есть ошибки" : state === "optional" ? "По желанию" : "Ожидает"; return `<button type="button" class="overview-progress-row ${state}" data-overview-go="${key}"><i>${state === "done" ? "✓" : number}</i><span>${label}</span><small>${status}</small></button>`; }).join("");
+      const next = steps.find(([, , key]) => !["done","optional"].includes(states[key])) || ["","Опубликованный фид","results"];
+      document.querySelector("#overviewNextStep").textContent = next[0] || "✓";
+      document.querySelector("#overviewNextTitle").textContent = next[1];
+      document.querySelector("#overviewNextText").textContent = next[2] === "source" ? "Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами." : next[2] === "results" ? "Все основные шаги завершены. Проверьте выпуск и обновите ссылку на фид." : "Продолжите настройку проекта, чтобы перейти к публикации.";
+      document.querySelector("#overviewNextAction").dataset.overviewGo = next[2];
+      const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} замечаний в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
+      document.querySelector("#overviewAlerts").innerHTML = alerts;
     }
 
     const supportCategoryLabels = { feed: "Фид и данные", import: "Загрузка XML", publication: "Проверка и публикация", billing: "Оплата и тариф", account: "Аккаунт и доступ", other: "Другой вопрос" };
@@ -6843,7 +6908,7 @@
         if (nextUrl.href !== window.location.href) history.pushState({ listingflowPage: page }, "", nextUrl);
         return;
       }
-      if (!currentProject || !["source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(page)) return;
+      if (!currentProject || !["overview", "source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(page)) return;
       nextUrl.searchParams.set("project", currentProject.id);
       if (page === "source") nextUrl.searchParams.delete("page");
       else nextUrl.searchParams.set("page", page);
@@ -6867,11 +6932,15 @@
         return;
       }
       const route = url.searchParams.get("page");
-      activePage = route === "support" ? "support" : currentProject && ["source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(route) ? route : currentProject ? "source" : "projects";
+      activePage = route === "support" ? "support" : currentProject && ["overview", "source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(route) ? route : currentProject ? "overview" : "projects";
       renderPage();
     });
     document.querySelectorAll("[data-step]").forEach(button => {
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
+    });
+    document.querySelector(".project-overview").addEventListener("click", event => {
+      const button = event.target.closest("[data-overview-go]");
+      if (button) switchPage(button.dataset.overviewGo);
     });
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
