@@ -5046,7 +5046,7 @@
 
         <div class="section-title">Точечная кастомизация</div>
         <div class="field span-2">
-          <label for="layoutPhoto">Планировка, которую увидит ЦИАН</label>
+          <label for="layoutPhoto" id="layoutPhotoLabel">Планировка для выбранной площадки</label>
           <div class="media-input-row">
             <input id="layoutPhoto" name="layoutPhoto" placeholder="https://...">
             <button id="chooseLayoutForObjectBtn" type="button">Выбрать</button>
@@ -7996,7 +7996,15 @@
       }
     }
 
+    function updateLayoutPhotoLabel() {
+      const label = document.querySelector("#layoutPhotoLabel");
+      if (!label) return;
+      const platformName = platformProfiles[activePlatform]?.name || "выбранной площадки";
+      label.textContent = `Планировка, которую увидит ${platformName}`;
+    }
+
     function fillForm() {
+      updateLayoutPhotoLabel();
       const checked = checkedObjects();
       if (checked.length > 1) {
         groupEditorSnapshot = {};
