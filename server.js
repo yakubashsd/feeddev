@@ -537,7 +537,18 @@ let feedSyncRunning = false;
 
 async function syncPublishedFeed(record) {
   if (!record.sourceUrl || record.sourceType !== "url") return;
-  const sourceResponse = await fetch(record.sourceUrl, {
+  const feeds = await readFeeds();
+  const visited = new Set([record.slug]);
+  let sourceUrl = record.sourceUrl;
+  while (/^https?:\/\/feeds\.sozdateli\.ru\/f\/[a-z0-9а-яё-]+\.php$/i.test(sourceUrl)) {
+    const slug = sourceUrl.match(/\/f\/([a-z0-9а-яё-]+)\.php$/i)?.[1];
+    const linked = feeds.find(item => item.slug === slug && !visited.has(item.slug));
+    if (!linked || !linked.sourceUrl || linked.sourceType !== "url") break;
+    visited.add(linked.slug);
+    sourceUrl = linked.sourceUrl;
+  }
+  if (sourceUrl === `https://feeds.sozdateli.ru/f/${record.slug}.php`) throw new Error("Источник фида ссылается сам на себя");
+  const sourceResponse = await fetch(sourceUrl, {
     headers: { "User-Agent": "FeedDev/0.1" },
     signal: AbortSignal.timeout(30000)
   });
@@ -556,6 +567,10 @@ async function syncPublishedFeed(record) {
   const now = new Date();
   record.lastAutoSyncAt = now.toISOString();
   record.nextAutoSyncAt = new Date(now.getTime() + record.autoSyncIntervalMinutes * 60 * 1000).toISOString();
+  if (sourceUrl !== record.sourceUrl && sourceUrl !== `https://feeds.sozdateli.ru/f/${record.slug}.php`) {
+    record.sourceUrl = sourceUrl;
+    record.sourceType = "url";
+  }
   record.autoSyncError = "";
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
