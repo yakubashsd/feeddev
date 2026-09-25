@@ -4761,6 +4761,7 @@
             <div class="layout-file-control">
               <input id="brandBadgeFileInput" class="file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml">
               <button id="pickBrandBadgeBtn" type="button">Выбрать подложку</button>
+              <button id="removeBrandBadgeBtn" type="button" disabled>Удалить подложку</button>
               <span id="brandBadgePickedFile">Подложка не выбрана</span>
             </div>
             <select id="brandPosition" class="technical-fields" aria-hidden="true">
@@ -5731,6 +5732,11 @@
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error || new Error("Не удалось сохранить подложку текущего фида."));
       }).finally(() => db.close());
+    }
+
+    function updateBrandBadgeControls() {
+      const button = document.querySelector("#removeBrandBadgeBtn");
+      if (button) button.disabled = !brandBadgeDataUrl && !brandBadgeFileName;
     }
 
     async function deleteBrandAsset(projectKey) {
@@ -7112,8 +7118,10 @@
         document.querySelector("#brandBadgePickedFile").textContent = brandBadgeDataUrl
           ? `${brandBadgeFileName || "Подложка фида"} · сохранено для текущего фида`
           : "Подложка для текущего фида не выбрана";
+        updateBrandBadgeControls();
       } catch (error) {
         document.querySelector("#brandBadgePickedFile").textContent = "Не удалось загрузить сохраненную подложку";
+        updateBrandBadgeControls();
         brandStatus(error.message);
       } finally {
         brandProfileHydrating = false;
@@ -7240,10 +7248,14 @@
       return { sx, sy, sw: Math.max(1, ex - sx), sh: Math.max(1, ey - sy) };
     }
 
-    function brandedLayoutPlacement(baseImage, badgeImage, config = brandConfig()) {
+    function brandedLayoutPlacement(baseImage, badgeImage, config = brandConfig(), platform = activePlatform) {
       const width = badgeImage.naturalWidth || badgeImage.width;
       const height = badgeImage.naturalHeight || badgeImage.height;
-      const source = visibleImageBounds(baseImage);
+      const sourceWidth = baseImage.naturalWidth || baseImage.width;
+      const sourceHeight = baseImage.naturalHeight || baseImage.height;
+      const source = platform === "cian"
+        ? visibleImageBounds(baseImage)
+        : { sx: 0, sy: 0, sw: sourceWidth, sh: sourceHeight };
       const frameWidth = Math.round(width * (config.widthPercent / 100));
       const frameHeight = Math.round(height * (config.widthPercent / 100));
       const ratio = Math.min(frameWidth / Math.max(1, source.sw), frameHeight / Math.max(1, source.sh));
@@ -7270,7 +7282,7 @@
       return String(value || "").replace(/{{\s*(price|area|rooms|complex)\s*}}/gi, (_, field) => ({ price: moneyText, area: item.totalArea || "—", rooms: item.rooms || "—", complex: item.complexName || "" })[field.toLowerCase()] || "");
     }
 
-    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig(), item = brandPreviewImages?.target || {}) {
+    function drawBrandedLayout(baseImage, badgeImage, canvas, config = brandConfig(), item = brandPreviewImages?.target || {}, platform = activePlatform) {
       const context = canvas.getContext("2d");
       const width = badgeImage.naturalWidth || badgeImage.width;
       const height = badgeImage.naturalHeight || badgeImage.height;
@@ -7279,7 +7291,7 @@
       context.clearRect(0, 0, width, height);
       context.drawImage(badgeImage, 0, 0, width, height);
 
-      const placement = brandedLayoutPlacement(baseImage, badgeImage, config);
+      const placement = brandedLayoutPlacement(baseImage, badgeImage, config, platform);
       context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
       const headline = templateText(config.headline, item);
       const subline = templateText(config.subline, item);
@@ -9476,12 +9488,31 @@ ${photos}
     if (uploadLayoutBtn) uploadLayoutBtn.addEventListener("click", uploadLayout);
     document.querySelector("#refreshLayoutsBtn")?.addEventListener("click", () => loadLayouts());
     document.querySelector("#pickBrandBadgeBtn").addEventListener("click", () => document.querySelector("#brandBadgeFileInput").click());
+    document.querySelector("#removeBrandBadgeBtn").addEventListener("click", async () => {
+      if (!brandBadgeDataUrl && !brandBadgeFileName) return;
+      if (!confirm("Удалить подложку текущего фида? Уже созданные JPG-макеты останутся без изменений.")) return;
+      const projectKey = activeBrandProjectKey || currentFeedProjectKey();
+      try {
+        await deleteBrandAsset(projectKey);
+        brandBadgeDataUrl = "";
+        brandBadgeFileName = "";
+        document.querySelector("#brandBadgeFileInput").value = "";
+        document.querySelector("#brandBadgePickedFile").textContent = "Подложка не выбрана";
+        await persistActiveBrandProfile();
+        updateBrandBadgeControls();
+        renderBrandPreview();
+        showToast("Подложка удалена для текущего фида");
+      } catch (error) {
+        brandStatus(`Не удалось удалить подложку: ${error.message}`);
+      }
+    });
     document.querySelector("#brandBadgeFileInput").addEventListener("change", async event => {
       const file = event.target.files[0];
       if (!file) {
         brandBadgeDataUrl = "";
         brandBadgeFileName = "";
         document.querySelector("#brandBadgePickedFile").textContent = "Подложка не выбрана";
+        updateBrandBadgeControls();
         renderBrandPreview();
         return;
       }
@@ -9494,6 +9525,7 @@ ${photos}
       brandBadgeFileName = file.name;
       activeBrandProjectKey = currentFeedProjectKey();
       document.querySelector("#brandBadgePickedFile").textContent = `${file.name} · текущий фид`;
+      updateBrandBadgeControls();
       try {
         await persistActiveBrandProfile({ includeAsset: true });
         showToast("Подложка сохранена для текущего фида");
