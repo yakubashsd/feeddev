@@ -489,6 +489,11 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     slug = `${slug}-${crypto.randomBytes(3).toString("hex")}`;
   }
 
+  const sourceIsPublishedFeed = /^https?:\/\/feeds\.sozdateli\.ru\/f\/[a-z0-9а-яё-]+\.php$/i.test(data.sourceUrl);
+  const effectiveSourceUrl = sourceIsPublishedFeed && existing?.sourceUrl ? existing.sourceUrl : data.sourceUrl;
+  const effectiveSourceType = sourceIsPublishedFeed && existing?.sourceUrl ? existing.sourceType : data.sourceType;
+  const effectiveInterval = sourceIsPublishedFeed && existing?.sourceUrl ? existing.autoSyncIntervalMinutes : payload.autoSyncIntervalMinutes;
+
   const blob = await persistFeedXml(slug, data.xml);
 
   const history = Array.isArray(existing?.history) ? existing.history : [];
@@ -508,9 +513,9 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     ownerId: APP_MODE === "external" ? actor?.userId : undefined,
     projectId: String(payload.projectId || existing?.projectId || ""),
     platform: data.platform,
-    sourceUrl: data.sourceUrl,
-    sourceType: data.sourceType,
-    autoSyncIntervalMinutes: normalizeAutoSyncInterval(payload.autoSyncIntervalMinutes),
+    sourceUrl: effectiveSourceUrl,
+    sourceType: effectiveSourceType,
+    autoSyncIntervalMinutes: normalizeAutoSyncInterval(effectiveInterval),
     lastAutoSyncAt: existing?.lastAutoSyncAt || "",
     nextAutoSyncAt: existing?.nextAutoSyncAt || "",
     autoSyncError: "",

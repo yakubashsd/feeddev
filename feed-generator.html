@@ -9037,6 +9037,15 @@ ${photos}
       return `${platformProfiles[activePlatform].downloadPrefix}-${date}-${random}`;
     }
 
+    function publishedSlugFromUrl(value = "") {
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.hostname !== new URL(PUBLIC_FEED_ORIGIN).hostname) return "";
+        const match = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.php$/i);
+        return match ? match[1] : "";
+      } catch { return ""; }
+    }
+
     function readPublishedFeeds() {
       try {
         const parsed = JSON.parse(localStorage.getItem(publishedStorageKey));
@@ -9091,7 +9100,8 @@ ${photos}
       const button = document.querySelector("#generateLinkBtn");
       const publicationKey = activePublicationKey();
       const publication = appState.publishedFeeds?.[publicationKey] || {};
-      const publicationId = publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
+      const sourceUrlForPublication = appState.feedUrl || document.querySelector("#feedUrl").value;
+      const publicationId = publication.id || publishedSlugFromUrl(sourceUrlForPublication) || (activeSourceId === "all" ? appState.generatedFeedId : "");
       const hadPublishedId = Boolean(publicationId);
       button.disabled = true;
       button.classList.add("loading");
@@ -9101,7 +9111,7 @@ ${photos}
         const publishedFeed = await publishFeedToServer({
           id: publicationId,
           platform: activePlatform,
-          sourceUrl: appState.feedUrl || document.querySelector("#feedUrl").value,
+          sourceUrl: sourceUrlForPublication,
           sourceType: /^https?:\/\//i.test(appState.feedUrl || "") ? "url" : "file",
           xml,
           objectCount: currentObjects.length,
