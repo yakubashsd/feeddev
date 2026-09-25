@@ -590,7 +590,10 @@ function validateFeedPayload(payload) {
 
 function normalizeAutoSyncInterval(value) {
   const minutes = Number(value);
-  return Number.isInteger(minutes) && minutes >= 60 && minutes <= 1440 ? minutes : 0;
+  // Supported intervals mirror the client and the public product promise.
+  // Keep the allow-list explicit so arbitrary values cannot create a tight
+  // polling loop or overload an upstream feed.
+  return [30, 60, 120, 180, 360, 720, 1440].includes(minutes) ? minutes : 0;
 }
 
 async function saveFeed(req, payload, existingSlug = "", actor = null) {

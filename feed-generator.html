@@ -4632,7 +4632,7 @@
           </div>
           <div class="field compact">
             <label for="sourceInterval">Обновление</label>
-            <select id="sourceInterval"><option value="manual">Вручную</option><option value="60">Каждый час</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720" selected>Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
+            <select id="sourceInterval"><option value="manual">Вручную</option><option value="30">Каждые 30 минут</option><option value="60">Каждый час</option><option value="120">Каждые 2 часа</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720" selected>Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
           </div>
           <button id="loadUrlBtn" type="button" class="primary" aria-describedby="loadStatus">Добавить источник</button>
           <button id="importBtn" type="button" aria-describedby="loadStatus">Загрузить XML</button>
@@ -4645,7 +4645,7 @@
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
-        <div class="source-schedule-note">Новые источники обновляются каждые 12 часов. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
+        <div class="source-schedule-note">Выберите интервал от 30 минут до суток. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
         </div>
@@ -4653,7 +4653,7 @@
 
       <section class="feeds-panel page-hidden" id="feedsPanel" data-page="feeds">
         <h2 class="panel-title">Мониторинг фидов</h2>
-        <div class="panel-caption">Сервер проверяет все фиды проекта раз в 12 часов и сообщает о новых ошибках.</div>
+        <div class="panel-caption">Сервер проверяет фиды по выбранному интервалу и сообщает о новых ошибках.</div>
         <div class="monitor-add">
           <div class="field">
             <label for="monitorFeedUrl">Ссылка на фид для мониторинга</label>
@@ -9673,12 +9673,18 @@ ${photos}
     }
 
     function publicationSourceFeeds(currentObjects) {
+      // If the user explicitly selected ЖК in the catalog, publish only those
+      // groups. An empty selection keeps the backwards-compatible behaviour:
+      // all objects are included.
+      const publicationObjects = publishedComplexes.size
+        ? currentObjects.filter(item => publishedComplexes.has(normalizeProjectName(String(item.complexName || item.buildingName || item.address || "Без названия").trim())))
+        : currentObjects;
       const selectedSources = activeSourceId === "all"
         ? projectSources
         : projectSources.filter(source => source.id === activeSourceId);
       return selectedSources.map(source => {
         const belongsToSource = item => item._sourceId === source.id || (item._sourceIds || []).includes(source.id);
-        const objectIds = currentObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
+        const objectIds = publicationObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
         const originalIds = originalObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
         const currentIds = new Set(objectIds);
         return {
