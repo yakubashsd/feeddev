@@ -5458,6 +5458,7 @@
         }
         if (state.authenticated) {
           if (state.mode === "internal" && !(await enforceTemporaryPassword(state.user))) return;
+          await syncWorkspaceState();
           if (await syncExternalProjects()) {
             location.reload();
             return;
@@ -5544,12 +5545,53 @@
       }
     }
 
+    let workspaceSyncTimer = null;
+    function workspaceStorageSnapshot() {
+      const prefixes = ["feeddev-projects-v1", "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1", "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1", "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"];
+      return Object.fromEntries(Object.keys(localStorage).filter(key => prefixes.some(prefix => key === prefix || key.startsWith(`${prefix}-`))).map(key => [key, localStorage.getItem(key)]));
+    }
+    function queueWorkspaceSync() {
+      if (runtimeMode !== "internal" || !currentProject?.id || !sessionState?.authenticated) return;
+      clearTimeout(workspaceSyncTimer);
+      workspaceSyncTimer = setTimeout(async () => {
+        try { await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage: workspaceStorageSnapshot() }) }); } catch { /* local state remains available during a temporary network failure */ }
+      }, 350);
+    }
+    async function syncWorkspaceState() {
+      if (runtimeMode !== "internal") return;
+      if (!currentProject?.id) {
+        const response = await fetch("/api/workspace-state", { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json().catch(() => ({}));
+        const merged = Object.assign({}, ...((result.states || []).map(item => item.storage || {})));
+        if (!Object.keys(merged).length) return;
+        const local = workspaceStorageSnapshot();
+        if (JSON.stringify(local) !== JSON.stringify(merged)) { Object.entries(merged).forEach(([key, value]) => localStorage.setItem(key, value)); location.reload(); }
+        return;
+      }
+      const response = await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { credentials: "same-origin", cache: "no-store" });
+      if (!response.ok) return;
+      const remote = await response.json().catch(() => ({}));
+      const storage = remote.storage && typeof remote.storage === "object" ? remote.storage : {};
+      const keys = Object.keys(storage);
+      if (keys.length) {
+        const local = workspaceStorageSnapshot();
+        if (JSON.stringify(local) !== JSON.stringify(storage)) {
+          keys.forEach(key => localStorage.setItem(key, storage[key]));
+          location.reload();
+        }
+        return;
+      }
+      await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage: workspaceStorageSnapshot() }) });
+    }
+
     function save() {
       appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} }));
+      queueWorkspaceSync();
     }
 
     function loadChangeLog() {
@@ -5563,6 +5605,7 @@
 
     function saveChangeLog() {
       localStorage.setItem(changeLogStorageKey, JSON.stringify(changeLog.slice(0, 30)));
+      queueWorkspaceSync();
     }
 
     function addChangeLog(title, details) {
@@ -5622,6 +5665,7 @@
 
     function saveBrandProfiles() {
       localStorage.setItem(brandProfilesStorageKey, JSON.stringify(brandProfiles));
+      queueWorkspaceSync();
     }
 
     function openBrandAssetsDb() {
@@ -6094,6 +6138,7 @@
 
     function saveProjectSources() {
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
+      queueWorkspaceSync();
     }
 
     async function renameSourceFeed(sourceId) {

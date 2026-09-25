@@ -24,6 +24,7 @@ const FEEDS_DIR = path.join(DATA_DIR, "feeds");
 const LAYOUTS_DIR = path.join(DATA_DIR, "layouts");
 const INDEX_FILE = path.join(DATA_DIR, "feeds-index.json");
 const LAYOUTS_INDEX_FILE = path.join(DATA_DIR, "layouts-index.json");
+const WORKSPACE_STATE_FILE = path.join(DATA_DIR, "workspace-state.json");
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
 const MAX_LAYOUT_BYTES = 12 * 1024 * 1024;
 const AUTH_USERNAME = String(process.env.AUTH_USERNAME || "sozdateli");
@@ -94,6 +95,17 @@ function ensureStorage() {
   fs.mkdirSync(LAYOUTS_DIR, { recursive: true });
   if (!fs.existsSync(INDEX_FILE)) fs.writeFileSync(INDEX_FILE, "[]\n");
   if (!fs.existsSync(LAYOUTS_INDEX_FILE)) fs.writeFileSync(LAYOUTS_INDEX_FILE, "[]\n");
+}
+
+function readWorkspaceState() {
+  ensureStorage();
+  try { const value = JSON.parse(fs.readFileSync(WORKSPACE_STATE_FILE, "utf8")); return value && typeof value === "object" ? value : {}; } catch { return {}; }
+}
+function writeWorkspaceState(value) {
+  ensureStorage();
+  const temp = `${WORKSPACE_STATE_FILE}.${process.pid}.tmp`;
+  fs.writeFileSync(temp, `${JSON.stringify(value)}\n`, { mode: 0o600 });
+  fs.renameSync(temp, WORKSPACE_STATE_FILE);
 }
 
 function usesBlobStorage() {
@@ -817,6 +829,25 @@ async function handleApi(req, res, url) {
   const actor = await currentActor(req);
   if (!actor) {
     return sendError(res, 401, "Требуется вход в сервис.");
+  }
+
+  if (APP_MODE === "internal" && url.pathname === "/api/workspace-state") {
+    const workspace = AUTH_USERNAME;
+    const projectId = String(url.searchParams.get("projectId") || "").trim();
+    if (!projectId && req.method === "GET") return send(res, 200, { states: Object.values(readWorkspaceState()[workspace] || {}) });
+    if (!projectId || !/^[a-zA-Z0-9_-]{1,120}$/.test(projectId)) return sendError(res, 400, "Некорректный проект.");
+    const all = readWorkspaceState();
+    if (req.method === "GET") return send(res, 200, all[workspace]?.[projectId] || { projectId, storage: {} });
+    if (req.method === "PUT") {
+      const payload = await parseBody(req);
+      const storage = payload.storage && typeof payload.storage === "object" ? payload.storage : {};
+      const safeStorage = Object.fromEntries(Object.entries(storage).filter(([key, value]) => typeof key === "string" && key.length < 180 && typeof value === "string" && value.length < 20000000));
+      all[workspace] = all[workspace] || {};
+      all[workspace][projectId] = { projectId, storage: safeStorage, updatedAt: new Date().toISOString(), updatedBy: actor.user?.username || AUTH_USERNAME };
+      writeWorkspaceState(all);
+      return send(res, 200, all[workspace][projectId]);
+    }
+    return sendError(res, 405, "Метод не поддерживается");
   }
 
   if (APP_MODE === "internal" && url.pathname === "/api/team/users") {
