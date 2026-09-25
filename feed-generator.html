@@ -5546,10 +5546,13 @@
     }
 
     let workspaceSyncTimer = null;
-    function workspaceStorageSnapshot(projectId = "") {
-      const prefixes = ["feeddev-projects-v1", "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1", "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1", "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"];
+    const workspaceStoragePrefixes = ["feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1", "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1", "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"];
+    function workspaceStorageBelongsToProject(key, projectId = "") {
       const suffix = projectId && projectId !== "legacy" ? `-${projectId}` : "";
-      return Object.fromEntries(Object.keys(localStorage).filter(key => key === "feeddev-projects-v1" || prefixes.slice(1).some(prefix => key === `${prefix}${suffix}`)).map(key => [key, localStorage.getItem(key)]));
+      return key === "feeddev-projects-v1" || workspaceStoragePrefixes.some(prefix => key === `${prefix}${suffix}`);
+    }
+    function workspaceStorageSnapshot(projectId = "") {
+      return Object.fromEntries(Object.keys(localStorage).filter(key => workspaceStorageBelongsToProject(key, projectId)).map(key => [key, localStorage.getItem(key)]));
     }
     function queueWorkspaceSync() {
       if (runtimeMode !== "internal" || !currentProject?.id || !sessionState?.authenticated) return;
@@ -5575,7 +5578,8 @@
       const response = await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { credentials: "same-origin", cache: "no-store" });
       if (!response.ok) return;
       const remote = await response.json().catch(() => ({}));
-      const storage = remote.storage && typeof remote.storage === "object" ? remote.storage : {};
+      const rawStorage = remote.storage && typeof remote.storage === "object" ? remote.storage : {};
+      const storage = Object.fromEntries(Object.entries(rawStorage).filter(([key]) => workspaceStorageBelongsToProject(key, currentProject.id)));
       const keys = Object.keys(storage);
       if (keys.length) {
         const local = workspaceStorageSnapshot(currentProject.id);
@@ -5585,6 +5589,9 @@
           keys.forEach(key => localStorage.setItem(key, storage[key]));
           sessionStorage.setItem(hydrationKey, "1");
           location.reload();
+        }
+        if (Object.keys(storage).length !== Object.keys(rawStorage).length) {
+          fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage }) }).catch(() => {});
         }
         return;
       }
