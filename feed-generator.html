@@ -4323,7 +4323,8 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:110px minmax(180px,1.2fr) minmax(220px,1.5fr) 110px minmax(190px,auto) auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record { display:grid; grid-template-columns:54px minmax(0,1.2fr) minmax(0,1.35fr) 90px minmax(0,1fr) minmax(250px,auto); gap:12px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record > * { min-width:0; }
     .source-record strong, .source-record small { display:block; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .source-record .source-next small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.35; }
@@ -4337,7 +4338,7 @@
     .source-selection small { grid-column:2; color:var(--muted); font-size:11px; }
     .published-history-item button { flex:0 0 auto; min-height:28px; padding:0 9px; }
     .source-record .source-health { font-size:11px; color:#444; }
-    .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
+    .source-record .source-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
     .source-empty { padding:24px; border:1px dashed var(--line-strong); border-radius:9px; color:var(--muted); text-align:center; }
     .source-schedule-note { margin-top:10px; color:var(--muted); font-size:10px; line-height:1.5; }
     .template-layer-editor { display:grid; gap:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:#fafafa; }
