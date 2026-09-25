@@ -4323,9 +4323,12 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:54px minmax(0,1.2fr) minmax(0,1.35fr) 90px minmax(0,1fr) minmax(250px,auto); gap:12px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record { display:grid; grid-template-columns:54px minmax(150px,1.05fr) minmax(240px,1.55fr) 90px 80px minmax(140px,1fr) minmax(250px,auto); gap:12px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
     .source-record > * { min-width:0; }
     .source-record strong, .source-record small { display:block; }
+    .source-record .source-label { display:block; margin-bottom:4px; color:var(--muted); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .source-record a { display:block; min-width:0; overflow:hidden; color:inherit; text-decoration:none; text-overflow:ellipsis; white-space:nowrap; }
+    .source-record a:hover { text-decoration:underline; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .source-record .source-next small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.35; }
     .source-record.is-selected { border-color:#171717; box-shadow:0 0 0 2px #171717 inset; }
@@ -6150,11 +6153,14 @@
       }
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
+        const publication = appState.publishedFeeds?.[source.id] || {};
+        const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
-          <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
+          <div><span class="source-label">Название фида</span><strong>${escapeXml(source.name || platform)}</strong></div>
+          <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span class="source-next"><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
@@ -9458,7 +9464,7 @@ ${photos}
         return;
       }
       const sourceCard = event.target.closest("[data-source-select]");
-      if (sourceCard && !syncButton && !renameButton && !removeButton) {
+      if (sourceCard && !syncButton && !renameButton && !removeButton && !event.target.closest("a")) {
         selectSource(sourceCard.dataset.sourceSelect);
         return;
       }
