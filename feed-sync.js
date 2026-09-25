@@ -42,14 +42,11 @@ function recordPrice(xml) {
 
 function records(xml) {
   const result = [];
-  const tags = ["Ad", "offer", "Offer", "object"];
-  for (const tag of tags) {
-    const matcher = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi");
-    for (const match of String(xml).matchAll(matcher)) {
-      const id = recordId(match[0]);
-      const price = recordPrice(match[0]);
-      if (id && price) result.push({ id, price, block: match[0], index: match.index });
-    }
+  const matcher = /<(Ad|offer|Offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi;
+  for (const match of String(xml).matchAll(matcher)) {
+    const id = recordId(match[0]);
+    const price = recordPrice(match[0]);
+    if (id && price) result.push({ id, price, block: match[0], tag: match[1], index: match.index, end: match.index + match[0].length });
   }
   return result;
 }
@@ -59,11 +56,14 @@ function replacePrice(block, price) {
   if (/<price\b[^>]*\bvalue=["']/i.test(block)) {
     return block.replace(/(<price\b[^>]*\bvalue=["'])[^"']*(["'][^>]*\/?\s*>)/i, `$1${escaped}$2`);
   }
+  if (/<price\b[^>]*>[\s\S]*?<value\b[^>]*>/i.test(block)) {
+    return block.replace(/(<value\b[^>]*>)[\s\S]*?(<\/value>)/i, `$1${escaped}$2`);
+  }
   return block.replace(/(<(?:Price|price)\b[^>]*>)[\s\S]*?(<\/(?:Price|price)>)/i, `$1${escaped}$2`);
 }
 
 function synchronizePrices(publishedXml, sourceXml) {
-  const sourcePrices = new Map(records(sourceXml).map(item => [item.id, item.price]));
+  const sourcePrices = new Map(records(sourceXml).filter(item => item.id && item.price).map(item => [item.id, item.price]));
   let checked = 0;
   let updated = 0;
   const xml = String(publishedXml).replace(/<(Ad|offer|Offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi, block => {

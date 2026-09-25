@@ -7252,8 +7252,10 @@
       return canvas;
     }
 
-    async function brandedLayoutBlob(canvas) {
-      const exportCanvas = feedSafeLayoutCanvas(canvas);
+    async function brandedLayoutBlob(canvas, platform = activePlatform) {
+      // CIAN requires a square safe area. Other aggregators should receive
+      // the original canvas dimensions without an artificial white frame.
+      const exportCanvas = platform === "cian" ? feedSafeLayoutCanvas(canvas) : canvas;
       const variants = [
         ["image/jpeg", .86, "jpg"],
         ["image/jpeg", .74, "jpg"],
@@ -7314,7 +7316,7 @@
           brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
           const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
           drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig, firstItem);
-          const output = await brandedLayoutBlob(canvas);
+          const output = await brandedLayoutBlob(canvas, activePlatform);
           brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
           const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
           urlMap.set(sourceUrl, record.url);
