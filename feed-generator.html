@@ -6233,7 +6233,8 @@
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const publication = appState.publishedFeeds?.[source.id] || {};
-        const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
+        const sourcePublishedUrl = publishedSlugFromUrl(source.url) ? source.url : "";
+        const publishedUrl = sourcePublishedUrl || publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
@@ -7903,12 +7904,21 @@
         const mapped = {};
         matched.forEach(item => {
           const source = projectSources.find(candidate => candidate.url === item.sourceUrl);
-          if (source) mapped[source.id] = { id: item.id, url: item.url, history: item.history || [] };
+          if (source) {
+            const sourceSlug = publishedSlugFromUrl(source.url);
+            mapped[source.id] = {
+              id: sourceSlug || item.id,
+              url: sourceSlug ? source.url : item.url,
+              history: item.history || []
+            };
+          }
         });
         if (record && !matched.length) mapped["default-feed"] = { id: record.id, url: record.url, history: record.history || [] };
         appState.publishedFeeds = { ...(appState.publishedFeeds || {}), ...mapped };
-        appState.generatedFeedId = record.id || record.slug || "";
-        appState.generatedLink = record.url || "";
+        const activeSource = projectSources.find(source => source.id === appState.activeSourceId);
+        const activeSourceSlug = activeSource ? publishedSlugFromUrl(activeSource.url) : "";
+        appState.generatedFeedId = activeSourceSlug || record.id || record.slug || "";
+        appState.generatedLink = activeSourceSlug ? activeSource.url : (record.url || "");
         appState.publishedHistory = Array.isArray(record.history) ? record.history : [];
         save();
         renderAll();
