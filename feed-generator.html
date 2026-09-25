@@ -7152,10 +7152,10 @@
       const profile = activeBrandProfile();
       if (profile.autoApplyBranding === false || !brandingTemplateEnabled(profile)) return { applied: 0, skipped: [] };
       const ids = new Set(newObjectIds || []);
-      const before = objects.filter(item => ids.has(item.externalId) && photoList(item).some(isBrandedLayoutUrl)).length;
+      const before = objects.filter(item => ids.has(item.externalId) && hasBrandedLayout(item)).length;
       objects = applyKnownBranding(objects);
-      const reused = objects.filter(item => ids.has(item.externalId) && photoList(item).some(isBrandedLayoutUrl)).length - before;
-      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !photoList(item).some(isBrandedLayoutUrl));
+      const reused = objects.filter(item => ids.has(item.externalId) && hasBrandedLayout(item)).length - before;
+      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasBrandedLayout(item));
       if (!targets.length) { save(); return { applied: Math.max(0, reused), skipped: [] }; }
       if (!brandBadgeDataUrl) return { applied: Math.max(0, reused), skipped: [{ message: "Подложка недоступна", ids: targets.map(item => item.externalId).slice(0, 6) }] };
       const button = document.querySelector("#insertBrandPhotoBtn") || { textContent: "Синхронизация" };
@@ -8229,6 +8229,10 @@
 
     function isBrandedLayoutUrl(url = "") {
       return /\/layouts\/(?:branded-|planirovka-na-podlozhke-)|(?:branded-|planirovka-na-podlozhke-)/i.test(String(url));
+    }
+
+    function hasBrandedLayout(item) {
+      return isBrandedLayoutUrl(item?.layoutPhoto || "") || photoList(item).some(isBrandedLayoutUrl);
     }
 
     function feedImageList(item) {
