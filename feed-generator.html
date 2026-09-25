@@ -5295,6 +5295,8 @@
     appState.serverBaseUrl = PUBLIC_FEED_ORIGIN;
     let objects = appState.objects;
     let originalObjects = appState.originalObjects;
+    objects = objects.map(dedupeObjectMedia);
+    originalObjects = originalObjects.map(dedupeObjectMedia);
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     let activePage = currentProject ? "source" : "projects";
