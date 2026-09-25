@@ -4466,6 +4466,7 @@
       <button type="button" class="nav-item" data-nav="validator"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M15 6h3.5A1.5 1.5 0 0 1 20 7.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7.5A1.5 1.5 0 0 1 5.5 6H10"/></svg><span class="nav-text">Валидатор фидов</span></button>
       <button type="button" class="nav-item" data-nav="results"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg><span class="nav-text">Результаты и ссылки</span></button>
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг</span></button>
+      <button type="button" class="nav-item" id="teamNav" hidden><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M15 19a4 4 0 0 1 5.5 0"/></svg><span class="nav-text">Участники</span></button>
       <div class="sidebar-spacer"></div>
       <div class="workspace-note">От исходного XML<br>до готовой ссылки для площадки.</div>
       <button type="button" class="nav-item" data-nav="billing" id="billingNav" hidden><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span class="nav-text">Тариф и оплата</span></button>
@@ -4507,6 +4508,7 @@
         </div>
       </section>
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>Объедините источник, настройки и результат в одном пространстве.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
+      <dialog id="teamDialog"><form id="teamForm"><h2>Участники кабинета</h2><p>Администратор задаёт логин и временный пароль. Пользователь сменит пароль после первого входа.</p><div id="teamUsersList" class="project-source-list"></div><hr><label for="teamUsername">Логин</label><input id="teamUsername" required maxlength="80" placeholder="manager"><label for="teamName">Имя</label><input id="teamName" required maxlength="120" placeholder="Имя пользователя"><label for="teamRole">Роль</label><select id="teamRole"><option value="editor">Редактор</option><option value="viewer">Просмотр</option></select><label for="teamPassword">Временный пароль</label><input id="teamPassword" required minlength="8" type="password" placeholder="Не менее 8 символов"><div class="actions"><button type="button" id="closeTeam">Закрыть</button><button class="primary">Создать пользователя</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Подключённые источники</h2>
         <div class="panel-caption">Добавляйте XML разных площадок. Каждый источник обновляется независимо, а квартиры собираются в общий каталог проекта.</div>
@@ -5402,6 +5404,18 @@
       return true;
     }
 
+    async function enforceTemporaryPassword(user) {
+      if (!user?.mustChangePassword) return true;
+      const password = prompt("Это временный пароль. Задайте новый пароль (минимум 8 символов):");
+      if (!password) { showLogin("Сначала смените временный пароль."); return false; }
+      const confirmPassword = prompt("Повторите новый пароль:");
+      if (password !== confirmPassword) { showLogin("Пароли не совпадают."); return false; }
+      const response = await fetch(`/api/team/users/${encodeURIComponent(user.id)}/password`, { method: "PATCH", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) { showLogin(result.error || "Не удалось сменить пароль."); return false; }
+      return true;
+    }
+
     function renderBilling() {
       const status = document.querySelector("#billingStatus");
       const button = document.querySelector("#checkoutButton");
@@ -5439,6 +5453,7 @@
           return;
         }
         if (state.authenticated) {
+          if (state.mode === "internal" && !(await enforceTemporaryPassword(state.user))) return;
           if (await syncExternalProjects()) {
             location.reload();
             return;
@@ -6077,6 +6092,34 @@
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
     }
 
+    async function renameSourceFeed(sourceId) {
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!source) return;
+      const nextName = prompt("Новое название фида", source.name || "");
+      if (nextName === null) return;
+      const name = nextName.trim().slice(0, 160);
+      if (!name) return showToast("Название не может быть пустым");
+      const oldName = source.name;
+      source.name = name;
+      const publication = appState.publishedFeeds?.[sourceId] || {};
+      const feedId = publication.id || (activeSourceId === sourceId ? appState.generatedFeedId : "");
+      if (feedId) {
+        const response = await fetch(`/api/feeds/${encodeURIComponent(feedId)}/name`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ name })
+        });
+        if (!response.ok) {
+          source.name = oldName;
+          throw new Error((await response.json().catch(() => ({}))).error || "Не удалось переименовать опубликованный фид");
+        }
+      }
+      saveProjectSources();
+      renderProjectSources();
+      showToast("Фид переименован");
+    }
+
     function sourceIntervalLabel(value) {
       return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
     }
@@ -6114,7 +6157,7 @@
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span class="source-next"><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
-          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
     }
@@ -6202,9 +6245,21 @@
       });
       document.querySelector("#currentProjectName").textContent = currentProject?.name || "Все проекты";
       document.querySelector("#currentProjectMeta").textContent = currentProject ? "Проект открыт" : "Выберите проект для работы";
+      const teamNav = document.querySelector("#teamNav");
+      if (teamNav) teamNav.hidden = sessionState?.user?.role !== "owner";
       if (activePage === "projects") renderProjects();
       if (activePage === "feeds") renderMonitorNotificationSettings();
       if (activePage === "billing") renderBilling();
+    }
+
+    async function openTeamDialog() {
+      const dialog = document.querySelector("#teamDialog");
+      if (!dialog) return;
+      const response = await fetch("/api/team/users", { credentials: "same-origin", cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return showToast(result.error || "Не удалось загрузить участников");
+      document.querySelector("#teamUsersList").innerHTML = (result.users || []).map(user => `<div class="source-record"><div><strong>${escapeXml(user.name)}</strong><small>${escapeXml(user.username)}</small></div><span>${user.role === "owner" ? "Администратор" : user.role === "editor" ? "Редактор" : "Просмотр"}</span></div>`).join("");
+      dialog.showModal();
     }
 
     function switchPage(page) {
@@ -6221,6 +6276,17 @@
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
     });
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
+    document.querySelector("#teamNav").addEventListener("click", openTeamDialog);
+    document.querySelector("#closeTeam").addEventListener("click", () => document.querySelector("#teamDialog").close());
+    document.querySelector("#teamForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const response = await fetch("/api/team/users", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: document.querySelector("#teamUsername").value, name: document.querySelector("#teamName").value, role: document.querySelector("#teamRole").value, password: document.querySelector("#teamPassword").value }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return showToast(result.error || "Не удалось создать пользователя");
+      document.querySelector("#teamForm").reset();
+      showToast("Пользователь создан");
+      openTeamDialog();
+    });
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
     document.querySelector("#projectSearch").addEventListener("input", renderProjects);
     document.querySelector("#projectList").addEventListener("click", event => {
@@ -6893,7 +6959,9 @@
         textColor: config.textColor,
         textSize: config.textSize,
         textXPercent: config.textXPercent,
-        textYPercent: config.textYPercent
+        textYPercent: config.textYPercent,
+        autoApplyBranding: brandProfiles[activeBrandProjectKey]?.autoApplyBranding !== false,
+        generatedLayouts: brandProfiles[activeBrandProjectKey]?.generatedLayouts || {}
       };
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
@@ -6942,6 +7010,55 @@
       const key = currentFeedProjectKey();
       if (brandProfileHydrating || activeBrandProjectKey === key) return;
       restoreBrandProfile(key);
+    }
+
+    function activeBrandProfile() {
+      return brandProfiles[activeBrandProjectKey] || {};
+    }
+
+    function brandingTemplateEnabled(profile = activeBrandProfile()) {
+      return Boolean(profile.fileName || profile.headline || profile.subline);
+    }
+
+    function rememberGeneratedLayouts(urlMap) {
+      if (!urlMap?.size || !activeBrandProjectKey) return;
+      const profile = activeBrandProfile();
+      profile.generatedLayouts = { ...(profile.generatedLayouts || {}), ...Object.fromEntries(urlMap) };
+      profile.autoApplyBranding = profile.autoApplyBranding !== false;
+      brandProfiles[activeBrandProjectKey] = profile;
+      saveBrandProfiles();
+    }
+
+    function applyKnownBranding(items = objects) {
+      const mapping = activeBrandProfile().generatedLayouts || {};
+      return items.map(item => item.layoutPhoto && mapping[item.layoutPhoto]
+        ? { ...item, photos: prependPhotoUrl(item, mapping[item.layoutPhoto]) }
+        : item);
+    }
+
+    async function applyBrandingToNewObjects(newObjectIds) {
+      const profile = activeBrandProfile();
+      if (profile.autoApplyBranding === false || !brandingTemplateEnabled(profile)) return { applied: 0, skipped: [] };
+      const ids = new Set(newObjectIds || []);
+      const before = objects.filter(item => ids.has(item.externalId) && photoList(item).some(isBrandedLayoutUrl)).length;
+      objects = applyKnownBranding(objects);
+      const reused = objects.filter(item => ids.has(item.externalId) && photoList(item).some(isBrandedLayoutUrl)).length - before;
+      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !photoList(item).some(isBrandedLayoutUrl));
+      if (!targets.length) { save(); return { applied: Math.max(0, reused), skipped: [] }; }
+      if (!brandBadgeDataUrl) return { applied: Math.max(0, reused), skipped: [{ message: "Подложка недоступна", ids: targets.map(item => item.externalId).slice(0, 6) }] };
+      const button = document.querySelector("#insertBrandPhotoBtn") || { textContent: "Синхронизация" };
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      try {
+        const { urlMap, skipped } = await createBrandedLayoutUrlMap(button, targets);
+        rememberGeneratedLayouts(urlMap);
+        objects = applyKnownBranding(objects);
+        save();
+        return { applied: Math.max(0, reused) + targets.filter(item => urlMap.has(item.layoutPhoto)).length, skipped };
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
     }
 
     function visibleImageBounds(image) {
@@ -7385,6 +7502,7 @@
           if (!targetIds.has(item.externalId) || !urlMap.has(item.layoutPhoto)) return item;
           return { ...item, photos: prependPhotoUrl(item, urlMap.get(item.layoutPhoto)) };
         });
+        rememberGeneratedLayouts(urlMap);
         const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
         invalidateGeneratedLink();
         save();
@@ -8661,6 +8779,7 @@ ${photos}
           else if (sourceIds.length) result.push({ ...item, _sourceId: sourceIds[0], _sourceIds: sourceIds });
           return result;
         }, []);
+        const newObjectIds = [];
         parsed.objects.forEach(sourceItem => {
           const overrides = sourceOverrides.get(sourceItem.externalId) || {};
           const item = { ...sourceItem, ...overrides, ...(Object.keys(overrides).length ? { _overrides: overrides } : {}) };
@@ -8669,10 +8788,12 @@ ${photos}
             duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), id])];
           } else {
             withoutSource.push({ ...item, _sourceId: id, _sourceIds: [id] });
+            newObjectIds.push(item.externalId);
           }
         });
         objects = withoutSource;
         originalObjects = structuredClone(objects);
+        await applyBrandingToNewObjects(newObjectIds);
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
@@ -9327,6 +9448,7 @@ ${photos}
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const syncButton = event.target.closest("[data-source-sync]");
+      const renameButton = event.target.closest("[data-source-rename]");
       const removeButton = event.target.closest("[data-source-remove]");
       const check = event.target.closest("[data-source-check]");
       if (check) {
@@ -9335,11 +9457,12 @@ ${photos}
         return;
       }
       const sourceCard = event.target.closest("[data-source-select]");
-      if (sourceCard && !syncButton && !removeButton) {
+      if (sourceCard && !syncButton && !renameButton && !removeButton) {
         selectSource(sourceCard.dataset.sourceSelect);
         return;
       }
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
+      if (renameButton) renameSourceFeed(renameButton.dataset.sourceRename).catch(error => showToast(error.message));
       if (removeButton) {
         const id = removeButton.dataset.sourceRemove;
         const source = projectSources.find(item => item.id === id);

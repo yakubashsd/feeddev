@@ -13,7 +13,8 @@ const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
 const { PLAN, createSaasStore, isSubscriptionActive, normalizeEmail } = require("./saas-store");
 const { createFreeKassa } = require("./freekassa");
-const { synchronizePrices } = require("./feed-sync");
+const { synchronizeFeed } = require("./feed-sync");
+const { createTeamStore } = require("./team-store");
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/, "");
@@ -33,6 +34,9 @@ const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const APP_MODE = String(process.env.APP_MODE || "internal").toLowerCase() === "external" ? "external" : "internal";
 const SAAS_SESSION_SECRET = String(process.env.SAAS_SESSION_SECRET || "");
 const SESSION_SECRET = APP_MODE === "external" ? SAAS_SESSION_SECRET : AUTH_SECRET;
+const teamStore = APP_MODE === "internal" && AUTH_SECRET
+  ? createTeamStore({ dataDir: DATA_DIR, secret: AUTH_SECRET, adminUsername: AUTH_USERNAME, adminPassword: AUTH_PASSWORD })
+  : null;
 const EXTERNAL_ADMIN_EMAIL = normalizeEmail(process.env.EXTERNAL_ADMIN_EMAIL);
 const EXTERNAL_ADMIN_PASSWORD = String(process.env.EXTERNAL_ADMIN_PASSWORD || "");
 const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || "");
@@ -267,7 +271,7 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
     "Content-Type": type,
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type"
   });
   res.end(type.includes("json") ? JSON.stringify(body) : body);
@@ -314,7 +318,7 @@ function readSession(req) {
   try {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
     if (Number(session.expiresAt) <= Date.now()) return null;
-    if (APP_MODE === "internal") return session.role === "internal" && session.username === AUTH_USERNAME ? session : null;
+    if (APP_MODE === "internal") return session.role === "internal" && session.userId ? session : null;
     return ["customer", "admin"].includes(session.role) ? session : null;
   } catch {
     return null;
@@ -328,6 +332,10 @@ function isAuthenticated(req) {
 async function currentActor(req) {
   const session = readSession(req);
   if (!session) return null;
+  if (session.role === "internal") {
+    const user = teamStore?.get(session.userId);
+    return user && user.active !== false ? { ...session, user } : null;
+  }
   if (session.role !== "customer") return session;
   const user = await saasStore?.getUser(session.userId);
   return user && user.status !== "blocked" ? { ...session, user } : null;
@@ -521,7 +529,7 @@ async function syncPublishedFeed(record) {
   const filePath = path.join(FEEDS_DIR, `${record.slug}.xml`);
   if (!fs.existsSync(filePath)) throw new Error("Опубликованный XML не найден");
   const publishedXml = fs.readFileSync(filePath, "utf8");
-  const result = synchronizePrices(publishedXml, sourceXml);
+  const result = synchronizeFeed(publishedXml, sourceXml);
   if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
   if (result.updated) {
     const tempPath = `${filePath}.${process.pid}.tmp`;
@@ -534,7 +542,7 @@ async function syncPublishedFeed(record) {
   record.autoSyncError = "";
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
-  console.log(`Feed sync: ${record.slug}, prices updated: ${result.updated}/${result.checked}`);
+  console.log(`Feed sync: ${record.slug}, prices updated: ${result.updated}/${result.checked}, added: ${result.added}, removed: ${result.removed}`);
 }
 
 async function runScheduledFeedSync() {
@@ -777,14 +785,11 @@ async function handleApi(req, res, url) {
       setSessionCookie(req, res, createSessionToken({ role: "customer", userId: user.id }));
       return send(res, 200, { authenticated: true, role: "customer" });
     }
-    if (!AUTH_PASSWORD || !AUTH_SECRET) return sendError(res, 503, "Вход ещё не настроен на сервере.");
-    const usernameMatches = safeEqual(payload.username || "", AUTH_USERNAME);
-    const passwordMatches = safeEqual(payload.password || "", AUTH_PASSWORD);
-    if (!usernameMatches || !passwordMatches) {
-      return sendError(res, 401, "Неверный логин или пароль.");
-    }
-    setSessionCookie(req, res, createSessionToken({ role: "internal", username: AUTH_USERNAME }));
-    return send(res, 200, { authenticated: true });
+    if (!AUTH_PASSWORD || !AUTH_SECRET || !teamStore) return sendError(res, 503, "Вход ещё не настроен на сервере.");
+    const user = teamStore.authenticate(payload.username || "", payload.password || "");
+    if (!user) return sendError(res, 401, "Неверный логин или пароль.");
+    setSessionCookie(req, res, createSessionToken({ role: "internal", userId: user.id, username: user.username }));
+    return send(res, 200, { authenticated: true, role: "internal", user });
   }
 
   if (req.method === "POST" && url.pathname === "/api/auth-logout") {
@@ -812,6 +817,24 @@ async function handleApi(req, res, url) {
   const actor = await currentActor(req);
   if (!actor) {
     return sendError(res, 401, "Требуется вход в сервис.");
+  }
+
+  if (APP_MODE === "internal" && url.pathname === "/api/team/users") {
+    if (actor.user?.role !== "owner") return sendError(res, 403, "Требуются права администратора.");
+    if (req.method === "GET") return send(res, 200, { users: teamStore.list() });
+    if (req.method === "POST") {
+      const payload = await parseBody(req);
+      return send(res, 201, { user: teamStore.create(payload) });
+    }
+    return sendError(res, 405, "Метод не поддерживается");
+  }
+
+  const teamPasswordMatch = url.pathname.match(/^\/api\/team\/users\/([a-f0-9-]+)\/password$/i);
+  if (APP_MODE === "internal" && teamPasswordMatch && req.method === "PATCH") {
+    const payload = await parseBody(req);
+    const targetId = teamPasswordMatch[1];
+    if (actor.user?.role !== "owner" && actor.user?.id !== targetId) return sendError(res, 403, "Недостаточно прав.");
+    return send(res, 200, { user: teamStore.changePassword(targetId, payload.password) });
   }
 
   if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/projects") {
@@ -952,6 +975,20 @@ async function handleApi(req, res, url) {
     record.history = (Array.isArray(record.history) ? record.history : []).filter(item => Number(item.version) !== version);
     await persistFeedRecord(record);
     return send(res, 200, { history: record.history });
+  }
+
+  const renameFeedMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/name$/i);
+  if (req.method === "PATCH" && renameFeedMatch) {
+    const payload = await parseBody(req);
+    const name = String(payload.name || "").trim().slice(0, 160);
+    if (!name) return sendError(res, 400, "Название фида не может быть пустым.");
+    const feeds = await readFeeds();
+    const record = feeds.find(feed => feed.slug === renameFeedMatch[1]);
+    if (!record || (APP_MODE === "external" && record.ownerId !== actor?.userId)) return sendError(res, 404, "Фид не найден.");
+    record.name = name;
+    record.updatedAt = new Date().toISOString();
+    await persistFeedRecord(record);
+    return send(res, 200, record);
   }
 
   const updateMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)$/i);

@@ -62,6 +62,70 @@ function replacePrice(block, price) {
   return block.replace(/(<(?:Price|price)\b[^>]*>)[\s\S]*?(<\/(?:Price|price)>)/i, `$1${escaped}$2`);
 }
 
+function duplicateIds(items) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const item of items) {
+    if (!item.id) continue;
+    if (seen.has(item.id)) duplicates.add(item.id);
+    seen.add(item.id);
+  }
+  return [...duplicates];
+}
+
+function insertBeforeRootClose(xml, blocks, tag) {
+  if (!blocks.length) return xml;
+  const root = tag.toLowerCase() === "ad" ? "Ads" : tag.toLowerCase() === "offer" ? "realty-feed" : "feed";
+  const match = new RegExp(`</${root}\\s*>`, "i").exec(xml);
+  if (!match) return xml;
+  const separator = xml.slice(0, match.index).endsWith("\\n") ? "" : "\\n";
+  return `${xml.slice(0, match.index)}${separator}${blocks.join("\\n")}\\n${xml.slice(match.index)}`;
+}
+
+function synchronizeFeed(publishedXml, sourceXml, options = {}) {
+  const sourceRecords = records(sourceXml);
+  const publishedRecords = records(publishedXml);
+  const sourceById = new Map(sourceRecords.map(item => [item.id, item]));
+  const publishedById = new Map(publishedRecords.map(item => [item.id, item]));
+  const excludedIds = new Set((options.excludedIds || []).map(normalizeId).filter(Boolean));
+  const managedIds = new Set((options.managedIds || publishedRecords.map(item => item.id)).map(normalizeId).filter(Boolean));
+  let checked = 0;
+  let updated = 0;
+  let added = 0;
+  let removed = 0;
+  let cursor = 0;
+  const pieces = [];
+  for (const item of publishedRecords) {
+    pieces.push(String(publishedXml).slice(cursor, item.index));
+    cursor = item.index + item.block.length;
+    if (!item.id || excludedIds.has(item.id)) {
+      if (item.id && excludedIds.has(item.id)) removed += 1;
+      else pieces.push(item.block);
+      continue;
+    }
+    const source = sourceById.get(item.id);
+    if (!source && managedIds.has(item.id)) {
+      removed += 1;
+      continue;
+    }
+    if (!source) {
+      pieces.push(item.block);
+      continue;
+    }
+    checked += 1;
+    if (source.price !== item.price) {
+      updated += 1;
+      pieces.push(replacePrice(item.block, source.price));
+    } else pieces.push(item.block);
+  }
+  pieces.push(String(publishedXml).slice(cursor));
+  const addedRecords = sourceRecords.filter(item => item.price && !publishedById.has(item.id) && !excludedIds.has(item.id));
+  const tag = publishedRecords[0]?.tag || sourceRecords[0]?.tag || "";
+  const xml = insertBeforeRootClose(pieces.join(""), addedRecords.map(item => item.block), tag);
+  added = addedRecords.length;
+  return { xml, checked, updated, added, removed, sourceCount: sourceById.size, outputCount: records(xml).length };
+}
+
 function synchronizePrices(publishedXml, sourceXml) {
   const sourcePrices = new Map(records(sourceXml).filter(item => item.id && item.price).map(item => [item.id, item.price]));
   let checked = 0;
@@ -78,4 +142,4 @@ function synchronizePrices(publishedXml, sourceXml) {
   return { xml, checked, updated, sourceCount: sourcePrices.size };
 }
 
-module.exports = { synchronizePrices };
+module.exports = { records, synchronizeFeed, synchronizePrices };
