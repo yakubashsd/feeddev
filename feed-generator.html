@@ -9101,7 +9101,7 @@ ${photos}
       const publicationKey = activePublicationKey();
       const publication = appState.publishedFeeds?.[publicationKey] || {};
       const sourceUrlForPublication = appState.feedUrl || document.querySelector("#feedUrl").value;
-      const publicationId = publication.id || publishedSlugFromUrl(sourceUrlForPublication) || (activeSourceId === "all" ? appState.generatedFeedId : "");
+      const publicationId = publishedSlugFromUrl(sourceUrlForPublication) || publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
       const hadPublishedId = Boolean(publicationId);
       button.disabled = true;
       button.classList.add("loading");
