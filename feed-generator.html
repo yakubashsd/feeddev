@@ -5546,15 +5546,16 @@
     }
 
     let workspaceSyncTimer = null;
-    function workspaceStorageSnapshot() {
+    function workspaceStorageSnapshot(projectId = "") {
       const prefixes = ["feeddev-projects-v1", "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1", "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1", "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"];
-      return Object.fromEntries(Object.keys(localStorage).filter(key => prefixes.some(prefix => key === prefix || key.startsWith(`${prefix}-`))).map(key => [key, localStorage.getItem(key)]));
+      const suffix = projectId && projectId !== "legacy" ? `-${projectId}` : "";
+      return Object.fromEntries(Object.keys(localStorage).filter(key => key === "feeddev-projects-v1" || prefixes.slice(1).some(prefix => key === `${prefix}${suffix}`)).map(key => [key, localStorage.getItem(key)]));
     }
     function queueWorkspaceSync() {
       if (runtimeMode !== "internal" || !currentProject?.id || !sessionState?.authenticated) return;
       clearTimeout(workspaceSyncTimer);
       workspaceSyncTimer = setTimeout(async () => {
-        try { await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage: workspaceStorageSnapshot() }) }); } catch { /* local state remains available during a temporary network failure */ }
+        try { await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage: workspaceStorageSnapshot(currentProject.id) }) }); } catch { /* local state remains available during a temporary network failure */ }
       }, 350);
     }
     async function syncWorkspaceState() {
@@ -5577,7 +5578,7 @@
       const storage = remote.storage && typeof remote.storage === "object" ? remote.storage : {};
       const keys = Object.keys(storage);
       if (keys.length) {
-        const local = workspaceStorageSnapshot();
+        const local = workspaceStorageSnapshot(currentProject.id);
         const hydrationKey = `feeddev-workspace-hydrated-${currentProject.id}`;
         if (sessionStorage.getItem(hydrationKey)) { sessionStorage.removeItem(hydrationKey); return; }
         if (JSON.stringify(local) !== JSON.stringify(storage)) {
@@ -5587,7 +5588,7 @@
         }
         return;
       }
-      await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage: workspaceStorageSnapshot() }) });
+      await fetch(`/api/workspace-state?projectId=${encodeURIComponent(currentProject.id)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storage: workspaceStorageSnapshot(currentProject.id) }) });
     }
 
     function save() {
