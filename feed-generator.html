@@ -5722,8 +5722,8 @@
       document.querySelector("#loginPasswordField").hidden = forgot;
       document.querySelector("#loginPassword").required = !forgot;
       document.querySelector("#loginPassword").autocomplete = register || reset ? "new-password" : "current-password";
-      document.querySelector("#loginPasswordConfirmField").hidden = !reset;
-      document.querySelector("#loginPasswordConfirm").required = reset;
+      document.querySelector("#loginPasswordConfirmField").hidden = !register;
+      document.querySelector("#loginPasswordConfirm").required = register;
       document.querySelector("#authSwitch").hidden = reset || runtimeMode !== "external";
       const forgotPasswordLink = document.querySelector("#forgotPasswordLink");
       forgotPasswordLink.hidden = register || reset || runtimeMode !== "external";

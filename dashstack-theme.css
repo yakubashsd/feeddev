@@ -113,6 +113,7 @@ body.client-ui .auth-card .lf-brand-name span { color:var(--lf-accent)!important
 body.client-ui .auth-card h1 { margin:0!important; color:var(--lf-text)!important; font-size:30px!important; letter-spacing:-.5px!important; }
 body.client-ui .auth-card .auth-description { margin:8px 0 28px!important; color:var(--lf-muted)!important; font-size:14px!important; line-height:21px!important; }
 body.client-ui .auth-fields { display:grid!important; gap:16px!important; }
+body.client-ui .auth-fields > [hidden] { display:none!important; }
 body.client-ui .auth-card .field { display:grid!important; gap:7px!important; }
 body.client-ui .auth-card .field label { color:var(--lf-text)!important; font-size:13px!important; font-weight:650!important; }
 body.client-ui .auth-card .field input { width:100%!important; min-height:46px!important; padding:0 13px!important; border-radius:9px!important; }
