@@ -5920,6 +5920,7 @@
         configureExternalMode(state);
         const resetToken = new URLSearchParams(location.search).get("reset");
         if (!state.authenticated && state.mode === "external" && resetToken) setAuthFormMode("reset");
+        else if (!state.authenticated) setAuthFormMode("login");
         if (state.authenticated && ["owner", "manager", "admin"].includes(state.role)) {
           location.href = "/admin.html";
           return;
