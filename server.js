@@ -1466,7 +1466,18 @@ async function handleApi(req, res, url) {
     const payload = await parseBody(req);
     const sourceUrl = String(payload.url || "").trim();
     if (!sourceUrl) return sendError(res, 400, "Передайте ссылку на фид.");
-    const xml = await safeDownload(sourceUrl);
+    let xml;
+    try {
+      xml = await safeDownload(sourceUrl);
+    } catch (error) {
+      const code = String(error?.code || "");
+      const message = code === "ENOTFOUND"
+        ? "Не удалось найти домен источника. Проверьте адрес XML-фида."
+        : code === "ETIMEDOUT" || /20 секунд|timeout/i.test(String(error?.message || ""))
+          ? "Источник не ответил вовремя. Проверьте доступность XML-фида."
+          : String(error?.message || "Не удалось загрузить XML-фид.");
+      return sendError(res, 422, message);
+    }
     return send(res, 200, { xml, sourceUrl });
   }
 

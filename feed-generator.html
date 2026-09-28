@@ -9917,22 +9917,27 @@ ${photos}
     }
 
     async function fetchFeedXmlByUrl(url) {
+      // Always download through the authenticated server proxy. A direct browser
+      // request leaks the source URL to the client and fails for most feeds due
+      // to CORS (it also made the UI report the unhelpful "Failed to fetch").
+      let response;
       try {
-        const response = await fetch("/api/feeds-import", {
+        response = await fetch("/api/feeds-import", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({ url })
         });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.xml) return data.xml;
-        }
       } catch {
-        // Static prototype fallback: direct browser fetch can still work for CORS-friendly feeds.
+        throw new Error("Не удалось связаться с сервером. Проверьте соединение и повторите попытку.");
       }
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Источник вернул ошибку ${response.status}`);
-      return response.text();
+      let data = null;
+      try { data = await response.json(); } catch { /* handled below */ }
+      if (!response.ok) {
+        throw new Error(data?.error || `Сервер вернул ошибку ${response.status}`);
+      }
+      if (!data?.xml) throw new Error("Сервер не вернул XML источника.");
+      return data.xml;
     }
 
     async function loadFeedFromUrl(sourceId = "") {
