@@ -2,6 +2,7 @@
   const dialog = document.querySelector("#usageGuideDialog");
   const hint = document.querySelector("#usageHint");
   if (!dialog || !hint) return;
+  const on = (selector, event, handler) => document.querySelector(selector)?.addEventListener(event, handler);
 
   const pages = {
     projects: {
@@ -81,19 +82,19 @@
     }
   }
 
-  document.querySelector("#usageGuideOpen").addEventListener("click", () => dialog.showModal());
-  document.querySelector("#usageGuideClose").addEventListener("click", () => dialog.close());
-  document.querySelector("#usageGuideStart").addEventListener("click", () => go("source"));
-  document.querySelector("#usageGuideDialog").addEventListener("click", (event) => {
+  on("#usageGuideOpen", "click", () => dialog.showModal());
+  on("#usageGuideClose", "click", () => dialog.close());
+  on("#usageGuideStart", "click", () => go("source"));
+  on("#usageGuideDialog", "click", (event) => {
     if (event.target === dialog) dialog.close();
     const button = event.target.closest("[data-guide-go]");
     if (button) go(button.dataset.guideGo);
   });
-  document.querySelector("#usageHintDismiss").addEventListener("click", () => {
+  on("#usageHintDismiss", "click", () => {
     dismissedFor = activePage();
     hint.hidden = true;
   });
-  document.querySelector("#usageHintAction").addEventListener("click", (event) => {
+  on("#usageHintAction", "click", (event) => {
     const button = event.currentTarget;
     const target = document.querySelector(button.dataset.target);
     if (!target) return;

@@ -9898,8 +9898,15 @@ ${photos}
       // If the user explicitly selected ЖК in the catalog, publish only those
       // groups. An empty selection keeps the backwards-compatible behaviour:
       // all objects are included.
-      const publicationObjects = publishedComplexes.size
-        ? currentObjects.filter(item => publishedComplexes.has(normalizeProjectName(String(item.complexName || item.buildingName || item.address || "Без названия").trim())))
+      // The editor can reach this function before the catalog state is restored
+      // (for example after a fresh login or while the first source is loading).
+      // Keep that path equivalent to an empty selection instead of throwing a
+      // ReferenceError and aborting publication.
+      const selectedComplexes = typeof publishedComplexes !== "undefined" && publishedComplexes instanceof Set
+        ? publishedComplexes
+        : new Set();
+      const publicationObjects = selectedComplexes.size
+        ? currentObjects.filter(item => selectedComplexes.has(normalizeProjectName(String(item.complexName || item.buildingName || item.address || "Без названия").trim())))
         : currentObjects;
       const selectedSources = activeSourceId === "all"
         ? projectSources

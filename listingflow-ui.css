@@ -615,6 +615,54 @@ body.client-ui .usage-hint{display:none!important}
 }
 body.client-ui .sidebar :is(.nav-item,.nav-label,.nav-workflow)[hidden]{display:none!important}
 
+/* Responsive shell guard: the legacy stylesheet had a 1-column breakpoint at
+   1200px while the drawer behavior started at 1100px. That left the 1101–1200px
+   band with a grid sidebar on the first row and the fixed topbar over it. Keep
+   one predictable tablet layout across the whole range. */
+@media(min-width:761px) and (max-width:1200px){
+  body.client-ui .app,
+  body.client-ui .app.project-list-mode,
+  body.client-ui .app.feeds-mode,
+  body.client-ui .app.layouts-mode,
+  body.client-ui .app.validator-mode{
+    display:block!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    overflow:visible!important;
+  }
+  body.client-ui .sidebar{
+    position:fixed!important;
+    z-index:100!important;
+    inset:0 auto 0 0!important;
+    width:260px!important;
+    height:100dvh!important;
+    min-height:0!important;
+    padding-inline:14px!important;
+    transform:translateX(-102%);
+    transition:transform .2s ease!important;
+    box-shadow:20px 0 50px rgba(0,0,0,.28)!important;
+  }
+  body.client-ui .app.nav-open .sidebar{transform:none!important}
+  body.client-ui .sidebar .brand{justify-content:flex-start!important}
+  body.client-ui .lf-brand-name,
+  body.client-ui .workspace-switcher,
+  body.client-ui .nav-label,
+  body.client-ui .nav-text,
+  body.client-ui .workspace-note,
+  body.client-ui .logout-btn,
+  body.client-ui .nav-chevron{display:flex!important}
+  body.client-ui .workspace-switcher,
+  body.client-ui .workspace-note{display:block!important}
+  body.client-ui .sidebar .nav-item{justify-content:flex-start!important;padding:9px 11px!important}
+  body.client-ui .nav-workflow-items{margin-left:20px!important;padding-left:13px!important;border-left:1px solid #30343d!important}
+  body.client-ui .nav-workflow-items .nav-item::before{display:block!important}
+  body.client-ui .topbar{left:0!important;padding-inline:18px!important}
+  body.client-ui .mobile-menu-toggle{display:grid!important;place-items:center!important}
+  body.client-ui .main{grid-column:1!important;min-width:0!important;padding:82px 24px 34px!important}
+  body.client-ui .editor{min-width:0!important;border-left:1px solid var(--lf-line)!important}
+  body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 290px!important}
+}
+
 /* ListingFlow owner console — canonical product layout.
    This block intentionally neutralizes the legacy glass presentation in admin.html. */
 body.admin-ui{

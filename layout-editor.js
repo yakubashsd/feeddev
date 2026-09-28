@@ -1,6 +1,7 @@
 /* Canvas-first controls. Existing profile and image rendering remain the source of truth. */
 (() => {
   const panel = document.querySelector('#layoutsPanel');
+  if (!panel) return;
   const root = panel.querySelector('.layout-branding');
   const canvas = document.querySelector('#brandPreviewCanvas');
   const controls = panel.querySelector('.brand-controls');

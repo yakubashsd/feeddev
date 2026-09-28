@@ -6,6 +6,7 @@
   const analytics = document.querySelector("#analyticsConsent");
   const webvisor = document.querySelector("#webvisorConsent");
   if (!notice || !dialog || !analytics || !webvisor) return;
+  const on = (selector, event, handler) => document.querySelector(selector)?.addEventListener(event, handler);
 
   function maskWebvisorFields(root = document) {
     root.querySelectorAll?.("input, textarea, [contenteditable=true]").forEach(field => field.classList.add("ym-disable-keys"));
@@ -67,10 +68,10 @@
   const current = read();
   if (!current) notice.hidden = false;
   else load(current);
-  document.querySelector("#acceptAnalytics").addEventListener("click", () => save({ analytics: true, webvisor: true }));
-  document.querySelector("#declineAnalytics").addEventListener("click", () => save({ analytics: false, webvisor: false }));
-  document.querySelector("#openCookiePrefs").addEventListener("click", openPrefs);
-  document.querySelector("#manageCookies").addEventListener("click", openPrefs);
-  document.querySelector("#cancelCookiePrefs").addEventListener("click", () => dialog.close());
-  document.querySelector("#saveCookiePrefs").addEventListener("click", () => save({ analytics: analytics.checked, webvisor: analytics.checked && webvisor.checked }));
+  on("#acceptAnalytics", "click", () => save({ analytics: true, webvisor: true }));
+  on("#declineAnalytics", "click", () => save({ analytics: false, webvisor: false }));
+  on("#openCookiePrefs", "click", openPrefs);
+  on("#manageCookies", "click", openPrefs);
+  on("#cancelCookiePrefs", "click", () => dialog.close());
+  on("#saveCookiePrefs", "click", () => save({ analytics: analytics.checked, webvisor: analytics.checked && webvisor.checked }));
 })();
