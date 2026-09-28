@@ -432,7 +432,15 @@ body.client-ui .sidebar .nav-workflow-toggle { color:#eef1f6!important; font-siz
 body.client-ui .sidebar .nav-workflow-items .nav-item { color:#e4e8ef!important; }
 body.client-ui .sidebar .nav-optional { color:#aeb8c8!important; font-size:12px!important; font-weight:400!important; }
 body.client-ui .sidebar .nav-item.active .nav-optional { color:rgba(255,255,255,.84)!important; }
-body.client-ui[data-theme="dark"] .sidebar .nav-item.active .nav-optional { color:rgba(23,29,50,.76)!important; }
+/* The sidebar itself stays graphite in dark mode; the selected item therefore
+   keeps the violet action surface and light text rather than inheriting the
+   dark-on-light token intended for buttons. */
+body.client-ui[data-theme="dark"] .sidebar .nav-item.active {
+  background:var(--lf-accent)!important;
+  border-color:var(--lf-accent)!important;
+  color:#fff!important;
+}
+body.client-ui[data-theme="dark"] .sidebar .nav-item.active .nav-optional { color:rgba(255,255,255,.84)!important; }
 body.client-ui .topbar>div:first-child { row-gap:4px!important; }
 body.client-ui .topbar h1 { margin:3px 0 0!important; }
 body.client-ui .topbar .subtitle { margin:0 0 3px!important; }
