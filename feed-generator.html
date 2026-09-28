@@ -5924,22 +5924,15 @@
       const result = await response.json().catch(() => ({}));
       if (response.status === 409) {
         cloudSaveConflict = true;
-        if (indicator) indicator.textContent = "Конфликт сохранения — выберите версию";
-        const useLocal = confirm("Этот проект изменился на другом устройстве. ОК — оставить текущие правки и записать их поверх серверной версии. Отмена — сохранить локальную копию и загрузить серверную версию.");
-        if (useLocal) {
-          cloudSaveRevision = Number(result.current?.revision || 0);
-          cloudSavedSnapshot = JSON.stringify(result.current?.state || {});
-          cloudSaveConflict = false;
-          await pushExternalProjectState();
-        } else if (result.current) {
-          const backupKey = `listingflow-conflict-backup-${currentProject.id}-${Date.now()}`;
-          localStorage.setItem(backupKey, JSON.stringify(state));
-          for (const key of projectStateKeys()) {
-            if (Object.hasOwn(result.current.state || {}, key)) localStorage.setItem(key, result.current.state[key]);
-            else localStorage.removeItem(key);
-          }
-          location.reload();
+        if (indicator) indicator.textContent = "Загружаем сохранённую версию проекта…";
+        const remoteState = result.current?.state || {};
+        for (const key of projectStateKeys()) {
+          if (Object.hasOwn(remoteState, key)) localStorage.setItem(key, remoteState[key]);
+          else localStorage.removeItem(key);
         }
+        cloudSaveRevision = Number(result.current?.revision || 0);
+        cloudSavedSnapshot = JSON.stringify(remoteState);
+        location.reload();
         return;
       }
       if (!response.ok) {
@@ -5967,14 +5960,10 @@
       cloudSavedSnapshot = JSON.stringify(remote.state || {});
       const local = captureProjectBrowserState();
       if (!remote.state) {
-        if (Object.keys(local).length) await pushExternalProjectState();
-        return false;
+        for (const key of projectStateKeys()) localStorage.removeItem(key);
+        return Object.keys(local).length > 0;
       }
       if (JSON.stringify(remote.state) === JSON.stringify(local)) return false;
-      if (Object.keys(local).length && !confirm("На сервере есть сохранённая версия проекта, отличающаяся от этого браузера. ОК загрузит серверную версию; Отмена оставит локальные правки и отправит их как новую версию.")) {
-        await pushExternalProjectState();
-        return false;
-      }
       for (const key of projectStateKeys()) {
         if (Object.hasOwn(remote.state, key)) localStorage.setItem(key, remote.state[key]);
         else localStorage.removeItem(key);

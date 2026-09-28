@@ -19,6 +19,16 @@ test("client scripts remain syntactically valid after integrating both branches"
   for (const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
 });
 
+test("external clients always hydrate the server project state without a local-version prompt", () => {
+  const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
+  const push = html.match(/    async function pushExternalProjectState\([\s\S]*?\n    }\n\n    let projectStateSyncTimer/)[0];
+  assert.doesNotMatch(hydrate, /confirm\(/);
+  assert.doesNotMatch(hydrate, /pushExternalProjectState\(/);
+  assert.match(hydrate, /for \(const key of projectStateKeys\(\)\) localStorage\.removeItem\(key\)/);
+  assert.doesNotMatch(push, /const useLocal = confirm/);
+  assert.match(push, /Загружаем сохранённую версию проекта/);
+});
+
 test("switching sources isolates objects and publication URLs, including shared objects", () => {
   const context = vm.createContext({
     activeSourceId: "a", activePlatform: "cian", selectedId: "one", checkedIds: new Set(["one"]),
