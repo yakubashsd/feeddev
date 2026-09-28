@@ -38,6 +38,18 @@ test("project boot uses bounded requests and cannot wait forever on project APIs
   assert.match(hydrate, /fetchWithTimeout\(`\/api\/projects\/\$\{encodeURIComponent\(currentProject\.id\)\}\/state`/);
 });
 
+test("project bootstrap has a visible fallback and cannot reload forever", () => {
+  const init = html.match(/    async function initializeAuth\([\s\S]*?\n    }\n\n    async function submitLogin/)[0];
+  assert.match(html, /const bootWatchdog = window\.setTimeout/);
+  assert.match(html, /Не удалось загрузить кабинет/);
+  assert.match(html, /function reloadAfterBootstrapSync/);
+  assert.match(html, /sessionStorage\.getItem\(key\)/);
+  assert.match(init, /updateBootStatus\("Загружаю список проектов…"\)/);
+  assert.match(init, /reloadAfterBootstrapSync\("Обновляю список проектов…"\)/);
+  assert.match(init, /reloadAfterBootstrapSync\("Применяю сохранённые данные проекта…"\)/);
+  assert.doesNotMatch(init, /\n            location\.reload\(\);/);
+});
+
 test("layout editor applies the size value and exposes a working canvas resize handle", () => {
   const draw = clientFunction("drawBrandedLayout");
   const startDrag = clientFunction("startBrandPreviewDrag");

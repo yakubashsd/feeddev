@@ -4447,6 +4447,10 @@
     #bootScreen[hidden] { display:none; }
     .boot-status { display:grid; justify-items:center; gap:12px; }
     .boot-status::before { content:""; width:22px; height:22px; border:2px solid #d6d6d6; border-top-color:#171717; border-radius:50%; animation:spin .7s linear infinite; }
+    .boot-status.boot-status-error { max-width:340px; color:#303030; text-align:center; line-height:1.45; }
+    .boot-status.boot-status-error::before { display:none; }
+    .boot-status-error strong { font-size:16px; color:#1d1d1d; }
+    .boot-status-error button { min-height:38px; padding:0 16px; border:1px solid #242424; border-radius:8px; background:#242424; color:#fff; font:inherit; font-weight:700; cursor:pointer; }
     @media(max-width:1000px){
       .monitor-notification-settings { grid-template-columns:1fr; }
       #saveMonitorNotifications { justify-self:stretch; }
@@ -5364,6 +5368,25 @@
   </dialog>
 
   <script>
+    // This timer intentionally runs independently of the application bootstrap.
+    // If a browser extension, a stale connection or an unexpected script error stops
+    // initialization, a customer must never be left on an endless "checking access" screen.
+    const bootWatchdog = window.setTimeout(() => {
+      const boot = document.querySelector("#bootScreen");
+      if (!boot || boot.hidden) return;
+      const message = document.createElement("div");
+      message.className = "boot-status boot-status-error";
+      const title = document.createElement("strong");
+      title.textContent = "Не удалось загрузить кабинет";
+      const description = document.createElement("span");
+      description.textContent = "Проверьте соединение и попробуйте открыть кабинет ещё раз.";
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = "Обновить страницу";
+      retry.addEventListener("click", () => location.reload());
+      message.append(title, description, retry);
+      boot.replaceChildren(message);
+    }, 15000);
     let runtimeMode = "internal";
     let authFormMode = "login";
     let sessionState = null;
@@ -5776,6 +5799,7 @@
     let appInitialized = false;
 
     function showLogin(message = "") {
+      window.clearTimeout(bootWatchdog);
       document.querySelector("#bootScreen").hidden = true;
       authScreen.hidden = false;
       appShell.hidden = true;
@@ -5785,6 +5809,7 @@
     }
 
     function showWorkspace() {
+      window.clearTimeout(bootWatchdog);
       document.querySelector("#bootScreen").hidden = true;
       authScreen.hidden = true;
       appShell.hidden = false;
@@ -5808,6 +5833,27 @@
       } finally {
         window.clearTimeout(timer);
       }
+    }
+
+    function updateBootStatus(message) {
+      const status = document.querySelector("#bootScreen .boot-status");
+      if (status) status.textContent = message;
+    }
+
+    function reloadAfterBootstrapSync(stage) {
+      const key = `listingflow-bootstrap-reload:${requestedProject || "project-list"}`;
+      let attempts = 0;
+      try { attempts = Number(sessionStorage.getItem(key) || "0"); } catch (_) {}
+      if (attempts >= 1) return false;
+      try { sessionStorage.setItem(key, String(attempts + 1)); } catch (_) {}
+      updateBootStatus(stage);
+      location.reload();
+      return true;
+    }
+
+    function completeBootstrapSync() {
+      const key = `listingflow-bootstrap-reload:${requestedProject || "project-list"}`;
+      try { sessionStorage.removeItem(key); } catch (_) {}
     }
 
     function configureExternalMode(state) {
@@ -6042,6 +6088,7 @@
       loginButton.disabled = true;
       loginButton.textContent = "Проверяю доступ...";
       try {
+        updateBootStatus("Проверяю доступ…");
         const response = await fetchWithTimeout("/api/auth-session", { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) throw new Error(`Сервер вернул HTTP ${response.status}`);
         const state = await response.json();
@@ -6055,14 +6102,17 @@
           return;
         }
         if (state.authenticated) {
+          updateBootStatus("Загружаю список проектов…");
           if (await syncExternalProjects()) {
-            location.reload();
-            return;
+            if (reloadAfterBootstrapSync("Обновляю список проектов…")) return;
+            throw new Error("Не удалось завершить синхронизацию списка проектов. Обновите страницу ещё раз.");
           }
+          updateBootStatus("Загружаю данные проекта…");
           if (await hydrateExternalProjectState()) {
-            location.reload();
-            return;
+            if (reloadAfterBootstrapSync("Применяю сохранённые данные проекта…")) return;
+            throw new Error("Не удалось завершить синхронизацию проекта. Обновите страницу ещё раз.");
           }
+          completeBootstrapSync();
           showWorkspace();
           await hydratePublishedFeedState();
           if (runtimeMode === "external" && !state.subscriptionActive && activePage !== "support") {
@@ -6070,7 +6120,10 @@
           }
           renderBilling();
         }
-        else showLogin(state.configured ? "" : "Вход ещё не настроен на сервере. Проверьте переменные окружения Selectel.");
+        else {
+          completeBootstrapSync();
+          showLogin(state.configured ? "" : "Вход ещё не настроен на сервере. Проверьте переменные окружения Selectel.");
+        }
       } catch (error) {
         showLogin(`Не удалось проверить доступ: ${error.message}`);
       } finally {
