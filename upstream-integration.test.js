@@ -49,6 +49,8 @@ test("project bootstrap has a visible fallback and cannot reload forever", () =>
   assert.match(init, /reloadAfterBootstrapSync\("Применяю сохранённые данные проекта…"\)/);
   assert.match(init, /needsProjectHydration\(\) && await hydrateExternalProjectState\(\)/);
   assert.match(html, /listingflow-bootstrap-hydrated/);
+  assert.match(init, /!bootstrapStageDone\("projects"\) && await syncExternalProjects\(\)/);
+  assert.match(init, /markBootstrapStage\("state"\)/);
   assert.doesNotMatch(init, /\n            location\.reload\(\);/);
 });
 

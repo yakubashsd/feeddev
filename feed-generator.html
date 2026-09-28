@@ -5856,7 +5856,14 @@
     function completeBootstrapSync() {
       const key = `listingflow-bootstrap-reload:${requestedProject || "project-list"}`;
       try { sessionStorage.removeItem(key); } catch (_) {}
-      try { sessionStorage.removeItem(`listingflow-bootstrap-hydrated:${requestedProject || "project-list"}`); } catch (_) {}
+    }
+
+    function bootstrapStageDone(stage) {
+      try { return sessionStorage.getItem(`listingflow-bootstrap-stage:${stage}:${requestedProject || "project-list"}`) === "1"; } catch (_) { return false; }
+    }
+
+    function markBootstrapStage(stage) {
+      try { sessionStorage.setItem(`listingflow-bootstrap-stage:${stage}:${requestedProject || "project-list"}`, "1"); } catch (_) {}
     }
 
     function needsProjectHydration() {
@@ -6116,16 +6123,20 @@
         }
         if (state.authenticated) {
           updateBootStatus("Загружаю список проектов…");
-          if (await syncExternalProjects()) {
+          if (!bootstrapStageDone("projects") && await syncExternalProjects()) {
+            markBootstrapStage("projects");
             if (reloadAfterBootstrapSync("Обновляю список проектов…")) return;
             throw new Error("Не удалось завершить синхронизацию списка проектов. Обновите страницу ещё раз.");
           }
+          markBootstrapStage("projects");
           updateBootStatus("Загружаю данные проекта…");
           if (needsProjectHydration() && await hydrateExternalProjectState()) {
             markProjectHydrated();
+            markBootstrapStage("state");
             if (reloadAfterBootstrapSync("Применяю сохранённые данные проекта…")) return;
             throw new Error("Не удалось завершить синхронизацию проекта. Обновите страницу ещё раз.");
           }
+          markBootstrapStage("state");
           completeBootstrapSync();
           showWorkspace();
           await hydratePublishedFeedState();
@@ -6196,6 +6207,10 @@
       try {
         await fetch("/api/auth-logout", { method: "POST", credentials: "same-origin" });
       } finally {
+        for (const stage of ["projects", "state"]) {
+          try { sessionStorage.removeItem(`listingflow-bootstrap-stage:${stage}:${requestedProject || "project-list"}`); } catch (_) {}
+        }
+        try { sessionStorage.removeItem(`listingflow-bootstrap-hydrated:${requestedProject || "project-list"}`); } catch (_) {}
         showLogin("Вы вышли из сервиса.");
         document.querySelector("#loginUsername").focus();
       }
