@@ -1171,3 +1171,62 @@ body.client-ui[data-theme="dark"] .project-list-mode .project-row-action{backgro
   body.client-ui .main{grid-column:1!important;padding:82px 24px 34px!important}
 }
 body.client-ui .sidebar :is(.nav-item,.nav-label,.nav-workflow)[hidden]{display:none!important}
+
+/* Source cards keep all seven fields in the card. The action group used to
+   become an implicit grid item (and could render outside the card) because
+   the premium shell override declared only six columns. */
+body.client-ui .project-source-list .source-record{
+  grid-template-columns:24px minmax(150px,1.05fr) minmax(190px,1.35fr) minmax(170px,1.05fr) 86px minmax(165px,1fr) minmax(250px,auto)!important;
+  align-items:center!important;
+  overflow:visible!important;
+}
+body.client-ui .project-source-list .source-record>.source-actions{
+  grid-column:auto!important;
+  grid-row:auto!important;
+  position:static!important;
+  width:100%!important;
+  min-width:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  flex-wrap:wrap!important;
+  gap:6px!important;
+}
+body.client-ui .project-source-list .source-record>.source-actions button{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  white-space:nowrap!important;
+}
+@media(max-width:1200px){
+  body.client-ui .project-source-list .source-record{
+    grid-template-columns:24px minmax(0,1fr)!important;
+    align-items:start!important;
+  }
+  body.client-ui .project-source-list .source-record>:not(.source-select-control){
+    grid-column:2!important;
+    min-width:0!important;
+  }
+  body.client-ui .project-source-list .source-record>.source-actions{
+    grid-column:2!important;
+    grid-row:auto!important;
+    width:100%!important;
+    justify-content:flex-start!important;
+    padding-top:4px!important;
+  }
+}
+@media(max-width:720px){
+  body.client-ui .project-source-list .source-record{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  body.client-ui .project-source-list .source-record>:not(.source-select-control),
+  body.client-ui .project-source-list .source-record>.source-select-control{
+    grid-column:1!important;
+  }
+  body.client-ui .project-source-list .source-record>.source-actions{
+    justify-content:stretch!important;
+  }
+  body.client-ui .project-source-list .source-record>.source-actions button{
+    flex:1 1 140px!important;
+  }
+}
