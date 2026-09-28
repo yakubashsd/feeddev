@@ -4802,7 +4802,7 @@
         <header class="strategy-heading"><div><span class="eyebrow">Стратегия публикации</span><h2 class="panel-title">Пессимизация</h2><p class="panel-caption">Управляйте объёмом объявлений на площадке: оставляйте в публикации только нужные варианты, не удаляя квартиры из проекта. Настройка действует отдельно для каждого источника.</p></div></header>
         <div id="trafficPolicyEmpty" class="traffic-empty" hidden>Сначала добавьте источник в проект.</div>
         <div id="trafficPolicyContent" class="traffic-policy-content">
-          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Источник</label><select id="trafficPolicySource"></select></div><label class="traffic-policy-toggle"><input id="trafficPolicyOnePerRoom" type="checkbox"><span><strong>Пессимизация: одно объявление на комнатность</strong><small>Для студий, 1-, 2-, 3-комнатных и других групп будет выбран один представитель. Остальные квартиры останутся в проекте, но не будут передаваться на площадку.</small></span></label></div>
+          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Источник</label><select id="trafficPolicySource"></select></div><div class="field"><label for="trafficPolicyMode">Режим пессимизации</label><select id="trafficPolicyMode"><option value="all">Публиковать все объявления</option><option value="one-per-room">По одному объекту каждой комнатности</option><option value="one-per-complex-room">По одному объекту каждой комнатности в каждом ЖК/доме</option></select><small class="field-hint">Остальные квартиры останутся в проекте, но не будут передаваться на площадку.</small></div></div>
           <div class="traffic-policy-note" id="trafficPolicySummary"></div>
           <div class="traffic-room-list" id="trafficRoomSelections"></div>
           <div class="traffic-policy-help">Новые объекты будут попадать в соответствующую группу при синхронизации. Если выбранный представитель исчезнет из исходного фида, сервис автоматически выберет другой объект этой комнатности.</div>
@@ -5667,15 +5667,28 @@
 
     function sourceTrafficPolicy(source) {
       return {
-        mode: source?.trafficPolicy === "one-per-room" ? "one-per-room" : "all",
+        mode: ["one-per-room", "one-per-complex-room"].includes(source?.trafficPolicy) ? source.trafficPolicy : "all",
         selections: source?.trafficSelections && typeof source.trafficSelections === "object" ? source.trafficSelections : {}
       };
     }
 
-    function trafficPolicyGroups(items = []) {
+    function trafficPolicyGroupKey(item, mode = "one-per-room") {
+      const room = roomPolicyKey(item.rooms);
+      if (mode !== "one-per-complex-room") return room;
+      const complex = String(item.complexName || item.buildingName || item.houseId || item.address || "Без ЖК").trim() || "Без ЖК";
+      return `${complex}::${room}`;
+    }
+
+    function trafficPolicyGroupLabel(key, mode = "one-per-room") {
+      if (mode !== "one-per-complex-room") return roomPolicyLabel(key);
+      const [complex, room] = String(key).split("::");
+      return `${complex || "Без ЖК"} · ${roomPolicyLabel(room)}`;
+    }
+
+    function trafficPolicyGroups(items = [], mode = "one-per-room") {
       const groups = new Map();
       items.forEach(item => {
-        const key = roomPolicyKey(item.rooms);
+        const key = trafficPolicyGroupKey(item, mode);
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(item);
       });
@@ -5686,7 +5699,7 @@
       const ids = items.map(item => item.externalId).filter(Boolean);
       const policy = sourceTrafficPolicy(source);
       if (policy.mode !== "one-per-room") return ids;
-      return trafficPolicyGroups(items).map(([key, group]) => {
+      return trafficPolicyGroups(items, policy.mode).map(([key, group]) => {
         const selected = group.find(item => item.externalId === policy.selections[key]);
         return (selected || group[0])?.externalId;
       }).filter(Boolean);
@@ -5720,22 +5733,27 @@
       content.hidden = false;
       panel.querySelector("#trafficPolicyEmpty").hidden = true;
       const policy = sourceTrafficPolicy(source);
-      const toggle = document.querySelector("#trafficPolicyOnePerRoom");
-      toggle.checked = policy.mode === "one-per-room";
-      const groups = trafficPolicyGroups(sourceObjects(source.id));
+      const modeSelect = document.querySelector("#trafficPolicyMode");
+      modeSelect.value = policy.mode;
+      const groups = trafficPolicyGroups(sourceObjects(source.id), policy.mode);
       const map = document.querySelector("#trafficRoomSelections");
       map.innerHTML = groups.length ? groups.map(([key, group]) => {
         const selected = group.find(item => item.externalId === policy.selections[key]) || group[0];
-        return `<div class="traffic-room-row"><div><strong>${escapeXml(roomPolicyLabel(key))}</strong><small>${group.length} объявлений · в публикации останется 1</small></div><select data-traffic-room="${escapeXml(key)}" ${policy.mode === "one-per-room" ? "" : "disabled"}>${group.map(item => `<option value="${escapeXml(item.externalId)}" ${item.externalId === selected?.externalId ? "selected" : ""}>${escapeXml(`${item.externalId || "Без ID"} · ${item.totalArea || "—"} м² · ${item.price || "—"} ₽`)}</option>`).join("")}</select></div>`;
+        return `<div class="traffic-room-row"><div><strong>${escapeXml(trafficPolicyGroupLabel(key, policy.mode))}</strong><small>${group.length} объявлений · в публикации останется 1</small></div><select data-traffic-room="${escapeXml(key)}" ${policy.mode === "all" ? "disabled" : ""}>${group.map(item => `<option value="${escapeXml(item.externalId)}" ${item.externalId === selected?.externalId ? "selected" : ""}>${escapeXml(`${item.externalId || "Без ID"} · ${item.totalArea || "—"} м² · ${item.price || "—"} ₽`)}</option>`).join("")}</select></div>`;
       }).join("") : `<div class="traffic-empty">Загрузите объекты с заполненной комнатностью, чтобы настроить витрину.</div>`;
       const count = trafficPolicyIncludedIds(source, sourceObjects(source.id)).length;
-      document.querySelector("#trafficPolicySummary").textContent = policy.mode === "one-per-room" ? `В публикации останется ${count} объявлений — по одному на каждую комнатность.` : `Сейчас публикуются все ${sourceObjects(source.id).length} объявлений этого источника.`;
+      const summary = policy.mode === "one-per-room"
+        ? `В публикации останется ${count} объявлений — по одному на каждую комнатность.`
+        : policy.mode === "one-per-complex-room"
+          ? `В публикации останется ${count} объявлений — по одному на каждую комнатность внутри каждого ЖК/дома.`
+          : `Сейчас публикуются все ${sourceObjects(source.id).length} объявлений этого источника.`;
+      document.querySelector("#trafficPolicySummary").textContent = summary;
     }
 
     function saveTrafficPolicy(sourceId, nextPolicy) {
       const source = projectSources.find(item => item.id === sourceId);
       if (!source) return;
-      source.trafficPolicy = nextPolicy.mode === "one-per-room" ? "one-per-room" : "all";
+      source.trafficPolicy = ["one-per-room", "one-per-complex-room"].includes(nextPolicy.mode) ? nextPolicy.mode : "all";
       source.trafficSelections = nextPolicy.selections || {};
       saveProjectSources();
       invalidateGeneratedLink();
@@ -10691,11 +10709,11 @@ ${photos}
       selectSource(event.target.value);
       renderTrafficPolicy();
     });
-    document.querySelector("#trafficPolicyOnePerRoom")?.addEventListener("change", event => {
+    document.querySelector("#trafficPolicyMode")?.addEventListener("change", event => {
       const sourceId = document.querySelector("#trafficPolicySource")?.value;
       const source = projectSources.find(item => item.id === sourceId);
       if (!source) return;
-      saveTrafficPolicy(sourceId, { mode: event.target.checked ? "one-per-room" : "all", selections: sourceTrafficPolicy(source).selections });
+      saveTrafficPolicy(sourceId, { mode: event.target.value, selections: sourceTrafficPolicy(source).selections });
     });
     document.querySelector("#trafficRoomSelections")?.addEventListener("change", event => {
       const select = event.target.closest("[data-traffic-room]");

@@ -74,3 +74,9 @@ test("one-per-room traffic policy keeps a chosen representative and applies to n
   assert.match(result.xml, /one-b/);
   assert.match(result.xml, /two-a/);
 });
+
+test("one-per-complex-room policy keeps one representative inside each ЖК", () => {
+  const source = `<feed><object><ExternalId>a1</ExternalId><Name>Солнечный</Name><FlatRoomsCount>1</FlatRoomsCount><Price>10</Price></object><object><ExternalId>a2</ExternalId><Name>Солнечный</Name><FlatRoomsCount>1</FlatRoomsCount><Price>11</Price></object><object><ExternalId>b1</ExternalId><Name>Речной</Name><FlatRoomsCount>1</FlatRoomsCount><Price>12</Price></object></feed>`;
+  const { records, trafficPolicyExcludedIds } = require("./feed-sync");
+  assert.deepEqual(trafficPolicyExcludedIds(records(source), { mode: "one-per-complex-room" }), ["a2"]);
+});

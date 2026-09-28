@@ -584,7 +584,7 @@ function validateFeedPayload(payload) {
       autoSyncIntervalMinutes: normalizeAutoSyncInterval(source?.autoSyncIntervalMinutes),
       objectIds: [...new Set(Array.isArray(source?.objectIds) ? source.objectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])],
       excludedObjectIds: [...new Set(Array.isArray(source?.excludedObjectIds) ? source.excludedObjectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])],
-      trafficPolicy: source?.trafficPolicy === "one-per-room" ? "one-per-room" : "all",
+      trafficPolicy: ["one-per-room", "one-per-complex-room"].includes(source?.trafficPolicy) ? source.trafficPolicy : "all",
       trafficSelections: source?.trafficSelections && typeof source.trafficSelections === "object"
         ? Object.fromEntries(Object.entries(source.trafficSelections).slice(0, 100).map(([key, value]) => [String(key).slice(0, 40), String(value).slice(0, 160)]))
         : {}

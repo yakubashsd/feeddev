@@ -44,6 +44,10 @@ function recordRooms(xml) {
   return normalizeId(textTag(xml, ["FlatRoomsCount", "Rooms", "rooms", "room-count", "roomCount"]));
 }
 
+function recordComplex(xml) {
+  return normalizeId(textTag(xml, ["ComplexName", "building-name", "BuildingName", "Name"]));
+}
+
 function records(xml) {
   const result = [];
   const matcher = /<(Ad|offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi;
@@ -52,6 +56,7 @@ function records(xml) {
       id: recordId(match[0]),
       price: recordPrice(match[0]),
       rooms: recordRooms(match[0]),
+      complex: recordComplex(match[0]),
       block: match[0],
       tag: match[1],
       index: match.index,
@@ -69,11 +74,12 @@ function roomPolicyKey(value = "") {
 }
 
 function trafficPolicyExcludedIds(items = [], policy = {}) {
-  if (policy?.mode !== "one-per-room") return [];
+  if (!["one-per-room", "one-per-complex-room"].includes(policy?.mode)) return [];
   const groups = new Map();
   for (const item of items) {
     if (!item.id) continue;
-    const key = roomPolicyKey(item.rooms);
+    const roomKey = roomPolicyKey(item.rooms);
+    const key = policy.mode === "one-per-complex-room" ? `${roomPolicyKey(item.complex)}::${roomKey}` : roomKey;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(item);
   }
