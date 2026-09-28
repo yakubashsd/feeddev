@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { synchronizeFeed, synchronizePrices } = require("./feed-sync");
+const { synchronizeFeed, synchronizePrices, trafficPolicyExcludedIds } = require("./feed-sync");
 
 test("synchronizes only matching prices and preserves other published fields", () => {
   const source = `<Ads><Ad><Id>42</Id><BargainTerms><Price>9100000</Price></BargainTerms></Ad></Ads>`;
@@ -57,4 +57,20 @@ test("Yandex offers keep edited text while source controls price and membership"
   assert.match(result.xml, /internal-id="a"[\s\S]*?<description>Edited A<\/description>[\s\S]*?<value>120<\/value>/);
   assert.match(result.xml, /internal-id="b"/);
   assert.doesNotMatch(result.xml, /internal-id="old"/);
+});
+
+test("one-per-room traffic policy keeps a chosen representative and applies to new objects", () => {
+  const source = `<feed>
+    <object><ExternalId>one-a</ExternalId><FlatRoomsCount>1</FlatRoomsCount><Description>A</Description><Address>A</Address><BargainTerms><Price>100</Price></BargainTerms></object>
+    <object><ExternalId>one-b</ExternalId><FlatRoomsCount>1</FlatRoomsCount><Description>B</Description><Address>B</Address><BargainTerms><Price>110</Price></BargainTerms></object>
+    <object><ExternalId>two-a</ExternalId><FlatRoomsCount>2</FlatRoomsCount><Description>C</Description><Address>C</Address><BargainTerms><Price>200</Price></BargainTerms></object>
+  </feed>`;
+  const published = `<feed><object><ExternalId>one-a</ExternalId><Description>Edited</Description><Address>A</Address><BargainTerms><Price>90</Price></BargainTerms></object><object><ExternalId>two-a</ExternalId><Description>C</Description><Address>C</Address><BargainTerms><Price>190</Price></BargainTerms></object></feed>`;
+  const records = require("./feed-sync").records(source);
+  assert.deepEqual(trafficPolicyExcludedIds(records, { mode: "one-per-room", selections: { "1": "one-b" } }), ["one-a"]);
+  const result = synchronizeFeed(published, source, { managedIds: ["one-a", "two-a"], excludedIds: trafficPolicyExcludedIds(records, { mode: "one-per-room", selections: { "1": "one-b" } }) });
+  assert.equal(result.outputCount, 2);
+  assert.doesNotMatch(result.xml, /one-a/);
+  assert.match(result.xml, /one-b/);
+  assert.match(result.xml, /two-a/);
 });

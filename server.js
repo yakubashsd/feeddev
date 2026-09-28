@@ -17,7 +17,7 @@ const { createProjectStateStore } = require("./project-state-store");
 const { createSupportTicketStore } = require("./support-tickets");
 const { createPlatega } = require("./platega");
 const { inspectLaunchReadiness } = require("./launch-readiness");
-const { records: feedRecords, synchronizeFeed } = require("./feed-sync");
+const { records: feedRecords, synchronizeFeed, trafficPolicyExcludedIds } = require("./feed-sync");
 const { download: safeDownload, downloadBuffer: safeDownloadBuffer } = require("./feed-monitor");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -583,7 +583,11 @@ function validateFeedPayload(payload) {
       sourceType: String(source?.sourceType || "").trim() === "url" ? "url" : "file",
       autoSyncIntervalMinutes: normalizeAutoSyncInterval(source?.autoSyncIntervalMinutes),
       objectIds: [...new Set(Array.isArray(source?.objectIds) ? source.objectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])],
-      excludedObjectIds: [...new Set(Array.isArray(source?.excludedObjectIds) ? source.excludedObjectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])]
+      excludedObjectIds: [...new Set(Array.isArray(source?.excludedObjectIds) ? source.excludedObjectIds.map(value => String(value).trim()).filter(Boolean).slice(0, 100000) : [])],
+      trafficPolicy: source?.trafficPolicy === "one-per-room" ? "one-per-room" : "all",
+      trafficSelections: source?.trafficSelections && typeof source.trafficSelections === "object"
+        ? Object.fromEntries(Object.entries(source.trafficSelections).slice(0, 100).map(([key, value]) => [String(key).slice(0, 40), String(value).slice(0, 160)]))
+        : {}
     })) : []
   };
 }
@@ -702,7 +706,8 @@ async function syncPublishedFeed(record) {
   if (!fs.existsSync(filePath)) throw new Error("Опубликованный XML не найден");
   const publishedXml = fs.readFileSync(filePath, "utf8");
   const managedIds = configuredSources.flatMap(source => Array.isArray(source.objectIds) ? source.objectIds : []);
-  const excludedIds = configuredSources.flatMap(source => Array.isArray(source.excludedObjectIds) ? source.excludedObjectIds : []);
+  const policyExcludedIds = downloadedSources.flatMap(({ source, xml }) => trafficPolicyExcludedIds(feedRecords(xml), { mode: source.trafficPolicy, selections: source.trafficSelections }));
+  const excludedIds = [...new Set(configuredSources.flatMap(source => Array.isArray(source.excludedObjectIds) ? source.excludedObjectIds : []).concat(policyExcludedIds))];
   const result = synchronizeFeed(publishedXml, downloadedSources.map(item => item.xml), {
     ...(managedIds.length ? { managedIds } : {}),
     excludedIds

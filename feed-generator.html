@@ -4660,6 +4660,7 @@
         </div>
       </div>
       <div class="nav-label nav-label-secondary" id="projectControlLabel">Контроль фида</div>
+      <button type="button" class="nav-item" data-nav="strategy"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/></svg><span class="nav-text">Стратегия публикации</span></button>
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг и ошибки</span></button>
       <div class="nav-label nav-label-secondary">Помощь</div>
       <button type="button" class="nav-item" data-nav="support"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22a10 10 0 1 0-10-10v4a2 2 0 0 0 2 2h2v-6H4a8 8 0 0 1 16 0h-2v6h2a2 2 0 0 0 2-2v-4"/><path d="M9 18c.7 1.3 1.7 2 3 2h2"/></svg><span class="nav-text">Техподдержка</span></button>
@@ -4794,6 +4795,17 @@
         <div class="source-schedule-note">Выберите интервал от 30 минут до суток. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
+        </div>
+      </section>
+
+      <section class="strategy-panel page-hidden" id="trafficPolicyPanel" data-page="strategy">
+        <header class="strategy-heading"><div><span class="eyebrow">Контроль объёма публикации</span><h2 class="panel-title">Стратегия публикации</h2><p class="panel-caption">Сократите количество объявлений на площадке, не удаляя квартиры из проекта. Настройка действует только для выбранного источника.</p></div></header>
+        <div id="trafficPolicyEmpty" class="traffic-empty" hidden>Сначала добавьте источник в проект.</div>
+        <div id="trafficPolicyContent" class="traffic-policy-content">
+          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Источник</label><select id="trafficPolicySource"></select></div><label class="traffic-policy-toggle"><input id="trafficPolicyOnePerRoom" type="checkbox"><span><strong>Оставлять по одному объявлению на комнатность</strong><small>Для студий, 1-, 2-, 3-комнатных и других групп будет выбран один представитель.</small></span></label></div>
+          <div class="traffic-policy-note" id="trafficPolicySummary"></div>
+          <div class="traffic-room-list" id="trafficRoomSelections"></div>
+          <div class="traffic-policy-help">Новые объекты будут попадать в соответствующую группу при синхронизации. Если выбранный представитель исчезнет из исходного фида, сервис автоматически выберет другой объект этой комнатности.</div>
         </div>
       </section>
 
@@ -5571,7 +5583,7 @@
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     const requestedPage = new URLSearchParams(location.search).get("page");
-    let activePage = requestedPage === "support" ? "support" : currentProject && ["overview", "source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "overview" : "projects";
+    let activePage = requestedPage === "support" ? "support" : currentProject && ["overview", "source", "complexes", "apartments", "branding", "results", "strategy", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "overview" : "projects";
     let projectPage = 1;
     const selectedProjectIds = new Set();
     let sortState = { key: "", direction: "asc" };
@@ -5599,7 +5611,7 @@
     let publishedComplexes = new Set(JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]"));
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
     if (!projectSources.length && appState.feedUrl) {
-      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "720", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "" }];
+      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "720", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} }];
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
       objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
       originalObjects = structuredClone(objects);
@@ -5634,6 +5646,103 @@
       renderAll();
       const source = projectSources.find(item => item.id === activeSourceId);
       showToast(source ? `Выбран фид «${source.name || source.url}»` : "Показаны все фиды проекта");
+    }
+
+    function roomPolicyKey(value = "") {
+      const normalized = String(value || "").trim().toLowerCase();
+      if (!normalized || normalized.includes("студ")) return normalized.includes("студ") ? "studio" : "unknown";
+      const number = normalized.match(/\d+(?:[.,]\d+)?/)?.[0];
+      return number ? String(Number(number.replace(",", "."))) : normalized;
+    }
+
+    function roomPolicyLabel(key = "") {
+      if (key === "studio") return "Студии";
+      if (key === "unknown") return "Без комнатности";
+      return `${key}-комнатные`;
+    }
+
+    function sourceObjects(sourceId) {
+      return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(sourceId));
+    }
+
+    function sourceTrafficPolicy(source) {
+      return {
+        mode: source?.trafficPolicy === "one-per-room" ? "one-per-room" : "all",
+        selections: source?.trafficSelections && typeof source.trafficSelections === "object" ? source.trafficSelections : {}
+      };
+    }
+
+    function trafficPolicyGroups(items = []) {
+      const groups = new Map();
+      items.forEach(item => {
+        const key = roomPolicyKey(item.rooms);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+      return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], "ru", { numeric: true }));
+    }
+
+    function trafficPolicyIncludedIds(source, items = sourceObjects(source?.id)) {
+      const ids = items.map(item => item.externalId).filter(Boolean);
+      const policy = sourceTrafficPolicy(source);
+      if (policy.mode !== "one-per-room") return ids;
+      return trafficPolicyGroups(items).map(([key, group]) => {
+        const selected = group.find(item => item.externalId === policy.selections[key]);
+        return (selected || group[0])?.externalId;
+      }).filter(Boolean);
+    }
+
+    function publicationObjectsForCurrentContext() {
+      const scope = activeSourceId === "all" ? objects : workingObjects();
+      if (!projectSources.length) return scope;
+      const sourceIds = activeSourceId === "all" ? projectSources.map(source => source.id) : [activeSourceId];
+      const allowed = new Set(sourceIds.flatMap(sourceId => {
+        const source = projectSources.find(item => item.id === sourceId);
+        return source ? trafficPolicyIncludedIds(source, sourceObjects(source.id)) : [];
+      }));
+      return scope.filter(item => !item.externalId || allowed.has(item.externalId));
+    }
+
+    function renderTrafficPolicy() {
+      const panel = document.querySelector("#trafficPolicyPanel");
+      const content = document.querySelector("#trafficPolicyContent");
+      const sourceSelect = document.querySelector("#trafficPolicySource");
+      if (!panel || !content || !sourceSelect) return;
+      sourceSelect.innerHTML = projectSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || platformProfiles[source.platform]?.name || "Источник")}</option>`).join("");
+      const selectedSourceId = projectSources.some(source => source.id === activeSourceId) ? activeSourceId : projectSources[0]?.id || "";
+      sourceSelect.value = selectedSourceId;
+      const source = projectSources.find(item => item.id === sourceSelect.value);
+      if (!source) {
+        content.hidden = true;
+        panel.querySelector("#trafficPolicyEmpty").hidden = false;
+        return;
+      }
+      content.hidden = false;
+      panel.querySelector("#trafficPolicyEmpty").hidden = true;
+      const policy = sourceTrafficPolicy(source);
+      const toggle = document.querySelector("#trafficPolicyOnePerRoom");
+      toggle.checked = policy.mode === "one-per-room";
+      const groups = trafficPolicyGroups(sourceObjects(source.id));
+      const map = document.querySelector("#trafficRoomSelections");
+      map.innerHTML = groups.length ? groups.map(([key, group]) => {
+        const selected = group.find(item => item.externalId === policy.selections[key]) || group[0];
+        return `<div class="traffic-room-row"><div><strong>${escapeXml(roomPolicyLabel(key))}</strong><small>${group.length} объявлений · в публикации останется 1</small></div><select data-traffic-room="${escapeXml(key)}" ${policy.mode === "one-per-room" ? "" : "disabled"}>${group.map(item => `<option value="${escapeXml(item.externalId)}" ${item.externalId === selected?.externalId ? "selected" : ""}>${escapeXml(`${item.externalId || "Без ID"} · ${item.totalArea || "—"} м² · ${item.price || "—"} ₽`)}</option>`).join("")}</select></div>`;
+      }).join("") : `<div class="traffic-empty">Загрузите объекты с заполненной комнатностью, чтобы настроить витрину.</div>`;
+      const count = trafficPolicyIncludedIds(source, sourceObjects(source.id)).length;
+      document.querySelector("#trafficPolicySummary").textContent = policy.mode === "one-per-room" ? `В публикации останется ${count} объявлений — по одному на каждую комнатность.` : `Сейчас публикуются все ${sourceObjects(source.id).length} объявлений этого источника.`;
+    }
+
+    function saveTrafficPolicy(sourceId, nextPolicy) {
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!source) return;
+      source.trafficPolicy = nextPolicy.mode === "one-per-room" ? "one-per-room" : "all";
+      source.trafficSelections = nextPolicy.selections || {};
+      saveProjectSources();
+      invalidateGeneratedLink();
+      save();
+      renderTrafficPolicy();
+      renderAll();
+      showToast("Стратегия публикации сохранена. Повторно сохраните фид, чтобы обновить ссылку.");
     }
 
     const form = document.querySelector("#editorForm");
@@ -6835,7 +6944,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Все проекты", overview: "Обзор проекта", source: "Источники видов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Все проекты", overview: "Обзор проекта", source: "Источники видов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -6905,6 +7014,7 @@
       if (activePage === "complexes") renderComplexes();
       if (activePage === "billing") renderBilling();
       if (activePage === "results") { renderReleasePreflight(); renderReleaseHistory(); }
+      if (activePage === "strategy") renderTrafficPolicy();
       if (activePage === "support") renderSupportPage();
     }
 
@@ -6990,7 +7100,7 @@
         if (nextUrl.href !== window.location.href) history.pushState({ listingflowPage: page }, "", nextUrl);
         return;
       }
-      if (!currentProject || !["overview", "source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(page)) return;
+      if (!currentProject || !["overview", "source", "complexes", "apartments", "branding", "results", "strategy", "feeds", "billing"].includes(page)) return;
       nextUrl.searchParams.set("project", currentProject.id);
       if (page === "source") nextUrl.searchParams.delete("page");
       else nextUrl.searchParams.set("page", page);
@@ -7014,7 +7124,7 @@
         return;
       }
       const route = url.searchParams.get("page");
-      activePage = route === "support" ? "support" : currentProject && ["overview", "source", "complexes", "apartments", "branding", "results", "feeds", "billing"].includes(route) ? route : currentProject ? "overview" : "projects";
+      activePage = route === "support" ? "support" : currentProject && ["overview", "source", "complexes", "apartments", "branding", "results", "strategy", "feeds", "billing"].includes(route) ? route : currentProject ? "overview" : "projects";
       renderPage();
     });
     document.querySelectorAll("[data-step]").forEach(button => {
@@ -9322,10 +9432,10 @@ ${photos}
       return `<?xml version="1.0" encoding="UTF-8"?>\n<DomclickFeed>\n  <GeneratedAt>${new Date().toISOString()}</GeneratedAt>\n${body}\n</DomclickFeed>\n`;
     }
 
-    function validateFeedForPlatform(platform = activePlatform) {
+    function validateFeedForPlatform(platform = activePlatform, scopedObjects = null) {
       const findings = [];
       const add = (severity, title, message, ids = []) => findings.push({ severity, title, message, ids });
-      const currentObjects = workingObjects();
+      const currentObjects = Array.isArray(scopedObjects) ? scopedObjects : workingObjects();
       if (!currentObjects.length) {
         add("warning", "Фид не загружен", "Сначала загрузите ссылку или XML-файл в рабочей области.");
         return findings;
@@ -9781,7 +9891,9 @@ ${photos}
           objectCount: parsed.objects.length,
           updatedAt: new Date().toISOString(),
           error: "",
-          excludedObjectIds: [...excludedObjectIds]
+          excludedObjectIds: [...excludedObjectIds],
+          trafficPolicy: existingSource?.trafficPolicy || "all",
+          trafficSelections: existingSource?.trafficSelections || {}
         };
         const sourceIndex = projectSources.findIndex(source => source.id === id);
         if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
@@ -9832,10 +9944,10 @@ ${photos}
     function downloadXml() {
       validated = true;
       renderValidation();
-      const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const currentObjects = workingObjects();
+      const currentObjects = publicationObjectsForCurrentContext();
+      const platformErrors = validateFeedForPlatform(activePlatform, currentObjects).filter(item => item.severity === "error");
       const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
-      const blob = new Blob([buildXml(workingObjects(), activePlatform)], { type: "application/xml;charset=utf-8" });
+      const blob = new Blob([buildXml(currentObjects, activePlatform)], { type: "application/xml;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `${platformProfiles[activePlatform].downloadPrefix}-${new Date().toISOString().slice(0, 10)}.xml`;
@@ -9925,7 +10037,11 @@ ${photos}
         : projectSources.filter(source => source.id === activeSourceId);
       return selectedSources.map(source => {
         const belongsToSource = item => item._sourceId === source.id || (item._sourceIds || []).includes(source.id);
-        const objectIds = publicationObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
+        const sourceObjectsForPublication = publicationObjects.filter(belongsToSource);
+        const policy = typeof sourceTrafficPolicy === "function" ? sourceTrafficPolicy(source) : { mode: "all", selections: {} };
+        const objectIds = typeof trafficPolicyIncludedIds === "function"
+          ? trafficPolicyIncludedIds(source, sourceObjectsForPublication)
+          : sourceObjectsForPublication.map(item => item.externalId).filter(Boolean);
         const originalIds = originalObjects.filter(belongsToSource).map(item => item.externalId).filter(Boolean);
         const currentIds = new Set(objectIds);
         return {
@@ -9934,7 +10050,9 @@ ${photos}
           sourceType: /^https?:\/\//i.test(source.url || "") ? "url" : "file",
           autoSyncIntervalMinutes: Number(source.interval) || 0,
           objectIds,
-          excludedObjectIds: [...new Set([...(source.excludedObjectIds || []), ...originalIds.filter(id => !currentIds.has(id))])]
+          excludedObjectIds: [...new Set([...(source.excludedObjectIds || []), ...originalIds.filter(id => !currentIds.has(id))])],
+          trafficPolicy: policy.mode,
+          trafficSelections: policy.selections
         };
       });
     }
@@ -9985,8 +10103,8 @@ ${photos}
         showToast("Постоянная публикация Домклик закрыта до подтверждения схемы агрегатором. Можно скачать тестовый XML.");
         return;
       }
-      const platformErrors = validateFeedForPlatform(activePlatform).filter(item => item.severity === "error");
-      const currentObjects = workingObjects();
+      const currentObjects = publicationObjectsForCurrentContext();
+      const platformErrors = validateFeedForPlatform(activePlatform, currentObjects).filter(item => item.severity === "error");
       const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       if (platformErrors.length || bad.length) {
         const examples = [...platformErrors.map(item => item.message || item.title), ...bad].filter(Boolean).slice(0, 3);
@@ -10002,7 +10120,7 @@ ${photos}
         showToast("Проверьте название фида перед генерацией ссылки");
         return;
       }
-      const xml = buildXml(currentObjects, activePlatform);
+      const xml = buildXml(publicationObjectsForCurrentContext(), activePlatform);
       const button = document.querySelector("#generateLinkBtn");
       const publicationKey = activePublicationKey();
       const publication = appState.publishedFeeds?.[publicationKey] || {};
@@ -10019,7 +10137,7 @@ ${photos}
           sourceUrl: appState.feedUrl || document.querySelector("#feedUrl").value,
           sourceType: /^https?:\/\//i.test(appState.feedUrl || "") ? "url" : "file",
           xml,
-          objectCount: currentObjects.length,
+          objectCount: publicationObjectsForCurrentContext().length,
           name: feedName,
           slug: generatedFeedId(feedName)
         });
@@ -10569,6 +10687,24 @@ ${photos}
       document.querySelector("#appShell").classList.remove("nav-open");
       document.querySelector("#sidebarToggle").setAttribute("aria-expanded", "false");
     });
+    document.querySelector("#trafficPolicySource")?.addEventListener("change", event => {
+      selectSource(event.target.value);
+      renderTrafficPolicy();
+    });
+    document.querySelector("#trafficPolicyOnePerRoom")?.addEventListener("change", event => {
+      const sourceId = document.querySelector("#trafficPolicySource")?.value;
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!source) return;
+      saveTrafficPolicy(sourceId, { mode: event.target.checked ? "one-per-room" : "all", selections: sourceTrafficPolicy(source).selections });
+    });
+    document.querySelector("#trafficRoomSelections")?.addEventListener("change", event => {
+      const select = event.target.closest("[data-traffic-room]");
+      const sourceId = document.querySelector("#trafficPolicySource")?.value;
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!select || !source) return;
+      const policy = sourceTrafficPolicy(source);
+      saveTrafficPolicy(sourceId, { mode: policy.mode, selections: { ...policy.selections, [select.dataset.trafficRoom]: select.value } });
+    });
     document.querySelector(".nav-workflow-toggle").addEventListener("click", event => {
       const workflow = event.currentTarget.closest(".nav-workflow");
       const expanded = workflow.classList.toggle("expanded");
@@ -10753,7 +10889,7 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || file.name;
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
-        projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
+        projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} });
         setSourceContext(sourceId);
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;

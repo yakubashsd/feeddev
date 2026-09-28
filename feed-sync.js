@@ -40,6 +40,10 @@ function recordPrice(xml) {
   return normalizePrice(attribute || textTag(xml, ["Price", "price"]));
 }
 
+function recordRooms(xml) {
+  return normalizeId(textTag(xml, ["FlatRoomsCount", "Rooms", "rooms", "room-count", "roomCount"]));
+}
+
 function records(xml) {
   const result = [];
   const matcher = /<(Ad|offer|object)\b[^>]*>[\s\S]*?<\/\1>/gi;
@@ -47,6 +51,7 @@ function records(xml) {
     result.push({
       id: recordId(match[0]),
       price: recordPrice(match[0]),
+      rooms: recordRooms(match[0]),
       block: match[0],
       tag: match[1],
       index: match.index,
@@ -54,6 +59,32 @@ function records(xml) {
     });
   }
   return result;
+}
+
+function roomPolicyKey(value = "") {
+  const normalized = normalizeId(value).toLowerCase();
+  if (!normalized || normalized.includes("студ")) return normalized.includes("студ") ? "studio" : "unknown";
+  const number = normalized.match(/\d+(?:[.,]\d+)?/)?.[0];
+  return number ? String(Number(number.replace(",", "."))) : normalized;
+}
+
+function trafficPolicyExcludedIds(items = [], policy = {}) {
+  if (policy?.mode !== "one-per-room") return [];
+  const groups = new Map();
+  for (const item of items) {
+    if (!item.id) continue;
+    const key = roomPolicyKey(item.rooms);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const selections = policy?.selections && typeof policy.selections === "object" ? policy.selections : {};
+  const excluded = [];
+  for (const [key, group] of groups) {
+    const selectedId = normalizeId(selections[key] || "");
+    const keep = group.find(item => item.id === selectedId) || group[0];
+    group.forEach(item => { if (item.id !== keep.id) excluded.push(item.id); });
+  }
+  return [...new Set(excluded)];
 }
 
 function replacePrice(block, price) {
@@ -170,4 +201,4 @@ function synchronizePrices(publishedXml, sourceXml) {
   return { xml, checked, updated, sourceCount: sourcePrices.size };
 }
 
-module.exports = { records, synchronizeFeed, synchronizePrices };
+module.exports = { records, synchronizeFeed, synchronizePrices, roomPolicyKey, trafficPolicyExcludedIds };

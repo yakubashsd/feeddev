@@ -387,6 +387,25 @@ body.client-ui[data-theme="dark"] #layoutsPanel .le-properties{background:var(--
 @media(max-width:1050px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 290px}body.client-ui #layoutsPanel .le-toolbar .le-save-state{display:none}}
 @media(max-width:760px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr)}body.client-ui #layoutsPanel .brand-preview{grid-column:1;grid-row:2;min-height:410px}body.client-ui #layoutsPanel .le-stage{min-height:300px;padding:12px}body.client-ui #layoutsPanel .le-properties{position:relative;top:auto;grid-column:1;grid-row:4;max-height:none}body.client-ui #layoutsPanel .brand-source-panel{grid-column:1;grid-row:3}body.client-ui #layoutsPanel .le-footer{grid-row:5}body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto}body.client-ui #layoutsPanel .le-toolbar button{min-height:34px}}
 
+body.client-ui .strategy-panel{display:grid;gap:18px}
+body.client-ui .strategy-heading{display:flex;justify-content:space-between;align-items:flex-start}
+body.client-ui .traffic-policy-content{display:grid;gap:14px}
+body.client-ui .traffic-policy-toolbar{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:14px;align-items:stretch}
+body.client-ui .traffic-policy-toolbar .field{margin:0}
+body.client-ui .traffic-policy-toggle{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid var(--lf-line);border-radius:8px;background:var(--lf-surface-2);cursor:pointer}
+body.client-ui .traffic-policy-toggle input{margin-top:3px;accent-color:var(--lf-blue)}
+body.client-ui .traffic-policy-toggle strong,body.client-ui .traffic-policy-toggle small{display:block}
+body.client-ui .traffic-policy-toggle small{margin-top:4px;color:var(--lf-muted);font-size:12px;line-height:1.4}
+body.client-ui .traffic-policy-note{padding:12px 14px;border-left:3px solid var(--lf-blue);background:var(--lf-blue-bg);color:var(--lf-text);font-size:13px}
+body.client-ui .traffic-room-list{display:grid;gap:8px}
+body.client-ui .traffic-room-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);gap:16px;align-items:center;padding:12px 14px;border:1px solid var(--lf-line);border-radius:8px;background:var(--lf-surface)}
+body.client-ui .traffic-room-row strong,body.client-ui .traffic-room-row small{display:block}
+body.client-ui .traffic-room-row small{margin-top:3px;color:var(--lf-muted);font-size:12px}
+body.client-ui .traffic-room-row select:disabled{opacity:.58;cursor:not-allowed}
+body.client-ui .traffic-policy-help{padding:12px 14px;border:1px dashed var(--lf-line);border-radius:8px;color:var(--lf-muted);font-size:12px;line-height:1.5}
+body.client-ui .traffic-empty{padding:28px;border:1px dashed var(--lf-line);border-radius:8px;color:var(--lf-muted);text-align:center}
+@media(max-width:760px){body.client-ui .traffic-policy-toolbar,body.client-ui .traffic-room-row{grid-template-columns:1fr}body.client-ui .traffic-room-row{gap:9px}body.client-ui .traffic-room-row select{width:100%}}
+
 /* ListingFlow design system — shared client/admin finish */
 body.client-ui,body.admin-ui{font-family:var(--lf-font)!important;font-size:14px!important;letter-spacing:0!important}
 body.client-ui :is(button,a),body.admin-ui :is(button,a){transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease!important}
