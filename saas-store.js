@@ -3,6 +3,9 @@ const fs = require("fs");
 const path = require("path");
 
 const PLAN = Object.freeze({ code: "projects", name: "Проекты", unitAmount: 5000, days: 30, minProjects: 1, maxProjects: 10 });
+// -1 is reserved for manually granted, non-billable unlimited access.
+// Paid plans remain limited by PLAN.maxProjects.
+const UNLIMITED_PROJECT_LIMIT = -1;
 const FILE_NAME = "saas-store.enc";
 const BLOB_PATH = "private/saas-store.enc";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,6 +48,10 @@ function publicUser(user = {}) {
   return { id: user.id, role: "client", email: user.email, name: user.name, company: user.company || "", phone: user.phone || "", status: user.status, projectLimit: Number(user.projectLimit || 1), subscriptionUntil: user.subscriptionUntil || null, sessionVersion: Number(user.sessionVersion || 1), createdAt: user.createdAt, updatedAt: user.updatedAt || user.createdAt };
 }
 function publicStaff(staff) { return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, status: staff.status, sessionVersion: Number(staff.sessionVersion || 1), createdAt: staff.createdAt }; }
+function isUnlimitedProjectLimit(value) { return Number(value) === UNLIMITED_PROJECT_LIMIT; }
+function projectLimitForEnforcement(value) {
+  return isUnlimitedProjectLimit(value) ? Infinity : Math.min(PLAN.maxProjects, Math.max(PLAN.minProjects, Number(value || 1)));
+}
 
 function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN) }) {
   if (!secret) throw new Error("Для внешнего режима задайте SAAS_DATA_SECRET.");
@@ -167,7 +174,7 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
       const user = state.users.find(item => item.id === userId);
       if (!user || user.status === "blocked") throw new Error("Аккаунт недоступен.");
       if (!isSubscriptionActive(user)) throw new Error("Сначала оплатите тариф.");
-      const limit = Math.min(PLAN.maxProjects, Math.max(PLAN.minProjects, Number(user.projectLimit || 1)));
+      const limit = projectLimitForEnforcement(user.projectLimit);
       if (state.projects.filter(project => project.userId === userId && project.status !== "archived").length >= limit) throw new Error(`На тарифе доступно проектов: ${limit} (учитываются только активные).`);
       const now = new Date().toISOString(); const project = { id: crypto.randomUUID(), userId, name: name.slice(0, 100), status: "active", createdAt: now, updatedAt: now };
       state.projects.push(project); audit(state, userId, "create", "project", project.id, { name: project.name }); const { userId: _, ...result } = project; return result;
@@ -178,7 +185,7 @@ async function deleteProject(userId, projectId) {
   }
   async function ownsProject(userId, projectId) { const state = await read(); return state.projects.some(project => project.userId === userId && project.id === projectId && project.status !== "archived"); }
   async function hasProject(userId, projectId) { const state = await read(); return state.projects.some(project => project.userId === userId && project.id === projectId); }
-  async function restoreProject(userId, projectId) { return mutate(async state => { const project = state.projects.find(item => item.id === projectId && item.userId === userId); if (!project) return false; const user = state.users.find(item => item.id === userId); const limit = Math.min(PLAN.maxProjects, Math.max(PLAN.minProjects, Number(user?.projectLimit || 1))); if (state.projects.filter(item => item.userId === userId && item.status !== "archived").length >= limit) throw new Error(`На тарифе доступно проектов: ${limit}. Освободите место или увеличьте лимит.`); project.status = "active"; project.archivedAt = null; project.updatedAt = new Date().toISOString(); audit(state, userId, "restore", "project", projectId, { name: project.name }); return true; }); }
+  async function restoreProject(userId, projectId) { return mutate(async state => { const project = state.projects.find(item => item.id === projectId && item.userId === userId); if (!project) return false; const user = state.users.find(item => item.id === userId); const limit = projectLimitForEnforcement(user?.projectLimit); if (state.projects.filter(item => item.userId === userId && item.status !== "archived").length >= limit) throw new Error(`На тарифе доступно проектов: ${limit}. Освободите место или увеличьте лимит.`); project.status = "active"; project.archivedAt = null; project.updatedAt = new Date().toISOString(); audit(state, userId, "restore", "project", projectId, { name: project.name }); return true; }); }
   async function createPayment(userId, projectCount = 1) {
     projectCount = Number(projectCount); if (!Number.isInteger(projectCount) || projectCount < PLAN.minProjects || projectCount > PLAN.maxProjects) throw new Error(`Выберите от ${PLAN.minProjects} до ${PLAN.maxProjects} проектов.`);
     return mutate(async state => {
@@ -240,10 +247,10 @@ async function deleteProject(userId, projectId) {
     const users = state.users.map(user => { const projects = state.projects.filter(project => project.userId === user.id); const payments = state.payments.filter(payment => payment.userId === user.id).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); return { ...publicUser(user), projects, activeProjects: projects.filter(project => project.status !== "archived").length, revenue: payments.filter(payment => payment.status === "paid").reduce((sum, payment) => sum + payment.amount, 0), payments }; });
     const currentMonth = series.at(-1)?.amount || 0, previousMonth = series.at(-2)?.amount || 0;
     const actorNames = new Map([...state.users, ...state.staff].map(account => [account.id, account.email]));
-    return { plan: PLAN, users, projects: state.projects.map(project => ({ ...project, client: publicUser(state.users.find(user => user.id === project.userId) || {}) })), payments: state.payments.map(payment => ({ ...payment, email: state.users.find(user => user.id === payment.userId)?.email || "", clientName: state.users.find(user => user.id === payment.userId)?.name || "" })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), paymentLogs: state.paymentLogs.slice(0, 500), staff: state.staff.map(publicStaff), audit: state.audit.slice(0, 100).map(item => ({ ...item, actor: actorNames.get(item.actor) || item.actor })), revenue: { total: paidPayments.reduce((sum, payment) => sum + payment.amount, 0), currentMonth, previousMonth, growthPercent: previousMonth ? Math.round(((currentMonth - previousMonth) / previousMonth) * 1000) / 10 : null, mrr: users.filter(user => isSubscriptionActive(user)).reduce((sum, user) => sum + user.projectLimit * PLAN.unitAmount, 0), series } };
+    return { plan: PLAN, users, projects: state.projects.map(project => ({ ...project, client: publicUser(state.users.find(user => user.id === project.userId) || {}) })), payments: state.payments.map(payment => ({ ...payment, email: state.users.find(user => user.id === payment.userId)?.email || "", clientName: state.users.find(user => user.id === payment.userId)?.name || "" })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), paymentLogs: state.paymentLogs.slice(0, 500), staff: state.staff.map(publicStaff), audit: state.audit.slice(0, 100).map(item => ({ ...item, actor: actorNames.get(item.actor) || item.actor })), revenue: { total: paidPayments.reduce((sum, payment) => sum + payment.amount, 0), currentMonth, previousMonth, growthPercent: previousMonth ? Math.round(((currentMonth - previousMonth) / previousMonth) * 1000) / 10 : null, mrr: users.filter(user => isSubscriptionActive(user)).reduce((sum, user) => sum + (isUnlimitedProjectLimit(user.projectLimit) ? 0 : user.projectLimit * PLAN.unitAmount), 0), series } };
   }
   async function updateUser(userId, changes, actor = "owner") {
-    return mutate(async state => { const user = state.users.find(item => item.id === userId); if (!user) throw new Error("Пользователь не найден."); if (changes.status && ["active", "pending_payment", "blocked"].includes(changes.status)) user.status = changes.status; if (changes.subscriptionUntil !== undefined) user.subscriptionUntil = changes.subscriptionUntil ? new Date(changes.subscriptionUntil).toISOString() : null; if (changes.projectLimit !== undefined) { const limit = Number(changes.projectLimit); if (!Number.isInteger(limit) || limit < PLAN.minProjects || limit > PLAN.maxProjects) throw new Error(`Лимит должен быть от ${PLAN.minProjects} до ${PLAN.maxProjects}.`); user.projectLimit = limit; } for (const key of ["name", "company", "phone"]) if (changes[key] !== undefined) user[key] = String(changes[key]).trim().slice(0, 160); user.updatedAt = new Date().toISOString(); audit(state, actor, "update", "client", user.id, { status: user.status, projectLimit: user.projectLimit }); return publicUser(user); });
+    return mutate(async state => { const user = state.users.find(item => item.id === userId); if (!user) throw new Error("Пользователь не найден."); if (changes.status && ["active", "pending_payment", "blocked"].includes(changes.status)) user.status = changes.status; if (changes.subscriptionUntil !== undefined) user.subscriptionUntil = changes.subscriptionUntil ? new Date(changes.subscriptionUntil).toISOString() : null; if (changes.projectLimit !== undefined) { const limit = Number(changes.projectLimit); if (!Number.isInteger(limit) || (limit !== UNLIMITED_PROJECT_LIMIT && (limit < PLAN.minProjects || limit > PLAN.maxProjects))) throw new Error(`Лимит должен быть от ${PLAN.minProjects} до ${PLAN.maxProjects} либо «Безлимит».`); user.projectLimit = limit; } for (const key of ["name", "company", "phone"]) if (changes[key] !== undefined) user[key] = String(changes[key]).trim().slice(0, 160); user.updatedAt = new Date().toISOString(); audit(state, actor, "update", "client", user.id, { status: user.status, projectLimit: user.projectLimit }); return publicUser(user); });
   }
   async function renameProject(userId, projectId, name) {
     name = String(name || "").trim();

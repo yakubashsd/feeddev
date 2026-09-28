@@ -5905,7 +5905,8 @@
       const receiptsReady = sessionState?.onlineReceiptsReady === true;
       button.disabled = onlineBilling && !receiptsReady;
       if (sessionState?.subscriptionActive && until) {
-        status.textContent = `Доступ к ${sessionState.user.projectLimit || 1} проектам оплачен до ${new Date(until).toLocaleDateString("ru-RU")}. Следующая оплата установит выбранный лимит и продлит срок ещё на 30 дней.`;
+        const projectAccess = Number(sessionState.user.projectLimit) === -1 ? "неограниченному числу проектов" : `${sessionState.user.projectLimit || 1} проектам`;
+        status.textContent = `Доступ к ${projectAccess} оплачен до ${new Date(until).toLocaleDateString("ru-RU")}. Следующая оплата установит выбранный лимит и продлит срок ещё на 30 дней.`;
         button.textContent = onlineBilling ? "Продлить онлайн" : "Запросить счёт";
       } else if (sessionState?.subscriptionReadOnly && sessionState?.subscriptionGraceUntil) {
         status.textContent = `Тариф закончился ${new Date(until).toLocaleDateString("ru-RU")}. До ${new Date(sessionState.subscriptionGraceUntil).toLocaleDateString("ru-RU")} доступен просмотр проектов и выпусков; редактирование отключено.`;
@@ -6770,7 +6771,8 @@
       const createButton = document.querySelector("#newProjectBtn");
       if (runtimeMode === "external") {
         const limit = Number(sessionState?.user?.projectLimit || 1);
-        const limitReached = activeProjects.length >= limit;
+        const unlimitedProjects = limit === -1;
+        const limitReached = !unlimitedProjects && activeProjects.length >= limit;
         createButton.disabled = limitReached;
         createButton.textContent = limitReached ? `Лимит проектов: ${limit}` : "Создать проект";
       } else {
