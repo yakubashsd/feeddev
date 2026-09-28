@@ -5718,7 +5718,7 @@
       const reset = mode === "reset";
       const nameField = document.querySelector("#loginNameField");
       nameField.hidden = !register;
-      nameField.style.display = register ? "grid" : "none";
+      nameField.style.setProperty("display", register ? "grid" : "none", "important");
       document.querySelector("#loginName").required = register;
       document.querySelector("#loginUsername").closest(".field").hidden = reset;
       document.querySelector("#loginUsername").required = !reset;
@@ -5727,7 +5727,7 @@
       document.querySelector("#loginPassword").autocomplete = register || reset ? "new-password" : "current-password";
       const passwordConfirmField = document.querySelector("#loginPasswordConfirmField");
       passwordConfirmField.hidden = !register;
-      passwordConfirmField.style.display = register ? "grid" : "none";
+      passwordConfirmField.style.setProperty("display", register ? "grid" : "none", "important");
       document.querySelector("#loginPasswordConfirm").required = register;
       document.querySelector("#authSwitch").hidden = reset || runtimeMode !== "external";
       const forgotPasswordLink = document.querySelector("#forgotPasswordLink");
