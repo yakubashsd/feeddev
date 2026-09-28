@@ -5854,6 +5854,17 @@
     function completeBootstrapSync() {
       const key = `listingflow-bootstrap-reload:${requestedProject || "project-list"}`;
       try { sessionStorage.removeItem(key); } catch (_) {}
+      try { sessionStorage.removeItem(`listingflow-bootstrap-hydrated:${requestedProject || "project-list"}`); } catch (_) {}
+    }
+
+    function needsProjectHydration() {
+      const key = `listingflow-bootstrap-hydrated:${requestedProject || "project-list"}`;
+      try { return sessionStorage.getItem(key) !== "1"; } catch (_) { return true; }
+    }
+
+    function markProjectHydrated() {
+      const key = `listingflow-bootstrap-hydrated:${requestedProject || "project-list"}`;
+      try { sessionStorage.setItem(key, "1"); } catch (_) {}
     }
 
     function configureExternalMode(state) {
@@ -6108,7 +6119,8 @@
             throw new Error("Не удалось завершить синхронизацию списка проектов. Обновите страницу ещё раз.");
           }
           updateBootStatus("Загружаю данные проекта…");
-          if (await hydrateExternalProjectState()) {
+          if (needsProjectHydration() && await hydrateExternalProjectState()) {
+            markProjectHydrated();
             if (reloadAfterBootstrapSync("Применяю сохранённые данные проекта…")) return;
             throw new Error("Не удалось завершить синхронизацию проекта. Обновите страницу ещё раз.");
           }
