@@ -28,7 +28,8 @@ test("external clients always hydrate the server project state without a local-v
   assert.doesNotMatch(hydrate, /pushExternalProjectState\(/);
   assert.match(hydrate, /for \(const key of projectStateKeys\(\)\) localStorage\.removeItem\(key\)/);
   assert.doesNotMatch(push, /const useLocal = confirm/);
-  assert.match(push, /Загружаем сохранённую версию проекта/);
+  assert.doesNotMatch(push, /location\.reload\(\)/);
+  assert.match(push, /обновите данные вручную/);
 });
 
 test("project boot uses bounded requests and cannot wait forever on project APIs", () => {

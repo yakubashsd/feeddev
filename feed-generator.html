@@ -5991,7 +5991,7 @@
       const result = await response.json().catch(() => ({}));
       if (response.status === 409) {
         cloudSaveConflict = true;
-        if (indicator) indicator.textContent = "Загружаем сохранённую версию проекта…";
+        if (indicator) indicator.textContent = "Проект изменён в другой вкладке — обновите данные вручную";
         const remoteState = result.current?.state || {};
         for (const key of projectStateKeys()) {
           if (Object.hasOwn(remoteState, key)) localStorage.setItem(key, remoteState[key]);
@@ -5999,7 +5999,7 @@
         }
         cloudSaveRevision = Number(result.current?.revision || 0);
         cloudSavedSnapshot = JSON.stringify(remoteState);
-        location.reload();
+        showToast("Проект изменён в другой вкладке. Текущие данные сохранены локально; обновите страницу, когда будете готовы загрузить серверную версию.");
         return;
       }
       if (!response.ok) {
