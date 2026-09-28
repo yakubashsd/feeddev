@@ -9973,8 +9973,6 @@ ${photos}
         const requestedPlatform = existingSource?.requestedPlatform || document.querySelector("#sourcePlatform").value;
         if (!parsed.objects.length) throw new Error("В XML не найдено объектов");
         const id = existingSource?.id || crypto.randomUUID();
-        const otherSources = projectSources.filter(source => source.id !== id);
-        if (otherSources.some(source => source.platform !== parsed.platform)) throw new Error("В одном проекте можно объединять источники только одной площадки. Для другого формата создайте отдельный проект.");
         activeSourceId = id;
         activePlatform = parsed.platform;
         activeMonitorPlatform = parsed.platform;
@@ -11022,9 +11020,6 @@ ${photos}
         const next = parsed.objects;
         if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
         const incomingPlatform = parsed.platform || "cian";
-        if (projectSources.some(source => source.platform !== incomingPlatform)) {
-          throw new Error("В одном проекте можно объединять источники только одной площадки. Для другого формата создайте отдельный проект.");
-        }
         const sourceId = crypto.randomUUID();
         const objectIdsBeforeImport = new Set(objects.map(item => item.externalId).filter(Boolean));
         activeSourceId = sourceId;
