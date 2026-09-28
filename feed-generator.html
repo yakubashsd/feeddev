@@ -5882,7 +5882,7 @@
 
     async function syncExternalProjects() {
       if (runtimeMode !== "external" || !["client", "customer"].includes(sessionState?.role)) return false;
-      const response = await fetch("/api/projects", { credentials: "same-origin", cache: "no-store" });
+      const response = await fetchWithTimeout("/api/projects", { credentials: "same-origin", cache: "no-store" });
       if (response.status === 402) return false;
       if (!response.ok) throw new Error("Не удалось загрузить проекты аккаунта.");
       const result = await response.json();
@@ -5954,7 +5954,7 @@
 
     async function hydrateExternalProjectState() {
       if (runtimeMode !== "external" || !currentProject || !["client", "customer"].includes(sessionState?.role)) return false;
-      const response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+      const response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
       if (!response.ok) return false;
       const remote = await response.json();
       cloudSaveRevision = Number(remote.revision || 0);

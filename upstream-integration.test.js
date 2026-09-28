@@ -31,6 +31,13 @@ test("external clients always hydrate the server project state without a local-v
   assert.match(push, /Загружаем сохранённую версию проекта/);
 });
 
+test("project boot uses bounded requests and cannot wait forever on project APIs", () => {
+  const sync = html.match(/    async function syncExternalProjects\([\s\S]*?\n    }\n\n    function projectStateKeys/)[0];
+  const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
+  assert.match(sync, /fetchWithTimeout\("\/api\/projects"/);
+  assert.match(hydrate, /fetchWithTimeout\(`\/api\/projects\/\$\{encodeURIComponent\(currentProject\.id\)\}\/state`/);
+});
+
 test("layout editor applies the size value and exposes a working canvas resize handle", () => {
   const draw = clientFunction("drawBrandedLayout");
   const startDrag = clientFunction("startBrandPreviewDrag");
