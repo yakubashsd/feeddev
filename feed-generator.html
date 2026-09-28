@@ -6120,7 +6120,6 @@
             updateBootStatus("Данные проекта синхронизированы…");
           }
           markBootstrapStage("state");
-          completeBootstrapSync();
           showWorkspace();
           await hydratePublishedFeedState();
           if (runtimeMode === "external" && !state.subscriptionActive && activePage !== "support") {
@@ -6129,7 +6128,6 @@
           renderBilling();
         }
         else {
-          completeBootstrapSync();
           showLogin(state.configured ? "" : "Вход ещё не настроен на сервере. Проверьте переменные окружения Selectel.");
         }
       } catch (error) {
