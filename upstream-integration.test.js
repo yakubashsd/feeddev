@@ -29,6 +29,49 @@ test("external clients always hydrate the server project state without a local-v
   assert.match(push, /Загружаем сохранённую версию проекта/);
 });
 
+test("layout editor applies the size value and exposes a working canvas resize handle", () => {
+  const draw = clientFunction("drawBrandedLayout");
+  const startDrag = clientFunction("startBrandPreviewDrag");
+  const moveDrag = clientFunction("moveBrandPreviewDrag");
+  const endDrag = html.match(/    async function endBrandPreviewDrag\([\s\S]*?\n    }\n\n    async function openBrandPreviewDialog/)[0];
+  assert.match(draw, /frameSize = Math\.max\(20, Math\.min\(95, Number\(config\.widthPercent\)/);
+  assert.doesNotMatch(draw, /width \* \.78 \/ source\.sw/);
+  assert.match(draw, /canvas\._brandLayoutPlacement = placement/);
+  assert.match(startDrag, /mode: resize \? "resize" : "move"/);
+  assert.match(moveDrag, /brandDragState\.mode === "resize"/);
+  assert.match(moveDrag, /sizeInput\.value = nextSize/);
+  assert.match(endDrag, /Размер планировки сохранён/);
+  assert.match(html, /brandPreviewCanvas\.addEventListener\("pointerleave"/);
+  assert.match(html, /\["\[", "\]"\]/);
+});
+
+test("layout preview really scales a plan without a backdrop", () => {
+  const calls = [];
+  const context = vm.createContext({
+    activePlatform: "cian",
+    visibleImageBounds: image => ({ sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight }),
+    drawCanvasLayers: () => {},
+    templateText: value => value,
+    canvasFontStack: value => value
+  });
+  vm.runInContext(clientFunction("drawBrandedLayout"), context);
+  const canvas = {
+    getContext: () => ({ clearRect: () => {}, save: () => {}, restore: () => {}, fillRect: () => {}, drawImage: (...args) => calls.push(args) }),
+    width: 0,
+    height: 0
+  };
+  const base = { naturalWidth: 100, naturalHeight: 200 };
+  const config = { widthPercent: 38, offsetXPercent: 0, offsetYPercent: 0, canvasOpacity: 100, canvasColor: "#fff", headline: "", subline: "", canvasLayers: [] };
+  context.drawBrandedLayout(base, null, canvas, config, {}, "cian");
+  assert.equal(Math.round(canvas._brandLayoutPlacement.width), 38);
+  assert.equal(Math.round(canvas._brandLayoutPlacement.height), 76);
+  assert.equal(calls.at(-1).at(-2), 38);
+  config.widthPercent = 78;
+  context.drawBrandedLayout(base, null, canvas, config, {}, "cian");
+  assert.equal(Math.round(canvas._brandLayoutPlacement.width), 78);
+  assert.equal(Math.round(canvas._brandLayoutPlacement.height), 156);
+});
+
 test("switching sources isolates objects and publication URLs, including shared objects", () => {
   const context = vm.createContext({
     activeSourceId: "a", activePlatform: "cian", selectedId: "one", checkedIds: new Set(["one"]),

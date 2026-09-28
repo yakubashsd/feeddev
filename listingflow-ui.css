@@ -331,7 +331,9 @@ body.client-ui #layoutsPanel .brand-preview-help strong{display:block;margin-bot
 body.client-ui #layoutsPanel .brand-preview-help #brandStatus{color:#aeb4bf}
 body.client-ui #layoutsPanel .le-stage{position:relative;align-self:stretch;justify-content:flex-start;min-height:420px;height:100%;margin:0;padding:20px;overflow:auto;border:1px solid #30343e;border-radius:7px;background-color:#1d2027;background-image:radial-gradient(#3b404a .8px,transparent .8px);background-size:16px 16px}
 body.client-ui #layoutsPanel .le-stage.show-grid{background-image:linear-gradient(#353a44 1px,transparent 1px),linear-gradient(90deg,#353a44 1px,transparent 1px),radial-gradient(#515763 .8px,transparent .8px);background-size:80px 80px,80px 80px,16px 16px}
-body.client-ui #layoutsPanel #brandPreviewCanvas{position:relative;z-index:1;flex:0 0 auto;max-width:none;max-height:none;width:auto;height:auto;box-shadow:0 10px 34px rgba(0,0,0,.32);touch-action:none;cursor:crosshair}
+body.client-ui #layoutsPanel #brandPreviewCanvas{position:relative;z-index:1;flex:0 0 auto;max-width:none;max-height:none;width:auto;height:auto;box-shadow:0 10px 34px rgba(0,0,0,.32);touch-action:none;cursor:grab}
+body.client-ui #layoutsPanel #brandPreviewCanvas.dragging{cursor:grabbing}
+body.client-ui #layoutsPanel #brandPreviewCanvas.resize-ready,body.client-ui #layoutsPanel #brandPreviewCanvas.resizing{cursor:nwse-resize}
 body.client-ui #layoutsPanel .le-selection{z-index:2;border:1px solid #5488ff;box-shadow:0 0 0 1px rgba(84,136,255,.18)}
 body.client-ui #layoutsPanel .le-selection:after{width:9px;height:9px;right:-5px;bottom:-5px;border:1px solid #fff;border-radius:2px;background:#5488ff}
 body.client-ui #layoutsPanel .le-grid-overlay{position:absolute;inset:20px;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(82,132,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(82,132,255,.12) 1px,transparent 1px);background-size:80px 80px}

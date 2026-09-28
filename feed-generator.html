@@ -5600,6 +5600,7 @@
     let brandSelectionTouched = false;
     let groupEditorSnapshot = null;
     let brandDragState = null;
+    let brandPreviewPlacement = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
     let brandDialogDragState = null;
@@ -8097,16 +8098,22 @@
       context.fillRect(0, 0, width, height);
       context.restore();
       if (badgeImage) context.drawImage(badgeImage, 0, 0, width, height);
+      let placement = null;
       if (baseImage && badgeImage) {
-        const placement = brandedLayoutPlacement(baseImage, badgeImage, config, platform);
+        placement = brandedLayoutPlacement(baseImage, badgeImage, config, platform);
         context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
       } else if (baseImage) {
         const source = visibleImageBounds(baseImage);
-        const ratio = Math.min(width * .78 / source.sw, height * .78 / source.sh);
+        // The size control must work with or without a graphic backdrop. Previously
+        // this branch used a hard-coded 78%, so the inspector and resize handle
+        // appeared to change while the actual plan never changed size.
+        const frameSize = Math.max(20, Math.min(95, Number(config.widthPercent) || 78)) / 100;
+        const ratio = Math.min(width * frameSize / source.sw, height * frameSize / source.sh);
         const drawWidth = source.sw * ratio;
         const drawHeight = source.sh * ratio;
         const x = (width - drawWidth) / 2 + width * config.offsetXPercent / 100;
         const y = (height - drawHeight) / 2 + height * config.offsetYPercent / 100;
+        placement = { source, x, y, width: drawWidth, height: drawHeight };
         context.drawImage(baseImage, source.sx, source.sy, source.sw, source.sh, x, y, drawWidth, drawHeight);
       } else if (!badgeImage) {
         context.fillStyle = "#8a919e";
@@ -8130,18 +8137,41 @@
         }
       }
       drawCanvasLayers(context, width, height, config.canvasLayers, item);
+      canvas._brandLayoutPlacement = placement;
       return canvas;
+    }
+
+    function drawBrandSelection(canvas) {
+      const placement = canvas?._brandLayoutPlacement;
+      if (!canvas || !placement) return;
+      const context = canvas.getContext("2d");
+      const handleSize = Math.max(12, Math.round(Math.min(canvas.width, canvas.height) * .016));
+      context.save();
+      context.strokeStyle = "#5488ff";
+      context.lineWidth = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * .003));
+      context.setLineDash([]);
+      context.strokeRect(placement.x, placement.y, placement.width, placement.height);
+      context.fillStyle = "#5488ff";
+      context.fillRect(placement.x + placement.width - handleSize / 2, placement.y + placement.height - handleSize / 2, handleSize, handleSize);
+      context.strokeStyle = "#ffffff";
+      context.lineWidth = Math.max(1, context.lineWidth / 2);
+      context.strokeRect(placement.x + placement.width - handleSize / 2, placement.y + placement.height - handleSize / 2, handleSize, handleSize);
+      context.restore();
     }
 
     function drawBrandPreviewFrame() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas || !brandPreviewImages) return false;
       drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas, brandConfig());
+      brandPreviewPlacement = canvas._brandLayoutPlacement || null;
+      drawBrandSelection(canvas);
       return true;
     }
 
     function drawBrandBadgePreview(badgeImage, canvas = document.querySelector("#brandPreviewCanvas")) {
       if (!canvas || !badgeImage) return false;
+      brandPreviewPlacement = null;
+      canvas._brandLayoutPlacement = null;
       const width = badgeImage.naturalWidth || badgeImage.width;
       const height = badgeImage.naturalHeight || badgeImage.height;
       canvas.width = width;
@@ -8211,27 +8241,56 @@
 
     function startBrandPreviewDrag(event) {
       const canvas = document.querySelector("#brandPreviewCanvas");
-      if (!canvas || !brandBadgeDataUrl) return;
+      if (!canvas || !brandPreviewImages?.baseImage || !brandPreviewPlacement) return;
       event.preventDefault();
       const config = brandConfig();
+      const rect = canvas.getBoundingClientRect();
+      const handleX = rect.left + (brandPreviewPlacement.x + brandPreviewPlacement.width) / canvas.width * rect.width;
+      const handleY = rect.top + (brandPreviewPlacement.y + brandPreviewPlacement.height) / canvas.height * rect.height;
+      const handleRadius = Math.max(16, Math.min(28, Math.min(rect.width, rect.height) * .045));
+      const resize = Math.hypot(event.clientX - handleX, event.clientY - handleY) <= handleRadius;
       brandDragState = {
         pointerId: event.pointerId,
         clientX: event.clientX,
         clientY: event.clientY,
         offsetX: config.offsetXPercent,
         offsetY: config.offsetYPercent,
+        widthPercent: config.widthPercent,
+        placement: { ...brandPreviewPlacement },
+        mode: resize ? "resize" : "move",
         moved: false
       };
+      canvas.classList.toggle("resizing", resize);
       canvas.classList.add("dragging");
       canvas.setPointerCapture?.(event.pointerId);
     }
 
     function moveBrandPreviewDrag(event) {
-      if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
       const canvas = document.querySelector("#brandPreviewCanvas");
+      if (!brandDragState) {
+        if (!canvas || !brandPreviewPlacement) return;
+        const rect = canvas.getBoundingClientRect();
+        const handleX = rect.left + (brandPreviewPlacement.x + brandPreviewPlacement.width) / canvas.width * rect.width;
+        const handleY = rect.top + (brandPreviewPlacement.y + brandPreviewPlacement.height) / canvas.height * rect.height;
+        const handleRadius = Math.max(16, Math.min(28, Math.min(rect.width, rect.height) * .045));
+        canvas.classList.toggle("resize-ready", Math.hypot(event.clientX - handleX, event.clientY - handleY) <= handleRadius);
+        return;
+      }
+      if (brandDragState.pointerId !== event.pointerId) return;
       const rect = canvas.getBoundingClientRect();
       const distance = Math.hypot(event.clientX - brandDragState.clientX, event.clientY - brandDragState.clientY);
       if (distance > 4) brandDragState.moved = true;
+      if (brandDragState.mode === "resize") {
+        const pointX = (event.clientX - rect.left) / Math.max(1, rect.width) * canvas.width;
+        const pointY = (event.clientY - rect.top) / Math.max(1, rect.height) * canvas.height;
+        const startDiagonal = Math.max(1, Math.hypot(brandDragState.placement.width, brandDragState.placement.height));
+        const nextDiagonal = Math.max(1, Math.hypot(pointX - brandDragState.placement.x, pointY - brandDragState.placement.y));
+        const nextSize = Math.round(Math.max(20, Math.min(95, brandDragState.widthPercent * nextDiagonal / startDiagonal)));
+        const sizeInput = document.querySelector("#brandSize");
+        if (sizeInput) sizeInput.value = nextSize;
+        drawBrandPreviewFrame();
+        return;
+      }
       const dxPercent = ((event.clientX - brandDragState.clientX) / Math.max(1, rect.width)) * 100;
       const dyPercent = ((event.clientY - brandDragState.clientY) / Math.max(1, rect.height)) * 100;
       setBrandOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
@@ -8241,10 +8300,13 @@
     async function endBrandPreviewDrag(event) {
       if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
       const shouldOpenPreview = event.type === "pointerup" && !brandDragState.moved;
-      document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging");
+      const mode = brandDragState.mode;
+      document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging", "resizing");
       brandDragState = null;
       await persistActiveBrandProfile();
-      brandStatus(`Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам текущего фида.`);
+      brandStatus(mode === "resize"
+        ? `Размер планировки сохранён: ${document.querySelector("#brandSize")?.value || 78}%. Он будет применён ко всем макетам текущего фида.`
+        : `Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам текущего фида.`);
       if (shouldOpenPreview) openBrandPreviewDialog();
     }
 
@@ -10638,7 +10700,22 @@ ${photos}
     brandPreviewCanvas.addEventListener("pointermove", moveBrandPreviewDrag);
     brandPreviewCanvas.addEventListener("pointerup", endBrandPreviewDrag);
     brandPreviewCanvas.addEventListener("pointercancel", endBrandPreviewDrag);
+    brandPreviewCanvas.addEventListener("pointerleave", () => {
+      if (!brandDragState) brandPreviewCanvas.classList.remove("resize-ready");
+    });
     brandPreviewCanvas.addEventListener("keydown", event => {
+      if (["[", "]"].includes(event.key) && brandPreviewImages?.baseImage) {
+        event.preventDefault();
+        const sizeInput = document.querySelector("#brandSize");
+        if (sizeInput) {
+          const step = event.key === "]" ? 2 : -2;
+          sizeInput.value = Math.max(20, Math.min(95, Number(sizeInput.value || 78) + step));
+          drawBrandPreviewFrame();
+          persistActiveBrandProfile();
+          brandStatus(`Размер планировки: ${sizeInput.value}%.`);
+        }
+        return;
+      }
       if (["Enter", " "].includes(event.key)) {
         event.preventDefault();
         openBrandPreviewDialog();
