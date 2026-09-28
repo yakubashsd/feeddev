@@ -56,9 +56,9 @@
   stage.className = 'le-stage';
   canvas.before(stage);
   stage.append(canvas);
-  const outline = document.createElement('div');
-  outline.className = 'le-selection';
-  stage.append(outline);
+  // The selection is drawn directly on the canvas by drawBrandPreviewFrame.
+  // A second DOM outline used an old fixed 78% formula, drifted away from the
+  // actual plan and also made the resize hit area misleading.
   canvas.setAttribute('aria-label', 'Макет: выберите планировку или текст, перемещайте мышью или стрелками');
   const search = document.createElement('input');
   search.id = 'le-search'; search.type = 'search'; search.placeholder = 'Найти образец по ЖК, площади или ID'; search.setAttribute('aria-label', search.placeholder);
@@ -119,13 +119,22 @@
     if(selected==='custom'){const layer=activeCustom();return layer?{x:canvas.width*Number(layer.x||0)/100,y:canvas.height*Number(layer.y||0)/100,width:canvas.width*Number(layer.width||30)/100,height:canvas.height*Number(layer.height||12)/100}:null;}
     if (!brandPreviewImages) return selected==='background'?{x:0,y:0,width:canvas.width,height:canvas.height}:null;
     if(selected==='background')return {x:0,y:0,width:canvas.width,height:canvas.height};
-    if(selected==='layout'){if(brandPreviewImages.baseImage&&brandPreviewImages.badgeImage)return brandedLayoutPlacement(brandPreviewImages.baseImage,brandPreviewImages.badgeImage);const image=brandPreviewImages.baseImage;if(!image)return{x:0,y:0,width:canvas.width,height:canvas.height};const source=visibleImageBounds(image),ratio=Math.min(canvas.width*.78/source.sw,canvas.height*.78/source.sh);return{x:(canvas.width-source.sw*ratio)/2,y:(canvas.height-source.sh*ratio)/2,width:source.sw*ratio,height:source.sh*ratio};}
+    if(selected==='layout'){
+      // drawBrandPreviewFrame stores the exact placement used to render the
+      // plan. Reuse it for hit testing instead of reconstructing an approximate
+      // rectangle, so dragging and the visible resize handle always agree.
+      if(brandPreviewPlacement)return {...brandPreviewPlacement};
+      if(brandPreviewImages.baseImage&&brandPreviewImages.badgeImage)return brandedLayoutPlacement(brandPreviewImages.baseImage,brandPreviewImages.badgeImage);
+      const image=brandPreviewImages.baseImage;if(!image)return{x:0,y:0,width:canvas.width,height:canvas.height};
+      const source=visibleImageBounds(image),size=Math.max(20,Math.min(95,Number(brandConfig().widthPercent)||78))/100,ratio=Math.min(canvas.width*size/source.sw,canvas.height*size/source.sh);
+      return{x:(canvas.width-source.sw*ratio)/2+canvas.width*brandConfig().offsetXPercent/100,y:(canvas.height-source.sh*ratio)/2+canvas.height*brandConfig().offsetYPercent/100,width:source.sw*ratio,height:source.sh*ratio};
+    }
     const c=brandConfig(); return {x:canvas.width*c.textXPercent/100,y:canvas.height*c.textYPercent/100,width:Math.max(40,canvas.width*(1-c.textXPercent/50)),height:c.textSize*(c.subline?1.9:1)};
   }
   function selectionBox() {
-    const b=bounds(); outline.hidden=!b || selected==='background'; if(!b)return;
-    const r=canvas.getBoundingClientRect(), s=stage.getBoundingClientRect();
-    Object.assign(outline.style,{left:`${r.left-s.left+b.x*r.width/canvas.width}px`,top:`${r.top-s.top+b.y*r.height/canvas.height}px`,width:`${b.width*r.width/canvas.width}px`,height:`${b.height*r.height/canvas.height}px`});
+    // Kept as a small compatibility hook for resize/zoom observers. The only
+    // selection frame is painted inside the canvas, next to the real image.
+    return bounds();
   }
   properties.addEventListener('click', e=> {const b=e.target.closest('[data-layer]');if(b){choose(b.dataset.layer);return}const custom=e.target.closest('[data-select-custom]');if(custom){chooseCustom(custom.dataset.selectCustom);return}const del=e.target.closest('[data-layer-delete]');if(del){baseline=snapshot();writeLayers(readLayers().filter(layer=>layer.id!==del.dataset.layerDelete));selectedCustomId='';choose('layout');redraw();commit();return}const direction=e.target.closest('[data-layer-up],[data-layer-down]');if(direction){baseline=snapshot();const layers=readLayers(),i=layers.findIndex(layer=>layer.id===(direction.dataset.layerUp||direction.dataset.layerDown)),j=i+(direction.dataset.layerUp?1:-1);if(i>=0&&j>=0&&j<layers.length){[layers[i],layers[j]]=[layers[j],layers[i]];writeLayers(layers);renderLayerTree();redraw();commit();}}});
   properties.addEventListener('focusin',()=>{if(!drag)baseline=snapshot()});
@@ -167,7 +176,7 @@
   stage.addEventListener('pointermove',e=>{if(!pan||pan.pointer!==e.pointerId)return;stage.scrollLeft=pan.left-(e.clientX-pan.x);stage.scrollTop=pan.top-(e.clientY-pan.y)});
   const endPan=e=>{if(!pan||pan.pointer!==e.pointerId)return;pan=null;stage.classList.remove('panning')};stage.addEventListener('pointerup',endPan);stage.addEventListener('pointercancel',endPan);
   toolbar.insertAdjacentHTML('beforeend','<button type="button" id="le-export">Экспорт PNG</button>');
-  document.querySelector('#centerBrandLayoutBtn').addEventListener('click',()=>{document.querySelector('#brandOffsetX').value=0;document.querySelector('#brandOffsetY').value=(100-brandConfig().widthPercent)/2;drawBrandPreviewFrame();commit();});
+  document.querySelector('#centerBrandLayoutBtn').addEventListener('click',()=>{document.querySelector('#brandOffsetX').value=0;document.querySelector('#brandOffsetY').value=0;drawBrandPreviewFrame();commit();});
   document.querySelector('#centerBrandLayoutBtn').textContent='По центру холста';
   // Replace the old whole-canvas drag with element hit testing and resize handles.
   canvas.removeEventListener('pointerdown',startBrandPreviewDrag);

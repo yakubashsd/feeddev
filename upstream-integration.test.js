@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const html = fs.readFileSync(path.join(__dirname, "feed-generator.html"), "utf8");
+const layoutEditor = fs.readFileSync(path.join(__dirname, "layout-editor.js"), "utf8");
 
 function clientFunction(name) {
   const start = html.indexOf(`    function ${name}(`);
@@ -17,6 +18,7 @@ function clientFunction(name) {
 
 test("client scripts remain syntactically valid after integrating both branches", () => {
   for (const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
+  new vm.Script(layoutEditor);
 });
 
 test("external clients always hydrate the server project state without a local-version prompt", () => {
@@ -70,6 +72,13 @@ test("layout preview really scales a plan without a backdrop", () => {
   context.drawBrandedLayout(base, null, canvas, config, {}, "cian");
   assert.equal(Math.round(canvas._brandLayoutPlacement.width), 78);
   assert.equal(Math.round(canvas._brandLayoutPlacement.height), 156);
+});
+
+test("editor uses the rendered plan placement and does not add a second stale outline", () => {
+  assert.match(layoutEditor, /if\(brandPreviewPlacement\)return \{\.\.\.brandPreviewPlacement\}/);
+  assert.doesNotMatch(layoutEditor, /canvas\.width\*\.78\/source\.sw/);
+  assert.doesNotMatch(layoutEditor, /outline\.className = 'le-selection'/);
+  assert.match(layoutEditor, /document\.querySelector\('#brandOffsetY'\)\.value=0/);
 });
 
 test("switching sources isolates objects and publication URLs, including shared objects", () => {

@@ -416,21 +416,20 @@ body.client-ui :is(.overview-metric strong,.monitor-card strong,.validator-stat 
   body.client-ui .overview-alert .text-button { margin-left:0; }
 }
 
-/* Sidebar hierarchy and header breathing room. The workspace lives on a dark
-   rail, so its group labels need their own high-contrast role rather than the
-   muted copy token used inside white panels. */
+/* Sidebar hierarchy and header breathing room. Keep this token-led so the
+   workflow remains readable in both the white and graphite themes. */
 body.client-ui .sidebar .nav-label {
   margin:0 12px 10px!important;
-  color:#b7c0cf!important;
+  color:var(--lf-muted)!important;
   font-size:13px!important;
   line-height:18px!important;
   font-weight:800!important;
   letter-spacing:.01em!important;
 }
 body.client-ui .sidebar .nav-label:not(:first-child) { margin-top:26px!important; }
-body.client-ui .sidebar .nav-workflow-toggle { color:#eef1f6!important; font-size:15px!important; line-height:22px!important; font-weight:700!important; }
-body.client-ui .sidebar .nav-workflow-items .nav-item { color:#e4e8ef!important; }
-body.client-ui .sidebar .nav-optional { color:#aeb8c8!important; font-size:12px!important; font-weight:400!important; }
+body.client-ui .sidebar .nav-workflow-toggle { color:var(--lf-text)!important; font-size:15px!important; line-height:22px!important; font-weight:700!important; }
+body.client-ui .sidebar .nav-workflow-items .nav-item { color:var(--lf-text)!important; }
+body.client-ui .sidebar .nav-optional { color:var(--lf-muted)!important; font-size:12px!important; font-weight:400!important; }
 body.client-ui .sidebar .nav-item.active .nav-optional { color:rgba(255,255,255,.84)!important; }
 /* The sidebar itself stays graphite in dark mode; the selected item therefore
    keeps the violet action surface and light text rather than inheriting the
@@ -441,6 +440,10 @@ body.client-ui[data-theme="dark"] .sidebar .nav-item.active {
   color:#fff!important;
 }
 body.client-ui[data-theme="dark"] .sidebar .nav-item.active .nav-optional { color:rgba(255,255,255,.84)!important; }
+body.client-ui[data-theme="dark"] .sidebar .nav-label { color:#b7c0cf!important; }
+body.client-ui[data-theme="dark"] .sidebar .nav-workflow-toggle { color:#eef1f6!important; }
+body.client-ui[data-theme="dark"] .sidebar .nav-workflow-items .nav-item { color:#e4e8ef!important; }
+body.client-ui[data-theme="dark"] .sidebar .nav-optional { color:#aeb8c8!important; }
 body.client-ui .topbar>div:first-child { row-gap:4px!important; }
 body.client-ui .topbar h1 { margin:3px 0 0!important; }
 body.client-ui .topbar .subtitle { margin:0 0 3px!important; }
