@@ -5649,6 +5649,7 @@
       document.querySelector("#bootScreen").hidden = true;
       authScreen.hidden = false;
       appShell.hidden = true;
+      if (runtimeMode === "external" && authFormMode !== "reset") setAuthFormMode("login");
       loginError.textContent = message;
       document.querySelector("#loginPassword").value = "";
     }
