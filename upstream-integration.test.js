@@ -43,11 +43,11 @@ test("project bootstrap has a visible fallback and cannot reload forever", () =>
   const init = html.match(/    async function initializeAuth\([\s\S]*?\n    }\n\n    async function submitLogin/)[0];
   assert.match(html, /const bootWatchdog = window\.setTimeout/);
   assert.match(html, /Не удалось загрузить кабинет/);
-  assert.match(html, /function reloadAfterBootstrapSync/);
   assert.match(html, /sessionStorage\.getItem\(key\)/);
   assert.match(init, /updateBootStatus\("Загружаю список проектов…"\)/);
-  assert.match(init, /reloadAfterBootstrapSync\("Обновляю список проектов…"\)/);
-  assert.match(init, /reloadAfterBootstrapSync\("Применяю сохранённые данные проекта…"\)/);
+  assert.doesNotMatch(init, /location\.reload\(\)/);
+  assert.match(init, /Список проектов обновлён/);
+  assert.match(init, /Данные проекта синхронизированы/);
   assert.match(init, /needsProjectHydration\(\) && await hydrateExternalProjectState\(\)/);
   assert.match(html, /listingflow-bootstrap-hydrated/);
   assert.match(init, /!bootstrapStageDone\("projects"\) && await syncExternalProjects\(\)/);

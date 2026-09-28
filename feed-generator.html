@@ -5842,22 +5842,6 @@
       if (status) status.textContent = message;
     }
 
-    function reloadAfterBootstrapSync(stage) {
-      const key = `listingflow-bootstrap-reload:${requestedProject || "project-list"}`;
-      let attempts = 0;
-      try { attempts = Number(sessionStorage.getItem(key) || "0"); } catch (_) {}
-      if (attempts >= 1) return false;
-      try { sessionStorage.setItem(key, String(attempts + 1)); } catch (_) {}
-      updateBootStatus(stage);
-      location.reload();
-      return true;
-    }
-
-    function completeBootstrapSync() {
-      const key = `listingflow-bootstrap-reload:${requestedProject || "project-list"}`;
-      try { sessionStorage.removeItem(key); } catch (_) {}
-    }
-
     function bootstrapStageDone(stage) {
       try { return sessionStorage.getItem(`listingflow-bootstrap-stage:${stage}:${requestedProject || "project-list"}`) === "1"; } catch (_) { return false; }
     }
@@ -5954,6 +5938,7 @@
       const result = await response.json();
       const next = Array.isArray(result.projects) ? result.projects : [];
       if (JSON.stringify(next) === JSON.stringify(projects)) return false;
+      projects = next;
       localStorage.setItem(projectIndexKey, JSON.stringify(next));
       return true;
     }
@@ -6125,16 +6110,14 @@
           updateBootStatus("Загружаю список проектов…");
           if (!bootstrapStageDone("projects") && await syncExternalProjects()) {
             markBootstrapStage("projects");
-            if (reloadAfterBootstrapSync("Обновляю список проектов…")) return;
-            throw new Error("Не удалось завершить синхронизацию списка проектов. Обновите страницу ещё раз.");
+            updateBootStatus("Список проектов обновлён…");
           }
           markBootstrapStage("projects");
           updateBootStatus("Загружаю данные проекта…");
           if (needsProjectHydration() && await hydrateExternalProjectState()) {
             markProjectHydrated();
             markBootstrapStage("state");
-            if (reloadAfterBootstrapSync("Применяю сохранённые данные проекта…")) return;
-            throw new Error("Не удалось завершить синхронизацию проекта. Обновите страницу ещё раз.");
+            updateBootStatus("Данные проекта синхронизированы…");
           }
           markBootstrapStage("state");
           completeBootstrapSync();
