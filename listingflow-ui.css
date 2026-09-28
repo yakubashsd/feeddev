@@ -1252,3 +1252,21 @@ body.client-ui .project-source-list .source-record>.source-actions button{
     flex:1 1 140px!important;
   }
 }
+
+/* Admin reading sizes: the same Circe family and control rhythm as the client. */
+body.admin-ui :is(.button,.control,.field input,.field select,.field textarea){font-family:var(--lf-font)!important;font-size:14px!important;line-height:20px!important;font-weight:400!important;min-width:0;}
+body.admin-ui .button{font-weight:700!important;height:auto!important;min-height:40px!important;padding:9px 14px!important;white-space:normal;}
+body.admin-ui .field label{font-size:13px!important;line-height:18px!important;font-weight:700!important;text-transform:none!important;letter-spacing:0!important;}
+body.admin-ui :is(th,td),body.admin-ui td strong{font-size:13px!important;line-height:20px!important;}
+body.admin-ui th{text-transform:none!important;letter-spacing:0!important;}
+body.admin-ui :is(td small,.status,.metric small,.empty,.notice){font-size:12px!important;line-height:18px!important;}
+body.admin-ui :is(.dialog-actions,.toolbar){flex-wrap:wrap;gap:10px;}
+body.admin-ui .form-grid>*{min-width:0;}
+body.admin-ui .field :is(input,select,textarea){width:100%;}
+body.admin-ui .drawer :is(h2,h3){line-height:1.3;}
+@media(max-width:640px){
+  body.admin-ui .top{flex-wrap:wrap!important;gap:12px!important;}
+  body.admin-ui .top h1{white-space:normal!important;max-width:100%!important;}
+  body.admin-ui .toolbar .search{flex-basis:100%!important;}
+  body.admin-ui .field :is(input,select,textarea){font-size:16px!important;min-height:44px!important;}
+}

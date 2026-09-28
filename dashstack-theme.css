@@ -159,8 +159,9 @@ body.client-ui .editor .section-title { font-size:20px!important; }
 body.client-ui .page-breadcrumb { color:var(--lf-muted)!important; }
 body.client-ui .page-breadcrumb a { color:var(--lf-blue)!important; }
 body.client-ui :is(.status-badge,.project-status,.validation,.source-status) { border-radius:999px!important; }
-body.client-ui :is(button:not(.primary),.button,.secondary) { border-color:var(--lf-line-strong)!important; background:var(--lf-surface)!important; color:var(--lf-text)!important; }
-body.client-ui :is(button:not(.primary),.button,.secondary):hover:not(:disabled) { border-color:var(--lf-accent)!important; background:var(--lf-surface-2)!important; }
+/* Navigation and progress rows own their geometry and states. */
+body.client-ui :is(button:not(.primary),.button,.secondary):not(:where(.nav-item,.logout-btn,.overview-progress-row,.text-button,.auth-forgot-link,.auth-tab,.le-layer,.project-row-action,.theme-toggle)) { border-color:var(--lf-line-strong)!important; background:var(--lf-surface)!important; color:var(--lf-text)!important; }
+body.client-ui :is(button:not(.primary),.button,.secondary):not(:where(.nav-item,.logout-btn,.overview-progress-row,.text-button,.auth-forgot-link,.auth-tab,.le-layer,.project-row-action,.theme-toggle)):hover:not(:disabled) { border-color:var(--lf-accent)!important; background:var(--lf-surface-2)!important; }
 body.client-ui .topbar { min-height:68px!important; height:68px!important; }
 @media (max-width:760px) {
   body.client-ui :is(.source-panel,.feeds-panel,.validator-panel,.complexes-panel,.table-wrap,.bulk-panel,.layouts-panel,.change-log-panel,.quality-panel,.publish-panel,.billing-card,.support-form,.support-history,.project-overview) { padding:16px!important; }
@@ -254,18 +255,18 @@ body.client-ui .project-list-mode :is(#newProjectBtn,button.primary,#loadUrlBtn,
   border-color:var(--lf-accent-hover)!important;
   transform:translateY(-1px);
 }
-body.client-ui :is(button:not(.primary),.button,.secondary) {
+body.client-ui :is(button:not(.primary),.button,.secondary):not(:where(.nav-item,.logout-btn,.overview-progress-row,.text-button,.auth-forgot-link,.auth-tab,.le-layer,.project-row-action,.theme-toggle)) {
   min-height:40px;
   border:1px solid var(--lf-line-strong)!important;
   border-radius:8px!important;
   background:var(--lf-surface)!important;
   color:var(--lf-text)!important;
 }
-body.client-ui :is(button:not(.primary),.button,.secondary):hover:not(:disabled) {
+body.client-ui :is(button:not(.primary),.button,.secondary):not(:where(.nav-item,.logout-btn,.overview-progress-row,.text-button,.auth-forgot-link,.auth-tab,.le-layer,.project-row-action,.theme-toggle)):hover:not(:disabled) {
   border-color:var(--lf-accent)!important;
   background:var(--lf-surface-2)!important;
 }
-body.client-ui :is(button:not(.primary),.button,.secondary):active:not(:disabled) { transform:translateY(1px); }
+body.client-ui :is(button:not(.primary),.button,.secondary):not(:where(.nav-item,.logout-btn,.overview-progress-row,.text-button,.auth-forgot-link,.auth-tab,.le-layer,.project-row-action,.theme-toggle)):active:not(:disabled) { transform:translateY(1px); }
 body.client-ui :is(button,input,select,textarea):focus-visible {
   outline:2px solid color-mix(in srgb,var(--lf-accent) 62%,transparent)!important;
   outline-offset:2px!important;
@@ -287,4 +288,130 @@ body.client-ui :is(button,input,select,textarea):focus-visible {
 @media(max-width:430px) {
   body.client-ui .project-list-mode .project-metrics { grid-template-columns:1fr!important; }
   body.client-ui .project-list-mode .project-metric { min-height:92px!important; }
+}
+
+/* Workspace typography: Circe ships regular and bold, not intermediate weights. */
+body.client-ui { font-family:var(--lf-font); font-size:14px; line-height:1.5; }
+body.client-ui .main :is(.panel-caption,.field-hint,.source-schedule-note,.traffic-policy-note,.le-hint,.brand-preview-help,.generated-link) {
+  font-size:13px!important; line-height:1.5!important; color:var(--lf-muted);
+}
+body.client-ui .main .field>label,body.client-ui .auth-fields .field>label {
+  font-size:13px!important; line-height:18px!important; font-weight:700!important;
+}
+body.client-ui .main :is(th,td) { font-size:13px!important; line-height:20px!important; }
+body.client-ui .main th { font-weight:700!important; }
+body.client-ui .main .text-button {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:40px!important; height:auto; padding:8px 12px!important;
+  border:1px solid transparent!important; background:transparent!important;
+  color:var(--lf-blue)!important; font-size:14px!important; line-height:20px!important;
+  font-weight:700!important; white-space:normal; text-align:center; flex-shrink:0;
+}
+body.client-ui .main .text-button:hover { background:var(--lf-blue-bg)!important; }
+body.client-ui .sidebar .nav-item { gap:12px!important; font-size:14px!important; line-height:20px!important; font-weight:400!important; }
+body.client-ui .sidebar .nav-item.active { font-weight:700!important; }
+body.client-ui .sidebar .nav-workflow-items .nav-item { padding:10px 12px!important; min-height:44px!important; }
+body.client-ui .sidebar .nav-workflow-items .nav-text { display:block!important; }
+body.client-ui .sidebar .nav-optional { display:block; margin:3px 0 0; font-size:12px; line-height:16px; }
+body.client-ui .sidebar .nav-step { width:22px; height:22px; flex:0 0 22px; font-size:12px; line-height:1; font-weight:700; }
+body.client-ui .sidebar .nav-item[data-state="done"] .nav-step { background:var(--lf-green-bg); border-color:transparent; color:var(--lf-green); }
+body.client-ui .sidebar .nav-label { font-size:12px!important; line-height:18px!important; letter-spacing:0!important; text-transform:none!important; font-weight:700!important; }
+body.client-ui .project-overview { padding:0!important; border:0!important; background:transparent!important; box-shadow:none!important; }
+body.client-ui .overview-heading h1 { font-size:30px; line-height:1.2; font-weight:700; letter-spacing:-.4px; }
+body.client-ui .overview-heading p { font-size:14px; line-height:22px; }
+body.client-ui .overview-grid { align-items:start; gap:16px; margin-bottom:16px; }
+body.client-ui .overview-card { padding:24px; }
+body.client-ui .overview-card h2 { font-size:20px; line-height:28px; font-weight:700; letter-spacing:-.2px; }
+body.client-ui .overview-card p { margin:16px 0; font-size:14px; line-height:22px; }
+body.client-ui .project-overview .eyebrow { font-size:12px; line-height:18px; font-weight:700; letter-spacing:.06em; }
+body.client-ui .overview-metric small { font-size:13px; line-height:20px; }
+body.client-ui .overview-progress { gap:4px; margin-top:16px; }
+body.client-ui button.overview-progress-row {
+  grid-template-columns:24px minmax(0,1fr) auto;
+  min-height:48px; padding:10px 12px!important; gap:12px;
+  border:0!important; background:transparent!important; font-size:14px; line-height:20px;
+  font-weight:400; color:var(--lf-text)!important;
+}
+body.client-ui button.overview-progress-row:hover { background:var(--lf-surface-2)!important; }
+body.client-ui .overview-progress-row i { width:24px; height:24px; font-size:12px; font-weight:700; }
+body.client-ui .overview-progress-row small { padding-left:8px; font-size:12px; line-height:18px; white-space:nowrap; }
+body.client-ui .overview-alert { padding:16px 0 0; align-items:center; flex-wrap:wrap; gap:12px 20px; }
+body.client-ui .overview-alert>div { flex:1 1 240px; }
+body.client-ui .overview-alert strong { display:block; font-size:14px; line-height:22px; }
+body.client-ui .overview-alert span { display:block; margin-top:4px; font-size:13px; line-height:20px; }
+body.client-ui .overview-card-head { flex-wrap:wrap; }
+body.client-ui .overview-step { flex-shrink:0; font-size:13px; }
+body.client-ui #layoutsPanel :is(.le-font-requirements,.le-font-requirements strong,.le-save-state,.le-hint) { font-size:12px; line-height:18px; }
+body.client-ui :is(.monitor-summary,.validator-summary) { grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr)); }
+body.client-ui :is(.validator-panel,.monitor-filters,.catalog-head)>* { min-width:0; }
+body.client-ui :is(.validator-result,.monitor-feed,.complex-row) { overflow-wrap:anywhere; }
+body.client-ui #layoutsPanel :is(.le-save-state,.le-layer-count,.le-hint,.brand-source-meta,.brand-preview-help) { font-size:12px!important; line-height:18px!important; }
+body.client-ui #layoutsPanel .le-font-requirements { color:var(--lf-muted); }
+body.client-ui #layoutsPanel .le-font-requirements strong { color:var(--lf-text); }
+@media(max-width:760px) {
+  body.client-ui .overview-card { padding:18px; }
+  body.client-ui .overview-heading h1 { font-size:26px; }
+  body.client-ui .overview-card h2 { font-size:18px; line-height:26px; }
+  body.client-ui .overview-card-head { gap:12px; }
+  body.client-ui .overview-recent .overview-card-head>.text-button { padding-left:0!important; }
+  body.client-ui .overview-progress-row { column-gap:8px!important; }
+  body.client-ui .overview-progress-row small { grid-column:2/-1; padding-left:0; }
+  body.client-ui .topbar .account-copy { display:none!important; }
+  body.client-ui :is(.monitor-filters,.validator-toolbar,.validator-result,.complex-row,.billing-quantity,.billing-payment-row) { grid-template-columns:minmax(0,1fr)!important; }
+  body.client-ui .catalog-head { align-items:stretch; }
+  body.client-ui .catalog-head input { width:100%; min-width:0; }
+  body.client-ui .validator-panel>div { min-width:0; }
+  body.client-ui .main .field textarea { height:auto!important; min-height:112px!important; }
+}
+
+/* Final type and alignment contract.  Keep these roles independent from the
+   feature-level CSS above so a new panel cannot inherit a tiny label or an
+   arbitrary intermediate font weight. */
+body.client-ui {
+  font-family:var(--lf-font)!important;
+  font-size:14px!important;
+  line-height:20px!important;
+  font-synthesis:none;
+}
+body.client-ui .topbar h1 { font-size:16px!important; line-height:22px!important; font-weight:700!important; }
+body.client-ui .topbar .subtitle { font-size:13px!important; line-height:18px!important; }
+body.client-ui .main :is(.panel-title,.section-title,.catalog-head .panel-title,.table-headline>.panel-title) {
+  font-size:20px!important; line-height:28px!important; font-weight:700!important; letter-spacing:-.2px!important;
+}
+body.client-ui .main :is(.source-label,.feed-error-title span,.feed-error-summary span,.feed-error-hint,.catalog-state,.source-selection small,.layer-editor-head>span) {
+  font-size:12px!important; line-height:18px!important; font-weight:400!important; letter-spacing:0!important; text-transform:none!important;
+}
+body.client-ui .main :is(.source-select-control,.source-selection label,.feed-notification-channels,.monitor-card span,.validator-stat span) {
+  font-size:13px!important; line-height:18px!important; font-weight:700!important; letter-spacing:0!important; text-transform:none!important;
+}
+body.client-ui .main :is(.monitor-card strong,.validator-stat strong,.catalog-summary strong) { font-weight:700!important; }
+body.client-ui .main :is(.source-record,.monitor-feed,.validator-result,.complex-row,.change-log-item,.layout-card,.feed-row) { min-width:0!important; }
+body.client-ui .main :is(.source-record,.monitor-feed,.validator-result,.complex-row) :is(strong,small,span,p,a) { min-width:0!important; }
+body.client-ui .main :is(.source-record,.monitor-feed,.validator-result,.complex-row) small { font-size:12px!important; line-height:18px!important; }
+body.client-ui .main :is(.source-actions,.published-history-item,.monitor-feed-actions,.dialog-actions) { align-items:center!important; gap:8px!important; }
+body.client-ui .main :is(.source-actions,.published-history-item,.monitor-feed-actions) button {
+  min-height:40px!important; padding:8px 12px!important; font-size:13px!important; line-height:20px!important; font-weight:700!important;
+}
+body.client-ui #layoutsPanel :is(.le-toolbar button,.le-token-fields button,.le-properties .le-fields button,.le-layers>button,.le-user-layer>button:first-child) {
+  font-size:12px!important; line-height:18px!important; font-weight:700!important;
+}
+body.client-ui #layoutsPanel .le-field { font-size:12px!important; line-height:18px!important; font-weight:700!important; }
+body.client-ui .overview-progress-row small { justify-self:end; min-width:64px; text-align:right; color:var(--lf-muted)!important; }
+body.client-ui .overview-alert .text-button { margin-left:auto; }
+body.client-ui :is(.overview-metric strong,.monitor-card strong,.validator-stat strong,.catalog-summary strong,.billing-price) { font-variant-numeric:tabular-nums; }
+@media(max-width:980px) {
+  body.client-ui .monitor-notification-settings { grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important; }
+  body.client-ui .monitor-notification-settings :is(h3,p,#saveMonitorNotifications) { grid-column:1/-1!important; }
+  body.client-ui .source-grid { grid-template-columns:minmax(0,1fr) repeat(2,minmax(0,1fr))!important; }
+  body.client-ui .source-grid > :first-child { grid-column:1/-1!important; }
+}
+@media(max-width:760px) {
+  body.client-ui .topbar h1 { font-size:15px!important; line-height:20px!important; }
+  body.client-ui .main :is(.panel-title,.section-title,.catalog-head .panel-title,.table-headline>.panel-title) { font-size:18px!important; line-height:26px!important; }
+  body.client-ui .main :is(.source-grid,.monitor-notification-settings,.monitor-add,.feeds-toolbar,.validator-toolbar,.monitor-filters,.billing-quantity,.billing-payment-row) { grid-template-columns:minmax(0,1fr)!important; }
+  body.client-ui .main :is(.source-grid,.monitor-notification-settings,.monitor-add,.feeds-toolbar,.validator-toolbar,.monitor-filters) > * { grid-column:auto!important; }
+  body.client-ui .main .source-actions { justify-content:stretch!important; }
+  body.client-ui .main .source-actions button { flex:1 1 132px!important; }
+  body.client-ui .overview-progress-row small { grid-column:2/-1!important; justify-self:start; min-width:0; text-align:left; }
+  body.client-ui .overview-alert .text-button { margin-left:0; }
 }
