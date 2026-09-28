@@ -5566,6 +5566,8 @@
     appState.serverBaseUrl = publicFeedOrigin;
     let objects = appState.objects;
     let originalObjects = appState.originalObjects;
+    objects = objects.map(dedupeObjectMedia);
+    originalObjects = originalObjects.map(dedupeObjectMedia);
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     const requestedPage = new URLSearchParams(location.search).get("page");
@@ -9052,6 +9054,16 @@
       return String(item.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean);
     }
 
+    // Keep the source layout in its dedicated field only. Some aggregator
+    // exports repeat the same URL in Photos, which otherwise creates duplicate
+    // media after every synchronization/import cycle.
+    function dedupeObjectMedia(item) {
+      const layout = String(item.layoutPhoto || "").trim();
+      if (!layout) return item;
+      const photos = photoList(item).filter(url => url !== layout);
+      return { ...item, photos: photos.join("\n") };
+    }
+
     function isBrandedLayoutUrl(url = "") {
       return /\/layouts\/(?:branded-|planirovka-na-podlozhke-)|(?:branded-|planirovka-na-podlozhke-)/i.test(String(url));
     }
@@ -9751,7 +9763,7 @@ ${photos}
             withoutSource.push({ ...item, _sourceId: id, _sourceIds: [id] });
           }
         });
-        objects = withoutSource;
+        objects = withoutSource.map(dedupeObjectMedia);
         originalObjects = structuredClone(objects);
         selectedId = "";
         checkedIds = new Set();
@@ -10178,6 +10190,11 @@ ${photos}
       const isFloorPlan = url => /(?:\/|[_-])(?:floor(?:[\s_-]?plan)?|section|entrance|podjezd|podjezd)(?:\/|[_-])/i.test(url);
       const isApartmentLayout = url => /\/(?:preset|apartment|apartments|flat|flats|unit)\//i.test(url);
       const candidates = [explicit, ...images].filter(url => url && !isFloorPlan(url));
+      // A previously generated ListingFlow cover is the user's intended
+      // layout when a published feed is imported again. Preserve it instead
+      // of replacing it with the original aggregator image.
+      const branded = candidates.find(isBrandedLayoutUrl);
+      if (branded) return branded;
       return candidates.find(isApartmentLayout)
         || candidates.find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url))
         || explicit
@@ -10254,7 +10271,7 @@ ${photos}
         year: node.querySelector("Year")?.textContent || "",
         price: textOf(node, ["BargainTerms Price", "Price", "price value"])
       }));
-      return { platform, objects };
+      return { platform, objects: objects.map(dedupeObjectMedia) };
     }
 
     function parseCsvFile(text) {
