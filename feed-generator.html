@@ -5720,9 +5720,13 @@
       nameField.hidden = !register;
       nameField.style.setProperty("display", register ? "grid" : "none", "important");
       document.querySelector("#loginName").required = register;
-      document.querySelector("#loginUsername").closest(".field").hidden = reset;
+      const usernameField = document.querySelector("#loginUsername").closest(".field");
+      usernameField.hidden = reset;
+      usernameField.style.setProperty("display", reset ? "none" : "grid", "important");
       document.querySelector("#loginUsername").required = !reset;
-      document.querySelector("#loginPasswordField").hidden = forgot;
+      const passwordField = document.querySelector("#loginPasswordField");
+      passwordField.hidden = forgot;
+      passwordField.style.setProperty("display", forgot ? "none" : "grid", "important");
       document.querySelector("#loginPassword").required = !forgot;
       document.querySelector("#loginPassword").autocomplete = register || reset ? "new-password" : "current-password";
       const passwordConfirmField = document.querySelector("#loginPasswordConfirmField");
