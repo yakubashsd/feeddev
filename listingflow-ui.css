@@ -1,13 +1,13 @@
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
 /* Source selection imported from the upstream editor, using ListingFlow tokens. */
-body.client-ui .project-source-list .source-record{grid-template-columns:24px minmax(140px,1fr) minmax(130px,.8fr) 76px minmax(140px,1fr) auto;gap:12px;min-width:0}
+body.client-ui .project-source-list .source-record{grid-template-columns:24px minmax(150px,1.05fr) minmax(190px,1.35fr) minmax(170px,1.05fr) 86px minmax(165px,1fr) minmax(250px,auto);gap:12px;min-width:0;width:100%;max-width:100%;box-sizing:border-box}
 body.client-ui .project-source-list .source-record.is-selected{border-color:var(--lf-blue)!important;box-shadow:inset 3px 0 var(--lf-blue)!important}
 body.client-ui .source-select-control input{accent-color:var(--lf-blue)}
 body.client-ui .source-next{min-width:0}
 body.client-ui .published-history-item{min-width:0;border-color:var(--lf-line);background:var(--lf-surface);border-radius:8px;flex-wrap:wrap}
 body.client-ui .published-history-item a{flex:1 1 220px;min-width:0;color:var(--lf-blue)}
 body.client-ui .published-history-item span{color:var(--lf-muted)}
-@media(max-width:1200px){body.client-ui .project-source-list .source-record{grid-template-columns:24px minmax(0,1fr)}body.client-ui .project-source-list .source-record>:not(.source-select-control){grid-column:2}body.client-ui .source-record .source-actions{justify-content:flex-start;flex-wrap:wrap}}
+@media(max-width:1450px){body.client-ui .project-source-list .source-record{grid-template-columns:24px minmax(0,1fr);align-items:start}body.client-ui .project-source-list .source-record>:not(.source-select-control){grid-column:2;min-width:0}body.client-ui .source-record .source-actions{grid-column:2;justify-content:flex-start;flex-wrap:wrap;width:100%;padding-top:4px}}
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Light.woff2") format("woff2");font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
 @font-face{font-family:"Circe";src:url("/assets/fonts/Circe-ExtraBold.woff2") format("woff2");font-weight:800;font-style:normal;font-display:swap}
@@ -1197,6 +1197,9 @@ body.client-ui .sidebar :is(.nav-item,.nav-label,.nav-workflow)[hidden]{display:
 body.client-ui .project-source-list .source-record{
   grid-template-columns:24px minmax(150px,1.05fr) minmax(190px,1.35fr) minmax(170px,1.05fr) 86px minmax(165px,1fr) minmax(250px,auto)!important;
   align-items:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
   overflow:visible!important;
 }
 body.client-ui .project-source-list .source-record>.source-actions{
@@ -1216,7 +1219,7 @@ body.client-ui .project-source-list .source-record>.source-actions button{
   min-width:0!important;
   white-space:nowrap!important;
 }
-@media(max-width:1200px){
+@media(max-width:1450px){
   body.client-ui .project-source-list .source-record{
     grid-template-columns:24px minmax(0,1fr)!important;
     align-items:start!important;
