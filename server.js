@@ -938,7 +938,7 @@ async function sendMonitorAlerts(payload = {}) {
 }
 
 function serveStatic(req, res, pathname) {
-  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/grovia-workspace.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/dashstack-theme.css','/grovia-workspace.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : pathname === "/legal.html" ? path.join(ROOT, "legal-documents.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");

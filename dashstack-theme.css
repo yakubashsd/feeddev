@@ -1,0 +1,167 @@
+/* DashStack-inspired client shell. One token set owns both themes.
+   Scope: shell and project list; preserve the existing editor and workflow. */
+body.client-ui {
+  --lf-bg:#f5f6fa; --lf-surface:#fff; --lf-surface-2:#f1f3f9;
+  --lf-sidebar:#fff; --lf-sidebar-2:#f1f3f9;
+  --lf-text:#202633; --lf-muted:#60697a; --lf-line:#e5e8ef;
+  --lf-line-strong:#d5dbe6; --lf-accent:#5965d8; --lf-accent-hover:#4854c4;
+  --lf-blue:#4e60cf; --lf-blue-bg:#edf0ff; --lf-radius:12px;
+  --lf-shadow:0 4px 18px rgba(32,38,51,.035);
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --ease-in-out:cubic-bezier(0.77,0,0.175,1);
+  color-scheme:light;
+}
+body.client-ui[data-theme="dark"] {
+  --lf-bg:#202431; --lf-surface:#2b3041; --lf-surface-2:#343a4e;
+  --lf-sidebar:#2b3041; --lf-sidebar-2:#343a4e;
+  --lf-text:#f3f4fa; --lf-muted:#bec4d4; --lf-line:#3b4257;
+  --lf-line-strong:#50596f; --lf-accent:#7b85ee; --lf-accent-hover:#8c95f8;
+  --lf-blue:#a4afff; --lf-blue-bg:#343e64; --lf-shadow:none;
+  color-scheme:dark;
+}
+body.client-ui :is(button,a,select,input,textarea) { transition:color 160ms ease,background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,opacity 160ms ease; }
+body.client-ui .project-list-mode .project-table tbody tr { animation:lfRowIn 180ms var(--ease-out) both; }
+body.client-ui .project-list-mode .project-table tbody tr:nth-child(2) { animation-delay:30ms; }
+body.client-ui .project-list-mode .project-table tbody tr:nth-child(3) { animation-delay:60ms; }
+body.client-ui .project-list-mode .project-table tbody tr:nth-child(4) { animation-delay:90ms; }
+@keyframes lfRowIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  body.client-ui .project-list-mode .project-table tbody tr { animation:none!important; }
+  body.client-ui :is(button,a,select,input,textarea) { transition-duration:0.01ms!important; }
+}
+body.client-ui ::selection { background:var(--lf-blue-bg); color:var(--lf-text); }
+body.client-ui * { scrollbar-color:var(--lf-line-strong) var(--lf-bg); }
+body.client-ui input, body.client-ui textarea { caret-color:var(--lf-accent); }
+body.client-ui .sidebar { background:var(--lf-sidebar)!important; color:var(--lf-text)!important; border-right:1px solid var(--lf-line)!important; }
+body.client-ui .sidebar .lf-brand-name { color:var(--lf-text)!important; }
+body.client-ui .sidebar .lf-brand-name span { color:var(--lf-accent)!important; }
+body.client-ui .sidebar .workspace-switcher { background:var(--lf-surface-2)!important; border-color:var(--lf-line)!important; }
+body.client-ui .sidebar .workspace-switcher strong { color:var(--lf-text)!important; }
+body.client-ui .sidebar :is(.workspace-switcher span,.nav-label,.workspace-note,.nav-optional) { color:var(--lf-muted)!important; }
+body.client-ui .sidebar :is(.nav-item,.logout-btn) { color:var(--lf-text)!important; font-size:14px!important; min-height:44px!important; }
+body.client-ui .sidebar :is(.nav-item,.logout-btn):hover { background:var(--lf-surface-2)!important; color:var(--lf-text)!important; }
+body.client-ui .sidebar .nav-item.active { background:var(--lf-accent)!important; border-color:var(--lf-accent)!important; color:#fff!important; }
+body.client-ui .sidebar .nav-item.active :is(.nav-text,.nav-icon,.nav-step,.nav-chevron) { color:inherit!important; stroke:currentColor!important; }
+body.client-ui[data-theme="dark"] .sidebar .nav-item.active { color:#171d32!important; }
+body.client-ui .sidebar :is(.workspace-note,.nav-label-secondary,.nav-workflow-items) { border-color:var(--lf-line)!important; background:transparent!important; }
+body.client-ui .sidebar .nav-step { border-color:var(--lf-line-strong); color:var(--lf-muted); }
+body.client-ui .topbar { background:var(--lf-surface)!important; backdrop-filter:none!important; }
+body.client-ui .topbar :is(.account-avatar,.topbar-icon-action,.mobile-menu-toggle) { background:var(--lf-surface-2)!important; color:var(--lf-text)!important; }
+body.client-ui .topbar :is(.account-copy strong,.topbar-project-picker select) { color:var(--lf-text)!important; }
+body.client-ui .topbar :is(.account-copy small,.account-chevron) { color:var(--lf-muted)!important; }
+body.client-ui .app .theme-toggle { display:grid!important; }
+body.client-ui .sidebar::before, body.client-ui .sidebar::after { display:none!important; }
+body.client-ui .project-list-mode .topbar>div:first-child { grid-template-columns:auto minmax(0,1fr)!important; }
+body.client-ui .project-list-mode .projects-heading h1 { font-size:32px!important; line-height:1.25!important; letter-spacing:-.5px!important; }
+body.client-ui .project-list-mode .projects-heading p { max-width:64ch!important; font-size:14px!important; line-height:21px!important; }
+body.client-ui .project-list-mode .project-metrics { gap:20px!important; margin-bottom:24px!important; }
+body.client-ui .project-list-mode .project-metric { display:block!important; position:relative!important; min-height:144px!important; padding:20px!important; border:0!important; border-radius:12px!important; box-shadow:var(--lf-shadow)!important; }
+body.client-ui .project-list-mode .project-metric .metric-icon { position:absolute!important; left:auto!important; right:18px!important; top:20px!important; width:46px!important; height:46px!important; border-radius:15px!important; }
+body.client-ui .project-list-mode .metric-copy { display:block!important; padding-right:40px!important; }
+body.client-ui .project-list-mode .metric-copy>span { color:var(--lf-muted)!important; font-size:14px!important; font-weight:400!important; white-space:normal!important; }
+body.client-ui .project-list-mode .metric-copy strong { margin-top:12px!important; color:var(--lf-text)!important; font-size:30px!important; line-height:34px!important; }
+body.client-ui .project-list-mode .metric-copy small { margin:14px -40px 0 0!important; color:var(--lf-muted)!important; font-size:12px!important; line-height:18px!important; }
+body.client-ui .project-list-mode .metric-progress { display:none!important; }
+body.client-ui .project-list-mode .project-toolbar { gap:12px!important; margin-bottom:20px!important; }
+body.client-ui .project-list-mode .project-table-wrap { border-radius:12px!important; box-shadow:var(--lf-shadow)!important; }
+body.client-ui .project-list-mode .project-table { min-width:900px!important; }
+body.client-ui .project-list-mode .project-table th { height:48px!important; background:var(--lf-surface-2)!important; color:var(--lf-text)!important; }
+body.client-ui .project-list-mode .project-table td { height:64px!important; }
+body.client-ui .project-list-mode .project-table tbody tr:hover td { background:var(--lf-surface-2)!important; }
+body.client-ui .project-list-mode :is(.project-updated,.project-page-summary,.project-page-size,.project-name-link small) { color:var(--lf-muted)!important; }
+body.client-ui .project-list-mode .project-name-link:hover strong { color:var(--lf-blue)!important; }
+body.client-ui .project-list-mode .project-row-action { background:var(--lf-surface-2)!important; color:var(--lf-text)!important; }
+body.client-ui .project-list-mode .project-row-menu summary:hover { background:var(--lf-surface-2)!important; }
+body.client-ui .project-list-mode .project-select-cell input { accent-color:var(--lf-accent)!important; }
+body.client-ui .project-list-mode #projectSelectionSummary { color:var(--lf-blue)!important; }
+body.client-ui :is(button.primary,#loadUrlBtn,#generateLinkBtn,#applyBulkBtn),
+body.client-ui .project-list-mode :is(#newProjectBtn,.project-pagination button.active) { background:var(--lf-accent)!important; border-color:var(--lf-accent)!important; color:#fff!important; }
+body.client-ui[data-theme="dark"] :is(button.primary,#loadUrlBtn,#generateLinkBtn,#applyBulkBtn),
+body.client-ui[data-theme="dark"] .project-list-mode :is(#newProjectBtn,.project-pagination button.active) { color:#171d32!important; }
+body.client-ui button.primary:hover:not(:disabled) { background:var(--lf-accent-hover)!important; }
+body.client-ui .project-list-mode .project-pagination button:hover:not(:disabled):not(.active) { background:var(--lf-surface-2)!important; }
+body.client-ui :is(input,textarea)::placeholder { color:var(--lf-muted)!important; }
+body.client-ui :focus-visible { outline:2px solid var(--lf-accent)!important; outline-offset:3px!important; }
+@media (max-width:1200px) {
+  body.client-ui .project-list-mode .project-metrics { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+}
+@media (max-width:760px) {
+  body.client-ui .project-list-mode .projects-heading h1 { font-size:27px!important; }
+  body.client-ui .project-list-mode .project-metrics { gap:12px!important; }
+  body.client-ui .project-list-mode .project-metric { min-height:138px!important; padding:16px!important; }
+  body.client-ui .project-list-mode .project-metric .metric-icon { right:12px!important; width:32px!important; height:32px!important; }
+  body.client-ui .topbar .topbar-icon-action, body.client-ui .topbar .account-chevron { display:none!important; }
+}
+@media (max-width:420px) {
+  body.client-ui .project-list-mode .project-metrics { grid-template-columns:1fr!important; }
+  body.client-ui .project-list-mode .project-metric { min-height:130px!important; }
+}
+
+/* External-user entry screen */
+body.client-ui .auth-screen {
+  min-height:100dvh!important; display:grid!important; place-items:center!important; padding:32px 20px!important;
+  background:var(--lf-bg)!important;
+}
+body.client-ui .auth-card {
+  width:min(100%,440px)!important; margin:0!important; padding:40px!important;
+  border:1px solid var(--lf-line)!important; border-radius:18px!important; background:var(--lf-surface)!important;
+  box-shadow:0 18px 60px rgba(32,38,51,.08)!important;
+}
+body.client-ui .auth-card .lf-brand-lockup { margin-bottom:36px!important; }
+body.client-ui .auth-card .lf-brand-name { color:var(--lf-text)!important; font-size:24px!important; }
+body.client-ui .auth-card .lf-brand-name span { color:var(--lf-accent)!important; }
+body.client-ui .auth-card h1 { margin:0!important; color:var(--lf-text)!important; font-size:30px!important; letter-spacing:-.5px!important; }
+body.client-ui .auth-card .auth-description { margin:8px 0 28px!important; color:var(--lf-muted)!important; font-size:14px!important; line-height:21px!important; }
+body.client-ui .auth-fields { display:grid!important; gap:16px!important; }
+body.client-ui .auth-card .field { display:grid!important; gap:7px!important; }
+body.client-ui .auth-card .field label { color:var(--lf-text)!important; font-size:13px!important; font-weight:650!important; }
+body.client-ui .auth-card .field input { width:100%!important; min-height:46px!important; padding:0 13px!important; border-radius:9px!important; }
+body.client-ui .auth-card .auth-submit { width:100%!important; min-height:48px!important; margin-top:4px!important; border-radius:9px!important; font-size:14px!important; }
+body.client-ui .auth-card .auth-error { color:#c43548!important; font-size:13px!important; line-height:19px!important; }
+body.client-ui .auth-card .auth-forgot-link { justify-self:start!important; margin-top:-6px!important; padding:0!important; color:var(--lf-blue)!important; }
+/* External auth has two clear entry paths; internal mode keeps the switch hidden. */
+body.client-ui .auth-switch:not([hidden]) {
+  display:flex!important; align-items:center; gap:4px; padding:4px; margin:0 0 24px;
+  border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface-2);
+}
+body.client-ui .auth-switch button {
+  flex:1; min-height:38px; padding:0 12px; border:0; border-radius:7px;
+  background:transparent; color:var(--lf-muted); font:inherit; font-size:13px; font-weight:650;
+  cursor:pointer; transition:background-color 160ms var(--ease-out), color 160ms var(--ease-out), opacity 160ms var(--ease-out);
+}
+body.client-ui .auth-switch button:hover:not(:disabled) { color:var(--lf-text); }
+body.client-ui .auth-switch button:focus-visible { outline:2px solid var(--lf-accent); outline-offset:1px; }
+body.client-ui .auth-switch button.active:not(:disabled) { background:var(--lf-surface); color:var(--lf-text); box-shadow:0 1px 4px rgba(15,23,42,.08); }
+body.client-ui .auth-switch button:disabled { cursor:not-allowed; opacity:.48; }
+body.client-ui[data-theme="dark"] .auth-card { box-shadow:0 18px 60px rgba(0,0,0,.22)!important; }
+@media(max-width:520px) { body.client-ui .auth-card { padding:28px 22px!important; } }
+
+/* Shared workspace surfaces for every project page */
+body.client-ui .main { background:var(--lf-bg)!important; }
+body.client-ui .main > [data-page] { max-width:1500px!important; }
+body.client-ui :is(.source-panel,.feeds-panel,.validator-panel,.complexes-panel,.table-wrap,.bulk-panel,.layouts-panel,.change-log-panel,.quality-panel,.publish-panel,.billing-card,.support-form,.support-history,.project-overview) {
+  border:1px solid var(--lf-line)!important; border-radius:12px!important; background:var(--lf-surface)!important; box-shadow:var(--lf-shadow)!important;
+}
+body.client-ui :is(.source-panel,.feeds-panel,.validator-panel,.complexes-panel,.table-wrap,.bulk-panel,.layouts-panel,.change-log-panel,.quality-panel,.publish-panel,.billing-card,.support-form,.support-history,.project-overview) { padding:24px!important; }
+body.client-ui :is(.panel-title,.section-title,.projects-heading h1,.project-overview h2,.support-page h2) { color:var(--lf-text)!important; font-weight:700!important; letter-spacing:-.45px!important; }
+body.client-ui :is(.panel-caption,.subtitle,.support-page-heading p,.support-form-caption) { color:var(--lf-muted)!important; }
+body.client-ui :is(.field label,.form-label) { color:var(--lf-text)!important; font-size:13px!important; font-weight:650!important; }
+body.client-ui :is(input:not([type=checkbox]):not([type=range]):not([type=color]),select,textarea) { border-color:var(--lf-line-strong)!important; border-radius:8px!important; background:var(--lf-surface)!important; color:var(--lf-text)!important; }
+body.client-ui :is(input:not([type=checkbox]):not([type=range]):not([type=color]),select,textarea):hover { border-color:var(--lf-accent)!important; }
+body.client-ui :is(.source-grid,.object-filter-panel,.monitor-add,.monitor-notification-settings,.feeds-toolbar,.validator-toolbar,.layout-branding,.publish-row) { border-color:var(--lf-line)!important; border-radius:10px!important; background:var(--lf-surface-2)!important; }
+body.client-ui :is(.table-wrap,table) th { background:var(--lf-surface-2)!important; color:var(--lf-muted)!important; }
+body.client-ui :is(.table-wrap,table) td { border-color:var(--lf-line)!important; background:var(--lf-surface)!important; color:var(--lf-text)!important; }
+body.client-ui :is(.table-wrap,table) tbody tr:hover td { background:var(--lf-surface-2)!important; }
+body.client-ui .editor { border-color:var(--lf-line)!important; background:var(--lf-surface)!important; border-radius:12px!important; box-shadow:var(--lf-shadow)!important; }
+body.client-ui .editor-head { border-color:var(--lf-line)!important; background:var(--lf-surface)!important; }
+body.client-ui .editor .section-title { font-size:20px!important; }
+body.client-ui .page-breadcrumb { color:var(--lf-muted)!important; }
+body.client-ui .page-breadcrumb a { color:var(--lf-blue)!important; }
+body.client-ui :is(.status-badge,.project-status,.validation,.source-status) { border-radius:999px!important; }
+body.client-ui :is(button:not(.primary),.button,.secondary) { border-color:var(--lf-line-strong)!important; background:var(--lf-surface)!important; color:var(--lf-text)!important; }
+body.client-ui :is(button:not(.primary),.button,.secondary):hover:not(:disabled) { border-color:var(--lf-accent)!important; background:var(--lf-surface-2)!important; }
+body.client-ui .topbar { min-height:68px!important; height:68px!important; }
+@media (max-width:760px) {
+  body.client-ui :is(.source-panel,.feeds-panel,.validator-panel,.complexes-panel,.table-wrap,.bulk-panel,.layouts-panel,.change-log-panel,.quality-panel,.publish-panel,.billing-card,.support-form,.support-history,.project-overview) { padding:16px!important; }
+  body.client-ui .topbar { min-height:60px!important; height:60px!important; }
+}

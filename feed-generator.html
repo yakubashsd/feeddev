@@ -4464,10 +4464,10 @@
   <link rel="stylesheet" href="usage-guide.css">
   <style id="listingflow-product-redesign">
     /* Hallmark · pre-emit critique: P4 H5 E4 S4 R4 V4 */
-    /* Operate mode: make the product journey visible without adding another menu. */
+    /* Project navigation lives in the sidebar; avoid a duplicate step bar. */
     body.client-ui .usage-hint { display:none!important; }
     body.client-ui .workflow-nav {
-      display:grid!important;
+      display:none!important;
       grid-template-columns:repeat(6,minmax(0,1fr));
       gap:8px;
       max-width:1460px;
@@ -4600,6 +4600,7 @@
     body.client-ui .source-status.success, body.client-ui .validation.ok, body.client-ui .validator-result.ok { border-left:3px solid var(--lf-green)!important; }
     @keyframes lfSpin { to { transform:rotate(360deg); } }
   </style>
+  <link rel="stylesheet" href="dashstack-theme.css">
 </head>
 <body class="client-ui">
   <div id="bootScreen" role="status" aria-live="polite"><span class="boot-status">Проверяю доступ…</span></div>
@@ -4608,7 +4609,7 @@
       <div class="lf-brand-lockup" aria-label="ListingFlow"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
       <h1>Вход в сервис</h1>
       <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
-      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Вход</button><button type="button" data-auth-mode="register">Регистрация</button></div>
+      <div class="auth-switch" id="authSwitch" hidden><button class="active" type="button" data-auth-mode="login">Войти</button><button type="button" data-auth-mode="register">Создать аккаунт</button></div>
       <div class="auth-fields">
         <div class="field" id="loginNameField" hidden>
           <label for="loginName">Имя</label>
@@ -10774,14 +10775,15 @@ ${photos}
     });
 
     const themeButton = document.querySelector("#themeToggle");
-    const savedTheme = localStorage.getItem("listingflow-theme") || "light";
+    let savedTheme = "light";
+    try { savedTheme = localStorage.getItem("listingflow-theme") === "dark" ? "dark" : "light"; } catch {}
     document.body.dataset.theme = savedTheme;
     themeButton.setAttribute("aria-pressed", String(savedTheme === "dark"));
     themeButton.setAttribute("aria-label", savedTheme === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
     themeButton.addEventListener("click", () => {
       const next = document.body.dataset.theme === "dark" ? "light" : "dark";
       document.body.dataset.theme = next;
-      localStorage.setItem("listingflow-theme", next);
+      try { localStorage.setItem("listingflow-theme", next); } catch {}
       themeButton.setAttribute("aria-pressed", String(next === "dark"));
       themeButton.setAttribute("aria-label", next === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
     });
