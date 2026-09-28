@@ -5407,7 +5407,9 @@
     const publishedStorageKey = "feed-generator-published-v1" + projectSuffix;
     const brandProfilesStorageKey = "feed-generator-brand-profiles-v1" + projectSuffix;
     const monitoredStorageKey = "feed-generator-monitor-v1" + projectSuffix;
-    const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1" + projectSuffix;
+    // Notification preferences belong to the signed-in account, not to an individual feed.
+    // Project data remains scoped by projectSuffix below.
+    const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1";
     const changeLogStorageKey = "feed-generator-change-log-v1" + projectSuffix;
     const complexStatusStorageKey = "feed-generator-complex-status-v1" + projectSuffix;
     const projectSourcesStorageKey = "feed-generator-sources-v1" + projectSuffix;

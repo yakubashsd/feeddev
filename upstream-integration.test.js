@@ -52,6 +52,12 @@ test("project bootstrap has a visible fallback and cannot reload forever", () =>
   assert.doesNotMatch(init, /\n            location\.reload\(\);/);
 });
 
+test("account notification preferences are shared while project data stays scoped", () => {
+  assert.match(html, /const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1";/);
+  assert.doesNotMatch(html, /const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1" \+ projectSuffix/);
+  assert.match(html, /const storageKey = "feed-generator-cian-v2" \+ projectSuffix/);
+});
+
 test("layout editor applies the size value and exposes a working canvas resize handle", () => {
   const draw = clientFunction("drawBrandedLayout");
   const startDrag = clientFunction("startBrandPreviewDrag");
