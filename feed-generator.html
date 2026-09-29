@@ -4657,7 +4657,7 @@
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
-          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники видов</span></button>
+          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники фидов</span></button>
           <button type="button" class="nav-item" data-nav="complexes"><span class="nav-step">2</span><span class="nav-text">ЖК и дома</span></button>
           <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">3</span><span class="nav-text">Объявления и квартиры</span></button>
           <button type="button" class="nav-item" data-nav="branding" aria-label="Оформление планировок, необязательный шаг"><span class="nav-step">4</span><span class="nav-text">Оформление планировок <small class="nav-optional">по желанию</small></span></button>
@@ -4769,7 +4769,7 @@
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте будут источники, данные по ЖК и квартирам, настройки фида и ссылки публикации.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Подключённые источники</h2>
-        <div class="panel-caption">Источники одного проекта должны относиться к одной площадке. Для другой площадки создайте отдельный проект, чтобы формат публикации оставался однозначным.</div>
+        <div class="panel-caption">Добавляйте в проект несколько фидов разных площадок. Каждый источник, набор объектов и ссылка на публикацию сохраняются отдельно.</div>
         <div class="source-grid">
           <div class="field">
             <label for="sourceName">Название</label>
@@ -5139,7 +5139,7 @@
     <dialog class="usage-guide-dialog" id="usageGuideDialog" aria-labelledby="usageGuideTitle">
       <div class="usage-guide-head"><div><span class="usage-guide-eyebrow">КРАТКОЕ РУКОВОДСТВО</span><h2 id="usageGuideTitle">От исходного XML до публикации</h2><p>Пройдите шаги по порядку. Планировки можно настроить позже — для первой выгрузки это необязательно.</p></div><button class="usage-guide-close" id="usageGuideClose" type="button" aria-label="Закрыть инструкцию">×</button></div>
       <ol class="usage-guide-steps">
-        <li><span class="usage-guide-number">01</span><div><h3>Создайте проект</h3><p>Проект — отдельная выгрузка для одной площадки и объекта недвижимости. Так настройки и ссылка не смешиваются.</p></div><button type="button" data-guide-go="projects">Открыть проекты <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">01</span><div><h3>Создайте проект</h3><p>Проект — рабочая область, внутри которой можно хранить несколько фидов разных площадок и редактировать каждый отдельно.</p></div><button type="button" data-guide-go="projects">Открыть проекты <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">02</span><div><h3>Подключите источник</h3><p>Вставьте постоянную ссылку на XML и нажмите «Добавить источник» или загрузите XML-файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="source">К источнику <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">03</span><div><h3>Сверьте ЖК и дома</h3><p>Убедитесь, что сервис сгруппировал дома по жилым комплексам и показывает ожидаемое число квартир.</p></div><button type="button" data-guide-go="complexes">К списку ЖК <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">04</span><div><h3>Проверьте объявления</h3><p>Просмотрите ошибки и обязательные поля, поправьте отдельные объявления или выберите несколько строк для массовых правок.</p></div><button type="button" data-guide-go="apartments">К объявлениям <span aria-hidden="true">→</span></button></li>
@@ -5147,7 +5147,7 @@
         <li><span class="usage-guide-number">06</span><div><h3>Проверьте фид и передайте ссылку площадке</h3><p>На странице публикации исправьте блокирующие замечания, сохраните постоянную ссылку или скачайте XML-файл.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">07</span><div><h3>Следите за обновлениями</h3><p>Мониторинг показывает ошибки и состояние фида. Здесь же можно запустить проверку и настроить уведомления.</p></div><button type="button" data-guide-go="feeds">Открыть мониторинг <span aria-hidden="true">→</span></button></li>
       </ol>
-      <div class="usage-guide-foot"><span>Подсказка: один проект = одна целевая площадка.</span><div><button type="button" data-guide-go="support">Техподдержка</button><button id="usageGuideStart" class="primary" type="button">Начать с источника</button></div></div>
+      <div class="usage-guide-foot"><span>Подсказка: сначала выберите проект, затем загрузите новый или ранее сохранённый фид.</span><div><button type="button" data-guide-go="support">Техподдержка</button><button id="usageGuideStart" class="primary" type="button">Начать с источника</button></div></div>
     </dialog>
 
     <aside class="editor">
@@ -7100,7 +7100,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Все проекты", overview: "Обзор проекта", source: "Источники видов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Все проекты", overview: "Обзор проекта", source: "Источники фидов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -10468,7 +10468,7 @@ ${photos}
       target.classList.toggle("is-empty", empty);
       target.classList.toggle("is-ready", !blocked);
       if (empty) {
-        target.innerHTML = "<strong>Нет объектов для выпуска</strong>Подключите источник в разделе «Источники видов» и импортируйте квартиры. После загрузки здесь появится проверка фида.";
+        target.innerHTML = "<strong>Нет объектов для выпуска</strong>Подключите источник в разделе «Источники фидов» и импортируйте квартиры. После загрузки здесь появится проверка фида.";
         return;
       }
       if (activePlatform === "domclick") {
