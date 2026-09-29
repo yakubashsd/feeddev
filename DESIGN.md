@@ -15,7 +15,7 @@ Calendly-inspired operational workspace for real-estate feed teams. Light is the
 
 ## Surfaces
 
-The client shell has one sidebar, one topbar, and one content column. The top-level entity is a ЖК/workspace; each ЖК can contain multiple independent feed entities. The «Все ЖК» page uses a heading/action row, four summary metrics, one filter row, and a compact project table whose feed column shows count and platform summary. Project-specific navigation appears only after a ЖК is selected, and the feed picker is the explicit entry point for editing an existing feed.
+The client shell has one sidebar, one topbar, and one content column. The top-level entity is a project; each project can contain multiple independent feeds. The «Все проекты» page uses one heading/action row, a filter row, and a compact project table whose feed column shows count and platform summary. Project-specific navigation appears only after a project is selected, and the feed list is the explicit entry point for editing an existing feed.
 
 ## Interaction states
 

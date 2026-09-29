@@ -315,10 +315,12 @@ body.client-ui .validator-panel,
 body.client-ui .strategy-panel,
 body.client-ui .support-page,
 body.client-ui .billing-page { max-width:1240px!important; margin-inline:auto!important; }
-body.client-ui :is(.overview-heading,.projects-heading,.support-page-heading,.strategy-heading,.change-log-head,.bulk-head) { align-items:flex-end!important; gap:24px!important; }
-body.client-ui :is(.overview-heading h1,.projects-heading h1) { font-size:36px!important; line-height:43px!important; letter-spacing:-.9px!important; }
-body.client-ui :is(.overview-heading p,.projects-heading p) { max-width:68ch!important; }
-body.client-ui .overview-card-head h2 { color:var(--lf-text)!important; font-size:22px!important; line-height:28px!important; }
+/* One type scale for operational screens: title → section → supporting copy. */
+body.client-ui :is(.overview-heading,.projects-heading,.support-page-heading,.strategy-heading,.change-log-head,.bulk-head) { align-items:center!important; gap:24px!important; }
+body.client-ui :is(.overview-heading h1,.projects-heading h1) { margin:0!important; font-size:32px!important; line-height:38px!important; font-weight:700!important; letter-spacing:-.65px!important; }
+body.client-ui :is(.overview-heading p,.projects-heading p) { max-width:64ch!important; margin:8px 0 0!important; }
+body.client-ui .overview-heading { margin-bottom:20px!important; }
+body.client-ui .overview-card-head h2 { margin:0!important; color:var(--lf-text)!important; font-size:20px!important; line-height:26px!important; font-weight:700!important; letter-spacing:-.25px!important; }
 body.client-ui .overview-card,
 body.client-ui .overview-metric { border-color:var(--lf-line)!important; background:var(--lf-surface)!important; box-shadow:var(--lf-shadow)!important; }
 body.client-ui .overview-published-list { display:grid!important; gap:10px!important; }
@@ -330,10 +332,9 @@ body.client-ui .overview-published-row small { color:var(--lf-muted)!important; 
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-weight:700!important; }
 /* The overview is a feed switcher, not a second stepper. Keep the workflow
    in the project navigation and reserve this surface for feed actions. */
-body.client-ui .project-overview .overview-grid { display:none!important; }
+body.client-ui .project-overview :is(.overview-grid,.overview-metrics) { display:none!important; }
 body.client-ui .overview-published .overview-card-head { align-items:center!important; }
 body.client-ui .overview-published .overview-card-head > div { min-width:0; }
-body.client-ui .overview-published .overview-card-head > .primary { flex:0 0 auto; white-space:nowrap; }
 body.client-ui .overview-published-row { align-items:center!important; }
 body.client-ui .overview-published-row > div:first-child { min-width:0; }
 body.client-ui .overview-published-row .overview-feed-status { display:inline-flex; margin-left:8px; padding:3px 7px; border-radius:999px; background:var(--lf-blue-bg); color:var(--lf-accent); font-size:11px; font-weight:700; }
@@ -342,7 +343,6 @@ body.client-ui .overview-published-row .text-button { min-height:36px; padding:8
 body.client-ui .overview-published-row .text-button:hover { border-color:var(--lf-accent); background:var(--lf-blue-bg); }
 @media (max-width:760px) {
   body.client-ui .overview-published .overview-card-head { display:grid!important; gap:12px!important; }
-  body.client-ui .overview-published .overview-card-head > .primary { width:100%; }
   body.client-ui .overview-published-row { align-items:flex-start!important; gap:12px!important; }
   body.client-ui .overview-published-row .text-button { width:100%; }
 }
@@ -351,17 +351,15 @@ body.client-ui .overview-published-row .text-button:hover { border-color:var(--l
    low-contrast inline actions. */
 body.client-ui .overview-published { margin-top:14px!important; }
 body.client-ui .overview-published .overview-card-head { padding-bottom:4px!important; }
-body.client-ui .overview-published .overview-card-head h2 { margin-top:6px!important; }
+body.client-ui .overview-published .overview-card-head h2 { margin-top:0!important; }
 body.client-ui .overview-published .overview-card-head .panel-caption { margin:8px 0 0!important; }
-body.client-ui .overview-published .overview-card-head > .primary,
-body.client-ui .overview-published-empty > .primary { min-height:42px!important; padding:0 16px!important; font-size:13px!important; font-weight:700!important; }
 body.client-ui .overview-published-row { min-height:84px!important; }
 body.client-ui .overview-published-row > div:first-child strong { display:flex!important; align-items:center!important; flex-wrap:wrap!important; gap:4px!important; line-height:1.35!important; }
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-size:13px!important; font-weight:700!important; }
 body.client-ui .overview-published-row .text-button:focus-visible,
 body.client-ui .overview-published .primary:focus-visible { outline:3px solid rgba(4,68,252,.25)!important; outline-offset:3px!important; }
-body.client-ui .overview-published-empty { display:grid!important; gap:10px!important; align-items:start!important; }
-body.client-ui .overview-published-empty > .primary { justify-self:start!important; }
+body.client-ui .overview-published-empty { display:grid!important; gap:6px!important; align-items:start!important; color:var(--lf-muted)!important; }
+body.client-ui .overview-published-empty strong { color:var(--lf-text)!important; font-size:15px!important; }
 
 body.client-ui .source-panel .panel-caption,
 body.client-ui .strategy-panel .panel-caption,
