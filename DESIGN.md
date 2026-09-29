@@ -2,14 +2,14 @@
 
 ## Direction
 
-DashStack-inspired operational workspace for real-estate feed teams. Light is the default operating mode; dark is an explicit user preference. The shell uses a quiet grey canvas, white (or graphite) surfaces, a blue-violet action color, and restrained status colors. The main task remains visible: find a project, open it, then work with its feed.
+Calendly-inspired operational workspace for real-estate feed teams. Light is the default operating mode; dark is an explicit user preference. The shell uses a cool blue canvas, white (or deep navy) surfaces, saturated scheduling-blue actions, and restrained status colors. The main task remains visible: find a project, open it, then work with its feed.
 
 ## Tokens
 
 - Font: local Circe (`--lf-font`), with system sans fallback.
-- Light canvas: `#f5f6fa`; surface: `#ffffff`; text: `#202633`; muted: `#60697a`; line: `#e5e8ef`.
-- Dark canvas: `#202431`; surface: `#2b3041`; text: `#f3f4fa`; muted: `#bec4d4`; line: `#3b4257`.
-- Accent: `#5965d8` light / `#7b85ee` dark. Success, warning and error remain functional status colors.
+- Light canvas: `#f4f8ff`; surface: `#ffffff`; text: `#11385e`; muted: `#506e8a`; line: `#d9e6f5`.
+- Dark canvas: `#0e2438`; surface: `#12314f`; text: `#edf6ff`; muted: `#a9c2da`; line: `#2d5273`.
+- Accent: `#0444fc` light / `#4f83ff` dark. Success, warning and error remain functional status colors.
 - Radius: 12px for workspace surfaces; 7–8px for controls.
 - Elevation: low-contrast border and soft shadow in light mode; no decorative glow.
 
