@@ -5748,7 +5748,10 @@
       const sourceSelect = document.querySelector("#trafficPolicySource");
       if (!panel || !content || !sourceSelect) return;
       const publishedSources = projectSources.filter(source => {
-        const publication = appState.publishedFeeds?.[source.id];
+        const publication = appState.publishedFeeds?.[source.id]
+          || (appState.generatedFeedId && appState.generatedLink && ((activeSourceId === source.id) || (activeSourceId === "all" && projectSources.length === 1))
+            ? { id: appState.generatedFeedId, url: appState.generatedLink }
+            : null);
         return Boolean(publication?.id || publication?.url);
       });
       sourceSelect.innerHTML = publishedSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || platformProfiles[source.platform]?.name || "Фид")}</option>`).join("");
