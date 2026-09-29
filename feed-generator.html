@@ -10272,9 +10272,7 @@ ${photos}
       const bad = currentObjects.flatMap(item => requiredIssues(item).map(issue => `${item.externalId || "без ID"}: ${issue}`));
       if (platformErrors.length || bad.length) {
         const examples = [...platformErrors.map(item => item.message || item.title), ...bad].filter(Boolean).slice(0, 3);
-        showToast(`Публикация остановлена: исправьте ${platformErrors.length + bad.length} критических ошибок. ${examples.join("; ")}`);
-        switchPage("apartments");
-        return;
+        showToast(`Рекомендация: ${platformErrors.length + bad.length} замечаний к фиду. Генерация продолжается${examples.length ? ` — ${examples.join("; ")}` : ""}.`);
       }
       const feedName = currentFeedName();
       if (!feedName) {
@@ -10369,7 +10367,7 @@ ${photos}
       const errors = platformErrors.length + missingFields.length;
       const complexes = [...new Set(currentObjects.map(item => String(item.complexName || "").trim()).filter(Boolean))];
       const empty = currentObjects.length === 0;
-      const blocked = empty || errors > 0 || activePlatform === "domclick";
+      const blocked = empty || activePlatform === "domclick";
       const linkButton = document.querySelector("#generateLinkBtn");
       const downloadButton = document.querySelector("#downloadBtn");
       if (linkButton) linkButton.disabled = blocked;
@@ -10385,7 +10383,7 @@ ${photos}
         target.innerHTML = `<strong>Тестовый XML · ${currentObjects.length.toLocaleString("ru-RU")} объектов</strong>Домклик закрыт для постоянной публикации до подтверждения схемы.`;
         return;
       }
-      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `ЖК: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `К публикации не готово: ${errors} блокирующих ошибок.` : "Ошибок блокирующего уровня нет. Можно создать выпуск."}`;
+      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `ЖК: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `Рекомендации: ${errors} замечаний — они не блокируют создание фида.` : "Ошибок не найдено. Можно создать выпуск."}`;
     }
 
     async function renderReleaseHistory() {
