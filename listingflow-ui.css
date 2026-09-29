@@ -407,6 +407,14 @@ body.client-ui .traffic-policy-toolbar{display:grid;grid-template-columns:minmax
 body.client-ui .traffic-policy-save{min-height:42px;white-space:nowrap}
 body.client-ui .overview-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 body.client-ui .overview-actions .text-button{padding:8px 0}
+body.client-ui .overview-published-list{display:grid;gap:10px}
+body.client-ui .overview-published-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 16px;border:1px solid var(--lf-line);border-radius:10px;background:var(--lf-surface-2)}
+body.client-ui .overview-published-row>div{min-width:0;display:grid;gap:3px}
+body.client-ui .overview-published-row strong{font-size:14px;color:var(--lf-text)}
+body.client-ui .overview-published-row span,body.client-ui .overview-published-row small{color:var(--lf-muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.client-ui .overview-published-row small{max-width:560px}
+body.client-ui .overview-published-empty{padding:16px;border:1px dashed var(--lf-line);border-radius:10px;color:var(--lf-muted);font-size:13px}
+@media(max-width:760px){body.client-ui .overview-published-row{align-items:flex-start;flex-direction:column;gap:10px}body.client-ui .overview-published-row button{padding-left:0}}
 body.client-ui .traffic-policy-toolbar .field{margin:0}
 body.client-ui .traffic-policy-toggle{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid var(--lf-line);border-radius:8px;background:var(--lf-surface-2);cursor:pointer}
 body.client-ui .traffic-policy-toggle input{margin-top:3px;accent-color:var(--lf-blue)}

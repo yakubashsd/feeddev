@@ -4710,6 +4710,7 @@
         <div class="overview-heading"><div><span class="eyebrow">Рабочее пространство</span><h1 id="overviewTitle">Обзор проекта</h1><p>Состояние фида, готовность объектов и следующий шаг в одном месте.</p></div><button class="primary" type="button" data-overview-go="source">Подключить источник</button></div>
         <div class="overview-metrics" id="overviewMetrics"></div>
         <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Подключите источник</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><div class="overview-actions"><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть источники</button><button type="button" class="text-button" id="overviewEditFeedAction" data-overview-go="apartments" hidden>Редактировать опубликованный фид →</button></div></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
+        <section class="overview-card overview-published"><div class="overview-card-head"><div><span class="eyebrow">Опубликованные фиды</span><h2>Выберите фид для редактирования</h2><p class="panel-caption">У каждого фида своя площадка, набор объектов и постоянная ссылка.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
         <section class="overview-card overview-recent"><div class="overview-card-head"><div><span class="eyebrow">Контроль</span><h2>Что требует внимания</h2></div><button type="button" class="text-button" data-overview-go="feeds">Открыть мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
@@ -7185,6 +7186,18 @@
       document.querySelector("#overviewNextAction").textContent = ({ source: "Открыть источники", complexes: "Открыть ЖК и дома", apartments: "Открыть объявления", branding: "Открыть планировки", results: "Проверить и опубликовать" })[next[2]];
       const editFeedAction = document.querySelector("#overviewEditFeedAction");
       if (editFeedAction) editFeedAction.hidden = !hasPublishedFeed;
+      const publishedList = document.querySelector("#overviewPublishedFeeds");
+      if (publishedList) {
+        const publishedSources = projectSources.filter(source => {
+          const publication = publicationForSource(source.id);
+          return Boolean(publication?.id || publication?.url);
+        });
+        publishedList.innerHTML = publishedSources.length ? publishedSources.map(source => {
+          const publication = publicationForSource(source.id);
+          const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
+          return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)}</strong><span>${escapeXml(platform)} · ${sourceObjects(source.id).length.toLocaleString("ru-RU")} объектов</span><small>${escapeXml(publication.url || "Постоянная ссылка сохранена")}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать →</button></article>`;
+        }).join("") : `<div class="overview-published-empty">Опубликованных фидов пока нет. Сформируйте первый выпуск в разделе «Проверка и публикация».</div>`;
+      }
       const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} замечаний в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
       document.querySelector("#overviewAlerts").innerHTML = alerts;
     }
@@ -7264,6 +7277,13 @@
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
     });
     document.querySelector(".project-overview").addEventListener("click", event => {
+      const feedButton = event.target.closest("[data-overview-edit-source]");
+      if (feedButton) {
+        setSourceContext(feedButton.dataset.overviewEditSource);
+        save();
+        switchPage("apartments");
+        return;
+      }
       const button = event.target.closest("[data-overview-go]");
       if (button) switchPage(button.dataset.overviewGo);
     });
