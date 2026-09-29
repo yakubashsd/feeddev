@@ -4685,7 +4685,7 @@
           <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
           <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать проект"><option value="">Все проекты</option></select></label>
           <h1>Фиды недвижимости</h1>
-          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span></nav>
+          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
         </div>
         <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span><svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
@@ -4714,7 +4714,7 @@
         <section class="overview-card overview-recent"><div class="overview-card-head"><div><span class="eyebrow">Контроль</span><h2>Что требует внимания</h2></div><button type="button" class="text-button" data-overview-go="feeds">Открыть мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
-        <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Отдельный проект — для каждого фида и площадки. Источники, объявления и публикация собраны внутри.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
+        <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Один проект может содержать несколько фидов разных площадок. Источники, объявления и публикации собраны внутри проекта.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <p class="panel-caption" id="projectsStorageCaption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
         <div class="project-metrics" id="projectMetrics" aria-label="Сводка по проектам"></div>
         <div class="project-toolbar" role="search">
@@ -5701,6 +5701,13 @@
     function publicationForSource(sourceId) {
       const direct = appState.publishedFeeds?.[sourceId];
       if (direct?.id || direct?.url) return direct;
+      const source = projectSources.find(item => item.id === sourceId);
+      // Older server records did not always carry sourceId. Prefer the
+      // persisted source URL before falling back to the legacy `all` record.
+      if (source?.url) {
+        const byUrl = Object.values(appState.publishedFeeds || {}).find(publication => publication?.sourceUrl === source.url && (publication.id || publication.url));
+        if (byUrl) return byUrl;
+      }
       const legacy = appState.publishedFeeds?.all;
       if (legacy?.id || legacy?.url) {
         if (sourceId === "all" || projectSources.length === 1) return legacy;
@@ -5709,6 +5716,20 @@
         return { id: appState.generatedFeedId, url: appState.generatedLink || "", history: appState.publishedHistory || [] };
       }
       return {};
+    }
+
+    function publishedFeedEntries() {
+      const entries = [];
+      const seen = new Set();
+      for (const source of projectSources) {
+        const publication = publicationForSource(source.id);
+        if (!publication?.id && !publication?.url) continue;
+        const identity = publication.id || publication.url;
+        if (seen.has(identity)) continue;
+        seen.add(identity);
+        entries.push({ source, publication });
+      }
+      return entries;
     }
 
     function sourceTrafficPolicy(source) {
@@ -6902,9 +6923,10 @@
       }
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
-        const publication = appState.publishedFeeds?.[source.id] || {};
+        const publication = publicationForSource(source.id);
         const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
-        const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
+        const updatedAt = publication.updatedAt || source.updatedAt;
+        const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
@@ -6928,7 +6950,10 @@
       const entries = projects.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
-        const platform = state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
+        const sourceState = JSON.parse(localStorage.getItem("feed-generator-sources-v1" + suffix) || "[]");
+        const platformValues = [...new Set((Array.isArray(sourceState) ? sourceState : []).map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
+        const platformKey = platformValues[0] || state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
+        const platform = platformValues.length ? platformValues.map(value => platformNames[value] || value).join(" · ") : (platformNames[platformKey] || platformKey);
         const objectCount = state.objects?.length || project.summary?.objectCount || 0;
         const archived = project.status === "archived";
         const hasOutput = Boolean(state.generatedLink || project.summary?.feeds?.length);
@@ -6938,8 +6963,8 @@
         const status = archived ? "archived" : hasError ? "error" : hasWarning ? "warning" : hasOutput ? "published" : objectCount || state.feedUrl ? "processing" : "new";
         const updatedAt = state.updatedAt || state.lastUpdatedAt || project.updatedAt || project.createdAt;
         const updated = updatedAt ? new Date(updatedAt) : null;
-        const searchText = [project.name, project.id, state.feedUrl, project.summary?.feeds?.map(feed => feed.url).join(" "), platformNames[platform]].filter(Boolean).join(" ").toLowerCase();
-        return { project, state, platform, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
+        const searchText = [project.name, project.id, state.feedUrl, project.summary?.feeds?.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
+        return { project, state, platform, platformKey, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
       });
       const activeProjects = entries.filter(entry => !entry.archived);
       const published = activeProjects.filter(entry => entry.hasOutput).length;
@@ -6961,7 +6986,7 @@
       ].map(([label, value, detail, tone, width]) => `<article class="project-metric ${tone}"><span class="metric-icon" aria-hidden="true">${metricIcons[tone]}</span><span class="metric-copy"><span>${label}</span><strong>${Number(value).toLocaleString("ru-RU")}</strong><small>${detail}</small></span><span class="metric-progress" aria-hidden="true"><i style="width:${Math.max(value ? 4 : 0, width)}%"></i></span></article>`).join("");
       const filtered = entries.filter(entry => {
         if (query && !entry.searchText.includes(query)) return false;
-        if (platformFilter !== "all" && entry.platform !== platformFilter) return false;
+        if (platformFilter !== "all" && !(entry.platformKey === platformFilter || entry.platform.split(" · ").some(value => value === platformNames[platformFilter]))) return false;
         if (statusFilter !== "all" && entry.status !== statusFilter) return false;
         return true;
       });
@@ -6978,7 +7003,7 @@
       const statusMeta = {
         published: ["Опубликован", "success"], processing: ["На обработке", "info"], warning: ["Есть предупреждения", "warning"], error: ["Ошибка", "error"], new: ["Настройка", "neutral"], archived: ["В архиве", "neutral"]
       };
-      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, objectCount, status, updated }) => {
+      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, objectCount, status, updated }) => {
         const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
         const monitorUrl = `${projectUrl}&page=feeds`;
         const [statusLabel, statusTone] = statusMeta[status];
@@ -6990,7 +7015,7 @@
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
-          <td><span class="project-platform">${platformMark(platform)}<span>${escapeXml(platformNames[platform] || platformNames.auto)}</span></span></td>
+          <td><span class="project-platform">${platformMark(platformKey)}<span>${escapeXml(platform)}</span></span></td>
           <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
           <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${statusLabel}</span></td>
           <td class="project-updated">${updatedLabel}</td>
@@ -7116,6 +7141,14 @@
       const breadcrumb = document.querySelector("#pageBreadcrumb");
       breadcrumb.hidden = !currentProject || activePage === "projects";
       document.querySelector("#breadcrumbProjectName").textContent = currentProject?.name || "";
+      const activeFeed = projectSources.find(source => source.id === activeSourceId);
+      const feedDivider = document.querySelector("#breadcrumbFeedDivider");
+      const feedName = document.querySelector("#breadcrumbFeedName");
+      if (feedDivider && feedName) {
+        feedDivider.hidden = !activeFeed;
+        feedName.hidden = !activeFeed;
+        feedName.textContent = activeFeed ? (activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Выбранный фид") : "";
+      }
       document.querySelectorAll("[data-step]").forEach(button => {
         const page = stepPages[button.dataset.step];
         const state = stepStates[page] || "";
@@ -7153,7 +7186,7 @@
       const hasSourceIssue = projectSources.some(source => source.error);
       const hasObjectIssues = scopedObjects.some(item => requiredIssues(item).length);
       const hasBrandProfile = Object.values(brandProfiles || {}).some(profile => profile && Object.keys(profile).length);
-      const hasPublication = Boolean(appState.publishedFeeds?.[activePublicationKey()]?.url || appState.generatedLink);
+      const hasPublication = Boolean(publicationForSource(activePublicationKey()).url || appState.generatedLink);
       const states = {
         source: hasSourceIssue ? "issue" : projectSources.length ? "done" : "todo",
         complexes: complexGroups().length ? "done" : "todo",
@@ -7170,7 +7203,8 @@
       const scopedObjects = workingObjects();
       const issues = scopedObjects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
       const sourceCount = projectSources.length;
-      const publicationCount = Object.keys(appState.publishedFeeds || {}).filter(key => appState.publishedFeeds[key]?.url).length;
+      const publishedEntries = publishedFeedEntries();
+      const publicationCount = publishedEntries.length;
       const hasPublishedFeed = Boolean(publicationCount || appState.generatedFeedId || appState.generatedLink);
       const ready = scopedObjects.filter(item => requiredIssues(item).length === 0).length;
       document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта";
@@ -7185,13 +7219,16 @@
       document.querySelector("#overviewNextAction").dataset.overviewGo = next[2];
       document.querySelector("#overviewNextAction").textContent = ({ source: "Открыть источники", complexes: "Открыть ЖК и дома", apartments: "Открыть объявления", branding: "Открыть планировки", results: "Проверить и опубликовать" })[next[2]];
       const editFeedAction = document.querySelector("#overviewEditFeedAction");
-      if (editFeedAction) editFeedAction.hidden = !hasPublishedFeed;
+      if (editFeedAction) {
+        // With several feeds there is no safe implicit target. The rows below
+        // are the entry point and keep the selected source explicit.
+        editFeedAction.hidden = !hasPublishedFeed || publishedEntries.length !== 1;
+        editFeedAction.textContent = publishedEntries.length > 1 ? "Выберите фид выше" : "Редактировать фид →";
+        editFeedAction.disabled = publishedEntries.length > 1;
+      }
       const publishedList = document.querySelector("#overviewPublishedFeeds");
       if (publishedList) {
-        const publishedSources = projectSources.filter(source => {
-          const publication = publicationForSource(source.id);
-          return Boolean(publication?.id || publication?.url);
-        });
+        const publishedSources = publishedEntries.map(entry => entry.source);
         publishedList.innerHTML = publishedSources.length ? publishedSources.map(source => {
           const publication = publicationForSource(source.id);
           const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
@@ -9045,9 +9082,10 @@
         if (!records.length) return;
         const mapped = { ...(appState.publishedFeeds || {}) };
         records.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt)).forEach(record => {
-          const publication = { id: record.id || record.slug, url: record.url, history: record.history || [] };
+          const publication = { id: record.id || record.slug, url: record.url, sourceId: record.sourceId || "", sourceUrl: record.sourceUrl || "", platform: record.platform || "", objectCount: Number(record.objectCount || 0), updatedAt: record.updatedAt || "", history: record.history || [] };
           const rememberedKey = Object.keys(mapped).find(key => mapped[key]?.id === publication.id);
-          const key = record.sourceId || rememberedKey || "all";
+          const sourceByUrl = projectSources.find(source => source.url && publication.sourceUrl && source.url === publication.sourceUrl);
+          const key = record.sourceId || rememberedKey || sourceByUrl?.id || "all";
           mapped[key] = publication;
           if (key === "all" && projectSources.length === 1 && projectSources[0].url === record.sourceUrl) mapped[projectSources[0].id] = publication;
         });
@@ -10369,7 +10407,7 @@ ${photos}
           platform: activePlatform
         };
         appState.publishedHistory = serverHistory.length ? serverHistory : [localEntry, ...(appState.publishedHistory || [])].slice(0, 30);
-        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, history: appState.publishedHistory } };
+        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, sourceId: activeSourceId, sourceUrl: appState.feedUrl || "", platform: activePlatform, objectCount: currentObjects.length, updatedAt: publishedFeed.updatedAt || new Date().toISOString(), history: appState.publishedHistory } };
         document.querySelector("#serverBaseUrl").value = publicFeedOrigin;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
