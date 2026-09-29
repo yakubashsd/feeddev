@@ -328,6 +328,40 @@ body.client-ui .overview-published-row strong { color:var(--lf-text)!important; 
 body.client-ui .overview-published-row span,
 body.client-ui .overview-published-row small { color:var(--lf-muted)!important; }
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-weight:700!important; }
+/* The overview is a feed switcher, not a second stepper. Keep the workflow
+   in the project navigation and reserve this surface for feed actions. */
+body.client-ui .project-overview .overview-grid { display:none!important; }
+body.client-ui .overview-published .overview-card-head { align-items:center!important; }
+body.client-ui .overview-published .overview-card-head > div { min-width:0; }
+body.client-ui .overview-published .overview-card-head > .primary { flex:0 0 auto; white-space:nowrap; }
+body.client-ui .overview-published-row { align-items:center!important; }
+body.client-ui .overview-published-row > div:first-child { min-width:0; }
+body.client-ui .overview-published-row .overview-feed-status { display:inline-flex; margin-left:8px; padding:3px 7px; border-radius:999px; background:var(--lf-blue-bg); color:var(--lf-accent); font-size:11px; font-weight:700; }
+body.client-ui .overview-published-row .overview-feed-status.is-draft { background:var(--lf-surface-2); color:var(--lf-muted); }
+body.client-ui .overview-published-row .text-button { min-height:36px; padding:8px 12px; border:1px solid var(--lf-line); border-radius:7px; background:var(--lf-surface); white-space:nowrap; }
+body.client-ui .overview-published-row .text-button:hover { border-color:var(--lf-accent); background:var(--lf-blue-bg); }
+@media (max-width:760px) {
+  body.client-ui .overview-published .overview-card-head { display:grid!important; gap:12px!important; }
+  body.client-ui .overview-published .overview-card-head > .primary { width:100%; }
+  body.client-ui .overview-published-row { align-items:flex-start!important; gap:12px!important; }
+  body.client-ui .overview-published-row .text-button { width:100%; }
+}
+
+/* Overview hierarchy: one obvious entry point per feed and no competing
+   low-contrast inline actions. */
+body.client-ui .overview-published { margin-top:14px!important; }
+body.client-ui .overview-published .overview-card-head { padding-bottom:4px!important; }
+body.client-ui .overview-published .overview-card-head h2 { margin-top:6px!important; }
+body.client-ui .overview-published .overview-card-head .panel-caption { margin:8px 0 0!important; }
+body.client-ui .overview-published .overview-card-head > .primary,
+body.client-ui .overview-published-empty > .primary { min-height:42px!important; padding:0 16px!important; font-size:13px!important; font-weight:700!important; }
+body.client-ui .overview-published-row { min-height:84px!important; }
+body.client-ui .overview-published-row > div:first-child strong { display:flex!important; align-items:center!important; flex-wrap:wrap!important; gap:4px!important; line-height:1.35!important; }
+body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-size:13px!important; font-weight:700!important; }
+body.client-ui .overview-published-row .text-button:focus-visible,
+body.client-ui .overview-published .primary:focus-visible { outline:3px solid rgba(4,68,252,.25)!important; outline-offset:3px!important; }
+body.client-ui .overview-published-empty { display:grid!important; gap:10px!important; align-items:start!important; }
+body.client-ui .overview-published-empty > .primary { justify-self:start!important; }
 
 body.client-ui .source-panel .panel-caption,
 body.client-ui .strategy-panel .panel-caption,

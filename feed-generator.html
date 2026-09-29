@@ -4715,10 +4715,9 @@
       </nav>
 
       <section class="project-overview page-hidden" data-page="overview">
-        <div class="overview-heading"><div><span class="eyebrow">Проект | Жилой комплекс</span><h1 id="overviewTitle">Обзор проекта</h1><p>Состояние фидов, готовность объектов и следующий шаг в одном месте.</p></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
+        <div class="overview-heading"><div><span class="eyebrow">Проект | Жилой комплекс</span><h1 id="overviewTitle">Обзор проекта</h1><p>Выберите фид для работы или добавьте новый. Каждый фид редактируется и публикуется отдельно.</p></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
         <div class="overview-metrics" id="overviewMetrics"></div>
-        <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Добавьте фид</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><div class="overview-actions"><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть фиды</button><button type="button" class="text-button" id="overviewEditFeedAction" data-overview-go="apartments" hidden>Редактировать опубликованный фид →</button></div></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
-        <section class="overview-card overview-published"><div class="overview-card-head"><div><span class="eyebrow">Фиды этого ЖК</span><h2>Выберите фид для работы</h2><p class="panel-caption">Каждый фид хранит свою площадку, набор объектов, настройки и постоянную ссылку.</p></div><button type="button" class="text-button" data-overview-go="source">Добавить фид →</button></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
+        <section class="overview-card overview-published"><div class="overview-card-head"><div><span class="eyebrow">Фиды этого ЖК</span><h2>Выберите фид для работы</h2><p class="panel-caption">Каждый фид хранит свою площадку, набор объектов, настройки и постоянную ссылку.</p></div><button type="button" class="primary" data-overview-go="source">Добавить фид</button></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
         <section class="overview-card overview-recent"><div class="overview-card-head"><div><span class="eyebrow">Контроль</span><h2>Что требует внимания</h2></div><button type="button" class="text-button" data-overview-go="feeds">Открыть мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
@@ -5625,7 +5624,10 @@
     let checkedIds = new Set();
     let validated = false;
     let feedErrorPanelActivated = Boolean(currentProject && objects.length);
-    let feedErrorPanelMinimized = false;
+    // Keep the persistent error affordance compact by default so it never
+    // obscures the feed picker or its primary edit action. Users can expand
+    // the panel on demand from the bottom-right status control.
+    let feedErrorPanelMinimized = true;
     let layoutsCache = [];
     let layoutsLoaded = false;
     let brandBadgeDataUrl = "";
@@ -6936,14 +6938,14 @@
         const updatedAt = publication.updatedAt || source.updatedAt;
         const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
-        return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="button" aria-label="Выбрать фид ${escapeXml(source.name || platform)}">
+        return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="group" aria-label="Фид ${escapeXml(source.name || platform)}">
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
           <div class="source-identity"><span class="source-label">Название фида</span><strong>${escapeXml(source.name || platform)}</strong></div>
           <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
           <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>${escapeXml(source.error || nextSync.label)}</small></span>
-          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+          <div class="source-actions"><button type="button" class="primary" data-source-edit="${source.id}">Редактировать фид</button><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид для этого ЖК. После загрузки он появится здесь как отдельная рабочая карточка.</span></div>`;
     }
@@ -7216,38 +7218,42 @@
       const sourceCount = projectSources.length;
       const publishedEntries = publishedFeedEntries();
       const publicationCount = publishedEntries.length;
-      const hasPublishedFeed = Boolean(publicationCount || appState.generatedFeedId || appState.generatedLink);
       const ready = scopedObjects.filter(item => requiredIssues(item).length === 0).length;
       document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта | ЖК";
       document.querySelector("#overviewMetrics").innerHTML = [["Объекты", scopedObjects.length.toLocaleString("ru-RU"), sourceCount ? "загружены из фида" : "добавьте фид"], ["Готовы", ready.toLocaleString("ru-RU"), issues ? `${issues} замечаний` : "ошибок не найдено"], ["Фиды", sourceCount, sourceCount ? "добавлены в проект" : "ещё не добавлены"], ["Публикации", publicationCount, publicationCount ? "активные ссылки" : "фид ещё не опубликован"]].map(([label,value,note]) => `<div class="overview-metric"><span class="eyebrow">${label}</span><strong>${value}</strong><small>${note}</small></div>`).join("");
-      const states = getWorkflowStepStates();
-      const steps = [["01","Источник данных","source"],["02","ЖК и дома","complexes"],["03","Объявления","apartments"],["04","Планировки","branding"],["05","Проверка и публикация","results"]];
-      document.querySelector("#overviewProgress").innerHTML = steps.map(([number,label,key]) => { const state = states[key] || "todo"; const status = state === "done" ? "Готово" : state === "issue" ? "Есть ошибки" : state === "optional" ? "По желанию" : "Ожидает"; return `<button type="button" class="overview-progress-row ${state}" data-overview-go="${key}"><i>${state === "done" ? "✓" : number}</i><span>${label}</span><small>${status}</small></button>`; }).join("");
-      const next = steps.find(([, , key]) => !["done","optional"].includes(states[key])) || ["","Опубликованный фид","results"];
-      document.querySelector("#overviewNextStep").textContent = next[0] || "✓";
-      document.querySelector("#overviewNextTitle").textContent = next[1];
-      document.querySelector("#overviewNextText").textContent = next[2] === "source" ? "Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами." : next[2] === "results" ? "Все основные шаги завершены. Проверьте выпуск и обновите ссылку на фид." : "Продолжите настройку проекта, чтобы перейти к публикации.";
-      document.querySelector("#overviewNextAction").dataset.overviewGo = next[2];
-      document.querySelector("#overviewNextAction").textContent = ({ source: "Открыть фиды", complexes: "Открыть ЖК и дома", apartments: "Открыть объявления", branding: "Открыть планировки", results: "Проверить и опубликовать" })[next[2]];
-      const editFeedAction = document.querySelector("#overviewEditFeedAction");
-      if (editFeedAction) {
-        // With several feeds there is no safe implicit target. The rows below
-        // are the entry point and keep the selected source explicit.
-        editFeedAction.hidden = !hasPublishedFeed || publishedEntries.length !== 1;
-        editFeedAction.textContent = publishedEntries.length > 1 ? "Выберите фид выше" : "Редактировать фид →";
-        editFeedAction.disabled = publishedEntries.length > 1;
-      }
       const publishedList = document.querySelector("#overviewPublishedFeeds");
       if (publishedList) {
-        const publishedSources = publishedEntries.map(entry => entry.source);
-        publishedList.innerHTML = publishedSources.length ? publishedSources.map(source => {
+        // The overview is the project-level feed switcher. Show every feed,
+        // not only published ones, so an existing draft is always editable.
+        const feedSources = projectSources.slice().sort((a, b) => String(a.name || a.url).localeCompare(String(b.name || b.url), "ru"));
+        publishedList.innerHTML = feedSources.length ? feedSources.map(source => {
           const publication = publicationForSource(source.id);
           const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
-          return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)}</strong><span>${escapeXml(platform)} · ${sourceObjects(source.id).length.toLocaleString("ru-RU")} объектов</span><small>${escapeXml(publication.url || "Постоянная ссылка сохранена")}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать →</button></article>`;
-        }).join("") : `<div class="overview-published-empty"><strong>Опубликованных фидов пока нет</strong><span>Добавьте или выберите фид в разделе «Фиды проекта | ЖК», затем пройдите проверку и сохраните ссылку.</span><button type="button" class="text-button" data-overview-go="source">Открыть фиды →</button></div>`;
+          const isPublished = Boolean(publication.id || publication.url);
+          const updatedAt = publication.updatedAt || source.updatedAt;
+          const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
+          return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "" : "is-draft"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${sourceObjects(source.id).length.toLocaleString("ru-RU")} объектов</span><small>${isPublished ? escapeXml(publication.url || "Постоянная ссылка сохранена") : `Последнее обновление: ${escapeXml(updated)}`}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button></article>`;
+        }).join("") : `<div class="overview-published-empty"><strong>Фидов в этом ЖК пока нет</strong><span>Добавьте первый источник, затем выберите его здесь для редактирования и публикации.</span><button type="button" class="primary" data-overview-go="source">Добавить фид</button></div>`;
       }
       const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} замечаний в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
       document.querySelector("#overviewAlerts").innerHTML = alerts;
+      // Bind the primary overview actions directly after each render. The feed
+      // rows are rebuilt from state, so relying only on a parent delegation
+      // handler can leave controls inert after a state refresh.
+      document.querySelectorAll(".project-overview [data-overview-edit-source]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          setSourceContext(button.dataset.overviewEditSource);
+          save();
+          switchPage("apartments");
+        };
+      });
+      document.querySelectorAll(".project-overview [data-overview-go]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          switchPage(button.dataset.overviewGo);
+        };
+      });
     }
 
     const supportCategoryLabels = { feed: "Фид и данные", import: "Загрузка XML", publication: "Проверка и публикация", billing: "Оплата и тариф", account: "Аккаунт и доступ", other: "Другой вопрос" };
@@ -7335,6 +7341,22 @@
       const button = event.target.closest("[data-overview-go]");
       if (button) switchPage(button.dataset.overviewGo);
     });
+    // Capture-phase fallback keeps overview actions alive when a feed list is
+    // rehydrated after the initial project render.
+    document.addEventListener("click", event => {
+      const target = event.target instanceof Element ? event.target.closest("[data-overview-edit-source]") : null;
+      if (!target || !target.closest(".project-overview")) return;
+      setSourceContext(target.dataset.overviewEditSource);
+      save();
+      switchPage("apartments");
+      event.stopPropagation();
+    }, true);
+    document.addEventListener("click", event => {
+      const target = event.target instanceof Element ? event.target.closest("[data-overview-go]") : null;
+      if (!target || !target.closest(".project-overview")) return;
+      switchPage(target.dataset.overviewGo);
+      event.stopPropagation();
+    }, true);
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
     document.querySelector("#projectSearch").addEventListener("input", () => { projectPage = 1; renderProjects(); });
@@ -11076,13 +11098,20 @@ ${photos}
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
     document.querySelector("#projectSourceList").addEventListener("click", event => {
+      const editButton = event.target.closest("[data-source-edit]");
       const syncButton = event.target.closest("[data-source-sync]");
       const renameButton = event.target.closest("[data-source-rename]");
       const removeButton = event.target.closest("[data-source-remove]");
       const check = event.target.closest("[data-source-check]");
       if (check || event.target.closest(".source-select-control")) return;
       const sourceCard = event.target.closest("[data-source-select]");
-      if (sourceCard && !syncButton && !renameButton && !removeButton && !event.target.closest("a")) {
+      if (editButton) {
+        setSourceContext(editButton.dataset.sourceEdit);
+        save();
+        switchPage("apartments");
+        return;
+      }
+      if (sourceCard && !editButton && !syncButton && !renameButton && !removeButton && !event.target.closest("a")) {
         selectSource(sourceCard.dataset.sourceSelect);
         return;
       }
