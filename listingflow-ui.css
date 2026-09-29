@@ -403,7 +403,8 @@ body.client-ui[data-theme="dark"] #layoutsPanel .le-properties{background:var(--
 body.client-ui .strategy-panel{display:grid;gap:18px}
 body.client-ui .strategy-heading{display:flex;justify-content:space-between;align-items:flex-start}
 body.client-ui .traffic-policy-content{display:grid;gap:14px}
-body.client-ui .traffic-policy-toolbar{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:14px;align-items:stretch}
+body.client-ui .traffic-policy-toolbar{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr) auto;gap:14px;align-items:end}
+body.client-ui .traffic-policy-save{min-height:42px;white-space:nowrap}
 body.client-ui .traffic-policy-toolbar .field{margin:0}
 body.client-ui .traffic-policy-toggle{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid var(--lf-line);border-radius:8px;background:var(--lf-surface-2);cursor:pointer}
 body.client-ui .traffic-policy-toggle input{margin-top:3px;accent-color:var(--lf-blue)}
@@ -417,7 +418,7 @@ body.client-ui .traffic-room-row small{margin-top:3px;color:var(--lf-muted);font
 body.client-ui .traffic-room-row select:disabled{opacity:.58;cursor:not-allowed}
 body.client-ui .traffic-policy-help{padding:12px 14px;border:1px dashed var(--lf-line);border-radius:8px;color:var(--lf-muted);font-size:12px;line-height:1.5}
 body.client-ui .traffic-empty{padding:28px;border:1px dashed var(--lf-line);border-radius:8px;color:var(--lf-muted);text-align:center}
-@media(max-width:760px){body.client-ui .traffic-policy-toolbar,body.client-ui .traffic-room-row{grid-template-columns:1fr}body.client-ui .traffic-room-row{gap:9px}body.client-ui .traffic-room-row select{width:100%}}
+@media(max-width:760px){body.client-ui .traffic-policy-toolbar,body.client-ui .traffic-room-row{grid-template-columns:1fr}body.client-ui .traffic-room-row{gap:9px}body.client-ui .traffic-room-row select{width:100%}body.client-ui .traffic-policy-save{width:100%}}
 
 /* ListingFlow design system — shared client/admin finish */
 body.client-ui,body.admin-ui{font-family:var(--lf-font)!important;font-size:14px!important;letter-spacing:0!important}

@@ -4804,9 +4804,9 @@
 
       <section class="strategy-panel page-hidden" id="trafficPolicyPanel" data-page="strategy">
         <header class="strategy-heading"><div><span class="eyebrow">Стратегия публикации</span><h2 class="panel-title">Пессимизация</h2><p class="panel-caption">Управляйте объёмом объявлений на площадке: оставляйте в публикации только нужные варианты, не удаляя квартиры из проекта. Настройка действует отдельно для каждого источника.</p></div></header>
-        <div id="trafficPolicyEmpty" class="traffic-empty" hidden>Сначала добавьте источник в проект.</div>
+        <div id="trafficPolicyEmpty" class="traffic-empty" hidden>Сначала сформируйте и сохраните хотя бы один фид в разделе «Проверка и публикация».</div>
         <div id="trafficPolicyContent" class="traffic-policy-content">
-          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Источник</label><select id="trafficPolicySource"></select></div><div class="field"><label for="trafficPolicyMode">Режим пессимизации</label><select id="trafficPolicyMode"><option value="all">Публиковать все объявления</option><option value="one-per-room">По одному объекту каждой комнатности</option><option value="one-per-complex-room">По одному объекту каждой комнатности в каждом ЖК/доме</option></select><small class="field-hint">Остальные квартиры останутся в проекте, но не будут передаваться на площадку.</small></div></div>
+          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Опубликованный фид</label><select id="trafficPolicySource"></select></div><div class="field"><label for="trafficPolicyMode">Режим пессимизации</label><select id="trafficPolicyMode"><option value="all">Публиковать все объявления</option><option value="one-per-room">По одному объекту каждой комнатности</option><option value="one-per-complex-room">По одному объекту каждой комнатности в каждом ЖК/доме</option></select><small class="field-hint">Остальные квартиры останутся в проекте, но не будут передаваться на площадку.</small></div><button id="saveTrafficPolicyBtn" type="button" class="primary traffic-policy-save">Сохранить фид</button></div>
           <div class="traffic-policy-note" id="trafficPolicySummary"></div>
           <div class="traffic-room-list" id="trafficRoomSelections"></div>
           <div class="traffic-policy-help">Новые объекты будут попадать в соответствующую группу при синхронизации. Если выбранный представитель исчезнет из исходного фида, сервис автоматически выберет другой объект этой комнатности.</div>
@@ -5724,7 +5724,7 @@
     function trafficPolicyIncludedIds(source, items = sourceObjects(source?.id)) {
       const ids = items.map(item => item.externalId).filter(Boolean);
       const policy = sourceTrafficPolicy(source);
-      if (policy.mode !== "one-per-room") return ids;
+      if (!['one-per-room', 'one-per-complex-room'].includes(policy.mode)) return ids;
       return trafficPolicyGroups(items, policy.mode).map(([key, group]) => {
         const selected = group.find(item => item.externalId === policy.selections[key]);
         return (selected || group[0])?.externalId;
@@ -5747,10 +5747,14 @@
       const content = document.querySelector("#trafficPolicyContent");
       const sourceSelect = document.querySelector("#trafficPolicySource");
       if (!panel || !content || !sourceSelect) return;
-      sourceSelect.innerHTML = projectSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || platformProfiles[source.platform]?.name || "Источник")}</option>`).join("");
-      const selectedSourceId = projectSources.some(source => source.id === activeSourceId) ? activeSourceId : projectSources[0]?.id || "";
+      const publishedSources = projectSources.filter(source => {
+        const publication = appState.publishedFeeds?.[source.id];
+        return Boolean(publication?.id || publication?.url);
+      });
+      sourceSelect.innerHTML = publishedSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || platformProfiles[source.platform]?.name || "Фид")}</option>`).join("");
+      const selectedSourceId = publishedSources.some(source => source.id === activeSourceId) ? activeSourceId : publishedSources[0]?.id || "";
       sourceSelect.value = selectedSourceId;
-      const source = projectSources.find(item => item.id === sourceSelect.value);
+      const source = publishedSources.find(item => item.id === sourceSelect.value);
       if (!source) {
         content.hidden = true;
         panel.querySelector("#trafficPolicyEmpty").hidden = false;
@@ -5776,9 +5780,9 @@
       document.querySelector("#trafficPolicySummary").textContent = summary;
     }
 
-    function saveTrafficPolicy(sourceId, nextPolicy) {
+    function saveTrafficPolicy(sourceId, nextPolicy, { notify = true } = {}) {
       const source = projectSources.find(item => item.id === sourceId);
-      if (!source) return;
+      if (!source) return false;
       source.trafficPolicy = ["one-per-room", "one-per-complex-room"].includes(nextPolicy.mode) ? nextPolicy.mode : "all";
       source.trafficSelections = nextPolicy.selections || {};
       saveProjectSources();
@@ -5786,7 +5790,8 @@
       save();
       renderTrafficPolicy();
       renderAll();
-      showToast("Стратегия публикации сохранена. Повторно сохраните фид, чтобы обновить ссылку.");
+      if (notify) showToast("Стратегия публикации сохранена. Повторно сохраните фид, чтобы обновить ссылку.");
+      return true;
     }
 
     const form = document.querySelector("#editorForm");
@@ -10870,6 +10875,22 @@ ${photos}
       const source = projectSources.find(item => item.id === sourceId);
       if (!source) return;
       saveTrafficPolicy(sourceId, { mode: event.target.value, selections: sourceTrafficPolicy(source).selections });
+    });
+    document.querySelector("#saveTrafficPolicyBtn")?.addEventListener("click", async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.textContent = "Сохраняю…";
+      try {
+        const sourceId = document.querySelector("#trafficPolicySource")?.value;
+        if (sourceId && sourceId !== activeSourceId) setSourceContext(sourceId);
+        const published = await generateFeedLink();
+        if (published) showToast("Стратегия применена, фид обновлён по той же ссылке");
+      } finally {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        button.textContent = "Сохранить фид";
+      }
     });
     document.querySelector("#trafficRoomSelections")?.addEventListener("change", event => {
       const select = event.target.closest("[data-traffic-room]");
