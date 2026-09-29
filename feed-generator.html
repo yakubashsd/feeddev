@@ -4584,6 +4584,8 @@
     body.client-ui .project-table td, body.client-ui .project-table th { height:52px; }
     body.client-ui .project-row-action { min-width:36px; min-height:36px; }
     body.client-ui .project-platform { display:flex; align-items:center; gap:9px; min-width:0; }
+    body.client-ui .aggregator-mark.has-favicon { overflow:hidden!important; background:#fff!important; border:1px solid var(--lf-line)!important; }
+    body.client-ui .aggregator-mark.has-favicon img { display:block; width:100%; height:100%; padding:3px; object-fit:contain; }
     body.client-ui .project-platform > span:last-child { display:grid; gap:2px; min-width:0; }
     body.client-ui .project-platform strong { color:var(--lf-text); font-size:13px; line-height:1.2; }
     body.client-ui .project-platform small { color:var(--lf-muted); font-size:11px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -4695,7 +4697,7 @@
           <h1>Рабочая область фидов</h1>
           <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
         </div>
-        <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span><svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
+        <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
 
       <aside class="usage-hint" id="usageHint" aria-live="polite" aria-atomic="true">
@@ -4721,14 +4723,12 @@
       <section class="project-overview page-hidden" data-page="overview">
         <div class="overview-heading"><div><h1 id="overviewTitle">Список фидов</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
         <section class="overview-card overview-published"><div class="overview-card-head"><div><h2>Фиды</h2><p class="panel-caption">Выберите фид для редактирования или добавьте новый.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
-        <section class="overview-card overview-recent"><div class="overview-card-head"><div><h2>Проверка</h2></div><button type="button" class="text-button" data-overview-go="feeds">Мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
         <div class="projects-heading"><div><h1>Проекты</h1><p>В одном проекте можно работать с несколькими фидами и публиковать каждый по отдельной ссылке.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <div class="project-toolbar" role="search">
           <label class="project-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="projectSearch" type="search" placeholder="Поиск по названию проекта, источнику или ID…" aria-label="Поиск по проектам"></label>
-          <select id="projectPlatformFilter" aria-label="Фильтр по источнику"><option value="all">Все источники</option><option value="cian">ЦИАН</option><option value="avito">Авито Недвижимость</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик</option><option value="auto">Не выбран</option></select>
-          <select id="projectStatusFilter" aria-label="Фильтр по статусу"><option value="all">Все статусы</option><option value="published">Опубликовано</option><option value="processing">На обработке</option><option value="warning">Есть предупреждения</option><option value="error">Ошибка</option><option value="new">Настройка</option><option value="archived">В архиве</option></select>
+            <select id="projectStatusFilter" aria-label="Фильтр по статусу"><option value="all">Все статусы</option><option value="published">Опубликовано</option><option value="processing">Есть черновики</option><option value="warning">Нужна проверка</option><option value="error">Ошибка публикации</option><option value="new">Не настроено</option><option value="archived">В архиве</option></select>
           <select id="projectSort" aria-label="Сортировка проектов"><option value="newest">Сначала новые</option><option value="oldest">Сначала старые</option><option value="name">По названию</option><option value="objects">По числу объектов</option></select>
         </div>
         <div class="project-table-wrap">
@@ -5542,10 +5542,20 @@
         note: "Домклик часто принимает фиды через партнерский кабинет или интеграцию. В прототипе раздел вынесен отдельно, чтобы хранить свои проверки и правки; финальную схему нужно подтвердить в кабинете Домклик."
       }
     };
+    const platformIcons = {
+      cian: "/assets/aggregators/cian.ico",
+      avito: "/assets/aggregators/avito.ico",
+      yandex: "/assets/aggregators/yandex.ico",
+      domclick: "/assets/aggregators/domclick.ico"
+    };
     function platformMark(platform = "auto") {
       const normalized = platformProfiles[platform] ? platform : "auto";
+      const letters = { cian: "Ц", avito: "А", yandex: "Я", domclick: "Д", auto: "↗" };
+      if (platformIcons[normalized]) {
+        const fallback = letters[normalized];
+        return `<span class="aggregator-mark ${normalized} has-favicon" aria-hidden="true"><img src="${platformIcons[normalized]}" alt="" loading="lazy" onerror="this.remove();this.parentElement.textContent='${fallback}'"></span>`;
+      }
       if (normalized === "avito") return '<span class="aggregator-mark avito" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
-      const letters = { cian: "Ц", yandex: "Я", domclick: "Д", auto: "↗" };
       return `<span class="aggregator-mark ${normalized}" aria-hidden="true">${letters[normalized]}</span>`;
     }
     const defaultDescription = "Продается квартира в современном жилом комплексе в районе Лесобазы. Для жителей предусмотрены детские и спортивные площадки, приватные дворы-парки и комфортные зоны отдыха. Квартиры отличаются высокими потолками, панорамными окнами и предчистовой отделкой.";
@@ -7005,6 +7015,11 @@
           : `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид проекта. После загрузки он станет текущим и появится здесь как рабочая карточка.</span></div>`;
         return;
       }
+      const activePublication = publicationForSource(activeSource.id);
+      if (activePublication.id || activePublication.url || (activeSourceId === activeSource.id && appState.generatedLink)) {
+        node.innerHTML = `<div class="source-empty"><strong>Фид уже опубликован</strong><span>Для повторного редактирования выберите его в разделе «Список фидов» и нажмите «Редактировать фид».</span><button type="button" class="primary" data-source-overview>Открыть список фидов</button></div>`;
+        return;
+      }
       node.innerHTML = [activeSource].map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const publication = publicationForSource(source.id);
@@ -7027,7 +7042,6 @@
 
     function renderProjects() {
       const query = document.querySelector("#projectSearch").value.trim().toLowerCase();
-      const platformFilter = document.querySelector("#projectPlatformFilter").value;
       const statusFilter = document.querySelector("#projectStatusFilter").value;
       const sortBy = document.querySelector("#projectSort").value;
       const pageSize = Number(document.querySelector("#projectsPageSize").value) || 10;
@@ -7039,6 +7053,11 @@
         const summaryFeeds = Array.isArray(project.summary?.feeds) ? project.summary.feeds : [];
         const sourceRecords = Array.isArray(sourceState) && sourceState.length ? sourceState : summaryFeeds;
         const feedCount = sourceRecords.length || (state.feedUrl ? 1 : 0);
+        const publishedFeedCount = summaryFeeds.length
+          ? summaryFeeds.filter(feed => Boolean(feed.url || feed.lastSuccessAt || feed.publishedAt)).length
+          : sourceRecords.filter(source => Boolean(state.publishedFeeds?.[source.id]?.id || state.publishedFeeds?.[source.id]?.url)).length || (state.generatedLink ? 1 : 0);
+        const draftFeedCount = Math.max(0, feedCount - publishedFeedCount);
+        const errorFeedCount = sourceRecords.filter(source => Boolean(source.error || source.autoSyncError)).length;
         const platformValues = [...new Set(sourceRecords.map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
         const platformKey = platformValues[0] || state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
         const platform = platformValues.length ? platformValues.map(value => platformNames[value] || value).join(" · ") : (platformNames[platformKey] || platformKey);
@@ -7052,7 +7071,7 @@
         const updatedAt = state.updatedAt || state.lastUpdatedAt || project.updatedAt || project.createdAt;
         const updated = updatedAt ? new Date(updatedAt) : null;
         const searchText = [project.name, project.id, state.feedUrl, sourceRecords.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
-        return { project, state, platform, platformKey, feedCount, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
+        return { project, state, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
       });
       // Keep the billing guard independent from the visual project summary.
       // The metrics were removed from the UI, but the limit still relies on
@@ -7060,7 +7079,6 @@
       const activeProjects = entries.filter(entry => !entry.archived);
       const filtered = entries.filter(entry => {
         if (query && !entry.searchText.includes(query)) return false;
-        if (platformFilter !== "all" && !(entry.platformKey === platformFilter || entry.platform.split(" · ").some(value => value === platformNames[platformFilter]))) return false;
         if (statusFilter !== "all" && entry.status !== statusFilter) return false;
         return true;
       });
@@ -7075,12 +7093,13 @@
       projectPage = Math.min(projectPage, pages);
       const pageEntries = filtered.slice((projectPage - 1) * pageSize, projectPage * pageSize);
       const statusMeta = {
-        published: ["Опубликован", "success"], processing: ["На обработке", "info"], warning: ["Есть предупреждения", "warning"], error: ["Ошибка", "error"], new: ["Настройка", "neutral"], archived: ["В архиве", "neutral"]
+        published: ["Опубликовано", "success"], processing: ["Есть черновики", "info"], warning: ["Нужна проверка", "warning"], error: ["Ошибка публикации", "error"], new: ["Не настроено", "neutral"], archived: ["В архиве", "neutral"]
       };
-      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, objectCount, status, updated }) => {
+      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, objectCount, status, updated }) => {
         const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
         const monitorUrl = `${projectUrl}&page=feeds`;
         const [statusLabel, statusTone] = statusMeta[status];
+        const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Ошибок: ${errorFeedCount || "есть"}` : statusLabel;
         const updatedLabel = updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
         const projectIdShort = project.id === "legacy" ? "legacy" : project.id.slice(0, 8).toUpperCase();
         const actionMenu = status === "archived"
@@ -7089,13 +7108,13 @@
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
-          <td><span class="project-platform">${platformMark(platformKey)}<span><strong>${feedCount} ${feedCount === 1 ? "фид" : "фидов"}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
+          <td><span class="project-platform">${platformMark(platformKey)}<span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
           <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
-          <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${statusLabel}</span></td>
+          <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${publicationStatus}</span></td>
           <td class="project-updated">${updatedLabel}</td>
           <td class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
         </tr>`;
-      }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || platformFilter !== "all" || statusFilter !== "all" ? "Ничего не найдено" : "Проектов пока нет"}</strong><span>${query || platformFilter !== "all" || statusFilter !== "all" ? "Измените запрос или сбросьте фильтры." : "Создайте проект, чтобы добавить первый фид и начать работу."}</span></td></tr>`;
+      }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || statusFilter !== "all" ? "Ничего не найдено" : "Проектов пока нет"}</strong><span>${query || statusFilter !== "all" ? "Измените запрос или сбросьте фильтр." : "Создайте проект, чтобы добавить первый фид и начать работу."}</span></td></tr>`;
       const firstItem = filtered.length ? (projectPage - 1) * pageSize + 1 : 0;
       const lastItem = Math.min(projectPage * pageSize, filtered.length);
       document.querySelector("#projectPaginationSummary").textContent = `Показано ${firstItem}–${lastItem} из ${filtered.length} ${filtered.length === 1 ? "проекта" : "проектов"}`;
@@ -7308,8 +7327,6 @@
 
     function renderProjectOverview() {
       if (!currentProject) return;
-      const scopedObjects = workingObjects();
-      const issues = scopedObjects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
       document.querySelector("#overviewTitle").textContent = "Список фидов";
       const publishedList = document.querySelector("#overviewPublishedFeeds");
       if (publishedList) {
@@ -7329,8 +7346,6 @@
           return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
         }).join("") : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
       }
-      const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} ${pluralRu(issues, "замечание", "замечания", "замечаний")} в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
-      document.querySelector("#overviewAlerts").innerHTML = alerts;
       // Bind the primary overview actions directly after each render. The feed
       // rows are rebuilt from state, so relying only on a parent delegation
       // handler can leave controls inert after a state refresh.
@@ -7477,7 +7492,7 @@
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
     document.querySelector("#projectSearch").addEventListener("input", () => { projectPage = 1; renderProjects(); });
-    ["#projectPlatformFilter", "#projectStatusFilter", "#projectSort", "#projectsPageSize"].forEach(selector => {
+    ["#projectStatusFilter", "#projectSort", "#projectsPageSize"].forEach(selector => {
       document.querySelector(selector).addEventListener("change", () => { projectPage = 1; renderProjects(); });
     });
     document.querySelector("#projectPagination").addEventListener("click", event => {
