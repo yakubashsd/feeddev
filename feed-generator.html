@@ -4583,6 +4583,13 @@
     body.client-ui .project-table th { white-space:nowrap; }
     body.client-ui .project-table td, body.client-ui .project-table th { height:52px; }
     body.client-ui .project-row-action { min-width:36px; min-height:36px; }
+    body.client-ui .project-platform { display:flex; align-items:center; gap:9px; min-width:0; }
+    body.client-ui .project-platform > span:last-child { display:grid; gap:2px; min-width:0; }
+    body.client-ui .project-platform strong { color:var(--lf-text); font-size:13px; line-height:1.2; }
+    body.client-ui .project-platform small { color:var(--lf-muted); font-size:11px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    body.client-ui .source-empty { display:grid; gap:5px; }
+    body.client-ui .source-empty strong { color:var(--lf-text); font-size:14px; }
+    body.client-ui .source-empty span { color:var(--lf-muted); }
     body.client-ui .project-table-empty td { height:180px; text-align:center; }
     body.client-ui .project-table-empty strong, body.client-ui .project-table-empty span { display:block; }
     body.client-ui .project-table-empty span { margin-top:6px; color:var(--lf-muted); }
@@ -4647,17 +4654,17 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="lf-brand-lockup"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
-        <small>управление фидами</small>
+        <small>Проект | Жилой комплекс</small>
       </div>
-      <a class="workspace-switcher" id="workspaceSwitcher" href="/" aria-label="Вернуться ко всем проектам"><span>Рабочая область</span><strong>Все проекты</strong></a>
-      <div class="nav-label">Проекты</div>
-      <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
-      <div class="nav-label nav-label-project" id="projectNavLabel">Подготовка фида</div>
-      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Обзор проекта</span></button>
+      <a class="workspace-switcher" id="workspaceSwitcher" href="/" aria-label="Вернуться к проектам жилых комплексов"><span>Рабочая область</span><strong>Все ЖК</strong></a>
+      <div class="nav-label">Жилые комплексы</div>
+      <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все ЖК</span></a>
+      <div class="nav-label nav-label-project" id="projectNavLabel">Текущий проект | Жилой комплекс</div>
+      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Обзор проекта | ЖК</span></button>
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
-          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Источники фидов</span></button>
+          <button type="button" class="nav-item" data-nav="source"><span class="nav-step">1</span><span class="nav-text">Фиды</span></button>
           <button type="button" class="nav-item" data-nav="complexes"><span class="nav-step">2</span><span class="nav-text">ЖК и дома</span></button>
           <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">3</span><span class="nav-text">Объявления и квартиры</span></button>
           <button type="button" class="nav-item" data-nav="branding" aria-label="Оформление планировок, необязательный шаг"><span class="nav-step">4</span><span class="nav-text">Оформление планировок <small class="nav-optional">по желанию</small></span></button>
@@ -4684,9 +4691,9 @@
       <div class="topbar">
         <div>
           <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-          <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать проект"><option value="">Все проекты</option></select></label>
-          <h1>Фиды недвижимости</h1>
-          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
+          <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий ЖК"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать ЖК"><option value="">Все ЖК</option></select></label>
+          <h1>Рабочая область фидов</h1>
+          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все ЖК</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
         </div>
         <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span><svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
@@ -4708,14 +4715,14 @@
       </nav>
 
       <section class="project-overview page-hidden" data-page="overview">
-        <div class="overview-heading"><div><span class="eyebrow">Рабочее пространство</span><h1 id="overviewTitle">Обзор проекта</h1><p>Состояние фида, готовность объектов и следующий шаг в одном месте.</p></div><button class="primary" type="button" data-overview-go="source">Подключить источник</button></div>
+        <div class="overview-heading"><div><span class="eyebrow">Проект | Жилой комплекс</span><h1 id="overviewTitle">Обзор проекта</h1><p>Состояние фидов, готовность объектов и следующий шаг в одном месте.</p></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
         <div class="overview-metrics" id="overviewMetrics"></div>
-        <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Подключите источник</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><div class="overview-actions"><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть источники</button><button type="button" class="text-button" id="overviewEditFeedAction" data-overview-go="apartments" hidden>Редактировать опубликованный фид →</button></div></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
-        <section class="overview-card overview-published"><div class="overview-card-head"><div><span class="eyebrow">Опубликованные фиды</span><h2>Выберите фид для редактирования</h2><p class="panel-caption">У каждого фида своя площадка, набор объектов и постоянная ссылка.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
+        <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Добавьте фид</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><div class="overview-actions"><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть фиды</button><button type="button" class="text-button" id="overviewEditFeedAction" data-overview-go="apartments" hidden>Редактировать опубликованный фид →</button></div></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
+        <section class="overview-card overview-published"><div class="overview-card-head"><div><span class="eyebrow">Фиды этого ЖК</span><h2>Выберите фид для работы</h2><p class="panel-caption">Каждый фид хранит свою площадку, набор объектов, настройки и постоянную ссылку.</p></div><button type="button" class="text-button" data-overview-go="source">Добавить фид →</button></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
         <section class="overview-card overview-recent"><div class="overview-card-head"><div><span class="eyebrow">Контроль</span><h2>Что требует внимания</h2></div><button type="button" class="text-button" data-overview-go="feeds">Открыть мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
-        <div class="projects-heading"><div><h1>Проекты фидов</h1><p>Один проект может содержать несколько фидов разных площадок. Источники, объявления и публикации собраны внутри проекта.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
+        <div class="projects-heading"><div><span class="eyebrow">Проект | Жилой комплекс</span><h1>Проекты | Жилые комплексы</h1><p>Создайте рабочую область для жилого комплекса. Внутри можно хранить несколько фидов разных площадок, редактировать их отдельно и получать отдельные ссылки.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <p class="panel-caption" id="projectsStorageCaption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
         <div class="project-metrics" id="projectMetrics" aria-label="Сводка по проектам"></div>
         <div class="project-toolbar" role="search">
@@ -4726,7 +4733,7 @@
         </div>
         <div class="project-table-wrap">
           <table class="project-table">
-            <thead><tr><th class="project-select-cell"><input id="selectAllProjects" type="checkbox" aria-label="Выбрать проекты на странице"></th><th>Название проекта</th><th>Источник</th><th>Кол-во объектов</th><th>Состояние публикации</th><th>Последнее обновление</th><th class="project-actions-cell">Действия</th></tr></thead>
+            <thead><tr><th class="project-select-cell"><input id="selectAllProjects" type="checkbox" aria-label="Выбрать проекты на странице"></th><th>Проект | Жилой комплекс</th><th>Фиды</th><th>Кол-во объектов</th><th>Состояние публикации</th><th>Последнее обновление</th><th class="project-actions-cell">Действия</th></tr></thead>
             <tbody id="projectList"></tbody>
           </table>
           <footer class="project-table-footer"><div class="project-page-summary"><span id="projectSelectionSummary" hidden></span><span id="projectPaginationSummary"></span></div><nav class="project-pagination" id="projectPagination" aria-label="Страницы проектов"></nav><label class="project-page-size">Показывать по <select id="projectsPageSize" aria-label="Количество проектов на странице"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select></label></footer>
@@ -4766,13 +4773,13 @@
           <section class="support-history" aria-labelledby="supportHistoryTitle"><div class="support-history-heading"><div><h3 id="supportHistoryTitle">Мои обращения</h3><p>Статус и номер сохраняются в истории аккаунта.</p></div><button class="support-refresh" id="supportRefresh" type="button" aria-label="Обновить список обращений" title="Обновить список">↻</button></div><div id="supportTicketList" aria-live="polite"><p class="support-loading">Загружаем обращения…</p></div></section>
         </div>
       </section>
-      <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте будут источники, данные по ЖК и квартирам, настройки фида и ссылки публикации.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
+      <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект | Жилой комплекс</h2><p>В проекте будут храниться несколько фидов, объекты, настройки публикации и постоянные ссылки.</p><label for="projectName">Название проекта | ЖК</label><input id="projectName" required maxlength="100" placeholder="Например, Речной парк"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
-        <h2 class="panel-title">Подключённые источники</h2>
-        <div class="panel-caption">Добавляйте в проект несколько фидов разных площадок. Каждый источник, набор объектов и ссылка на публикацию сохраняются отдельно.</div>
+        <h2 class="panel-title">Фиды проекта | Жилой комплекс</h2>
+        <div class="panel-caption">Загрузите новый фид или выберите сохранённый ниже. Каждый фид редактируется отдельно и сохраняет собственную ссылку публикации.</div>
         <div class="source-grid">
           <div class="field">
-            <label for="sourceName">Название</label>
+            <label for="sourceName">Название фида</label>
             <input id="sourceName" placeholder="Например, ЦИАН — основной">
           </div>
           <div class="field">
@@ -4787,7 +4794,7 @@
             <label for="sourceInterval">Обновление</label>
             <select id="sourceInterval"><option value="manual">Вручную</option><option value="30">Каждые 30 минут</option><option value="60">Каждый час</option><option value="120">Каждые 2 часа</option><option value="180">Каждые 3 часа</option><option value="360">Каждые 6 часов</option><option value="720" selected>Каждые 12 часов</option><option value="1440">Каждые сутки</option></select>
           </div>
-          <button id="loadUrlBtn" type="button" class="primary" aria-describedby="loadStatus">Добавить источник</button>
+          <button id="loadUrlBtn" type="button" class="primary" aria-describedby="loadStatus">Добавить фид</button>
           <button id="importBtn" type="button" aria-describedby="loadStatus">Загрузить XML</button>
           <input id="fileInput" class="file-input" type="file" accept=".json,.xml,.csv,text/xml,application/xml,application/json,text/csv">
         </div>
@@ -6938,7 +6945,7 @@
           <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>${escapeXml(source.error || nextSync.label)}</small></span>
           <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
-      }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
+      }).join("") || `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид для этого ЖК. После загрузки он появится здесь как отдельная рабочая карточка.</span></div>`;
     }
 
     function renderProjects() {
@@ -6952,7 +6959,10 @@
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
         const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
         const sourceState = JSON.parse(localStorage.getItem("feed-generator-sources-v1" + suffix) || "[]");
-        const platformValues = [...new Set((Array.isArray(sourceState) ? sourceState : []).map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
+        const summaryFeeds = Array.isArray(project.summary?.feeds) ? project.summary.feeds : [];
+        const sourceRecords = Array.isArray(sourceState) && sourceState.length ? sourceState : summaryFeeds;
+        const feedCount = sourceRecords.length || (state.feedUrl ? 1 : 0);
+        const platformValues = [...new Set(sourceRecords.map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
         const platformKey = platformValues[0] || state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
         const platform = platformValues.length ? platformValues.map(value => platformNames[value] || value).join(" · ") : (platformNames[platformKey] || platformKey);
         const objectCount = state.objects?.length || project.summary?.objectCount || 0;
@@ -6964,8 +6974,8 @@
         const status = archived ? "archived" : hasError ? "error" : hasWarning ? "warning" : hasOutput ? "published" : objectCount || state.feedUrl ? "processing" : "new";
         const updatedAt = state.updatedAt || state.lastUpdatedAt || project.updatedAt || project.createdAt;
         const updated = updatedAt ? new Date(updatedAt) : null;
-        const searchText = [project.name, project.id, state.feedUrl, project.summary?.feeds?.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
-        return { project, state, platform, platformKey, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
+        const searchText = [project.name, project.id, state.feedUrl, sourceRecords.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
+        return { project, state, platform, platformKey, feedCount, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
       });
       const activeProjects = entries.filter(entry => !entry.archived);
       const published = activeProjects.filter(entry => entry.hasOutput).length;
@@ -7004,7 +7014,7 @@
       const statusMeta = {
         published: ["Опубликован", "success"], processing: ["На обработке", "info"], warning: ["Есть предупреждения", "warning"], error: ["Ошибка", "error"], new: ["Настройка", "neutral"], archived: ["В архиве", "neutral"]
       };
-      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, objectCount, status, updated }) => {
+      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, objectCount, status, updated }) => {
         const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
         const monitorUrl = `${projectUrl}&page=feeds`;
         const [statusLabel, statusTone] = statusMeta[status];
@@ -7016,13 +7026,13 @@
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
-          <td><span class="project-platform">${platformMark(platformKey)}<span>${escapeXml(platform)}</span></span></td>
+          <td><span class="project-platform">${platformMark(platformKey)}<span><strong>${feedCount} ${feedCount === 1 ? "фид" : "фидов"}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
           <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
           <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${statusLabel}</span></td>
           <td class="project-updated">${updatedLabel}</td>
           <td class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
         </tr>`;
-      }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || platformFilter !== "all" || statusFilter !== "all" ? "Ничего не найдено" : "Проектов пока нет"}</strong><span>${query || platformFilter !== "all" || statusFilter !== "all" ? "Измените запрос или сбросьте фильтры." : "Создайте проект, чтобы подключить источник и сформировать первый фид."}</span></td></tr>`;
+      }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || platformFilter !== "all" || statusFilter !== "all" ? "Ничего не найдено" : "ЖК пока нет"}</strong><span>${query || platformFilter !== "all" || statusFilter !== "all" ? "Измените запрос или сбросьте фильтры." : "Создайте ЖК, чтобы добавить первый фид и начать работу."}</span></td></tr>`;
       const firstItem = filtered.length ? (projectPage - 1) * pageSize + 1 : 0;
       const lastItem = Math.min(projectPage * pageSize, filtered.length);
       document.querySelector("#projectPaginationSummary").textContent = `Показано ${firstItem}–${lastItem} из ${filtered.length} ${filtered.length === 1 ? "проекта" : "проектов"}`;
@@ -7100,7 +7110,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Все проекты", overview: "Обзор проекта", source: "Источники фидов", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Проекты | Жилые комплексы", overview: "Обзор проекта | ЖК", source: "Фиды проекта | ЖК", complexes: "ЖК и дома", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -7158,11 +7168,11 @@
         if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
-      document.querySelector(".workspace-switcher span").textContent = currentProject ? "ТЕКУЩИЙ ПРОЕКТ · НАЗАД К СПИСКУ" : "РАБОЧАЯ ОБЛАСТЬ";
-      document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
+      document.querySelector(".workspace-switcher span").textContent = currentProject ? "ПРОЕКТ | ЖИЛОЙ КОМПЛЕКС · НАЗАД К СПИСКУ" : "ПРОЕКТЫ | ЖИЛЫЕ КОМПЛЕКСЫ";
+      document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все ЖК";
       const projectPicker = document.querySelector("#projectSwitcherSelect");
       const pickerProjects = projects.filter(project => project.status !== "archived" || project.id === currentProject?.id);
-      projectPicker.innerHTML = `<option value="">Все проекты</option>${pickerProjects.map(project => `<option value="${escapeXml(project.id)}">${escapeXml(project.name)}</option>`).join("")}`;
+      projectPicker.innerHTML = `<option value="">Все ЖК</option>${pickerProjects.map(project => `<option value="${escapeXml(project.id)}">${escapeXml(project.name)}</option>`).join("")}`;
       projectPicker.value = currentProject?.id || "";
       const account = sessionState?.user || {};
       const accountName = account.name || account.company || account.email?.split("@")[0] || "Личный кабинет";
@@ -7208,8 +7218,8 @@
       const publicationCount = publishedEntries.length;
       const hasPublishedFeed = Boolean(publicationCount || appState.generatedFeedId || appState.generatedLink);
       const ready = scopedObjects.filter(item => requiredIssues(item).length === 0).length;
-      document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта";
-      document.querySelector("#overviewMetrics").innerHTML = [["Объекты", scopedObjects.length.toLocaleString("ru-RU"), sourceCount ? "загружены из источника" : "подключите источник"], ["Готовы", ready.toLocaleString("ru-RU"), issues ? `${issues} замечаний` : "ошибок не найдено"], ["Источники", sourceCount, sourceCount ? "подключены" : "ещё не подключены"], ["Публикации", publicationCount, publicationCount ? "активные ссылки" : "фид ещё не опубликован"]].map(([label,value,note]) => `<div class="overview-metric"><span class="eyebrow">${label}</span><strong>${value}</strong><small>${note}</small></div>`).join("");
+      document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта | ЖК";
+      document.querySelector("#overviewMetrics").innerHTML = [["Объекты", scopedObjects.length.toLocaleString("ru-RU"), sourceCount ? "загружены из фида" : "добавьте фид"], ["Готовы", ready.toLocaleString("ru-RU"), issues ? `${issues} замечаний` : "ошибок не найдено"], ["Фиды", sourceCount, sourceCount ? "добавлены в проект" : "ещё не добавлены"], ["Публикации", publicationCount, publicationCount ? "активные ссылки" : "фид ещё не опубликован"]].map(([label,value,note]) => `<div class="overview-metric"><span class="eyebrow">${label}</span><strong>${value}</strong><small>${note}</small></div>`).join("");
       const states = getWorkflowStepStates();
       const steps = [["01","Источник данных","source"],["02","ЖК и дома","complexes"],["03","Объявления","apartments"],["04","Планировки","branding"],["05","Проверка и публикация","results"]];
       document.querySelector("#overviewProgress").innerHTML = steps.map(([number,label,key]) => { const state = states[key] || "todo"; const status = state === "done" ? "Готово" : state === "issue" ? "Есть ошибки" : state === "optional" ? "По желанию" : "Ожидает"; return `<button type="button" class="overview-progress-row ${state}" data-overview-go="${key}"><i>${state === "done" ? "✓" : number}</i><span>${label}</span><small>${status}</small></button>`; }).join("");
@@ -7218,7 +7228,7 @@
       document.querySelector("#overviewNextTitle").textContent = next[1];
       document.querySelector("#overviewNextText").textContent = next[2] === "source" ? "Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами." : next[2] === "results" ? "Все основные шаги завершены. Проверьте выпуск и обновите ссылку на фид." : "Продолжите настройку проекта, чтобы перейти к публикации.";
       document.querySelector("#overviewNextAction").dataset.overviewGo = next[2];
-      document.querySelector("#overviewNextAction").textContent = ({ source: "Открыть источники", complexes: "Открыть ЖК и дома", apartments: "Открыть объявления", branding: "Открыть планировки", results: "Проверить и опубликовать" })[next[2]];
+      document.querySelector("#overviewNextAction").textContent = ({ source: "Открыть фиды", complexes: "Открыть ЖК и дома", apartments: "Открыть объявления", branding: "Открыть планировки", results: "Проверить и опубликовать" })[next[2]];
       const editFeedAction = document.querySelector("#overviewEditFeedAction");
       if (editFeedAction) {
         // With several feeds there is no safe implicit target. The rows below
@@ -7234,7 +7244,7 @@
           const publication = publicationForSource(source.id);
           const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
           return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)}</strong><span>${escapeXml(platform)} · ${sourceObjects(source.id).length.toLocaleString("ru-RU")} объектов</span><small>${escapeXml(publication.url || "Постоянная ссылка сохранена")}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать →</button></article>`;
-        }).join("") : `<div class="overview-published-empty">Опубликованных фидов пока нет. Сформируйте первый выпуск в разделе «Проверка и публикация».</div>`;
+        }).join("") : `<div class="overview-published-empty"><strong>Опубликованных фидов пока нет</strong><span>Добавьте или выберите фид в разделе «Фиды проекта | ЖК», затем пройдите проверку и сохраните ссылку.</span><button type="button" class="text-button" data-overview-go="source">Открыть фиды →</button></div>`;
       }
       const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} замечаний в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
       document.querySelector("#overviewAlerts").innerHTML = alerts;
