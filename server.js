@@ -569,7 +569,18 @@ function validateFeedPayload(payload) {
         : [["ExternalId", item.ExternalId], ["Description", item.Description], ["Address", item.Address], ["Price", item.BargainTerms?.Price]];
     return checks.filter(([, value]) => !text(value)).map(([name]) => `объявление ${index + 1}: ${name}`);
   });
-  if (missing.length) invalid(`Публикация остановлена: обязательные поля не заполнены (${missing.slice(0, 5).join(", ")}).`);
+  // Missing fields are reported as recommendations in the client and do not block
+  // a release. Keep rejecting completely empty offer nodes, because they cannot
+  // represent an object and would produce an unusable feed.
+  const emptyItems = items.filter(item => {
+    const checks = platform === "avito"
+      ? [item.Id, item.Description, item.Address, item.Price]
+      : platform === "yandex"
+        ? [item["@_internal-id"], item.description, item.location?.address, item.price?.value]
+        : [item.ExternalId, item.Description, item.Address, item.BargainTerms?.Price];
+    return checks.every(value => !text(value));
+  });
+  if (emptyItems.length) invalid(`Публикация остановлена: в XML есть пустые объявления (${emptyItems.length}).`);
   if (Number(payload.objectCount) !== items.length) invalid(`Публикация остановлена: в XML ${items.length} объявлений, а указано ${Number(payload.objectCount) || 0}.`);
   return {
     xml,
