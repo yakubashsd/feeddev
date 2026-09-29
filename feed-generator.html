@@ -5397,7 +5397,7 @@
     let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
       projects = [{ id: "legacy", name: "Мой первый проект", createdAt: new Date().toISOString() }];
-      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      try { localStorage.setItem(projectIndexKey, JSON.stringify(projects)); } catch (_) { /* account state remains authoritative */ }
     }
     const requestedProject = new URLSearchParams(location.search).get("project");
     const currentProject = projects.find(project => project.id === requestedProject);
@@ -5654,9 +5654,11 @@
     }
 
     function setSourceContext(sourceId) {
-      activeSourceId = projectSources.some(source => source.id === sourceId) ? sourceId : "all";
+      activeSourceId = sourceId === "all" || projectSources.some(source => source.id === sourceId) ? sourceId : "all";
       const source = projectSources.find(item => item.id === activeSourceId);
-      const publication = appState.publishedFeeds?.[activePublicationKey()] || {};
+      const publication = appState.publishedFeeds?.[activePublicationKey()]
+        || (projectSources.length === 1 ? appState.publishedFeeds?.all : null)
+        || {};
       activePlatform = source?.platform || activePlatform;
       appState.feedUrl = source?.url || projectSources[0]?.url || "";
       appState.generatedFeedId = publication.id || "";
@@ -5688,7 +5690,24 @@
     }
 
     function sourceObjects(sourceId) {
+      if (sourceId === "all") return objects;
       return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(sourceId));
+    }
+
+    // A publication can be stored under the legacy `all` key (older projects)
+    // while the current source has its own id. Resolve both formats in one place
+    // so navigation and the strategy page never disagree about publication state.
+    function publicationForSource(sourceId) {
+      const direct = appState.publishedFeeds?.[sourceId];
+      if (direct?.id || direct?.url) return direct;
+      const legacy = appState.publishedFeeds?.all;
+      if (legacy?.id || legacy?.url) {
+        if (sourceId === "all" || projectSources.length === 1) return legacy;
+      }
+      if (appState.generatedFeedId && (activeSourceId === sourceId || (sourceId === "all" && activeSourceId === "all"))) {
+        return { id: appState.generatedFeedId, url: appState.generatedLink || "", history: appState.publishedHistory || [] };
+      }
+      return {};
     }
 
     function sourceTrafficPolicy(source) {
@@ -5748,15 +5767,13 @@
       const sourceSelect = document.querySelector("#trafficPolicySource");
       if (!panel || !content || !sourceSelect) return;
       let publishedSources = projectSources.filter(source => {
-        const publication = appState.publishedFeeds?.[source.id]
-          || (projectSources.length === 1 ? appState.publishedFeeds?.all : null)
-          || (appState.generatedFeedId && ((activeSourceId === source.id) || (activeSourceId === "all" && projectSources.length === 1))
-            ? { id: appState.generatedFeedId, url: appState.generatedLink || "" }
-            : null);
+        const publication = publicationForSource(source.id);
         return Boolean(publication?.id || publication?.url);
       });
       if (!publishedSources.length && (appState.generatedFeedId || appState.publishedFeeds?.all?.id)) {
-        const fallback = projectSources[0] || { id: "all", name: "Опубликованный фид", platform: activePlatform };
+        const fallback = projectSources.length === 1
+          ? projectSources[0]
+          : { id: "all", name: "Опубликованный фид", platform: activePlatform };
         publishedSources = [fallback];
       }
       sourceSelect.innerHTML = publishedSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || platformProfiles[source.platform]?.name || "Фид")}</option>`).join("");
@@ -5789,10 +5806,15 @@
     }
 
     function saveTrafficPolicy(sourceId, nextPolicy, { notify = true } = {}) {
-      const source = projectSources.find(item => item.id === sourceId);
-      if (!source) return false;
-      source.trafficPolicy = ["one-per-room", "one-per-complex-room"].includes(nextPolicy.mode) ? nextPolicy.mode : "all";
-      source.trafficSelections = nextPolicy.selections || {};
+      const sources = sourceId === "all"
+        ? projectSources
+        : projectSources.filter(item => item.id === sourceId);
+      if (!sources.length) return false;
+      const mode = ["one-per-room", "one-per-complex-room"].includes(nextPolicy.mode) ? nextPolicy.mode : "all";
+      sources.forEach(source => {
+        source.trafficPolicy = mode;
+        source.trafficSelections = nextPolicy.selections || {};
+      });
       saveProjectSources();
       invalidateGeneratedLink();
       save();
@@ -5993,7 +6015,7 @@
         if (indicator) indicator.textContent = "Проект изменён в другой вкладке — обновите данные вручную";
         const remoteState = result.current?.state || {};
         for (const key of projectStateKeys()) {
-          if (Object.hasOwn(remoteState, key)) localStorage.setItem(key, remoteState[key]);
+          if (Object.hasOwn(remoteState, key)) safeStorageSet(key, remoteState[key]);
           else localStorage.removeItem(key);
         }
         cloudSaveRevision = Number(result.current?.revision || 0);
@@ -6031,7 +6053,7 @@
       }
       if (JSON.stringify(remote.state) === JSON.stringify(local)) return false;
       for (const key of projectStateKeys()) {
-        if (Object.hasOwn(remote.state, key)) localStorage.setItem(key, remote.state[key]);
+        if (Object.hasOwn(remote.state, key)) safeStorageSet(key, remote.state[key]);
         else localStorage.removeItem(key);
       }
       return true;
@@ -10293,7 +10315,7 @@ ${photos}
       const xml = buildXml(publicationObjectsForCurrentContext(), activePlatform);
       const button = document.querySelector("#generateLinkBtn");
       const publicationKey = activePublicationKey();
-      const publication = appState.publishedFeeds?.[publicationKey] || {};
+      const publication = publicationForSource(publicationKey);
       const publicationId = publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
       const hadPublishedId = Boolean(publicationId);
       button.disabled = true;
