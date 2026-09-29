@@ -4709,7 +4709,7 @@
       <section class="project-overview page-hidden" data-page="overview">
         <div class="overview-heading"><div><span class="eyebrow">Рабочее пространство</span><h1 id="overviewTitle">Обзор проекта</h1><p>Состояние фида, готовность объектов и следующий шаг в одном месте.</p></div><button class="primary" type="button" data-overview-go="source">Подключить источник</button></div>
         <div class="overview-metrics" id="overviewMetrics"></div>
-        <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Подключите источник</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть источники</button></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
+        <div class="overview-grid"><section class="overview-card overview-next"><div class="overview-card-head"><div><span class="eyebrow">Следующий шаг</span><h2 id="overviewNextTitle">Подключите источник</h2></div><span class="overview-step" id="overviewNextStep">01</span></div><p id="overviewNextText">Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами.</p><div class="overview-actions"><button type="button" class="primary" id="overviewNextAction" data-overview-go="source">Открыть источники</button><button type="button" class="text-button" id="overviewEditFeedAction" data-overview-go="apartments" hidden>Редактировать опубликованный фид →</button></div></section><section class="overview-card"><div class="overview-card-head"><div><span class="eyebrow">Процесс</span><h2>Готовность проекта</h2></div></div><div class="overview-progress" id="overviewProgress"></div></section></div>
         <section class="overview-card overview-recent"><div class="overview-card-head"><div><span class="eyebrow">Контроль</span><h2>Что требует внимания</h2></div><button type="button" class="text-button" data-overview-go="feeds">Открыть мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
@@ -7170,6 +7170,7 @@
       const issues = scopedObjects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
       const sourceCount = projectSources.length;
       const publicationCount = Object.keys(appState.publishedFeeds || {}).filter(key => appState.publishedFeeds[key]?.url).length;
+      const hasPublishedFeed = Boolean(publicationCount || appState.generatedFeedId || appState.generatedLink);
       const ready = scopedObjects.filter(item => requiredIssues(item).length === 0).length;
       document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта";
       document.querySelector("#overviewMetrics").innerHTML = [["Объекты", scopedObjects.length.toLocaleString("ru-RU"), sourceCount ? "загружены из источника" : "подключите источник"], ["Готовы", ready.toLocaleString("ru-RU"), issues ? `${issues} замечаний` : "ошибок не найдено"], ["Источники", sourceCount, sourceCount ? "подключены" : "ещё не подключены"], ["Публикации", publicationCount, publicationCount ? "активные ссылки" : "фид ещё не опубликован"]].map(([label,value,note]) => `<div class="overview-metric"><span class="eyebrow">${label}</span><strong>${value}</strong><small>${note}</small></div>`).join("");
@@ -7182,6 +7183,8 @@
       document.querySelector("#overviewNextText").textContent = next[2] === "source" ? "Загрузите XML, CSV или JSON-фид, чтобы начать работу с объектами." : next[2] === "results" ? "Все основные шаги завершены. Проверьте выпуск и обновите ссылку на фид." : "Продолжите настройку проекта, чтобы перейти к публикации.";
       document.querySelector("#overviewNextAction").dataset.overviewGo = next[2];
       document.querySelector("#overviewNextAction").textContent = ({ source: "Открыть источники", complexes: "Открыть ЖК и дома", apartments: "Открыть объявления", branding: "Открыть планировки", results: "Проверить и опубликовать" })[next[2]];
+      const editFeedAction = document.querySelector("#overviewEditFeedAction");
+      if (editFeedAction) editFeedAction.hidden = !hasPublishedFeed;
       const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} замечаний в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
       document.querySelector("#overviewAlerts").innerHTML = alerts;
     }

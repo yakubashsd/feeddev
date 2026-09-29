@@ -405,6 +405,8 @@ body.client-ui .strategy-heading{display:flex;justify-content:space-between;alig
 body.client-ui .traffic-policy-content{display:grid;gap:14px}
 body.client-ui .traffic-policy-toolbar{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr) auto;gap:14px;align-items:end}
 body.client-ui .traffic-policy-save{min-height:42px;white-space:nowrap}
+body.client-ui .overview-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+body.client-ui .overview-actions .text-button{padding:8px 0}
 body.client-ui .traffic-policy-toolbar .field{margin:0}
 body.client-ui .traffic-policy-toggle{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid var(--lf-line);border-radius:8px;background:var(--lf-surface-2);cursor:pointer}
 body.client-ui .traffic-policy-toggle input{margin-top:3px;accent-color:var(--lf-blue)}
