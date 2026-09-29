@@ -4713,6 +4713,10 @@
         <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Проверка и публикация</span></span></button>
         <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
+      <div class="workflow-save-bar" id="workflowSaveBar" hidden>
+        <div class="workflow-save-copy"><strong id="workflowSaveTitle">Текущий фид</strong><span id="workflowSaveMeta">Изменения сохраняются в рабочем состоянии фида.</span></div>
+        <button type="button" class="primary" id="workflowSaveBtn">Сохранить изменения</button>
+      </div>
 
       <section class="project-overview page-hidden" data-page="overview">
         <div class="overview-heading"><div><h1 id="overviewTitle">Обзор проекта</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
@@ -4772,7 +4776,7 @@
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте хранятся фиды, объекты, настройки публикации и постоянные ссылки.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, Речной парк"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Фиды проекта</h2>
-        <div class="panel-caption">Добавьте новый фид или выберите сохранённый для редактирования.</div>
+        <div class="panel-caption">Добавьте новый фид. После загрузки он станет текущим — дальше проходите шаги только по нему.</div>
         <div class="source-grid">
           <div class="field">
             <label for="sourceName">Название фида</label>
@@ -5676,6 +5680,46 @@
       selectedId = "";
     }
 
+    function prepareNewFeedFlow() {
+      activeSourceId = "all";
+      activePlatform = "cian";
+      appState.feedUrl = "";
+      appState.feedName = "";
+      appState.generatedFeedId = "";
+      appState.generatedLink = "";
+      appState.publishedHistory = [];
+      checkedIds.clear();
+      selectedId = "";
+      const sourceName = document.querySelector("#sourceName");
+      const feedUrl = document.querySelector("#feedUrl");
+      const feedName = document.querySelector("#feedName");
+      if (sourceName) sourceName.value = "";
+      if (feedUrl) feedUrl.value = "";
+      if (feedName) feedName.value = "";
+      document.querySelector("#sourcePlatform")?.setAttribute("value", "auto");
+      const sourcePlatform = document.querySelector("#sourcePlatform");
+      if (sourcePlatform) sourcePlatform.value = "auto";
+      const sourceInterval = document.querySelector("#sourceInterval");
+      if (sourceInterval) sourceInterval.value = "720";
+      save();
+    }
+
+    function saveCurrentFeedDraft() {
+      const source = projectSources.find(item => item.id === activeSourceId);
+      if (!source) {
+        showToast("Сначала добавьте или выберите фид");
+        return false;
+      }
+      source.objectCount = sourceObjects(source.id).length;
+      source.updatedAt = new Date().toISOString();
+      source.error = "";
+      saveProjectSources();
+      save();
+      switchPage("overview");
+      showToast(publicationForSource(source.id).url ? "Изменения сохранены" : "Фид сохранён в обзоре как черновик");
+      return true;
+    }
+
     function selectSource(sourceId) {
       setSourceContext(sourceId);
       save();
@@ -6303,8 +6347,11 @@
     }
 
     function save() {
-      appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
-      appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
+      const activeSource = projectSources.find(item => item.id === activeSourceId);
+      const feedUrlInput = document.querySelector("#feedUrl")?.value.trim();
+      const feedNameInput = document.querySelector("#feedName")?.value.trim();
+      appState.feedUrl = feedUrlInput || activeSource?.url || appState.feedUrl || "";
+      appState.feedName = feedNameInput || activeSource?.name || appState.feedName || "";
       appState.serverBaseUrl = publicFeedOrigin;
       appState.generatedLink ||= "";
       const serialized = JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} });
@@ -6920,12 +6967,14 @@
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
-      const selector = document.querySelector("#activeSourceSelect");
-      if (selector) {
-        selector.innerHTML = `<option value="all">Все фиды проекта</option>${projectSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || source.url)}</option>`).join("")}`;
-        selector.value = projectSources.some(source => source.id === activeSourceId) ? activeSourceId : "all";
+      const activeSource = projectSources.find(source => source.id === activeSourceId);
+      if (!activeSource) {
+        node.innerHTML = projectSources.length
+          ? `<div class="source-empty"><strong>Фид для работы не выбран</strong><span>Вернитесь в обзор проекта и нажмите «Редактировать фид» у нужного источника.</span><button type="button" class="primary" data-source-overview>Открыть обзор проекта</button></div>`
+          : `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид проекта. После загрузки он станет текущим и появится здесь как рабочая карточка.</span></div>`;
+        return;
       }
-      node.innerHTML = projectSources.map(source => {
+      node.innerHTML = [activeSource].map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const publication = publicationForSource(source.id);
         const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
@@ -6941,7 +6990,7 @@
           <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>${escapeXml(source.error || nextSync.label)}</small></span>
           <div class="source-actions"><button type="button" class="primary" data-source-edit="${source.id}">Редактировать фид</button><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
-      }).join("") || `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид проекта. После загрузки он появится здесь как рабочая карточка.</span></div>`;
+      }).join("");
     }
 
     function renderProjects() {
@@ -7142,6 +7191,18 @@
         feedName.hidden = !activeFeed;
         feedName.textContent = activeFeed ? (activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Выбранный фид") : "";
       }
+      const workflowSaveBar = document.querySelector("#workflowSaveBar");
+      const workflowSaveTitle = document.querySelector("#workflowSaveTitle");
+      const workflowSaveMeta = document.querySelector("#workflowSaveMeta");
+      const workflowSaveButton = document.querySelector("#workflowSaveBtn");
+      const workflowPages = ["source", "complexes", "apartments", "branding", "results"];
+      const canSaveWorkflow = Boolean(currentProject && activeFeed && workflowPages.includes(activePage) && !projectReadOnly);
+      if (workflowSaveBar) workflowSaveBar.hidden = !canSaveWorkflow;
+      if (workflowSaveButton) workflowSaveButton.disabled = !canSaveWorkflow;
+      if (workflowSaveTitle) workflowSaveTitle.textContent = activeFeed ? `Фид «${activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Без названия"}»` : "Текущий фид";
+      if (workflowSaveMeta) workflowSaveMeta.textContent = activeFeed && publicationForSource(activeFeed.id).url
+        ? "Изменения сохранятся в опубликованный фид после следующей публикации."
+        : "Сохраните промежуточный результат — фид появится в обзоре как черновик.";
       document.querySelectorAll("[data-step]").forEach(button => {
         const page = stepPages[button.dataset.step];
         const state = stepStates[page] || "";
@@ -7208,7 +7269,7 @@
           const updatedAt = publication.updatedAt || source.updatedAt;
           const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
           const objectCount = sourceObjects(source.id).length;
-          return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "" : "is-draft"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span><small>${isPublished ? escapeXml(publication.url || "Постоянная ссылка сохранена") : `Последнее обновление: ${escapeXml(updated)}`}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button></article>`;
+          return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span><small>${isPublished ? escapeXml(publication.url || "Постоянная ссылка сохранена") : `Последнее обновление: ${escapeXml(updated)}`}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button></article>`;
         }).join("") : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
       }
       const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} ${pluralRu(issues, "замечание", "замечания", "замечаний")} в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
@@ -7227,6 +7288,7 @@
       document.querySelectorAll(".project-overview [data-overview-go]").forEach(button => {
         button.onclick = event => {
           event.stopPropagation();
+          if (button.dataset.overviewGo === "source") prepareNewFeedFlow();
           switchPage(button.dataset.overviewGo);
         };
       });
@@ -7315,7 +7377,10 @@
         return;
       }
       const button = event.target.closest("[data-overview-go]");
-      if (button) switchPage(button.dataset.overviewGo);
+      if (button) {
+        if (button.dataset.overviewGo === "source") prepareNewFeedFlow();
+        switchPage(button.dataset.overviewGo);
+      }
     });
     // Capture-phase fallback keeps overview actions alive when a feed list is
     // rehydrated after the initial project render.
@@ -7330,6 +7395,7 @@
     document.addEventListener("click", event => {
       const target = event.target instanceof Element ? event.target.closest("[data-overview-go]") : null;
       if (!target || !target.closest(".project-overview")) return;
+      if (target.dataset.overviewGo === "source") prepareNewFeedFlow();
       switchPage(target.dataset.overviewGo);
       event.stopPropagation();
     }, true);
@@ -11074,12 +11140,17 @@ ${photos}
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
     document.querySelector("#projectSourceList").addEventListener("click", event => {
+      const overviewButton = event.target.closest("[data-source-overview]");
       const editButton = event.target.closest("[data-source-edit]");
       const syncButton = event.target.closest("[data-source-sync]");
       const renameButton = event.target.closest("[data-source-rename]");
       const removeButton = event.target.closest("[data-source-remove]");
       const check = event.target.closest("[data-source-check]");
       if (check || event.target.closest(".source-select-control")) return;
+      if (overviewButton) {
+        switchPage("overview");
+        return;
+      }
       const sourceCard = event.target.closest("[data-source-select]");
       if (editButton) {
         setSourceContext(editButton.dataset.sourceEdit);
@@ -11113,6 +11184,7 @@ ${photos}
         showToast("Источник удалён");
       }
     });
+    document.querySelector("#workflowSaveBtn")?.addEventListener("click", saveCurrentFeedDraft);
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
     document.querySelector("#projectSourceList").addEventListener("change", event => {
       const check = event.target.closest("[data-source-check]");

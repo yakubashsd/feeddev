@@ -337,7 +337,8 @@ body.client-ui .overview-published .overview-card-head { align-items:center!impo
 body.client-ui .overview-published .overview-card-head > div { min-width:0; }
 body.client-ui .overview-published-row { align-items:center!important; }
 body.client-ui .overview-published-row > div:first-child { min-width:0; }
-body.client-ui .overview-published-row .overview-feed-status { display:inline-flex; margin-left:8px; padding:3px 7px; border-radius:999px; background:var(--lf-blue-bg); color:var(--lf-accent); font-size:11px; font-weight:700; }
+body.client-ui .overview-published-row .overview-feed-status { display:inline-flex; margin-left:8px; padding:3px 8px; border:1px solid transparent; border-radius:999px; background:var(--lf-surface-2); color:var(--lf-muted); font-size:11px; font-weight:700; line-height:1.2; }
+body.client-ui .overview-published-row .overview-feed-status.is-published { background:var(--lf-green-bg); border-color:#b9e8cd; color:var(--lf-green); }
 body.client-ui .overview-published-row .overview-feed-status.is-draft { background:var(--lf-surface-2); color:var(--lf-muted); }
 body.client-ui .overview-published-row .text-button { min-height:36px; padding:8px 12px; border:1px solid var(--lf-line); border-radius:7px; background:var(--lf-surface); white-space:nowrap; }
 body.client-ui .overview-published-row .text-button:hover { border-color:var(--lf-accent); background:var(--lf-blue-bg); }
@@ -358,6 +359,17 @@ body.client-ui .overview-published-row > div:first-child strong { display:flex!i
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-size:13px!important; font-weight:700!important; }
 body.client-ui .overview-published-row .text-button:focus-visible,
 body.client-ui .overview-published .primary:focus-visible { outline:3px solid rgba(4,68,252,.25)!important; outline-offset:3px!important; }
+body.client-ui .workflow-save-bar { display:flex!important; align-items:center!important; justify-content:space-between!important; gap:16px!important; margin:0 auto 18px!important; max-width:1240px!important; padding:12px 16px!important; border:1px solid #cfe0f8!important; border-radius:10px!important; background:var(--lf-blue-bg)!important; }
+body.client-ui .workflow-save-bar[hidden] { display:none!important; }
+body.client-ui .workflow-save-copy { display:grid; gap:2px; min-width:0; }
+body.client-ui .workflow-save-copy strong { color:var(--lf-text)!important; font-size:13px!important; font-weight:750!important; }
+body.client-ui .workflow-save-copy span { color:var(--lf-muted)!important; font-size:12px!important; line-height:1.35!important; }
+body.client-ui .workflow-save-bar .primary { min-height:38px!important; padding:8px 14px!important; white-space:nowrap!important; }
+body.client-ui[data-theme="dark"] .workflow-save-bar { border-color:#285486!important; background:var(--lf-blue-bg)!important; }
+@media (max-width:760px) {
+  body.client-ui .workflow-save-bar { align-items:stretch!important; flex-direction:column!important; margin-bottom:14px!important; }
+  body.client-ui .workflow-save-bar .primary { width:100%!important; }
+}
 body.client-ui .overview-published-empty { display:grid!important; gap:6px!important; align-items:start!important; color:var(--lf-muted)!important; }
 body.client-ui .overview-published-empty strong { color:var(--lf-text)!important; font-size:15px!important; }
 
