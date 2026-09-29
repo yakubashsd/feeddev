@@ -5749,6 +5749,7 @@
       if (!panel || !content || !sourceSelect) return;
       const publishedSources = projectSources.filter(source => {
         const publication = appState.publishedFeeds?.[source.id]
+          || (projectSources.length === 1 ? appState.publishedFeeds?.all : null)
           || (appState.generatedFeedId && appState.generatedLink && ((activeSourceId === source.id) || (activeSourceId === "all" && projectSources.length === 1))
             ? { id: appState.generatedFeedId, url: appState.generatedLink }
             : null);
