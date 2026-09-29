@@ -5947,17 +5947,18 @@
       return [storageKey, publishedStorageKey, brandProfilesStorageKey, monitoredStorageKey, monitorNotificationsStorageKey, changeLogStorageKey, complexStatusStorageKey, projectSourcesStorageKey];
     }
 
-    function captureProjectBrowserState() {
+    function captureProjectBrowserState(overrides = {}) {
       return Object.fromEntries(projectStateKeys().flatMap(key => {
+        if (Object.hasOwn(overrides, key)) return [[key, overrides[key]]];
         const value = localStorage.getItem(key);
         return value === null ? [] : [[key, value]];
       }));
     }
 
-    async function pushExternalProjectState() {
+    async function pushExternalProjectState(overrides = {}) {
       if (runtimeMode !== "external" || !currentProject || !sessionState?.subscriptionActive) return;
       if (cloudSaveConflict) return;
-      const state = captureProjectBrowserState();
+      const state = captureProjectBrowserState(overrides);
       if (!Object.keys(state).length) return;
       const snapshot = JSON.stringify(state);
       if (snapshot === cloudSavedSnapshot) return;
@@ -6222,12 +6223,34 @@
       }
     }
 
+    let storageQuotaWarningShown = false;
+
+    function safeStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (error) {
+        const quotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
+        if (!quotaError) throw error;
+        if (!storageQuotaWarningShown) {
+          storageQuotaWarningShown = true;
+          document.querySelector("#cloudSaveStatus")?.replaceChildren(document.createTextNode("Локальный кэш переполнен — сохраняем данные в аккаунт"));
+          showToast("Локальный кэш переполнен — данные сохраняются в аккаунт");
+        }
+        return false;
+      }
+    }
+
     function save() {
       appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = publicFeedOrigin;
       appState.generatedLink ||= "";
-      localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} }));
+      const serialized = JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} });
+      const savedLocally = safeStorageSet(storageKey, serialized);
+      if (!savedLocally && runtimeMode === "external" && currentProject) {
+        pushExternalProjectState({ [storageKey]: serialized }).catch(() => {});
+      }
       scheduleProjectStateSync();
     }
 
@@ -6782,7 +6805,7 @@
     }
 
     function saveProjectSources() {
-      localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
+      safeStorageSet(projectSourcesStorageKey, JSON.stringify(projectSources));
     }
 
     async function renameSourceFeed(sourceId) {
@@ -6853,7 +6876,7 @@
           <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
           <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
-          <span class="source-next"><small title="${escapeXml(nextSync.title)}">${escapeXml(source.error || nextSync.label)}<br>${source.error ? escapeXml(updated) : ""}</small></span>
+          <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>${escapeXml(source.error || nextSync.label)}</small></span>
           <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;

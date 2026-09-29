@@ -175,6 +175,17 @@ body.client-ui .validator-stat,body.client-ui .validator-result,body.client-ui .
 body.client-ui .change-log-item{border-color:var(--lf-line)!important;border-radius:8px!important;background:#fff!important;color:var(--lf-text)!important;box-shadow:none!important}
 body.client-ui .table-scroll,body.client-ui .layouts-table{border:1px solid var(--lf-line)!important;border-radius:8px!important;overflow:auto!important}
 body.client-ui .source-identity,body.client-ui .source-platform,body.client-ui .feed-platform{display:flex!important;align-items:center!important;gap:10px!important;min-width:0}body.client-ui .source-identity>span:last-child,body.client-ui .source-platform>span:last-child,body.client-ui .feed-platform>span:last-child{min-width:0}body.client-ui .source-identity small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.client-ui .source-record .source-next small{display:block!important;line-height:1.45!important;color:var(--lf-muted)!important}
+body.client-ui .source-record .source-next small strong{display:block!important;margin-bottom:3px!important;color:var(--lf-text)!important;font-size:11px!important;font-weight:650!important}
+body.client-ui .object-filter-panel{column-gap:14px!important;row-gap:16px!important;padding:18px 20px 20px!important;align-items:start!important}
+body.client-ui .object-filter-panel .field{display:grid!important;align-content:start!important;gap:6px!important}
+body.client-ui .object-filter-panel .field>label{margin:0!important;min-height:16px!important;line-height:1.3!important}
+body.client-ui .object-filter-panel .range-filter{padding-top:1px!important}
+body.client-ui .object-filter-panel .range-filter-controls{gap:9px!important}
+body.client-ui .object-filter-panel .range-filter-row{gap:9px!important;min-height:32px!important}
+body.client-ui .object-filter-panel .range-filter-row>span{line-height:1!important}
+body.client-ui .object-filter-panel .field:nth-child(6){align-self:start!important}
+body.client-ui .table-wrap .panel-caption{margin-bottom:16px!important;line-height:1.5!important}
 body.client-ui table{background:#fff!important;color:var(--lf-text)!important}body.client-ui th{position:sticky;top:0;z-index:1;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;font-size:10px!important}body.client-ui td{background:#fff!important;border-color:var(--lf-line)!important;color:var(--lf-text)!important;font-size:12px!important}body.client-ui tbody tr:hover td{background:#fafbfd!important}
 body.client-ui .badge,body.client-ui .feed-status,body.client-ui .source-health{border-radius:999px!important;font-weight:650!important}
 body.client-ui .billing-price{color:var(--lf-text)!important}.billing-status{border-color:var(--lf-line)!important;background:var(--lf-surface-2)!important}
