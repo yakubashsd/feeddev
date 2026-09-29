@@ -330,6 +330,12 @@ body.client-ui .overview-published-row strong { color:var(--lf-text)!important; 
 body.client-ui .overview-published-row span,
 body.client-ui .overview-published-row small { color:var(--lf-muted)!important; }
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-weight:700!important; }
+body.client-ui .overview-published-row { display:grid!important; grid-template-columns:minmax(0,1fr) minmax(260px,auto)!important; gap:16px!important; }
+body.client-ui .overview-feed-main { display:grid!important; gap:3px!important; min-width:0!important; }
+body.client-ui .overview-feed-actions { display:flex!important; flex-wrap:wrap!important; align-items:center!important; justify-content:flex-end!important; gap:6px!important; }
+body.client-ui .overview-feed-health.has-error { color:var(--lf-red)!important; }
+body.client-ui .overview-feed-health.is-ok { color:var(--lf-green)!important; }
+body.client-ui .overview-feed-actions .danger { color:var(--lf-red)!important; }
 /* The overview is a feed switcher, not a second stepper. Keep the workflow
    in the project navigation and reserve this surface for feed actions. */
 body.client-ui .project-overview :is(.overview-grid,.overview-metrics) { display:none!important; }
@@ -344,8 +350,10 @@ body.client-ui .overview-published-row .text-button { min-height:36px; padding:8
 body.client-ui .overview-published-row .text-button:hover { border-color:var(--lf-accent); background:var(--lf-blue-bg); }
 @media (max-width:760px) {
   body.client-ui .overview-published .overview-card-head { display:grid!important; gap:12px!important; }
-  body.client-ui .overview-published-row { align-items:flex-start!important; gap:12px!important; }
-  body.client-ui .overview-published-row .text-button { width:100%; }
+  body.client-ui .overview-published-row { align-items:flex-start!important; grid-template-columns:1fr!important; gap:12px!important; }
+  body.client-ui .overview-feed-actions { justify-content:flex-start!important; }
+  body.client-ui .overview-feed-actions .text-button,
+  body.client-ui .overview-feed-actions .primary { flex:1 1 auto; }
 }
 
 /* Overview hierarchy: one obvious entry point per feed and no competing
@@ -357,6 +365,7 @@ body.client-ui .overview-published .overview-card-head .panel-caption { margin:8
 body.client-ui .overview-published-row { min-height:84px!important; }
 body.client-ui .overview-published-row > div:first-child strong { display:flex!important; align-items:center!important; flex-wrap:wrap!important; gap:4px!important; line-height:1.35!important; }
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-size:13px!important; font-weight:700!important; }
+body.client-ui .overview-published-row .overview-feed-actions .text-button.danger { color:var(--lf-red)!important; }
 body.client-ui .overview-published-row .text-button:focus-visible,
 body.client-ui .overview-published .primary:focus-visible { outline:3px solid rgba(4,68,252,.25)!important; outline-offset:3px!important; }
 body.client-ui .workflow-save-bar { display:flex!important; align-items:center!important; justify-content:space-between!important; gap:16px!important; margin:0 auto 18px!important; max-width:1240px!important; padding:12px 16px!important; border:1px solid #cfe0f8!important; border-radius:10px!important; background:var(--lf-blue-bg)!important; }

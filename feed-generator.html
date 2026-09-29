@@ -4660,7 +4660,7 @@
       <div class="nav-label">Проекты</div>
       <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
       <div class="nav-label nav-label-project" id="projectNavLabel">Текущий проект</div>
-      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Обзор проекта</span></button>
+      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Список фидов</span></button>
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
@@ -4719,7 +4719,7 @@
       </div>
 
       <section class="project-overview page-hidden" data-page="overview">
-        <div class="overview-heading"><div><h1 id="overviewTitle">Обзор проекта</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
+        <div class="overview-heading"><div><h1 id="overviewTitle">Список фидов</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
         <section class="overview-card overview-published"><div class="overview-card-head"><div><h2>Фиды</h2><p class="panel-caption">Выберите фид для редактирования или добавьте новый.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
         <section class="overview-card overview-recent"><div class="overview-card-head"><div><h2>Проверка</h2></div><button type="button" class="text-button" data-overview-go="feeds">Мониторинг →</button></div><div id="overviewAlerts"></div></section>
       </section>
@@ -6893,6 +6893,10 @@
       return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "ru"));
     }
 
+    function shouldShowComplexesStep() {
+      return complexGroups().length > 1;
+    }
+
     function renderComplexes() {
       const query = document.querySelector("#complexSearch")?.value.trim().toLowerCase() || "";
       const groups = complexGroups();
@@ -6942,7 +6946,34 @@
       saveProjectSources();
       save();
       renderProjectSources();
+      if (activePage === "overview") renderProjectOverview();
       showToast("Фид переименован");
+    }
+
+    function sourceIssueCount(sourceId) {
+      return sourceObjects(sourceId).reduce((total, item) => total + requiredIssues(item).length, 0);
+    }
+
+    function removeSourceFeed(sourceId) {
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!source) return false;
+      if (!confirm(`Удалить фид «${source.name || source.url}» и полученные только из него квартиры?`)) return false;
+      projectSources = projectSources.filter(item => item.id !== sourceId);
+      objects = objects.reduce((result, item) => {
+        const remaining = (item._sourceIds || [item._sourceId]).filter(Boolean).filter(value => value !== sourceId);
+        if (!item._sourceId && !item._sourceIds) result.push(item);
+        else if (remaining.length) result.push({ ...item, _sourceId: remaining[0], _sourceIds: remaining });
+        return result;
+      }, []);
+      originalObjects = structuredClone(objects);
+      if (appState.publishedFeeds && sourceId in appState.publishedFeeds) delete appState.publishedFeeds[sourceId];
+      if (activeSourceId === sourceId) setSourceContext("all");
+      saveProjectSources();
+      save();
+      if (!objects.length) feedErrorPanelActivated = false;
+      renderAll();
+      showToast("Фид удалён");
+      return true;
     }
 
     function sourceIntervalLabel(value) {
@@ -6970,7 +7001,7 @@
       const activeSource = projectSources.find(source => source.id === activeSourceId);
       if (!activeSource) {
         node.innerHTML = projectSources.length
-          ? `<div class="source-empty"><strong>Фид для работы не выбран</strong><span>Вернитесь в обзор проекта и нажмите «Редактировать фид» у нужного источника.</span><button type="button" class="primary" data-source-overview>Открыть обзор проекта</button></div>`
+          ? `<div class="source-empty"><strong>Фид для работы не выбран</strong><span>Вернитесь в список фидов и нажмите «Редактировать фид» у нужного источника.</span><button type="button" class="primary" data-source-overview>Открыть список фидов</button></div>`
           : `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид проекта. После загрузки он станет текущим и появится здесь как рабочая карточка.</span></div>`;
         return;
       }
@@ -6981,13 +7012,14 @@
         const updatedAt = publication.updatedAt || source.updatedAt;
         const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
+        const issueCount = sourceIssueCount(source.id);
         return `<article class="source-record ${activeSourceId === source.id ? "is-selected" : ""}" data-source-select="${escapeXml(source.id)}" tabindex="0" role="group" aria-label="Фид ${escapeXml(source.name || platform)}">
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
           <div class="source-identity"><span class="source-label">Название фида</span><strong>${escapeXml(source.name || platform)}</strong></div>
           <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
           <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
-          <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
-          <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>${escapeXml(source.error || nextSync.label)}</small></span>
+          <span class="source-health">${source.error ? "Ошибка" : issueCount ? `${issueCount} ошибок` : "Работает"}</span>
+          <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>Следующее: ${escapeXml(nextSync.label)}${source.error ? `<br>${escapeXml(source.error)}` : issueCount ? `<br>Ошибки в объявлениях: ${issueCount}` : ""}</small></span>
           <div class="source-actions"><button type="button" class="primary" data-source-edit="${source.id}">Редактировать фид</button><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("");
@@ -7141,7 +7173,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Проекты", overview: "Обзор проекта", source: "Фиды проекта", complexes: "Дома и секции", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Дома и секции", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -7151,10 +7183,22 @@
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", false);
       shell.classList.toggle("project-list-mode", activePage === "projects");
+      const showComplexesStep = shouldShowComplexesStep();
+      if (!showComplexesStep && activePage === "complexes") {
+        activePage = "apartments";
+        syncPageUrl("apartments");
+      }
+      shell.classList.toggle("feeds-mode", activePage !== "apartments");
       document.querySelectorAll("[data-page]").forEach(section => {
         const isWorkflow = section.classList.contains("workflow-nav");
         section.classList.toggle("page-hidden", isWorkflow ? !currentProject : section.dataset.page !== activePage);
       });
+      const complexesNavItem = document.querySelector('[data-nav="complexes"]');
+      if (complexesNavItem) complexesNavItem.hidden = !currentProject || !showComplexesStep;
+      const complexesStepButton = document.querySelector('[data-step=".complexes-panel"]');
+      if (complexesStepButton) complexesStepButton.hidden = !showComplexesStep;
+      const complexesGuideItem = document.querySelector('[data-guide-go="complexes"]')?.closest("li");
+      if (complexesGuideItem) complexesGuideItem.hidden = !showComplexesStep;
       const stepOrder = ["source", "complexes", "apartments", "branding", "results"];
       const stepStates = getWorkflowStepStates();
       const activeStepIndex = stepOrder.indexOf(activePage);
@@ -7177,7 +7221,17 @@
         if (itemLabel && stateText) item.setAttribute("aria-label", `${itemLabel} — ${stateText}`);
         if (item.dataset.nav === activePage) item.setAttribute("aria-current", "page");
         else item.removeAttribute("aria-current");
-        item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : !currentProject;
+        item.hidden = item.dataset.nav === "complexes" ? !currentProject || !showComplexesStep : item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : !currentProject;
+      });
+      const visibleWorkflowNavItems = [...document.querySelectorAll(".nav-workflow-items [data-nav]")].filter(item => !item.hidden);
+      visibleWorkflowNavItems.forEach((item, index) => {
+        const step = item.querySelector(".nav-step");
+        if (step) step.textContent = String(index + 1);
+      });
+      const visibleWorkflowSteps = [...document.querySelectorAll(".workflow-nav [data-step]")].filter(item => !item.hidden);
+      visibleWorkflowSteps.forEach((item, index) => {
+        const step = item.querySelector(".step-number");
+        if (step) step.textContent = String(index + 1).padStart(2, "0");
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
       const breadcrumb = document.querySelector("#pageBreadcrumb");
@@ -7256,7 +7310,7 @@
       if (!currentProject) return;
       const scopedObjects = workingObjects();
       const issues = scopedObjects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
-      document.querySelector("#overviewTitle").textContent = currentProject.name || "Обзор проекта";
+      document.querySelector("#overviewTitle").textContent = "Список фидов";
       const publishedList = document.querySelector("#overviewPublishedFeeds");
       if (publishedList) {
         // The overview is the project-level feed switcher. Show every feed,
@@ -7269,7 +7323,10 @@
           const updatedAt = publication.updatedAt || source.updatedAt;
           const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
           const objectCount = sourceObjects(source.id).length;
-          return `<article class="overview-published-row"><div><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span><small>${isPublished ? escapeXml(publication.url || "Постоянная ссылка сохранена") : `Последнее обновление: ${escapeXml(updated)}`}</small></div><button type="button" class="text-button" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button></article>`;
+          const issueCount = sourceIssueCount(source.id);
+          const nextSync = sourceNextSync(source);
+          const healthLabel = source.error ? `Ошибка синхронизации: ${source.error}` : issueCount ? `Ошибки в объявлениях: ${issueCount}` : "Ошибок не найдено";
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
         }).join("") : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
       }
       const alerts = issues ? `<div class="overview-alert"><div><strong>${issues} ${pluralRu(issues, "замечание", "замечания", "замечаний")} в объявлениях</strong><span> Исправьте их до публикации.</span></div><button type="button" class="text-button" data-overview-go="apartments">Исправить →</button></div>` : `<div class="overview-alert"><div><strong>Блокирующих ошибок нет</strong><span> Проект готов к следующему этапу.</span></div><button type="button" class="text-button" data-overview-go="results">Проверить →</button></div>`;
@@ -7283,6 +7340,24 @@
           setSourceContext(button.dataset.overviewEditSource);
           save();
           switchPage("apartments");
+        };
+      });
+      document.querySelectorAll(".project-overview [data-source-sync]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          loadFeedFromUrl(button.dataset.sourceSync);
+        };
+      });
+      document.querySelectorAll(".project-overview [data-source-rename]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          renameSourceFeed(button.dataset.sourceRename).catch(error => showToast(error.message));
+        };
+      });
+      document.querySelectorAll(".project-overview [data-source-remove]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          removeSourceFeed(button.dataset.sourceRemove);
         };
       });
       document.querySelectorAll(".project-overview [data-overview-go]").forEach(button => {
@@ -10152,6 +10227,7 @@ ${photos}
         return;
       }
       setLoadStatus("Загружаю фид по ссылке...");
+      if (existingSource) showToast(`Обновляю фид «${existingSource.name || existingSource.url}»…`);
       loadFeedFromUrl.running = true;
       const loadButton = document.querySelector("#loadUrlBtn");
       const importButton = document.querySelector("#importBtn");
@@ -10252,8 +10328,10 @@ ${photos}
           existingSource.updatedAt = new Date().toISOString();
           saveProjectSources();
           renderProjectSources();
+          if (activePage === "overview") renderProjectOverview();
         }
         setLoadStatus(`Не удалось загрузить фид: ${error.message}. Проверьте ссылку, доступность XML и права доступа к источнику.`, "bad");
+        showToast(`Не удалось обновить фид: ${error.message}`);
       } finally {
         loadFeedFromUrl.running = false;
         loadButton.disabled = false;
@@ -11164,25 +11242,7 @@ ${photos}
       }
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
       if (renameButton) renameSourceFeed(renameButton.dataset.sourceRename).catch(error => showToast(error.message));
-      if (removeButton) {
-        const id = removeButton.dataset.sourceRemove;
-        const source = projectSources.find(item => item.id === id);
-        if (!source || !confirm(`Удалить источник «${source.name}» и полученные только из него квартиры?`)) return;
-        projectSources = projectSources.filter(item => item.id !== id);
-        objects = objects.reduce((result, item) => {
-          const remaining = (item._sourceIds || [item._sourceId]).filter(Boolean).filter(value => value !== id);
-          if (!item._sourceId && !item._sourceIds) result.push(item);
-          else if (remaining.length) result.push({ ...item, _sourceId: remaining[0], _sourceIds: remaining });
-          return result;
-        }, []);
-        originalObjects = structuredClone(objects);
-        if (activeSourceId === id) setSourceContext("all");
-        saveProjectSources();
-        save();
-        if (!objects.length) feedErrorPanelActivated = false;
-        renderAll();
-        showToast("Источник удалён");
-      }
+      if (removeButton) removeSourceFeed(removeButton.dataset.sourceRemove);
     });
     document.querySelector("#workflowSaveBtn")?.addEventListener("click", saveCurrentFeedDraft);
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
