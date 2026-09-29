@@ -6973,6 +6973,10 @@
         const searchText = [project.name, project.id, state.feedUrl, sourceRecords.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
         return { project, state, platform, platformKey, feedCount, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
       });
+      // Keep the billing guard independent from the visual project summary.
+      // The metrics were removed from the UI, but the limit still relies on
+      // the number of active projects in the account.
+      const activeProjects = entries.filter(entry => !entry.archived);
       const filtered = entries.filter(entry => {
         if (query && !entry.searchText.includes(query)) return false;
         if (platformFilter !== "all" && !(entry.platformKey === platformFilter || entry.platform.split(" · ").some(value => value === platformNames[platformFilter]))) return false;
