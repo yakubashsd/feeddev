@@ -166,8 +166,18 @@
   document.querySelector('#le-redo').onclick=()=>travel(future,history);
   document.querySelector('#le-preview').onclick=()=>brandPreviewImages?openBrandPreviewDialog():showToast('Добавьте планировку или графическую подложку для предпросмотра');
   toolbar.addEventListener('click',e=>{const add=e.target.closest('[data-add-layer]');if(add){if(readLayers().length>=40){showToast('Достигнут предел: 40 дополнительных слоёв');return}baseline=snapshot();const type=add.dataset.addLayer,id=`layer-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,layers=readLayers();layers.push({id,type,name:type==='text'?`Текст ${layers.filter(x=>x.type==='text').length+1}`:`Фигура ${layers.filter(x=>x.type==='rect').length+1}`,text:'Новый текст',x:type==='text'?12:8,y:type==='text'?72:10,width:type==='text'?55:34,height:type==='text'?14:18,fontSize:36,color:'#11151a',fill:'#d5ff19',opacity:100,weight:700});writeLayers(layers);chooseCustom(id);redraw();commit();properties.querySelector('[data-prop="text"]')?.focus();return}if(e.target.closest('#le-zoom-in'))setZoom(zoom+.1);if(e.target.closest('#le-zoom-out'))setZoom(zoom-.1);if(e.target.closest('#le-fit'))fitCanvas();if(e.target.closest('#le-grid')){grid.hidden=!grid.hidden;e.target.closest('#le-grid').setAttribute('aria-pressed',String(!grid.hidden));stage.classList.toggle('show-grid',!grid.hidden)}if(e.target.closest('#le-export')){redraw();canvas.toBlob(blob=>{if(!blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`listingflow-layout-${new Date().toISOString().slice(0,10)}.png`;a.click();URL.revokeObjectURL(a.href)},'image/png')}});
-  function setZoom(value){zoom=Math.max(.25,Math.min(2,Math.round(value*100)/100));canvas.style.maxWidth='none';canvas.style.maxHeight='none';canvas.style.width=`${Math.round(canvas.width*zoom)}px`;canvas.style.height='auto';toolbar.querySelector('.le-zoom-value').textContent=`${Math.round(zoom*100)}%`;selectionBox()}
-  function fitCanvas(){const available=Math.max(280,stage.clientWidth-32);setZoom(Math.min(1,available/canvas.width,480/canvas.height))}
+  function setZoom(value){zoom=Math.max(.25,Math.min(2,Math.round(value*100)/100));canvas.classList.toggle('le-fit-mode',zoom<=1);canvas.style.maxWidth='none';canvas.style.maxHeight='none';canvas.style.width=`${Math.round(canvas.width*zoom)}px`;canvas.style.height='auto';toolbar.querySelector('.le-zoom-value').textContent=`${Math.round(zoom*100)}%`;selectionBox()}
+  function fitCanvas(){
+    if(!canvas.width||!canvas.height||!stage.clientWidth)return;
+    // The editor can be opened after its panel was initially hidden. In that
+    // case the first fit pass runs against a zero-width stage and the canvas
+    // keeps its intrinsic image size, which makes the right side disappear
+    // behind the inspector. Fit against both dimensions whenever the stage or
+    // the rendered image changes.
+    const availableWidth=Math.max(280,stage.clientWidth-32);
+    const availableHeight=Math.max(280,Math.min(560,window.innerHeight-300));
+    setZoom(Math.min(1,availableWidth/canvas.width,availableHeight/canvas.height));
+  }
   document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.matches('input,textarea,select,button')){spaceHeld=true;e.preventDefault()}});
   document.addEventListener('keyup',e=>{if(e.code==='Space')spaceHeld=false});
   stage.addEventListener('pointerdown',e=>{if(e.button!==1&&!(spaceHeld&&e.button===0))return;pan={x:e.clientX,y:e.clientY,left:stage.scrollLeft,top:stage.scrollTop,pointer:e.pointerId};stage.setPointerCapture(e.pointerId);stage.classList.add('panning');e.preventDefault();e.stopPropagation()},true);
@@ -216,6 +226,7 @@
   new ResizeObserver(selectionBox).observe(canvas);
   new MutationObserver(()=>{
     if(projectKey!==activeBrandProjectKey){projectKey=activeBrandProjectKey;history.length=0;future.length=0;selectedCustomId='';selected='layout';baseline=snapshot();buttons();renderLayerTree();renderInspector();hydrateProjectFonts();if(zoom<=1)requestAnimationFrame(fitCanvas);}
+    if(zoom<=1)requestAnimationFrame(fitCanvas);
     selectionBox();
   }).observe(canvas,{attributes:true,attributeFilter:['width','height']});
   choose('layout');renderLayerTree();hydrateProjectFonts();redraw();requestAnimationFrame(fitCanvas);new ResizeObserver(()=>{if(zoom<1)fitCanvas()}).observe(stage);

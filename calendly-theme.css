@@ -78,6 +78,15 @@ body.client-ui .lf-brand-mark {
   background:var(--lf-accent)!important;
   color:#fff!important;
 }
+body.client-ui .lf-brand-mark img {
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
 body.client-ui .workspace-switcher {
   display:grid!important;
   gap:12px!important;
@@ -770,4 +779,47 @@ body.client-ui .source-grid {
 }
 body.client-ui .traffic-policy-toolbar {
   grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr) auto!important;
+}
+
+/* Keep the plan workspace inside the available editor column. The source
+   image can be much larger than the viewport; its intrinsic size must never
+   push it underneath the inspector or create a second horizontal page. */
+body.client-ui #layoutsPanel,
+body.client-ui #layoutsPanel .layout-branding,
+body.client-ui #layoutsPanel .brand-preview,
+body.client-ui #layoutsPanel .le-stage {
+  min-width:0!important;
+  max-width:100%!important;
+}
+body.client-ui #layoutsPanel .brand-preview {
+  overflow:hidden!important;
+}
+body.client-ui #layoutsPanel .le-stage {
+  overflow:auto!important;
+  min-height:280px!important;
+  max-height:calc(100dvh - 250px)!important;
+}
+body.client-ui #layoutsPanel #brandPreviewCanvas {
+  display:block!important;
+  height:auto!important;
+}
+body.client-ui #layoutsPanel #brandPreviewCanvas.le-fit-mode {
+  max-width:100%!important;
+  max-height:100%!important;
+}
+
+/* On compact desktop windows give the canvas the full work-column width and
+   place the inspector below it instead of squeezing the plan into a sliver. */
+@media (max-width:1280px) {
+  body.client-ui #layoutsPanel .layout-branding {
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  body.client-ui #layoutsPanel .brand-preview,
+  body.client-ui #layoutsPanel .brand-source-panel,
+  body.client-ui #layoutsPanel .le-properties {
+    grid-column:1!important;
+  }
+  body.client-ui #layoutsPanel .brand-preview { grid-row:2!important; }
+  body.client-ui #layoutsPanel .le-properties { grid-row:3!important; }
+  body.client-ui #layoutsPanel .brand-source-panel { grid-row:4!important; }
 }
