@@ -4336,8 +4336,12 @@
     .catalog-summary div:last-child { border-right:0; }
     .catalog-summary strong { display:block; margin-bottom:4px; font-size:24px; }
     .catalog-summary span { color:var(--muted); font-size:11px; }
+    .complex-selection-summary { display:flex; align-items:center; gap:12px; margin:18px 0; padding:14px 16px; border:1px solid #b9c8ff; border-radius:10px; background:#eef3ff; color:#173b73; }
+    .complex-selection-summary strong { white-space:nowrap; }
+    .complex-selection-summary span { flex:1; color:var(--muted); font-size:12px; }
     .complex-list { border-top:1px solid var(--line); }
     .complex-row { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(160px,1fr) 130px auto auto; gap:14px; align-items:center; padding:18px 4px; border-bottom:1px solid var(--line); }
+    .complex-row.is-selected { padding-left:12px; padding-right:12px; border:1px solid #b9c8ff; border-radius:10px; background:#f4f7ff; }
     .complex-row strong, .complex-row small { display:block; }
     .complex-row small { margin-top:5px; color:var(--muted); }
     .complex-houses { display:flex; flex-wrap:wrap; gap:5px; }
@@ -4386,7 +4390,7 @@
     .template-text-controls input[type="color"] { min-height:42px; padding:5px; }
     @media(max-width:780px) { .layer-list, .template-text-controls { grid-template-columns:1fr; } .layer-list>div { border-right:0; border-bottom:1px solid var(--line); } .template-text-controls .span-2 { grid-column:auto; } }
     @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } .source-selection { grid-template-columns:1fr; } .source-selection small { grid-column:auto; } }
-    @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } }
+    @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } .complex-selection-summary { align-items:flex-start; flex-wrap:wrap; } .complex-selection-summary span { flex-basis:100%; order:3; } }
     /* One page title and one navigation; technical guidance stays contextual. */
     .main > section > .panel-title,
     #validatorPanel > div:first-child > .panel-title,
@@ -4763,7 +4767,7 @@
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
           <button type="button" class="nav-item" data-nav="source" hidden><span class="nav-step">1</span><span class="nav-text">Фиды</span></button>
-          <button type="button" class="nav-item" data-nav="complexes"><span class="nav-step">2</span><span class="nav-text">Дома и секции</span></button>
+          <button type="button" class="nav-item" data-nav="complexes"><span class="nav-step">2</span><span class="nav-text">Жилые комплексы</span></button>
           <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">3</span><span class="nav-text">Объявления и квартиры</span></button>
           <button type="button" class="nav-item" data-nav="branding" aria-label="Оформление планировок, необязательный шаг"><span class="nav-step">4</span><span class="nav-text">Оформление планировок <small class="nav-optional">по желанию</small></span></button>
           <button type="button" class="nav-item" data-nav="results"><span class="nav-step">5</span><span class="nav-text">Проверка и публикация</span></button>
@@ -4805,7 +4809,7 @@
 
       <nav class="workflow-nav" data-page="workflow" aria-label="Этапы работы с фидом">
         <button type="button" data-step=".source-panel" hidden><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg></span><span class="step-copy"><span class="step-number">01</span><span class="step-title">Источник данных</span></span></button>
-        <button type="button" data-step=".complexes-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4v18m0-12h7v12M8 9v1m0 4v1m0 4v1m7-3v1m3-1v1"/></svg></span><span class="step-copy"><span class="step-number">02</span><span class="step-title">Дома и секции</span></span></button>
+        <button type="button" data-step=".complexes-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4v18m0-12h7v12M8 9v1m0 4v1m0 4v1m7-3v1m3-1v1"/></svg></span><span class="step-copy"><span class="step-number">02</span><span class="step-title">Жилые комплексы</span></span></button>
         <button type="button" data-step=".table-wrap"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg></span><span class="step-copy"><span class="step-number">03</span><span class="step-title">Объявления</span></span></button>
         <button type="button" data-step=".brand-workflow-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 15 2.2-2.2a1 1 0 0 1 1.4 0L14 15l1.2-1.2a1 1 0 0 1 1.4 0L20 17"/></svg></span><span class="step-copy"><span class="step-number">04</span><span class="step-title">Планировки</span></span></button>
         <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Проверка и публикация</span></span></button>
@@ -4984,9 +4988,10 @@
 
       <section class="complexes-panel" data-page="complexes">
         <div class="catalog-head">
-          <div><h2 class="panel-title">Дома и секции</h2><div class="panel-caption">Проверьте группировку домов, количество квартир и готовность к публикации.</div></div>
-          <input id="complexSearch" type="search" placeholder="Найти дом или секцию" aria-label="Найти дом или секцию">
+          <div><h2 class="panel-title">Жилые комплексы</h2><div class="panel-caption">Выберите ЖК, чтобы продолжить работу только с его объектами и выпустить отдельный фид.</div></div>
+          <input id="complexSearch" type="search" placeholder="Найти жилой комплекс" aria-label="Найти жилой комплекс">
         </div>
+        <div class="complex-selection-summary" id="complexSelectionSummary" hidden></div>
         <div class="catalog-summary" id="complexSummary"></div>
         <div class="complex-list" id="complexList"></div>
       </section>
@@ -5756,25 +5761,38 @@
       originalObjects = structuredClone(objects);
     }
     let activeSourceId = projectSources.some(source => source.id === appState.activeSourceId) ? appState.activeSourceId : "all";
+    let activeComplexKey = appState.activeComplexKey || "";
     // The source step is an entry point for a new feed, not a persistent
     // mirror of the feed list. Keep this marker in memory only: after a
     // reload the form starts clean and existing feeds are opened from the
     // project feed list instead.
     let sourceEntrySessionActive = false;
     let sourceEntryFormTouched = false;
-    if (activePage === "source") activeSourceId = "all";
+    if (activePage === "source") { activeSourceId = "all"; activeComplexKey = ""; }
     appState.publishedFeeds ||= {};
-    if (appState.generatedFeedId && !appState.publishedFeeds[activeSourceId]) {
+    if (appState.generatedFeedId && !activeComplexKey && !appState.publishedFeeds[activeSourceId]) {
       appState.publishedFeeds[activeSourceId] = { id: appState.generatedFeedId, url: appState.generatedLink, history: appState.publishedHistory || [] };
       if (activeSourceId === "all" && projectSources.length === 1) appState.publishedFeeds[projectSources[0].id] ||= appState.publishedFeeds.all;
     }
 
     function activePublicationKey() {
-      return activeSourceId;
+      return typeof activeComplexKey !== "undefined" && activeComplexKey ? `${activeSourceId}::complex::${activeComplexKey}` : activeSourceId;
+    }
+
+    function activeComplexName() {
+      if (typeof activeComplexKey === "undefined" || !activeComplexKey) return "";
+      return complexGroups().find(group => group.key === activeComplexKey)?.name || "";
+    }
+
+    function publicationForContext() {
+      const direct = appState.publishedFeeds?.[activePublicationKey()];
+      if (direct?.id || direct?.url) return direct;
+      return typeof activeComplexKey !== "undefined" && activeComplexKey ? {} : publicationForSource(activeSourceId);
     }
 
     function setSourceContext(sourceId) {
       activeSourceId = sourceId === "all" || projectSources.some(source => source.id === sourceId) ? sourceId : "all";
+      activeComplexKey = "";
       const source = projectSources.find(item => item.id === activeSourceId);
       // `all` is a neutral/new-feed context. Never fall back to the first
       // project source here: that is what made an old feed reappear in the
@@ -5794,6 +5812,7 @@
       sourceEntrySessionActive = false;
       sourceEntryFormTouched = false;
       activeSourceId = "all";
+      activeComplexKey = "";
       activePlatform = "cian";
       appState.feedUrl = "";
       appState.feedName = "";
@@ -5828,7 +5847,7 @@
       saveProjectSources();
       save();
       switchPage("overview");
-      showToast(publicationForSource(source.id).url ? "Изменения сохранены" : "Фид сохранён в обзоре как черновик");
+      showToast(publicationForContext().url ? "Изменения сохранены" : "Фид сохранён в обзоре как черновик");
       return true;
     }
 
@@ -5838,6 +5857,42 @@
       renderAll();
       const source = projectSources.find(item => item.id === activeSourceId);
       showToast(source ? `Выбран фид «${source.name || source.url}»` : "Показаны все фиды проекта");
+    }
+
+    function selectComplex(complexKey) {
+      const group = complexGroups().find(item => item.key === complexKey);
+      if (!group) return;
+      activeComplexKey = group.key;
+      checkedIds.clear();
+      selectedId = "";
+      const publication = publicationForContext();
+      const source = projectSources.find(item => item.id === activeSourceId);
+      appState.feedUrl = source?.url || appState.feedUrl || "";
+      appState.feedName = publication.name || `${source?.name || platformProfiles[activePlatform]?.name || "Фид"} · ${group.name}`;
+      appState.generatedFeedId = publication.id || "";
+      appState.generatedLink = publication.url || "";
+      appState.publishedHistory = publication.history || [];
+      const feedName = document.querySelector("#feedName");
+      if (feedName) feedName.value = appState.feedName;
+      save();
+      renderAll();
+      switchPage("apartments");
+      showToast(`Выбран ЖК «${group.name}»`);
+    }
+
+    function clearComplexSelection() {
+      activeComplexKey = "";
+      const publication = publicationForContext();
+      const source = projectSources.find(item => item.id === activeSourceId);
+      appState.feedName = publication.name || source?.name || "";
+      appState.generatedFeedId = publication.id || "";
+      appState.generatedLink = publication.url || "";
+      appState.publishedHistory = publication.history || [];
+      const feedName = document.querySelector("#feedName");
+      if (feedName) feedName.value = appState.feedName;
+      save();
+      renderAll();
+      showToast("Работа продолжается со всеми объектами фида");
     }
 
     function roomPolicyKey(value = "") {
@@ -5868,7 +5923,7 @@
       // Older server records did not always carry sourceId. Prefer the
       // persisted source URL before falling back to the legacy `all` record.
       if (source?.url) {
-        const byUrl = Object.values(appState.publishedFeeds || {}).find(publication => publication?.sourceUrl === source.url && (publication.id || publication.url));
+        const byUrl = Object.values(appState.publishedFeeds || {}).find(publication => publication?.sourceUrl === source.url && (!publication.contextKey || publication.contextKey === sourceId) && (publication.id || publication.url));
         if (byUrl) return byUrl;
       }
       const legacy = appState.publishedFeeds?.all;
@@ -5936,12 +5991,13 @@
     }
 
     function publicationObjectsForCurrentContext() {
-      const scope = activeSourceId === "all" ? objects : workingObjects();
+      const scope = workingObjects();
       if (!projectSources.length) return scope;
       const sourceIds = activeSourceId === "all" ? projectSources.map(source => source.id) : [activeSourceId];
       const allowed = new Set(sourceIds.flatMap(sourceId => {
         const source = projectSources.find(item => item.id === sourceId);
-        return source ? trafficPolicyIncludedIds(source, sourceObjects(source.id)) : [];
+        const scopedSourceObjects = source ? sourceObjects(source.id).filter(item => scope.includes(item)) : [];
+        return source ? trafficPolicyIncludedIds(source, scopedSourceObjects) : [];
       }));
       return scope.filter(item => !item.externalId || allowed.has(item.externalId));
     }
@@ -6435,14 +6491,15 @@
           generatedFeedId: saved.generatedFeedId || "",
           publishedHistory: Array.isArray(saved.publishedHistory) ? saved.publishedHistory : [],
           activeSourceId: saved.activeSourceId || "all",
+          activeComplexKey: saved.activeComplexKey || "",
           publishedFeeds: saved.publishedFeeds && typeof saved.publishedFeeds === "object" ? saved.publishedFeeds : {}
         };
-        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
+        if (currentProject?.id !== "legacy") return { objects: [], originalObjects: [], activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [], activeComplexKey: "" };
         const legacy = JSON.parse(localStorage.getItem(legacyStorageKey));
-        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
+        if (Array.isArray(legacy) && legacy.length) return { objects: legacy, originalObjects: structuredClone(legacy), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [], activeComplexKey: "" };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [], activeComplexKey: "" };
       } catch {
-        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [] };
+        return { objects: structuredClone(seed), originalObjects: structuredClone(seed), activePlatform: "cian", feedUrl: "", feedName: "", serverBaseUrl: "", generatedLink: "", generatedFeedId: "", publishedHistory: [], activeComplexKey: "" };
       }
     }
 
@@ -6477,7 +6534,7 @@
       }
       appState.serverBaseUrl = publicFeedOrigin;
       appState.generatedLink ||= "";
-      const serialized = JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} });
+      const serialized = JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, activeComplexKey, publishedFeeds: appState.publishedFeeds || {} });
       const savedLocally = safeStorageSet(storageKey, serialized);
       if (!savedLocally && runtimeMode === "external" && currentProject) {
         pushExternalProjectState({ [storageKey]: serialized }).catch(() => {});
@@ -6795,9 +6852,10 @@
       if (!select) return;
       const current = select.value || "all";
       const groups = issueGroups();
-      const errorObjects = objects.filter(item => issueKeys(item).length).length;
+      const currentObjects = workingObjects();
+      const errorObjects = currentObjects.filter(item => issueKeys(item).length).length;
       select.innerHTML = [
-        `<option value="all">Все объекты · ${objects.length}</option>`,
+        `<option value="all">Все объекты · ${currentObjects.length}</option>`,
         ...(errorObjects ? [`<option value="__errors__">Все с ошибками · ${errorObjects}</option>`] : []),
         ...groups.map(group => `<option value="${escapeXml(group.key)}">${escapeXml(group.guide.label)} · ${group.count}</option>`)
       ].join("");
@@ -6812,7 +6870,7 @@
     }
 
     function filterBounds(field, step) {
-      const values = objects.map(item => numberValue(item[field])).filter(value => value > 0);
+      const values = workingObjects().map(item => numberValue(item[field])).filter(value => value > 0);
       if (!values.length) return { min: 0, max: step };
       return {
         min: Math.floor(Math.min(...values) / step) * step,
@@ -6878,9 +6936,7 @@
       const areaFrom = numberValue(document.querySelector("#areaFrom").value);
       const areaTo = numberValue(document.querySelector("#areaTo").value);
       const issue = document.querySelector("#issueFilter").value;
-      const filtered = objects.filter(item => {
-        const sourceIds = item._sourceIds || (item._sourceId ? [item._sourceId] : []);
-        const matchesSource = activeSourceId === "all" || sourceIds.includes(activeSourceId);
+      const filtered = workingObjects().filter(item => {
         const joined = [item.externalId, item.flatNumber, item.sectionNumber, item.complexName, item.buildingName].join(" ").toLowerCase();
         const matchesTerm = !term || joined.includes(term);
         const st = itemStatus(item).type;
@@ -6896,14 +6952,25 @@
         const matchesArea = (!areaFrom || itemArea >= areaFrom) && (!areaTo || itemArea <= areaTo);
         const keys = issueKeys(item);
         const matchesIssue = issue === "all" || (issue === "__errors__" ? keys.length > 0 : keys.includes(issue));
-        return matchesSource && matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
+        return matchesTerm && matchesStatus && matchesRooms && matchesPrice && matchesArea && matchesIssue;
       });
       return sortObjects(filtered);
     }
 
     function workingObjects() {
+      const scoped = sourceWorkingObjects();
+      if (typeof activeComplexKey === "undefined" || !activeComplexKey) return scoped;
+      return scoped.filter(item => complexKeyForObject(item) === activeComplexKey);
+    }
+
+    function sourceWorkingObjects() {
       if (activeSourceId === "all") return objects;
       return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(activeSourceId));
+    }
+
+    function complexKeyForObject(item) {
+      const name = String(item.complexName || item.buildingName || (item.avitoNewDevelopmentId ? `Новостройка Avito ${item.avitoNewDevelopmentId}` : item.address) || "Без названия").trim();
+      return normalizeProjectName(name);
     }
 
     function sortObjects(items) {
@@ -7005,9 +7072,9 @@
 
     function complexGroups() {
       const groups = new Map();
-      workingObjects().forEach(item => {
+      sourceWorkingObjects().forEach(item => {
         const name = String(item.complexName || item.buildingName || (item.avitoNewDevelopmentId ? `Новостройка Avito ${item.avitoNewDevelopmentId}` : item.address) || "Без названия").trim();
-        const key = normalizeProjectName(name);
+        const key = complexKeyForObject(item);
         if (!groups.has(key)) groups.set(key, { key, name, items: [], houses: new Set() });
         const group = groups.get(key);
         group.items.push(item);
@@ -7025,16 +7092,22 @@
       const groups = complexGroups();
       const visible = groups.filter(group => [group.name, ...group.houses].join(" ").toLowerCase().includes(query));
       const ready = groups.filter(group => !group.items.some(item => requiredIssues(item).length)).length;
-      document.querySelector("#complexSummary").innerHTML = `<div><strong>${groups.length}</strong><span>групп домов</span></div><div><strong>${objects.length}</strong><span>квартир</span></div><div><strong>${ready}</strong><span>готовы к выгрузке</span></div>`;
+      document.querySelector("#complexSummary").innerHTML = `<div><strong>${groups.length}</strong><span>жилых комплексов</span></div><div><strong>${sourceWorkingObjects().length}</strong><span>квартир</span></div><div><strong>${ready}</strong><span>готовы к выгрузке</span></div>`;
+      const selectionSummary = document.querySelector("#complexSelectionSummary");
+      if (selectionSummary) {
+        const selected = groups.find(group => group.key === activeComplexKey);
+        selectionSummary.hidden = !selected;
+        selectionSummary.innerHTML = selected ? `<strong>Выбран ЖК: ${escapeXml(selected.name)}</strong><span>Все этапы настройки и публикации сейчас работают только с ${selected.items.length} ${pluralRu(selected.items.length, "объектом", "объектами", "объектами")} этого ЖК.</span><button type="button" class="text-button" data-clear-complex-selection>Вернуться ко всем объектам</button>` : "";
+      }
       document.querySelector("#complexList").innerHTML = visible.map(group => {
         const issues = group.items.reduce((sum, item) => sum + requiredIssues(item).length, 0);
-        const isPublished = publishedComplexes.has(group.key);
-        return `<article class="complex-row">
+        const isSelected = activeComplexKey === group.key;
+        return `<article class="complex-row ${isSelected ? "is-selected" : ""}">
           <div><strong>${escapeXml(group.name)}</strong><small>${group.houses.size} ${group.houses.size === 1 ? "дом" : "дома"} · ${group.items.length} квартир</small></div>
           <div class="complex-houses">${[...group.houses].slice(0, 3).map(house => `<span>${escapeXml(house)}</span>`).join("")}</div>
           <span class="catalog-state">${issues ? `${issues} замечаний` : "Данные заполнены"}</span>
-          <button type="button" data-complex-apartments="${escapeXml(group.name)}">Квартиры</button>
-          <button type="button" class="${isPublished ? "" : "primary"}" data-complex-publish="${group.key}">${isPublished ? "Снять с публикации" : "Опубликовать"}</button>
+          <button type="button" data-complex-apartments="${escapeXml(group.key)}">Квартиры</button>
+          <button type="button" class="${isSelected ? "" : "primary"}" data-complex-select="${escapeXml(group.key)}">${isSelected ? "Выбран" : "Выбрать ЖК"}</button>
         </article>`;
       }).join("") || `<div class="project-empty"><h3>${query ? "Ничего не найдено" : "Дома появятся после загрузки XML"}</h3><p>${query ? "Измените поисковый запрос или сбросьте фильтр." : "Сначала добавьте ссылку на XML или загрузите файл в разделе «Фиды»."}</p>${query ? `<button type="button" data-clear-complex-search>Сбросить поиск</button>` : `<button type="button" class="primary" data-complex-source>Открыть фиды</button>`}</div>`;
     }
@@ -7332,7 +7405,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Дома и секции", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -7405,7 +7478,7 @@
       if (feedDivider && feedName) {
         feedDivider.hidden = !activeFeed;
         feedName.hidden = !activeFeed;
-        feedName.textContent = activeFeed ? (activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Выбранный фид") : "";
+        feedName.textContent = activeFeed ? `${activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Выбранный фид"}${activeComplexName() ? ` · ${activeComplexName()}` : ""}` : "";
       }
       const workflowSaveBar = document.querySelector("#workflowSaveBar");
       const workflowSaveTitle = document.querySelector("#workflowSaveTitle");
@@ -7415,8 +7488,8 @@
       const canSaveWorkflow = Boolean(currentProject && activeFeed && workflowPages.includes(activePage) && !projectReadOnly);
       if (workflowSaveBar) workflowSaveBar.hidden = !canSaveWorkflow;
       if (workflowSaveButton) workflowSaveButton.disabled = !canSaveWorkflow;
-      if (workflowSaveTitle) workflowSaveTitle.textContent = activeFeed ? `Фид «${activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Без названия"}»` : "Текущий фид";
-      if (workflowSaveMeta) workflowSaveMeta.textContent = activeFeed && publicationForSource(activeFeed.id).url
+      if (workflowSaveTitle) workflowSaveTitle.textContent = activeFeed ? `Фид «${activeFeed.name || platformProfiles[activeFeed.platform]?.name || "Без названия"}${activeComplexName() ? ` · ${activeComplexName()}` : ""}»` : "Текущий фид";
+      if (workflowSaveMeta) workflowSaveMeta.textContent = activeFeed && publicationForContext().url
         ? "Изменения сохранятся в опубликованный фид после следующей публикации."
         : "Сохраните промежуточный результат — фид появится в обзоре как черновик.";
       renderWorkflowFeedGuard();
@@ -7465,7 +7538,7 @@
       const hasSourceIssue = projectSources.some(source => source.error);
       const hasObjectIssues = scopedObjects.some(item => requiredIssues(item).length);
       const hasBrandProfile = Object.values(brandProfiles || {}).some(profile => profile && Object.keys(profile).length);
-      const hasPublication = Boolean(publicationForSource(activePublicationKey()).url || appState.generatedLink);
+      const hasPublication = Boolean(publicationForContext().url || appState.generatedLink);
       const states = {
         source: hasSourceIssue ? "issue" : projectSources.length ? "done" : "todo",
         complexes: complexGroups().length ? "done" : "todo",
@@ -7485,7 +7558,7 @@
         // The overview is the project-level feed switcher. Show every feed,
         // not only published ones, so an existing draft is always editable.
         const feedSources = projectSources.slice().sort((a, b) => String(a.name || a.url).localeCompare(String(b.name || b.url), "ru"));
-        publishedList.innerHTML = feedSources.length ? feedSources.map(source => {
+        const sourceRows = feedSources.map(source => {
           const publication = publicationForSource(source.id);
           const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
           const isPublished = Boolean(publication.id || publication.url);
@@ -7496,7 +7569,14 @@
           const nextSync = sourceNextSync(source);
           const healthLabel = source.error ? `Ошибка синхронизации: ${source.error}` : issueCount ? `Ошибки в объявлениях: ${issueCount}` : "Ошибок не найдено";
           return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
-        }).join("") : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
+        }).join("");
+        const complexRows = Object.entries(appState.publishedFeeds || {}).filter(([key, publication]) => publication?.complexName && publication?.id && key.includes("::complex::")).map(([key, publication]) => {
+          const source = projectSources.find(item => item.id === publication.sourceId) || projectSources.find(item => item.url === publication.sourceUrl);
+          const platform = platformProfiles[publication.platform || source?.platform]?.name || publication.platform || source?.platform || "Площадка";
+          const objectCount = Number(publication.objectCount || 0);
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(publication.name || `${source?.name || platform} · ${publication.complexName}`)} <span class="overview-feed-status is-published">Опубликован</span></strong><span class="overview-feed-platform">${platformMark(publication.platform || source?.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small>ЖК: ${escapeXml(publication.complexName)}</small><small>Ссылка: <a href="${escapeXml(publication.url)}" target="_blank" rel="noreferrer">${escapeXml(publication.url)}</a></small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-context="${escapeXml(key)}">Редактировать ЖК</button></div></article>`;
+        }).join("");
+        publishedList.innerHTML = sourceRows || complexRows ? `${sourceRows}${complexRows}` : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
       }
       // Bind the primary overview actions directly after each render. The feed
       // rows are rebuilt from state, so relying only on a parent delegation
@@ -7505,6 +7585,22 @@
         button.onclick = event => {
           event.stopPropagation();
           setSourceContext(button.dataset.overviewEditSource);
+          save();
+          switchPage("apartments");
+        };
+      });
+      document.querySelectorAll(".project-overview [data-overview-edit-context]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          const contextKey = button.dataset.overviewEditContext || "";
+          const [sourceId, marker, ...complexParts] = contextKey.split("::");
+          setSourceContext(sourceId);
+          activeComplexKey = marker === "complex" ? complexParts.join("::") : "";
+          const publication = appState.publishedFeeds?.[contextKey] || {};
+          appState.feedName = publication.name || appState.feedName;
+          appState.generatedFeedId = publication.id || "";
+          appState.generatedLink = publication.url || "";
+          appState.publishedHistory = publication.history || [];
           save();
           switchPage("apartments");
         };
@@ -8393,17 +8489,17 @@
     function brandTargets() {
       const scope = document.querySelector("#brandScope")?.value || "all";
       const source = scope === "all"
-        ? objects
+        ? workingObjects()
         : scope === "checked"
-          ? objects.filter(item => checkedIds.has(item.externalId))
-          : objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
+          ? workingObjects().filter(item => checkedIds.has(item.externalId))
+          : workingObjects().filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
       return source.filter(item => String(item.layoutPhoto || "").trim());
     }
 
     function brandPreviewTarget() {
       const selectedUrl = [...selectedBrandLayoutUrls][0];
-      return objects.find(item => item.layoutPhoto === selectedUrl)
-        || objects.find(item => item.layoutPhoto);
+      return workingObjects().find(item => item.layoutPhoto === selectedUrl)
+        || workingObjects().find(item => item.layoutPhoto);
     }
 
     function proxyImageUrl(url) {
@@ -9351,8 +9447,8 @@
       saveFeedForMonitoring({
         url: sourceUrl,
         platform: activePlatform,
-        name: `${platformProfiles[activePlatform].name} • ${objects.length || 0} объектов`,
-        objectCount: objects.length
+        name: `${platformProfiles[activePlatform].name}${activeComplexName() ? ` · ${activeComplexName()}` : ""} • ${workingObjects().length || 0} объектов`,
+        objectCount: workingObjects().length
       });
     }
 
@@ -9503,15 +9599,15 @@
         if (!records.length) return;
         const mapped = { ...(appState.publishedFeeds || {}) };
         records.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt)).forEach(record => {
-          const publication = { id: record.id || record.slug, url: record.url, sourceId: record.sourceId || "", sourceUrl: record.sourceUrl || "", platform: record.platform || "", objectCount: Number(record.objectCount || 0), updatedAt: record.updatedAt || "", history: record.history || [] };
+          const publication = { id: record.id || record.slug, url: record.url, sourceId: record.sourceId || "", contextKey: record.contextKey || "", complexName: record.complexName || "", name: record.name || "", sourceUrl: record.sourceUrl || "", platform: record.platform || "", objectCount: Number(record.objectCount || 0), updatedAt: record.updatedAt || "", history: record.history || [] };
           const rememberedKey = Object.keys(mapped).find(key => mapped[key]?.id === publication.id);
           const sourceByUrl = projectSources.find(source => source.url && publication.sourceUrl && source.url === publication.sourceUrl);
-          const key = record.sourceId || rememberedKey || sourceByUrl?.id || "all";
+          const key = record.contextKey || rememberedKey || sourceByUrl?.id || record.sourceId || "all";
           mapped[key] = publication;
           if (key === "all" && projectSources.length === 1 && projectSources[0].url === record.sourceUrl) mapped[projectSources[0].id] = publication;
         });
         appState.publishedFeeds = mapped;
-        const publication = mapped[activePublicationKey()] || {};
+        const publication = mapped[activePublicationKey()] || publicationForContext();
         appState.generatedFeedId = publication.id || "";
         appState.generatedLink = publication.url || "";
         appState.publishedHistory = publication.history || [];
@@ -10304,7 +10400,7 @@ ${photos}
     }
 
     function currentIssueCount() {
-      return objects.reduce((sum, item) => sum + requiredIssues(item).length, 0);
+      return workingObjects().reduce((sum, item) => sum + requiredIssues(item).length, 0);
     }
 
     function focusIssueObjects(issueKey) {
@@ -10385,7 +10481,7 @@ ${photos}
       document.querySelector("#feedErrorTitle").textContent = hasErrors ? `Ошибки фида: ${issueTotal + platformErrors.length}` : "Фид без ошибок";
       document.querySelector("#feedErrorMeta").textContent = hasErrors
         ? `${objectsWithIssues} ${pluralRu(objectsWithIssues, "объект требует", "объекта требуют", "объектов требуют")} внимания`
-        : `${objects.length} ${pluralRu(objects.length, "объект готов", "объекта готовы", "объектов готовы")} к работе`;
+        : `${workingObjects().length} ${pluralRu(workingObjects().length, "объект готов", "объекта готовы", "объектов готовы")} к работе`;
 
       const body = document.querySelector("#feedErrorBody");
       if (!hasErrors) {
@@ -10419,7 +10515,7 @@ ${photos}
     function renderIssueDiagnostics(groups = issueGroups()) {
       const node = document.querySelector("#issueDiagnostics");
       if (!node) return;
-      if (!objects.length) {
+      if (!workingObjects().length) {
         node.innerHTML = `<div class="issue-empty">Загрузите фид, чтобы увидеть журнал проверки и инструкции по исправлению.</div>`;
         return;
       }
@@ -10715,19 +10811,7 @@ ${photos}
     }
 
     function publicationSourceFeeds(currentObjects) {
-      // If the user explicitly selected ЖК in the catalog, publish only those
-      // groups. An empty selection keeps the backwards-compatible behaviour:
-      // all objects are included.
-      // The editor can reach this function before the catalog state is restored
-      // (for example after a fresh login or while the first source is loading).
-      // Keep that path equivalent to an empty selection instead of throwing a
-      // ReferenceError and aborting publication.
-      const selectedComplexes = typeof publishedComplexes !== "undefined" && publishedComplexes instanceof Set
-        ? publishedComplexes
-        : new Set();
-      const publicationObjects = selectedComplexes.size
-        ? currentObjects.filter(item => selectedComplexes.has(normalizeProjectName(String(item.complexName || item.buildingName || item.address || "Без названия").trim())))
-        : currentObjects;
+      const publicationObjects = currentObjects;
       const selectedSources = activeSourceId === "all"
         ? projectSources
         : projectSources.filter(source => source.id === activeSourceId);
@@ -10753,7 +10837,7 @@ ${photos}
       });
     }
 
-    async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
+    async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug, contextKey, complexName }) {
       const sourceFeeds = publicationSourceFeeds(workingObjects());
       const syncIntervals = sourceFeeds
         .filter(source => source.sourceType === "url")
@@ -10764,6 +10848,8 @@ ${photos}
         platform,
         projectId: currentProject?.id || "",
         sourceId: activeSourceId,
+        contextKey: contextKey || activePublicationKey(),
+        complexName: complexName || activeComplexName(),
         sourceUrl,
         sourceType,
         sourceFeeds,
@@ -10817,8 +10903,8 @@ ${photos}
       const xml = buildXml(publicationObjectsForCurrentContext(), activePlatform);
       const button = document.querySelector("#generateLinkBtn");
       const publicationKey = activePublicationKey();
-      const publication = publicationForSource(publicationKey);
-      const publicationId = publication.id || (activeSourceId === "all" ? appState.generatedFeedId : "");
+      const publication = publicationForContext();
+      const publicationId = publication.id || "";
       const hadPublishedId = Boolean(publicationId);
       button.disabled = true;
       button.classList.add("loading");
@@ -10833,7 +10919,9 @@ ${photos}
           xml,
           objectCount: publicationObjectsForCurrentContext().length,
           name: feedName,
-          slug: generatedFeedId(feedName)
+          slug: generatedFeedId(feedName),
+          contextKey: publicationKey,
+          complexName: activeComplexName()
         });
         appState.serverBaseUrl = publicFeedOrigin;
         appState.generatedFeedId = publishedFeed.id;
@@ -10848,7 +10936,7 @@ ${photos}
           platform: activePlatform
         };
         appState.publishedHistory = serverHistory.length ? serverHistory : [localEntry, ...(appState.publishedHistory || [])].slice(0, 30);
-        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, sourceId: activeSourceId, sourceUrl: appState.feedUrl || "", platform: activePlatform, objectCount: currentObjects.length, updatedAt: publishedFeed.updatedAt || new Date().toISOString(), history: appState.publishedHistory } };
+        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, sourceId: activeSourceId, contextKey: publicationKey, complexName: activeComplexName(), name: feedName, sourceUrl: appState.feedUrl || "", platform: activePlatform, objectCount: currentObjects.length, updatedAt: publishedFeed.updatedAt || new Date().toISOString(), history: appState.publishedHistory } };
         document.querySelector("#serverBaseUrl").value = publicFeedOrigin;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
@@ -11640,25 +11728,21 @@ ${photos}
       const sourceButton = event.target.closest("[data-complex-source]");
       const clearSearchButton = event.target.closest("[data-clear-complex-search]");
       const apartmentsButton = event.target.closest("[data-complex-apartments]");
-      const publishButton = event.target.closest("[data-complex-publish]");
+      const selectButton = event.target.closest("[data-complex-select]");
       if (sourceButton) switchPage("source");
       if (clearSearchButton) {
         document.querySelector("#complexSearch").value = "";
         renderComplexes();
       }
       if (apartmentsButton) {
-        document.querySelector("#search").value = apartmentsButton.dataset.complexApartments === "Без названия" ? "" : apartmentsButton.dataset.complexApartments;
+        selectComplex(apartmentsButton.dataset.complexApartments);
         switchPage("apartments");
         renderRows();
       }
-      if (publishButton) {
-        const key = publishButton.dataset.complexPublish;
-        if (publishedComplexes.has(key)) publishedComplexes.delete(key);
-        else publishedComplexes.add(key);
-        localStorage.setItem(complexStatusStorageKey, JSON.stringify([...publishedComplexes]));
-        renderComplexes();
-        showToast(publishedComplexes.has(key) ? "Группа домов добавлена в публикацию" : "Группа домов снята с публикации");
-      }
+      if (selectButton) selectComplex(selectButton.dataset.complexSelect);
+    });
+    document.querySelector("#complexSelectionSummary").addEventListener("click", event => {
+      if (event.target.closest("[data-clear-complex-selection]")) clearComplexSelection();
     });
     document.querySelectorAll("[data-editor-anchor]").forEach(button => {
       button.addEventListener("click", () => {

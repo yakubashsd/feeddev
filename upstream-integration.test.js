@@ -118,7 +118,7 @@ test("switching sources isolates objects and publication URLs, including shared 
     appState: { generatedLink: "https://listingflow.test/feeds/a.xml", publishedFeeds: { a: { id: "saved-a", url: "https://listingflow.test/feeds/a.xml", history: [{ version: 1 }] } } },
     objects: [{ externalId: "one", _sourceIds: ["a"] }, { externalId: "two", _sourceIds: ["b"] }, { externalId: "shared", _sourceIds: ["a", "b"] }]
   });
-  vm.runInContext(["activePublicationKey", "setSourceContext", "workingObjects"].map(clientFunction).join("\n"), context);
+  vm.runInContext(["activePublicationKey", "setSourceContext", "sourceWorkingObjects", "workingObjects"].map(clientFunction).join("\n"), context);
   context.setSourceContext("b");
   assert.equal(context.appState.generatedLink, "");
   assert.equal(context.appState.generatedFeedId, "");
@@ -131,6 +131,22 @@ test("switching sources isolates objects and publication URLs, including shared 
   context.setSourceContext("removed-source");
   assert.equal(context.activeSourceId, "all");
   assert.equal(context.workingObjects().length, 3);
+});
+
+test("selecting a residential complex scopes editing and creates a separate publication context", () => {
+  const context = vm.createContext({
+    activeSourceId: "source-a", activeComplexKey: "", normalizeProjectName: value => String(value || "").trim().toLowerCase(),
+    projectSources: [{ id: "source-a", url: "https://a.test/feed.xml", platform: "cian" }],
+    objects: [
+      { externalId: "alpha-1", _sourceIds: ["source-a"], complexName: "ЖК Альфа" },
+      { externalId: "alpha-2", _sourceIds: ["source-a"], complexName: "ЖК Альфа" },
+      { externalId: "beta-1", _sourceIds: ["source-a"], complexName: "ЖК Бета" }
+    ]
+  });
+  vm.runInContext(["activePublicationKey", "complexKeyForObject", "sourceWorkingObjects", "workingObjects"].map(clientFunction).join("\n"), context);
+  context.activeComplexKey = context.complexKeyForObject({ complexName: "ЖК Альфа" });
+  assert.equal(context.activePublicationKey(), "source-a::complex::жк альфа");
+  assert.deepEqual(context.workingObjects().map(item => item.externalId), ["alpha-1", "alpha-2"]);
 });
 
 test("CIAN uses branded layout as the only default image and retains the original", () => {
@@ -195,6 +211,11 @@ test("publication URLs stay stable, history versions do not repeat, and project 
   }
   const payload = { projectId: "project-a", sourceId: "source-a", name: "Test", slug: "same-name", platform: "cian", sourceUrl: "", sourceType: "file", objectCount: 1, xml: "<feed><object><ExternalId>1</ExternalId><Description>Test apartment description</Description><Address>Test address</Address><BargainTerms><Price>5000000</Price></BargainTerms></object></feed>" };
   const first = await request("/api/feeds", "POST", payload);
+  assert.equal(first.contextKey, "source-a");
+  const complex = await request("/api/feeds", "POST", { ...payload, slug: "test-alpha", name: "Test · ЖК Альфа", contextKey: "source-a::complex::жк альфа", complexName: "ЖК Альфа" });
+  assert.notEqual(complex.id, first.id);
+  assert.equal(complex.contextKey, "source-a::complex::жк альфа");
+  assert.equal(complex.complexName, "ЖК Альфа");
   const second = await request(`/api/feeds?slug=${first.id}`, "PUT", { ...payload, xml: payload.xml.replace("5000000", "5100000") });
   assert.equal(second.url, first.url);
   assert.equal(second.history.length, 2);
@@ -210,7 +231,8 @@ test("publication URLs stay stable, history versions do not repeat, and project 
   const renamed = await request(`/api/feeds/${first.id}/name`, "PATCH", { name: "Основной фид ЦИАН" });
   assert.equal(renamed.name, "Основной фид ЦИАН");
   const filtered = await request("/api/feeds?projectId=project-a");
-  assert.deepEqual(filtered.feeds.map(item => item.id), [first.id]);
-  assert.equal(filtered.feeds[0].sourceId, "source-a");
-  assert.equal(filtered.feeds[0].name, "Основной фид ЦИАН");
+  assert.deepEqual(filtered.feeds.map(item => item.id).sort(), [complex.id, first.id].sort());
+  const filteredFirst = filtered.feeds.find(item => item.id === first.id);
+  assert.equal(filteredFirst.sourceId, "source-a");
+  assert.equal(filteredFirst.name, "Основной фид ЦИАН");
 });
