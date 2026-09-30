@@ -627,3 +627,147 @@ body.client-ui .auth-submit { min-height:48px!important; font-size:15px!importan
 @media(prefers-reduced-motion:reduce) {
   body.client-ui *, body.client-ui *::before, body.client-ui *::after { transition-duration:.01ms!important; animation-duration:.01ms!important; }
 }
+
+/* Fixed desktop workspace
+   -----------------------
+   The client console is an operating workspace, not a mobile-first content
+   page. Keep its navigation, work area and editor panels in one stable frame
+   at every viewport width. Narrow windows can scroll the workspace as a whole
+   instead of silently reordering controls into a different interface. */
+body.client-ui {
+  min-width:1000px!important;
+  overflow-x:auto!important;
+}
+body.client-ui .app,
+body.client-ui .app.project-list-mode,
+body.client-ui .app.feeds-mode,
+body.client-ui .app.layouts-mode,
+body.client-ui .app.validator-mode {
+  display:grid!important;
+  width:100%!important;
+  min-width:1000px!important;
+  min-height:100dvh!important;
+  height:100dvh!important;
+  overflow:hidden!important;
+}
+body.client-ui .app {
+  grid-template-columns:278px minmax(0,1fr) 390px!important;
+}
+body.client-ui .app.feeds-mode,
+body.client-ui .app.layouts-mode,
+body.client-ui .app.validator-mode,
+body.client-ui .app.project-list-mode {
+  grid-template-columns:278px minmax(0,1fr)!important;
+}
+body.client-ui .sidebar {
+  position:relative!important;
+  inset:auto!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  width:auto!important;
+  min-width:0!important;
+  height:100dvh!important;
+  min-height:0!important;
+  padding:24px 16px!important;
+  transform:none!important;
+  transition:none!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  box-shadow:none!important;
+}
+body.client-ui .app.nav-open .sidebar,
+body.client-ui .sidebar.open { transform:none!important; }
+body.client-ui .topbar {
+  left:278px!important;
+  right:0!important;
+  min-width:722px!important;
+  width:auto!important;
+}
+body.client-ui .mobile-menu-toggle { display:none!important; }
+body.client-ui .main {
+  grid-column:2!important;
+  grid-row:1!important;
+  min-width:0!important;
+  min-height:100dvh!important;
+  height:100dvh!important;
+  overflow:auto!important;
+}
+
+/* The layout editor keeps its preview and inspector side by side as well. */
+body.client-ui #layoutsPanel .layout-branding {
+  grid-template-columns:minmax(0,1fr) 280px!important;
+}
+body.client-ui #layoutsPanel .brand-preview {
+  grid-column:1!important;
+  grid-row:2!important;
+  min-width:0!important;
+  min-height:440px!important;
+}
+body.client-ui #layoutsPanel .le-properties {
+  grid-column:2!important;
+  grid-row:2/4!important;
+  min-width:0!important;
+}
+
+/* Save actions belong to the work area footer, not its header. Keep the
+   action visible while editing without covering the right-hand inspector. */
+body.client-ui .main:has(#workflowSaveBar:not([hidden])) {
+  padding-bottom:110px!important;
+}
+body.client-ui .workflow-save-bar {
+  position:fixed!important;
+  z-index:25!important;
+  left:278px!important;
+  right:0!important;
+  bottom:16px!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:12px 24px!important;
+  border:1px solid #cfe0f8!important;
+  border-radius:10px!important;
+  background:rgba(237,244,255,.97)!important;
+  box-shadow:0 10px 28px rgba(17,56,94,.14)!important;
+  backdrop-filter:blur(10px)!important;
+}
+body.client-ui .app:not(.feeds-mode):not(.layouts-mode):not(.validator-mode):not(.project-list-mode) .workflow-save-bar {
+  right:390px!important;
+}
+body.client-ui .workflow-save-bar .primary {
+  min-height:42px!important;
+  padding:9px 16px!important;
+}
+
+/* The projects index already represents the global project scope. A second
+   "Все проекты" selector in the topbar only repeats that context. */
+body.client-ui .app.project-list-mode .topbar-project-picker,
+body.client-ui .app.project-list-mode #workspaceSwitcher {
+  display:none!important;
+}
+
+/* Keep form/tool rows stable too; the legacy mobile rules must not turn the
+   fixed workspace into a second, stacked interface on narrow windows. */
+body.client-ui .monitor-add {
+  grid-template-columns:minmax(220px,1fr) auto!important;
+}
+body.client-ui .monitor-notification-settings {
+  grid-template-columns:auto minmax(180px,.7fr) auto minmax(220px,1fr)!important;
+}
+body.client-ui .monitor-notification-settings :is(h3,p,#saveMonitorNotifications) {
+  grid-column:1/-1!important;
+}
+body.client-ui .project-toolbar {
+  grid-template-columns:minmax(260px,1.5fr) repeat(2,minmax(145px,.7fr))!important;
+}
+body.client-ui .project-list-mode .project-toolbar {
+  grid-template-columns:minmax(220px,1fr) minmax(145px,.32fr) minmax(145px,.34fr) minmax(145px,.32fr)!important;
+}
+body.client-ui .publish-row {
+  grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) auto auto auto!important;
+}
+body.client-ui .source-grid {
+  grid-template-columns:minmax(260px,1fr) auto auto auto!important;
+}
+body.client-ui .traffic-policy-toolbar {
+  grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr) auto!important;
+}

@@ -4869,7 +4869,7 @@
         <div class="monitor-notification-settings">
           <h3>Уведомления проекта</h3>
           <p>Настройки применяются ко всем фидам текущего проекта. Один общий бот отправляет сообщение при появлении новой ошибки или изменении её текста.</p>
-          <label class="notification-channel"><input id="monitorTelegramEnabled" type="checkbox"><span>Telegram</span></label>
+          <label class="notification-channel"><input id="monitorTelegramEnabled" type="checkbox" aria-label="Включить Telegram-уведомления"><span>Telegram</span></label>
           <div class="field compact">
             <input id="monitorTelegramChatId" type="hidden">
             <span id="telegramConnectionStatus" role="status">Проверяем подключение…</span>
@@ -4911,7 +4911,7 @@
         </div>
         <div class="validator-toolbar">
           <div class="field compact">
-            <label>Определённый формат</label>
+            <label for="validatorPlatform">Определённый формат</label>
             <input id="validatorPlatform" readonly value="ЦИАН">
           </div>
           <button id="runValidatorBtn" type="button" class="primary">Проверить текущий фид</button>
@@ -8155,12 +8155,15 @@
         const input = document.querySelector(selector);
         if (input) input.value = "";
       });
-      document.querySelector("#layoutFileInput").value = "";
-      document.querySelector("#layoutPickedFile").textContent = "Файл не выбран";
+      const fileInput = document.querySelector("#layoutFileInput");
+      const pickedFile = document.querySelector("#layoutPickedFile");
+      if (fileInput) fileInput.value = "";
+      if (pickedFile) pickedFile.textContent = "Файл не выбран";
     }
 
     async function uploadLayout() {
-      const file = document.querySelector("#layoutFileInput").files[0];
+      const fileInput = document.querySelector("#layoutFileInput");
+      const file = fileInput?.files?.[0];
       const nameInput = document.querySelector("#layoutName");
       if (!file) {
         alert("Выберите файл планировки.");
