@@ -9,7 +9,7 @@
       step: "СТАРТ", title: "Создайте проект", text: "Проект объединяет несколько фидов разных площадок. Каждый фид можно редактировать и публиковать отдельно.", action: "Создать проект", target: "#newProjectBtn"
     },
     source: {
-      step: "01 / 04", index: "active", title: "Добавьте фид в проект", text: "Вставьте постоянную XML-ссылку и нажмите «Добавить фид» или загрузите файл. Выберите площадку и частоту обновления.", action: "К форме фида", target: "#sourceName"
+      step: "01 / 04", index: "active", title: "Добавьте фид в проект", text: "Откройте список фидов, нажмите «Добавить фид», затем вставьте постоянную XML-ссылку или загрузите файл.", action: "К списку фидов", target: ".project-overview"
     },
     apartments: {
       step: "03 / 05", index: "active", title: "Проверьте объявления", text: "Отфильтруйте квартиры с ошибками. Откройте объявление для точечной правки или отметьте несколько строк для массового изменения.", action: "К объявлениям", target: ".table-wrap"
@@ -84,7 +84,7 @@
 
   on("#usageGuideOpen", "click", () => dialog.showModal());
   on("#usageGuideClose", "click", () => dialog.close());
-  on("#usageGuideStart", "click", () => go("source"));
+  on("#usageGuideStart", "click", () => go("overview"));
   on("#usageGuideDialog", "click", (event) => {
     if (event.target === dialog) dialog.close();
     const button = event.target.closest("[data-guide-go]");
