@@ -5,13 +5,14 @@
   const root = panel.querySelector('.layout-branding');
   const canvas = document.querySelector('#brandPreviewCanvas');
   const controls = panel.querySelector('.brand-controls');
+  const fileControl = controls?.querySelector('.layout-file-control');
   const textControls = panel.querySelector('.template-layer-editor');
   const toolbar = document.createElement('div');
   toolbar.className = 'le-toolbar';
-  toolbar.innerHTML = `<strong>Макет</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span><button type="button" data-add-layer="text">＋ Текст</button><button type="button" data-add-layer="rect">▰ Фигура</button><span class="le-toolbar-divider"></span><button type="button" id="le-zoom-out" aria-label="Уменьшить масштаб">−</button><span class="le-zoom-value">100%</span><button type="button" id="le-zoom-in" aria-label="Увеличить масштаб">＋</button><button type="button" id="le-fit">По размеру</button><button type="button" id="le-grid" aria-pressed="false">Сетка</button><button type="button" id="le-undo" disabled aria-label="Отменить изменение">↶</button><button type="button" id="le-redo" disabled aria-label="Повторить изменение">↷</button><button type="button" id="le-preview">Предпросмотр</button>`;
+  toolbar.innerHTML = `<div class="le-toolbar-title"><strong>Макет</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div><div class="le-toolbar-layer-actions"><button type="button" data-add-layer="text">＋ Текст</button><button type="button" data-add-layer="rect">▰ Фигура</button></div><div class="le-toolbar-view-actions"><span class="le-toolbar-group-label">Вид</span><button type="button" id="le-zoom-out" aria-label="Уменьшить масштаб">−</button><span class="le-zoom-value">100%</span><button type="button" id="le-zoom-in" aria-label="Увеличить масштаб">＋</button><button type="button" id="le-fit">По размеру</button><button type="button" id="le-grid" aria-pressed="false">Сетка</button><button type="button" id="le-undo" disabled aria-label="Отменить изменение">↶</button><button type="button" id="le-redo" disabled aria-label="Повторить изменение">↷</button><button type="button" id="le-preview">Предпросмотр</button></div><div class="le-toolbar-secondary-actions"></div>`;
   root.prepend(toolbar);
   const checkButton = document.createElement('button');
-  checkButton.type='button';checkButton.textContent='Проверить на квартирах';toolbar.append(checkButton);
+  checkButton.type='button';checkButton.textContent='Проверить на квартирах';toolbar.querySelector('.le-toolbar-secondary-actions').append(checkButton);
   const checkDialog=document.createElement('dialog');checkDialog.className='le-check-dialog';
   checkDialog.innerHTML='<div class="le-check-head"><strong>Проверка шаблона на разных квартирах</strong><button type="button">Закрыть</button></div><p class="le-hint">Предпросмотр не меняет изображения в объявлениях.</p><div class="le-check-grid"></div>';
   document.body.append(checkDialog);checkDialog.querySelector('button').onclick=()=>checkDialog.close();
@@ -48,8 +49,6 @@
   footer.append(document.querySelector('#brandScope').closest('.field'), document.querySelector('#insertBrandPhotoBtn'));
   footer.querySelector('#insertBrandPhotoBtn').textContent = 'Сформировать изображения';
   root.append(footer);
-  const fileControl = controls.querySelector('.layout-file-control');
-  const removeBackdrop=document.createElement('button');removeBackdrop.type='button';removeBackdrop.id='le-remove-backdrop';removeBackdrop.textContent='Удалить подложку';fileControl.append(removeBackdrop);
   document.querySelector('#pickBrandBadgeBtn').textContent = 'Загрузить подложку';
   document.querySelector('label[for="brandSize"]').textContent = 'Размер, %';
   const stage = document.createElement('div');
@@ -166,7 +165,6 @@
   document.querySelector('#le-undo').onclick=()=>travel(history,future);
   document.querySelector('#le-redo').onclick=()=>travel(future,history);
   document.querySelector('#le-preview').onclick=()=>brandPreviewImages?openBrandPreviewDialog():showToast('Добавьте планировку или графическую подложку для предпросмотра');
-  removeBackdrop.addEventListener('click',async()=>{if(!brandBadgeDataUrl)return;try{await deleteBrandAsset(activeBrandProjectKey);brandBadgeDataUrl='';brandBadgeFileName='';document.querySelector('#brandBadgeFileInput').value='';document.querySelector('#brandBadgePickedFile').textContent='Подложка удалена';await persistActiveBrandProfile();await renderBrandPreview();showToast('Подложка удалена')}catch(error){brandStatus(`Не удалось удалить подложку: ${error.message}`)}});
   toolbar.addEventListener('click',e=>{const add=e.target.closest('[data-add-layer]');if(add){if(readLayers().length>=40){showToast('Достигнут предел: 40 дополнительных слоёв');return}baseline=snapshot();const type=add.dataset.addLayer,id=`layer-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,layers=readLayers();layers.push({id,type,name:type==='text'?`Текст ${layers.filter(x=>x.type==='text').length+1}`:`Фигура ${layers.filter(x=>x.type==='rect').length+1}`,text:'Новый текст',x:type==='text'?12:8,y:type==='text'?72:10,width:type==='text'?55:34,height:type==='text'?14:18,fontSize:36,color:'#11151a',fill:'#d5ff19',opacity:100,weight:700});writeLayers(layers);chooseCustom(id);redraw();commit();properties.querySelector('[data-prop="text"]')?.focus();return}if(e.target.closest('#le-zoom-in'))setZoom(zoom+.1);if(e.target.closest('#le-zoom-out'))setZoom(zoom-.1);if(e.target.closest('#le-fit'))fitCanvas();if(e.target.closest('#le-grid')){grid.hidden=!grid.hidden;e.target.closest('#le-grid').setAttribute('aria-pressed',String(!grid.hidden));stage.classList.toggle('show-grid',!grid.hidden)}if(e.target.closest('#le-export')){redraw();canvas.toBlob(blob=>{if(!blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`listingflow-layout-${new Date().toISOString().slice(0,10)}.png`;a.click();URL.revokeObjectURL(a.href)},'image/png')}});
   function setZoom(value){zoom=Math.max(.25,Math.min(2,Math.round(value*100)/100));canvas.style.maxWidth='none';canvas.style.maxHeight='none';canvas.style.width=`${Math.round(canvas.width*zoom)}px`;canvas.style.height='auto';toolbar.querySelector('.le-zoom-value').textContent=`${Math.round(zoom*100)}%`;selectionBox()}
   function fitCanvas(){const available=Math.max(280,stage.clientWidth-32);setZoom(Math.min(1,available/canvas.width,480/canvas.height))}
@@ -175,7 +173,7 @@
   stage.addEventListener('pointerdown',e=>{if(e.button!==1&&!(spaceHeld&&e.button===0))return;pan={x:e.clientX,y:e.clientY,left:stage.scrollLeft,top:stage.scrollTop,pointer:e.pointerId};stage.setPointerCapture(e.pointerId);stage.classList.add('panning');e.preventDefault();e.stopPropagation()},true);
   stage.addEventListener('pointermove',e=>{if(!pan||pan.pointer!==e.pointerId)return;stage.scrollLeft=pan.left-(e.clientX-pan.x);stage.scrollTop=pan.top-(e.clientY-pan.y)});
   const endPan=e=>{if(!pan||pan.pointer!==e.pointerId)return;pan=null;stage.classList.remove('panning')};stage.addEventListener('pointerup',endPan);stage.addEventListener('pointercancel',endPan);
-  toolbar.insertAdjacentHTML('beforeend','<button type="button" id="le-export">Экспорт PNG</button>');
+  toolbar.querySelector('.le-toolbar-secondary-actions').insertAdjacentHTML('beforeend','<button type="button" id="le-export">Экспорт PNG</button>');
   document.querySelector('#centerBrandLayoutBtn').addEventListener('click',()=>{document.querySelector('#brandOffsetX').value=0;document.querySelector('#brandOffsetY').value=0;drawBrandPreviewFrame();commit();});
   document.querySelector('#centerBrandLayoutBtn').textContent='По центру холста';
   // Replace the old whole-canvas drag with element hit testing and resize handles.

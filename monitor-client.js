@@ -80,6 +80,6 @@
     catch(error){showToast(error.message);}finally{button.disabled=false;}
   };
   feedsNav.addEventListener('click',refresh);
-  monitorPanel.querySelector('.panel-caption')?.replaceChildren(document.createTextNode('Добавьте постоянные ссылки: сервер проверяет XML, изменения состава и доступность изображений по расписанию, а о новых ошибках отправляет уведомление.'));
+  monitorPanel.querySelector('.panel-caption')?.replaceChildren(document.createTextNode('Добавьте постоянные ссылки: сервис проверяет XML, состав фида и доступность изображений по расписанию, а о новых ошибках отправляет уведомление.'));
   setInterval(()=>{if(activePage==='feeds')refresh();},30000);
 })();

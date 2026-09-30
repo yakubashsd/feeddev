@@ -31,6 +31,10 @@ body.client-ui[data-theme="dark"],body.admin-ui[data-theme="dark"]{
 body.client-ui[data-theme="dark"],body.admin-ui[data-theme="dark"]{background:var(--lf-bg)!important;color:var(--lf-text)!important}
 *{box-sizing:border-box}
 body.client-ui,body.admin-ui{margin:0;background:var(--lf-bg);color:var(--lf-text);font-family:var(--lf-font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body.client-ui{border-top:0!important}
+/* The client UI uses one light visual system; keep theme support internal
+   while removing the unused dark-theme control from the product surface. */
+body.client-ui .theme-toggle{display:none!important}
 body.client-ui [hidden],body.admin-ui [hidden]{display:none!important}
 body.client-ui button,body.client-ui input,body.client-ui select,body.client-ui textarea,
 body.admin-ui button,body.admin-ui input,body.admin-ui select,body.admin-ui textarea{font:inherit}
@@ -52,6 +56,8 @@ body.admin-ui[data-theme="dark"] th{background:var(--lf-surface-2)!important;col
 
 /* Shared brand */
 .lf-brand-lockup{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-home-link{display:inline-flex;align-items:center;min-width:0;color:inherit;text-decoration:none}
+.brand-home-link:focus-visible{outline:2px solid var(--lf-accent);outline-offset:5px;border-radius:8px}
 .lf-brand-mark{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border-radius:9px;background:var(--lf-accent);overflow:hidden;color:#11151a}
 .lf-brand-mark img{display:block;width:29px;height:29px;object-fit:contain}
 .lf-brand-mark svg{width:19px;height:19px;stroke-width:2}
@@ -192,6 +198,9 @@ body.client-ui .table-wrap .panel-caption{margin-bottom:16px!important;line-heig
 body.client-ui table{background:#fff!important;color:var(--lf-text)!important}body.client-ui th{position:sticky;top:0;z-index:1;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;font-size:10px!important}body.client-ui td{background:#fff!important;border-color:var(--lf-line)!important;color:var(--lf-text)!important;font-size:12px!important}body.client-ui tbody tr:hover td{background:#fafbfd!important}
 body.client-ui .badge,body.client-ui .feed-status,body.client-ui .source-health{border-radius:999px!important;font-weight:650!important}
 body.client-ui .billing-price{color:var(--lf-text)!important}.billing-status{border-color:var(--lf-line)!important;background:var(--lf-surface-2)!important}
+/* Keep the primary billing action visually separate from the payment history. */
+body.client-ui .billing-card #checkoutButton{display:block!important;margin-bottom:32px!important}
+@media(max-width:760px){body.client-ui .billing-card #checkoutButton{margin-bottom:26px!important}}
 
 /* Client editor */
 body.client-ui .editor{grid-column:3!important;grid-row:1!important;height:100dvh!important;border:0!important;border-left:1px solid var(--lf-line)!important;border-radius:0!important;background:#fff!important;color:var(--lf-text)!important;box-shadow:none!important;overflow:auto!important}
@@ -235,6 +244,21 @@ body.admin-ui .dialog{border:1px solid var(--lf-line)!important;border-radius:12
   body.admin-ui .shell{display:block!important}body.admin-ui .side{position:fixed!important;z-index:100!important;left:0!important;top:0!important;width:236px!important;transform:translateX(-102%);transition:transform .2s ease!important;box-shadow:20px 0 50px rgba(0,0,0,.28)!important}body.admin-ui .side.open{transform:none!important}body.admin-ui .brand .lf-brand-name,body.admin-ui .nav span,body.admin-ui .identity div,body.admin-ui .logout span{display:block!important}body.admin-ui .top{left:0!important;padding:0 14px!important}body.admin-ui .admin-menu-toggle{display:grid!important;place-items:center}body.admin-ui .main{padding:78px 12px 28px!important}body.admin-ui .metrics{grid-template-columns:1fr 1fr!important}body.admin-ui .section-head{display:block!important}body.admin-ui .toolbar{margin-top:10px!important;display:grid!important}body.admin-ui .search{min-width:0!important;width:100%!important}body.admin-ui .control,body.admin-ui .button{min-height:44px!important;font-size:14px!important}body.admin-ui .chart{height:220px!important;overflow-x:auto!important}body.admin-ui .top select{max-width:150px!important}
 }
 @media(max-width:430px){.client-ui .project-metrics,.admin-ui .metrics{grid-template-columns:1fr!important}.client-ui .project-metric,.admin-ui .metric{min-height:92px!important}.admin-ui .top h1{font-size:15px!important}.admin-ui .top select{max-width:132px!important}.client-ui .topbar .subtitle{display:none!important}}
+
+/* Keep the fixed client header inside the viewport on narrow phones. The
+   account copy is useful on desktop, but a long name/email pair must not force
+   feed and editor pages wider than the content area. */
+@media(max-width:760px){
+  body.client-ui .topbar>div:first-child,
+  body.client-ui .topbar-actions{min-width:0!important}
+  body.client-ui .topbar h1{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  body.client-ui .topbar-account{min-width:0!important}
+  body.client-ui .account-copy{min-width:0!important;max-width:clamp(74px,24vw,150px)!important}
+  body.client-ui .account-copy :is(strong,small){max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+}
+@media(max-width:430px){
+  body.client-ui .topbar .account-copy{display:none!important}
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
 
 /* Final consistency pass: semantic release states and complete dark surfaces. */
@@ -331,20 +355,27 @@ body.client-ui[data-theme="dark"] .project-metric .metric-icon.neutral{backgroun
 
 /* Plan layout workbench */
 body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 330px;gap:12px}
-body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto;z-index:1;min-height:48px;padding:7px 9px;border:1px solid var(--lf-line);border-radius:9px;background:var(--lf-surface);box-shadow:var(--lf-shadow)}
-body.client-ui #layoutsPanel .le-toolbar strong{margin:0 10px 0 4px;color:var(--lf-text);font-size:14px}
-body.client-ui #layoutsPanel .le-toolbar button{min-height:32px;padding:5px 9px;border:1px solid var(--lf-line)!important;border-radius:6px!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important;font-size:11px;font-weight:650}
+body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto;z-index:1;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"title layers view" "secondary secondary secondary";align-items:center;gap:10px 14px;min-height:48px;padding:10px 12px;border:1px solid var(--lf-line);border-radius:9px;background:var(--lf-surface);box-shadow:var(--lf-shadow)}
+body.client-ui #layoutsPanel .le-toolbar-title{grid-area:title;display:grid;gap:2px;min-width:150px}
+body.client-ui #layoutsPanel .le-toolbar-title strong{margin:0;color:var(--lf-text);font-size:14px;line-height:20px}
+body.client-ui #layoutsPanel .le-toolbar button{min-height:34px;padding:6px 10px;border:1px solid var(--lf-line)!important;border-radius:7px!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important;font-size:11px;font-weight:650;white-space:nowrap}
 body.client-ui #layoutsPanel .le-toolbar button:hover{border-color:var(--lf-line-strong)!important;background:var(--lf-bg)!important}
 body.client-ui #layoutsPanel .le-toolbar button:disabled{opacity:.4}
-body.client-ui #layoutsPanel .le-save-state{margin-right:auto;color:var(--lf-muted);font-size:11px}
+body.client-ui #layoutsPanel .le-save-state{color:var(--lf-muted);font-size:10px;line-height:15px;white-space:nowrap}
+body.client-ui #layoutsPanel .le-toolbar-layer-actions,body.client-ui #layoutsPanel .le-toolbar-view-actions,body.client-ui #layoutsPanel .le-toolbar-secondary-actions{display:flex;align-items:center;gap:7px;min-width:0}
+body.client-ui #layoutsPanel .le-toolbar-layer-actions{grid-area:layers}
+body.client-ui #layoutsPanel .le-toolbar-view-actions{grid-area:view;justify-content:flex-end}
+body.client-ui #layoutsPanel .le-toolbar-secondary-actions{grid-area:secondary;justify-content:flex-end;padding-top:10px;border-top:1px solid var(--lf-line)}
+body.client-ui #layoutsPanel .le-toolbar-group-label{display:none;color:var(--lf-muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
 body.client-ui #layoutsPanel .le-zoom-value{min-width:36px;color:var(--lf-muted);font-size:11px;text-align:center;font-variant-numeric:tabular-nums}
 body.client-ui #layoutsPanel .le-toolbar-divider{width:1px;height:22px;background:var(--lf-line);margin:0 2px}
 body.client-ui #layoutsPanel .brand-preview{min-height:570px;padding:12px;border:1px solid var(--lf-line);border-radius:9px;background:#17191f;box-shadow:none}
-body.client-ui #layoutsPanel .brand-preview-help{align-self:stretch;margin-top:10px;padding:8px 10px;border:1px solid #30343e;border-radius:7px;background:#20232b;color:#aeb4bf;font-size:11px}
-body.client-ui #layoutsPanel .brand-preview-help strong{display:block;margin-bottom:4px;color:#eff1f5}
-body.client-ui #layoutsPanel .brand-preview-help #brandStatus{color:#aeb4bf}
-body.client-ui #layoutsPanel .le-stage{position:relative;align-self:stretch;justify-content:flex-start;min-height:420px;height:100%;margin:0;padding:20px;overflow:auto;border:1px solid #30343e;border-radius:7px;background-color:#1d2027;background-image:radial-gradient(#3b404a .8px,transparent .8px);background-size:16px 16px}
-body.client-ui #layoutsPanel .le-stage.show-grid{background-image:linear-gradient(#353a44 1px,transparent 1px),linear-gradient(90deg,#353a44 1px,transparent 1px),radial-gradient(#515763 .8px,transparent .8px);background-size:80px 80px,80px 80px,16px 16px}
+body.client-ui #layoutsPanel .brand-preview{background:var(--lf-surface)!important}
+body.client-ui #layoutsPanel .brand-preview-help{align-self:stretch;margin-top:10px;padding:8px 10px;border:1px solid var(--lf-line);border-radius:7px;background:var(--lf-surface-2);color:var(--lf-muted);font-size:11px}
+body.client-ui #layoutsPanel .brand-preview-help strong{display:block;margin-bottom:4px;color:var(--lf-text)}
+body.client-ui #layoutsPanel .brand-preview-help #brandStatus{color:var(--lf-muted)}
+body.client-ui #layoutsPanel .le-stage{position:relative;align-self:stretch;justify-content:flex-start;min-height:420px;height:100%;margin:0;padding:20px;overflow:auto;border:1px solid var(--lf-line);border-radius:7px;background-color:#fff;background-image:none;background-size:auto}
+body.client-ui #layoutsPanel .le-stage.show-grid{background-image:linear-gradient(#edf1f5 1px,transparent 1px),linear-gradient(90deg,#edf1f5 1px,transparent 1px);background-size:80px 80px}
 body.client-ui #layoutsPanel #brandPreviewCanvas{position:relative;z-index:1;flex:0 0 auto;max-width:none;max-height:none;width:auto;height:auto;box-shadow:0 10px 34px rgba(0,0,0,.32);touch-action:none;cursor:grab}
 body.client-ui #layoutsPanel #brandPreviewCanvas.dragging{cursor:grabbing}
 body.client-ui #layoutsPanel #brandPreviewCanvas.resize-ready,body.client-ui #layoutsPanel #brandPreviewCanvas.resizing{cursor:nwse-resize}
@@ -353,8 +384,6 @@ body.client-ui #layoutsPanel .le-selection:after{width:9px;height:9px;right:-5px
 body.client-ui #layoutsPanel .le-grid-overlay{position:absolute;inset:20px;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(82,132,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(82,132,255,.12) 1px,transparent 1px);background-size:80px 80px}
 body.client-ui #layoutsPanel .le-selection{z-index:3}
 body.client-ui #layoutsPanel .le-stage.panning{cursor:grabbing}
-body.client-ui #layoutsPanel .le-properties .layout-file-control #le-remove-backdrop{min-height:31px;padding:5px 8px;border:1px solid var(--lf-line)!important;background:transparent!important;color:var(--lf-muted)!important;font-size:10px}
-body.client-ui #layoutsPanel .le-properties .layout-file-control #le-remove-backdrop:hover{border-color:var(--lf-red)!important;color:var(--lf-red)!important}
 body.client-ui #layoutsPanel .le-token-fields{display:flex;flex-wrap:wrap;gap:5px}
 body.client-ui #layoutsPanel .le-token-fields button{min-height:27px;padding:3px 7px;border:1px solid var(--lf-line)!important;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important;font-size:10px}
 body.client-ui #layoutsPanel .le-properties{grid-column:2;grid-row:2/4;position:relative;top:auto;align-self:stretch;height:auto;max-height:none;overflow:visible;padding:14px;border:1px solid var(--lf-line);border-radius:9px;background:var(--lf-surface);color:var(--lf-text);box-shadow:var(--lf-shadow)}
@@ -398,10 +427,10 @@ body.client-ui #layoutsPanel .le-footer{padding:11px;border-color:var(--lf-line)
 body.client-ui #layoutsPanel .le-footer p{color:var(--lf-muted);font-size:10px}
 body.client-ui #layoutsPanel .le-check-dialog{border:1px solid var(--lf-line);border-radius:10px;background:var(--lf-surface);color:var(--lf-text)}
 body.client-ui #layoutsPanel .le-check-dialog figure{border-color:var(--lf-line);background:var(--lf-surface-2)}
-body.client-ui[data-theme="dark"] #layoutsPanel .brand-preview{background:#17191f}
+body.client-ui[data-theme="dark"] #layoutsPanel .brand-preview{background:var(--lf-surface)!important}
 body.client-ui[data-theme="dark"] #layoutsPanel .le-properties{background:var(--lf-surface)!important;color:var(--lf-text)!important}
 @media(max-width:1050px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr) 290px}body.client-ui #layoutsPanel .le-toolbar .le-save-state{display:none}}
-@media(max-width:760px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr)}body.client-ui #layoutsPanel .brand-preview{grid-column:1;grid-row:2;min-height:410px}body.client-ui #layoutsPanel .le-stage{min-height:300px;padding:12px}body.client-ui #layoutsPanel .le-properties{position:relative;top:auto;grid-column:1;grid-row:4;max-height:none}body.client-ui #layoutsPanel .brand-source-panel{grid-column:1;grid-row:3}body.client-ui #layoutsPanel .le-footer{grid-row:5}body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto}body.client-ui #layoutsPanel .le-toolbar button{min-height:34px}}
+@media(max-width:760px){body.client-ui #layoutsPanel .layout-branding{grid-template-columns:minmax(0,1fr)}body.client-ui #layoutsPanel .brand-preview{grid-column:1;grid-row:2;min-height:410px}body.client-ui #layoutsPanel .le-stage{min-height:300px;padding:12px}body.client-ui #layoutsPanel .le-properties{position:relative;top:auto;grid-column:1;grid-row:4;max-height:none}body.client-ui #layoutsPanel .brand-source-panel{grid-column:1;grid-row:3}body.client-ui #layoutsPanel .le-footer{grid-row:5}body.client-ui #layoutsPanel .le-toolbar{position:relative;top:auto;grid-template-columns:1fr;grid-template-areas:"title" "layers" "view" "secondary";gap:9px;padding:10px}body.client-ui #layoutsPanel .le-toolbar-layer-actions,body.client-ui #layoutsPanel .le-toolbar-view-actions,body.client-ui #layoutsPanel .le-toolbar-secondary-actions{justify-content:flex-start;flex-wrap:wrap}body.client-ui #layoutsPanel .le-toolbar-secondary-actions{padding-top:9px}body.client-ui #layoutsPanel .le-toolbar button{min-height:34px}}
 
 body.client-ui .strategy-panel{display:grid;gap:18px}
 body.client-ui .strategy-heading{display:flex;justify-content:space-between;align-items:flex-start}
@@ -1062,7 +1091,7 @@ body.client-ui .account-copy small{max-width:180px!important;overflow:hidden!imp
 body.client-ui .account-chevron{width:16px;height:16px;flex:0 0 16px;stroke-width:1.8}
 body.client-ui .project-list-mode .theme-toggle{display:none!important}
 body.client-ui .project-list-mode .main{padding:91px 28px 40px!important}
-body.client-ui .project-list-mode .projects-page{max-width:1460px!important;margin:0 auto!important}
+body.client-ui .project-list-mode .projects-page{max-width:1460px!important;margin:0 auto!important;padding:34px 38px 30px!important}
 body.client-ui .project-list-mode .projects-heading{align-items:center!important;gap:24px!important;margin:0 0 22px!important}
 body.client-ui .project-list-mode .projects-heading h1{margin:0!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:36px!important;font-weight:700!important;line-height:1.12!important;letter-spacing:-.6px!important}
 body.client-ui .project-list-mode .projects-heading p{margin:5px 0 0!important;color:var(--lf-muted)!important;font-family:var(--lf-font)!important;font-size:16px!important;line-height:23px!important}
@@ -1119,6 +1148,7 @@ body.client-ui .project-list-mode .project-status.warning{background:#fff4dc!imp
 body.client-ui .project-list-mode .project-status.warning i{background:#c77b0c}
 body.client-ui .project-list-mode .project-status.error{background:#ffebed!important;color:#b4232e!important}
 body.client-ui .project-list-mode .project-status.error i{background:#d92d38}
+body.client-ui .project-list-mode .project-status.error{max-width:260px!important;white-space:normal!important;text-align:left!important;line-height:16px!important}
 body.client-ui .project-list-mode .project-status.neutral{background:#eff1f4!important;color:#586171!important}
 body.client-ui .project-list-mode .project-status.neutral i{background:#848c99}
 body.client-ui .project-list-mode .project-updated{color:#6b7483!important;font-size:12px!important;font-variant-numeric:tabular-nums!important;white-space:nowrap!important}
@@ -1281,6 +1311,14 @@ body.client-ui .project-source-list .source-record>.source-actions button{
     flex:1 1 140px!important;
   }
 }
+
+@media(max-width:720px){
+  body.client-ui .project-list-mode .projects-page{padding:24px 18px 22px!important}
+}
+
+/* The projects index already provides its own project context; keep the
+   project switcher available everywhere else in the client navigation. */
+body.client-ui .app.project-list-mode .workspace-switcher{display:none!important}
 
 /* Admin reading sizes: the same Circe family and control rhythm as the client. */
 body.admin-ui :is(.button,.control,.field input,.field select,.field textarea){font-family:var(--lf-font)!important;font-size:14px!important;line-height:20px!important;font-weight:400!important;min-width:0;}

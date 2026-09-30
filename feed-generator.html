@@ -4597,6 +4597,25 @@
     body.client-ui .source-empty { display:grid; gap:5px; }
     body.client-ui .source-empty strong { color:var(--lf-text); font-size:14px; }
     body.client-ui .source-empty span { color:var(--lf-muted); }
+    body.client-ui .requires-feed-selection > :not(.workflow-feed-empty) { display:none!important; }
+    body.client-ui .workflow-feed-empty {
+      min-height:260px;
+      display:grid;
+      align-content:center;
+      justify-items:center;
+      gap:10px;
+      padding:36px 24px;
+      border:1px dashed var(--lf-line);
+      border-radius:16px;
+      background:var(--lf-surface-2);
+      text-align:center;
+    }
+    body.client-ui .workflow-feed-empty[hidden] { display:none!important; }
+    body.client-ui .workflow-feed-empty strong { color:var(--lf-text); font-size:18px; }
+    body.client-ui .workflow-feed-empty p { max-width:520px; margin:0; color:var(--lf-muted); line-height:1.55; }
+    body.client-ui .workflow-feed-empty-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:6px; }
+    body.client-ui .workflow-feed-blocked [data-page="apartments"]:not(.table-wrap),
+    body.client-ui .workflow-feed-blocked > .editor { display:none!important; }
     body.client-ui .project-table-empty td { height:180px; text-align:center; }
     body.client-ui .project-table-empty strong, body.client-ui .project-table-empty span { display:block; }
     body.client-ui .project-table-empty span { margin-top:6px; color:var(--lf-muted); }
@@ -4660,27 +4679,23 @@
   <div class="app" id="appShell" hidden>
     <aside class="sidebar">
       <div class="brand">
-        <div class="lf-brand-lockup"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
+        <a class="brand-home-link" href="/" aria-label="Перейти к списку проектов"><span class="lf-brand-lockup"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></span></a>
         <small>Генерация и мониторинг фидов</small>
       </div>
       <section class="workspace-switcher" id="workspaceSwitcher" aria-label="Навигация по проектам">
-        <div class="workspace-switcher-head">
-          <span class="workspace-switcher-label" id="workspaceSwitcherLabel">Проекты</span>
-          <a class="workspace-switcher-back" id="workspaceSwitcherBack" href="/" aria-label="Вернуться к списку проектов">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
-            <span>Список проектов</span>
-          </a>
-        </div>
         <label class="workspace-switcher-control" for="sidebarProjectSwitcher">
           <span>Проект</span>
           <select id="sidebarProjectSwitcher" aria-label="Переключить проект">
             <option value="">Все проекты</option>
           </select>
         </label>
+        <a class="workspace-switcher-back" id="workspaceSwitcherBack" href="/" aria-label="Вернуться к списку проектов">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+          <span>Список проектов</span>
+        </a>
       </section>
       <div class="nav-label">Проекты</div>
       <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
-      <div class="nav-label nav-label-project" id="projectNavLabel">Текущий проект</div>
       <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Список фидов</span></button>
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
@@ -4807,7 +4822,7 @@
           </div>
           <div class="field compact">
             <label for="sourcePlatform">Тип фида</label>
-            <select id="sourcePlatform"><option value="auto">Определить автоматически</option><option value="cian">ЦИАН</option><option value="avito">Авито</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик · закрытая beta</option></select>
+            <select id="sourcePlatform"><option value="auto">Определить автоматически</option><option value="cian">ЦИАН</option><option value="avito">Авито</option><option value="yandex">Яндекс Недвижимость</option><option value="domclick">Домклик · закрытая бета</option></select>
           </div>
           <div class="field compact">
             <label for="sourceInterval">Обновление</label>
@@ -4824,17 +4839,17 @@
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
-        <div class="source-schedule-note">Выберите интервал от 30 минут до суток. Таймер показывает время до следующей синхронизации; кнопка «Обновить сейчас» запускает её без ожидания и обновляет опубликованный фид по той же ссылке.</div>
+        <div class="source-schedule-note">Выберите интервал от 30 минут до суток. После сохранения фида таймер покажет время до следующей синхронизации, а кнопка «Обновить сейчас» запустит её без ожидания.</div>
         <div class="platform-guidance">
           После загрузки сервис определит площадку, покажет состав объектов и оставит исходную версию фида для отката. Работайте сверху вниз: загрузка, выбор объектов, правки, проверка и финальная выгрузка.
         </div>
       </section>
 
       <section class="strategy-panel page-hidden" id="trafficPolicyPanel" data-page="strategy">
-        <header class="strategy-heading"><div><span class="eyebrow">Стратегия публикации</span><h2 class="panel-title">Пессимизация</h2><p class="panel-caption">Управляйте объёмом объявлений на площадке: оставляйте в публикации только нужные варианты, не удаляя квартиры из проекта. Настройка действует отдельно для каждого источника.</p></div></header>
-        <div id="trafficPolicyEmpty" class="traffic-empty" hidden>Сначала сформируйте и сохраните хотя бы один фид в разделе «Проверка и публикация».</div>
+        <header class="strategy-heading"><div><span class="eyebrow">Стратегия публикации</span><h2 class="panel-title">Ограничение публикации</h2><p class="panel-caption">Оставляйте на площадке только нужные варианты, не удаляя квартиры из проекта. Настройка действует отдельно для каждого источника.</p></div></header>
+        <div id="trafficPolicyEmpty" class="traffic-empty" hidden>Сначала добавьте и сохраните хотя бы один фид в разделе «Фиды проекта».</div>
         <div id="trafficPolicyContent" class="traffic-policy-content">
-          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Опубликованный фид</label><select id="trafficPolicySource"></select></div><div class="field"><label for="trafficPolicyMode">Режим пессимизации</label><select id="trafficPolicyMode"><option value="all">Публиковать все объявления</option><option value="one-per-room">По одному объекту каждой комнатности</option><option value="one-per-complex-room">По одному объекту каждой комнатности в каждом доме</option></select><small class="field-hint">Остальные квартиры останутся в проекте, но не будут передаваться на площадку.</small></div><button id="saveTrafficPolicyBtn" type="button" class="primary traffic-policy-save">Сохранить фид</button></div>
+          <div class="traffic-policy-toolbar"><div class="field"><label for="trafficPolicySource">Опубликованный фид</label><select id="trafficPolicySource"></select></div><div class="field"><label for="trafficPolicyMode">Способ ограничения</label><select id="trafficPolicyMode"><option value="all">Публиковать все объявления</option><option value="one-per-room">По одному объекту каждой комнатности</option><option value="one-per-complex-room">По одному объекту каждой комнатности в каждом доме</option></select><small class="field-hint">Остальные квартиры останутся в проекте, но не будут передаваться на площадку.</small></div><button id="saveTrafficPolicyBtn" type="button" class="primary traffic-policy-save">Сохранить настройки</button></div>
           <div class="traffic-policy-note" id="trafficPolicySummary"></div>
           <div class="traffic-room-list" id="trafficRoomSelections"></div>
           <div class="traffic-policy-help">Новые объекты будут попадать в соответствующую группу при синхронизации. Если выбранный представитель исчезнет из исходного фида, сервис автоматически выберет другой объект этой комнатности.</div>
@@ -4843,13 +4858,13 @@
 
       <section class="feeds-panel page-hidden" id="feedsPanel" data-page="feeds">
         <h2 class="panel-title">Мониторинг фидов</h2>
-        <div class="panel-caption">Сервер проверяет фиды по выбранному интервалу и сообщает о новых ошибках.</div>
+        <div class="panel-caption">Сервис проверяет ссылки на фиды по выбранному интервалу и сообщает о новых ошибках.</div>
         <div class="monitor-add">
           <div class="field">
             <label for="monitorFeedUrl">Ссылка на фид для мониторинга</label>
             <input id="monitorFeedUrl" type="url" placeholder="https://site.ru/feed.xml">
           </div>
-          <button id="addMonitorFeedBtn" type="button" class="primary">Добавить фид</button>
+          <button id="addMonitorFeedBtn" type="button" class="primary">Добавить в мониторинг</button>
         </div>
         <div class="monitor-notification-settings">
           <h3>Уведомления проекта</h3>
@@ -4884,7 +4899,7 @@
                 <option value="bad">С ошибками</option>
                 <option value="warning">Предупреждения</option>
                 <option value="ok">Работают</option>
-                <option value="pending">Ожидают сервера</option>
+                <option value="pending">Ожидают проверки</option>
               </select>
             </div>
           </div>
@@ -5166,14 +5181,14 @@
       <div class="usage-guide-head"><div><span class="usage-guide-eyebrow">КРАТКОЕ РУКОВОДСТВО</span><h2 id="usageGuideTitle">От исходного XML до публикации</h2><p>Пройдите шаги по порядку. Планировки можно настроить позже — для первой выгрузки это необязательно.</p></div><button class="usage-guide-close" id="usageGuideClose" type="button" aria-label="Закрыть инструкцию">×</button></div>
       <ol class="usage-guide-steps">
         <li><span class="usage-guide-number">01</span><div><h3>Создайте проект</h3><p>Проект — рабочая область, внутри которой можно хранить несколько фидов разных площадок и редактировать каждый отдельно.</p></div><button type="button" data-guide-go="projects">Открыть проекты <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">02</span><div><h3>Подключите источник</h3><p>Вставьте постоянную ссылку на XML и нажмите «Добавить источник» или загрузите XML-файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="source">К источнику <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">02</span><div><h3>Добавьте фид</h3><p>Вставьте постоянную ссылку на XML и нажмите «Добавить фид» или загрузите XML-файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="source">К форме добавления <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">03</span><div><h3>Сверьте дома и секции</h3><p>Убедитесь, что сервис правильно сгруппировал дома и показывает ожидаемое число квартир.</p></div><button type="button" data-guide-go="complexes">К списку домов <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">04</span><div><h3>Проверьте объявления</h3><p>Просмотрите ошибки и обязательные поля, поправьте отдельные объявления или выберите несколько строк для массовых правок.</p></div><button type="button" data-guide-go="apartments">К объявлениям <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number optional">05</span><div><h3>При необходимости оформите планировки</h3><p>Загрузите изображение-подложку, настройте макет на примере квартиры и сформируйте брендированное первое фото.</p></div><button type="button" data-guide-go="branding">К редактору <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">06</span><div><h3>Проверьте фид и передайте ссылку площадке</h3><p>На странице публикации исправьте блокирующие замечания, сохраните постоянную ссылку или скачайте XML-файл.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">06</span><div><h3>Проверьте и опубликуйте фид</h3><p>На странице публикации исправьте блокирующие замечания, сохраните постоянную ссылку для площадки или скачайте XML-файл.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">07</span><div><h3>Следите за обновлениями</h3><p>Мониторинг показывает ошибки и состояние фида. Здесь же можно запустить проверку и настроить уведомления.</p></div><button type="button" data-guide-go="feeds">Открыть мониторинг <span aria-hidden="true">→</span></button></li>
       </ol>
-      <div class="usage-guide-foot"><span>Подсказка: сначала выберите проект, затем загрузите новый или ранее сохранённый фид.</span><div><button type="button" data-guide-go="support">Техподдержка</button><button id="usageGuideStart" class="primary" type="button">Начать с источника</button></div></div>
+      <div class="usage-guide-foot"><span>Подсказка: сначала выберите проект, затем добавьте новый или ранее сохранённый фид.</span><div><button type="button" data-guide-go="support">Техподдержка</button><button id="usageGuideStart" class="primary" type="button">Начать с добавления фида</button></div></div>
     </dialog>
 
     <aside class="editor">
@@ -5704,11 +5719,13 @@
     function setSourceContext(sourceId) {
       activeSourceId = sourceId === "all" || projectSources.some(source => source.id === sourceId) ? sourceId : "all";
       const source = projectSources.find(item => item.id === activeSourceId);
-      const publication = appState.publishedFeeds?.[activePublicationKey()]
-        || (projectSources.length === 1 ? appState.publishedFeeds?.all : null)
-        || {};
+      // `all` is a neutral/new-feed context. Never fall back to the first
+      // project source here: that is what made an old feed reappear in the
+      // new-feed form after a refresh or a source switch.
+      const publication = source ? (appState.publishedFeeds?.[activePublicationKey()] || {}) : {};
       activePlatform = source?.platform || activePlatform;
-      appState.feedUrl = source?.url || projectSources[0]?.url || "";
+      appState.feedUrl = source?.url || "";
+      appState.feedName = source?.name || "";
       appState.generatedFeedId = publication.id || "";
       appState.generatedLink = publication.url || "";
       appState.publishedHistory = publication.history || [];
@@ -5931,7 +5948,7 @@
       save();
       renderTrafficPolicy();
       renderAll();
-      if (notify) showToast("Стратегия публикации сохранена. Повторно сохраните фид, чтобы обновить ссылку.");
+      if (notify) showToast("Стратегия публикации сохранена. Сохраните фид ещё раз, чтобы обновить опубликованную ссылку.");
       return true;
     }
 
@@ -7029,13 +7046,13 @@
       const updatedAt = new Date(source.updatedAt || 0).getTime();
       const dueAt = updatedAt + intervalMinutes * 60 * 1000;
       const remaining = dueAt - now;
-      if (!Number.isFinite(dueAt) || updatedAt <= 0) return { label: "Ожидает синхронизации", title: "Время следующего обновления будет рассчитано после первой загрузки" };
-      if (remaining <= 0) return { label: "Обновление запускается…", title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
+      if (!Number.isFinite(dueAt) || updatedAt <= 0) return { label: "ожидает синхронизации", title: "Время следующего обновления будет рассчитано после первой загрузки" };
+      if (remaining <= 0) return { label: "запускается…", title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
       const totalMinutes = Math.ceil(remaining / 60000);
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
       const duration = hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
-      return { label: `Следующее через ${duration}`, title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
+      return { label: `через ${duration}`, title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
     }
 
     function renderProjectSources() {
@@ -7089,7 +7106,33 @@
           ? summaryFeeds.filter(feed => Boolean(feed.url || feed.lastSuccessAt || feed.publishedAt)).length
           : sourceRecords.filter(source => Boolean(state.publishedFeeds?.[source.id]?.id || state.publishedFeeds?.[source.id]?.url)).length || (state.generatedLink ? 1 : 0);
         const draftFeedCount = Math.max(0, feedCount - publishedFeedCount);
-        const errorFeedCount = sourceRecords.filter(source => Boolean(source.error || source.autoSyncError)).length;
+        // Keep the project-level status useful even when the current page has
+        // no active feed selected. The API summary contains sync failures for
+        // published feeds, while local source state can contain the latest
+        // client-side validation details, so inspect both collections.
+        const errorRecords = [...summaryFeeds, ...sourceRecords].reduce((records, source) => {
+          const key = source.name || source.sourceId || source.url || source.id;
+          if (!key || records.some(item => (item.name || item.sourceId || item.url || item.id) === key)) return records;
+          records.push(source);
+          return records;
+        }, []);
+        const errorFeeds = errorRecords.map(source => {
+          const explicitCount = [source.errorCount, source.errorsCount, source.issueCount, source.validationErrorCount]
+            .map(value => Number(value))
+            .find(value => Number.isFinite(value) && value > 0);
+          const syncError = String(source.error || source.autoSyncError || "").trim();
+          const count = explicitCount || (syncError ? 1 : 0);
+          if (!count) return null;
+          const platformKey = source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto");
+          return {
+            name: source.name || platformNames[platformKey] || "Фид проекта",
+            count,
+            message: syncError
+          };
+        }).filter(Boolean);
+        const errorFeedCount = errorFeeds.length;
+        const errorTotal = errorFeeds.reduce((total, feed) => total + feed.count, 0);
+        const errorFeedNames = errorFeeds.map(feed => feed.name);
         const platformValues = [...new Set(sourceRecords.map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
         const platformKey = platformValues[0] || state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
         const platform = platformValues.length ? platformValues.map(value => platformNames[value] || value).join(" · ") : (platformNames[platformKey] || platformKey);
@@ -7097,13 +7140,13 @@
         const archived = project.status === "archived";
         const hasOutput = Boolean(state.generatedLink || project.summary?.feeds?.length);
         const health = project.summary?.feedHealth || "";
-        const hasError = !archived && health === "error";
+        const hasError = !archived && (health === "error" || errorFeedCount > 0);
         const hasWarning = !archived && health === "stale";
         const status = archived ? "archived" : hasError ? "error" : hasWarning ? "warning" : hasOutput ? "published" : objectCount || state.feedUrl ? "processing" : "new";
         const updatedAt = state.updatedAt || state.lastUpdatedAt || project.updatedAt || project.createdAt;
         const updated = updatedAt ? new Date(updatedAt) : null;
         const searchText = [project.name, project.id, state.feedUrl, sourceRecords.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
-        return { project, state, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
+        return { project, state, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, errorTotal, errorFeedNames, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
       });
       // Keep the billing guard independent from the visual project summary.
       // The metrics were removed from the UI, but the limit still relies on
@@ -7127,11 +7170,13 @@
       const statusMeta = {
         published: ["Опубликовано", "success"], processing: ["Есть черновики", "info"], warning: ["Нужна проверка", "warning"], error: ["Ошибка публикации", "error"], new: ["Не настроено", "neutral"], archived: ["В архиве", "neutral"]
       };
-      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, objectCount, status, updated }) => {
+      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, errorTotal, errorFeedNames, objectCount, status, updated }) => {
         const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
         const monitorUrl = `${projectUrl}&page=feeds`;
         const [statusLabel, statusTone] = statusMeta[status];
-        const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Ошибок: ${errorFeedCount || "есть"}` : statusLabel;
+        const errorNamesLabel = errorFeedNames?.length ? errorFeedNames.join(", ") : "Фид проекта";
+        const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Ошибки: ${errorTotal || 1} · ${errorNamesLabel}` : statusLabel;
+        const publicationStatusTitle = status === "error" ? `Ошибки: ${errorTotal || 1}. Фид${errorFeedCount === 1 ? "" : "ы"}: ${errorNamesLabel}` : publicationStatus;
         const updatedLabel = updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
         const projectIdShort = project.id === "legacy" ? "legacy" : project.id.slice(0, 8).toUpperCase();
         const actionMenu = status === "archived"
@@ -7142,7 +7187,7 @@
           <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
           <td><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
           <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
-          <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${publicationStatus}</span></td>
+          <td><span class="project-status ${statusTone}" title="${escapeXml(publicationStatusTitle)}"><i aria-hidden="true"></i>${escapeXml(publicationStatus)}</span></td>
           <td class="project-updated">${updatedLabel}</td>
           <td class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
         </tr>`;
@@ -7255,7 +7300,8 @@
       const activeStepIndex = stepOrder.indexOf(activePage);
       const workflow = document.querySelector(".nav-workflow");
       workflow.hidden = !currentProject;
-      document.querySelector("#projectNavLabel").hidden = !currentProject;
+      const projectNavLabel = document.querySelector("#projectNavLabel");
+      if (projectNavLabel) projectNavLabel.hidden = !currentProject;
       document.querySelector("#projectControlLabel").hidden = !currentProject;
       document.querySelector("#projectsNav").classList.toggle("active", activePage === "projects");
       document.querySelector("#projectsNav").removeAttribute("aria-current");
@@ -7310,6 +7356,7 @@
       if (workflowSaveMeta) workflowSaveMeta.textContent = activeFeed && publicationForSource(activeFeed.id).url
         ? "Изменения сохранятся в опубликованный фид после следующей публикации."
         : "Сохраните промежуточный результат — фид появится в обзоре как черновик.";
+      renderWorkflowFeedGuard();
       document.querySelectorAll("[data-step]").forEach(button => {
         const page = stepPages[button.dataset.step];
         const state = stepStates[page] || "";
@@ -7479,7 +7526,13 @@
 
     function switchPage(page) {
       if (page === activePage) return;
-      if (page === "source") prepareNewFeedFlow();
+      // The source step is the entry point for a new feed only when there is
+      // no selected feed. When a draft or published feed is already selected,
+      // moving between workflow steps must keep that feed in context.
+      if (page === "source") {
+        if (projectSources.some(source => source.id === activeSourceId)) sourceEntrySessionActive = true;
+        else prepareNewFeedFlow();
+      }
       activePage = page;
       syncPageUrl(page);
       renderPage();
@@ -7488,6 +7541,34 @@
     }
 
     const stepPages = { ".source-panel": "source", ".complexes-panel": "complexes", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".publish-panel": "results", ".feeds-panel": "feeds" };
+
+    function renderWorkflowFeedGuard() {
+      const guardedPages = ["complexes", "apartments", "branding", "results"];
+      const hasSelectedFeed = projectSources.some(source => source.id === activeSourceId);
+      document.querySelector("#appShell")?.classList.toggle("workflow-feed-blocked", !hasSelectedFeed);
+      const copy = {
+        complexes: "Выберите или добавьте фид, чтобы работать с домами и секциями.",
+        apartments: "Выберите или добавьте фид, чтобы редактировать объявления и квартиры.",
+        branding: "Выберите или добавьте фид, чтобы оформить планировки.",
+        results: "Выберите или добавьте фид, чтобы проверить и опубликовать его."
+      };
+      guardedPages.forEach(page => {
+        const section = document.querySelector(`[data-page="${page}"]`);
+        if (!section) return;
+        let guard = section.querySelector(":scope > .workflow-feed-empty");
+        if (!guard) {
+          guard = document.createElement("div");
+          guard.className = "workflow-feed-empty";
+          guard.innerHTML = `<strong>Выберите или добавьте фид</strong><p></p><div class="workflow-feed-empty-actions"><button type="button" data-workflow-empty-action="overview">Открыть список фидов</button><button type="button" class="primary" data-workflow-empty-action="source">Добавить фид</button></div>`;
+          section.prepend(guard);
+        }
+        guard.querySelector("p").textContent = copy[page];
+        const shouldGuard = !hasSelectedFeed;
+        section.classList.toggle("requires-feed-selection", shouldGuard);
+        guard.hidden = !shouldGuard;
+      });
+    }
+
     window.addEventListener("popstate", () => {
       const url = new URL(window.location.href);
       if ((url.searchParams.get("project") || "") !== (currentProject?.id || "")) {
@@ -7500,6 +7581,13 @@
     });
     document.querySelectorAll("[data-step]").forEach(button => {
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
+    });
+    document.addEventListener("click", event => {
+      const action = event.target instanceof Element ? event.target.closest("[data-workflow-empty-action]") : null;
+      if (!action) return;
+      event.preventDefault();
+      if (action.dataset.workflowEmptyAction === "source") prepareNewFeedFlow();
+      switchPage(action.dataset.workflowEmptyAction === "source" ? "source" : "overview");
     });
     document.querySelector(".project-overview").addEventListener("click", event => {
       const feedButton = event.target.closest("[data-overview-edit-source]");
@@ -7621,6 +7709,23 @@
       if (details.open) requestAnimationFrame(() => positionProjectRowMenu(details));
       else resetProjectRowMenu(details);
     }, true);
+    // Native <details> menus do not close when focus moves elsewhere. Close
+    // project action menus on outside interaction and Escape so a floating
+    // menu cannot remain over the table or trap the next action.
+    document.addEventListener("click", event => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(".project-row-menu")) return;
+      document.querySelectorAll("details.project-row-menu[open]").forEach(details => {
+        details.open = false;
+      });
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      const openMenus = [...document.querySelectorAll("details.project-row-menu[open]")];
+      if (!openMenus.length) return;
+      openMenus.forEach(details => { details.open = false; });
+      openMenus[0].querySelector("summary")?.focus();
+    });
     const repositionOpenProjectMenus = () => document.querySelectorAll("details.project-row-menu[open]").forEach(positionProjectRowMenu);
     window.addEventListener("resize", repositionOpenProjectMenus);
     window.addEventListener("scroll", repositionOpenProjectMenus, true);
@@ -7811,14 +7916,14 @@
         ok: "Работает",
         warning: "Есть предупреждения",
         bad: "Ошибка",
-        pending: "Ожидает сервер",
+        pending: "Ожидает проверки",
         checking: "Проверяется"
       };
       return labels[feed.status] || labels.pending;
     }
 
     function formatCheckDate(value) {
-      if (!value) return "еще не проверялся";
+      if (!value) return "ещё не проверялся";
       return new Date(value).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
     }
 
@@ -9381,7 +9486,7 @@
       if (box) {
         box.dataset.url = appState.generatedLink;
         box.classList.add("ready");
-        box.textContent = `${appState.generatedLink} — в фиде есть несохраненные изменения. Нажмите «Сохранить фид», чтобы обновить XML по этому же адресу.`;
+        box.textContent = `${appState.generatedLink} — в фиде есть несохранённые изменения. Нажмите «Сохранить фид», чтобы обновить XML по этому же адресу.`;
       }
       const input = document.querySelector("#generatedLinkInput");
       if (input) input.value = appState.generatedLink;
@@ -10333,7 +10438,8 @@ ${photos}
       if (loadFeedFromUrl.running) return;
       const objectIdsBeforeSync = new Set(objects.map(item => item.externalId).filter(Boolean));
       const input = document.querySelector("#feedUrl");
-      const existingSource = projectSources.find(source => source.id === sourceId);
+      const existingSource = projectSources.find(source => source.id === sourceId)
+        || (!sourceId && sourceEntrySessionActive ? projectSources.find(source => source.id === activeSourceId) : null);
       const publishedFeedIdBeforeSync = existingSource ? appState.publishedFeeds?.[existingSource.id]?.id : "";
       const url = (existingSource?.url || input.value).trim();
       if (!url) {
@@ -10744,14 +10850,14 @@ ${photos}
       target.classList.toggle("is-empty", empty);
       target.classList.toggle("is-ready", !blocked);
       if (empty) {
-        target.innerHTML = "<strong>Нет объектов для выпуска</strong>Подключите источник в разделе «Источники фидов» и импортируйте квартиры. После загрузки здесь появится проверка фида.";
+        target.innerHTML = "<strong>Нет объектов для публикации</strong>Добавьте фид в разделе «Фиды проекта», чтобы загрузить объекты и проверить публикацию.";
         return;
       }
       if (activePlatform === "domclick") {
         target.innerHTML = `<strong>Тестовый XML · ${currentObjects.length.toLocaleString("ru-RU")} объектов</strong>Домклик закрыт для постоянной публикации до подтверждения схемы.`;
         return;
       }
-      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `Проекты: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `Рекомендации: ${errors} замечаний — они не блокируют создание фида.` : "Ошибок не найдено. Можно создать выпуск."}`;
+      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `Проекты: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `Рекомендации: ${errors} ${pluralRu(errors, "замечание", "замечания", "замечаний")} — они не блокируют публикацию.` : "Ошибок не найдено. Фид готов к публикации."}`;
     }
 
     async function renderReleaseHistory() {
@@ -10976,7 +11082,7 @@ ${photos}
     form.addEventListener("input", () => {
       if (!selectedItem()) return;
       if (checkedIds.size > 1) {
-        setEditorStatus("Есть несохраненные групповые изменения");
+        setEditorStatus("Есть несохранённые групповые изменения");
         return;
       }
       const draft = updateSelectedFromForm();
@@ -10988,7 +11094,7 @@ ${photos}
     });
 
     form.addEventListener("change", () => {
-      if (checkedIds.size > 1) setEditorStatus("Есть несохраненные групповые изменения");
+      if (checkedIds.size > 1) setEditorStatus("Есть несохранённые групповые изменения");
     });
 
     document.querySelector("#duplicateBtn").addEventListener("click", () => {

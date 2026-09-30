@@ -106,9 +106,11 @@ body.client-ui .workspace-switcher-label {
 body.client-ui .workspace-switcher-back {
   display:inline-flex!important;
   align-items:center!important;
+  justify-self:start!important;
   gap:4px!important;
   flex:0 0 auto!important;
   min-height:24px!important;
+  margin:0!important;
   padding:0!important;
   border:0!important;
   background:transparent!important;
@@ -575,7 +577,10 @@ body.client-ui .auth-submit { min-height:48px!important; font-size:15px!importan
     table-layout:fixed!important;
   }
   body.client-ui .project-list-mode .project-table :is(th,td) {
-    max-width:0!important;
+    /* A zero max-width collapses table cells to their padding on narrow
+       viewports, making headings and statuses unreadable. Let the explicit
+       responsive column widths control the layout instead. */
+    max-width:none!important;
     overflow:hidden!important;
     overflow-wrap:anywhere!important;
     white-space:normal!important;
@@ -599,7 +604,17 @@ body.client-ui .auth-submit { min-height:48px!important; font-size:15px!importan
     font-size:10px!important;
     line-height:14px!important;
     white-space:normal!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
   }
+  body.client-ui .project-list-mode .project-table th:nth-child(1),
+  body.client-ui .project-list-mode .project-table td:nth-child(1) { width:30px!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(2),
+  body.client-ui .project-list-mode .project-table td:nth-child(2) { width:33%!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(5),
+  body.client-ui .project-list-mode .project-table td:nth-child(5) { width:40%!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(7),
+  body.client-ui .project-list-mode .project-table td:nth-child(7) { width:27%!important; }
   body.client-ui .project-list-mode .project-actions-cell { width:auto!important; white-space:normal!important; }
   body.client-ui .project-list-mode .project-row-action { width:30px!important; height:30px!important; margin-right:2px!important; }
   body.client-ui .project-list-mode .project-row-action svg { width:15px!important; height:15px!important; }
