@@ -50,7 +50,20 @@ body.client-ui .sidebar {
   box-shadow:none!important;
 }
 body.client-ui .sidebar .brand {
+  display:grid!important;
+  justify-items:start!important;
+  align-content:start!important;
+  gap:8px!important;
   margin:0 8px 28px!important;
+}
+body.client-ui .sidebar .brand small {
+  display:block!important;
+  margin:0!important;
+  color:var(--lf-muted)!important;
+  font-size:11px!important;
+  line-height:16px!important;
+  letter-spacing:.01em!important;
+  white-space:nowrap!important;
 }
 body.client-ui .lf-brand-name {
   color:var(--lf-text)!important;
@@ -63,15 +76,93 @@ body.client-ui .lf-brand-mark {
   color:#fff!important;
 }
 body.client-ui .workspace-switcher {
+  display:grid!important;
+  gap:12px!important;
   margin:0 0 28px!important;
-  padding:12px 14px!important;
+  padding:13px 14px!important;
   border:1px solid var(--lf-line)!important;
   border-radius:var(--lf-radius)!important;
   background:var(--lf-surface-2)!important;
   color:var(--lf-text)!important;
 }
-body.client-ui .workspace-switcher span { color:var(--lf-muted)!important; }
-body.client-ui .workspace-switcher strong { color:var(--lf-text)!important; }
+body.client-ui .workspace-switcher-head {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  min-width:0!important;
+}
+body.client-ui .workspace-switcher-label {
+  min-width:0!important;
+  overflow:hidden!important;
+  color:var(--lf-muted)!important;
+  font-size:10px!important;
+  line-height:14px!important;
+  letter-spacing:.08em!important;
+  text-overflow:ellipsis!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+}
+body.client-ui .workspace-switcher-back {
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  flex:0 0 auto!important;
+  min-height:24px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:var(--lf-blue)!important;
+  font-size:10px!important;
+  line-height:14px!important;
+  font-weight:700!important;
+  text-decoration:none!important;
+}
+body.client-ui .workspace-switcher-back:hover { color:var(--lf-text)!important; }
+body.client-ui .workspace-switcher-back svg { width:14px!important; height:14px!important; }
+body.client-ui .workspace-switcher-back span {
+  display:inline!important;
+  min-height:0!important;
+  margin:0!important;
+  color:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  letter-spacing:normal!important;
+  text-transform:none!important;
+}
+body.client-ui .workspace-switcher-control {
+  display:grid!important;
+  gap:5px!important;
+  min-width:0!important;
+}
+body.client-ui .workspace-switcher-control>span {
+  color:var(--lf-muted)!important;
+  font-size:10px!important;
+  line-height:14px!important;
+}
+body.client-ui .workspace-switcher-control select {
+  width:100%!important;
+  min-width:0!important;
+  height:38px!important;
+  min-height:38px!important;
+  padding:0 30px 0 10px!important;
+  border:1px solid var(--lf-line-strong)!important;
+  border-radius:8px!important;
+  background:var(--lf-surface)!important;
+  color:var(--lf-text)!important;
+  font-family:var(--lf-font)!important;
+  font-size:13px!important;
+  line-height:18px!important;
+}
+body.client-ui .workspace-switcher-control select:focus-visible,
+body.client-ui .workspace-switcher-back:focus-visible {
+  outline:3px solid rgba(68,107,252,.22)!important;
+  outline-offset:2px!important;
+}
+body.client-ui .workspace-switcher-back[hidden] { display:none!important; }
+@media (min-width:761px) and (max-width:1100px) {
+  body.client-ui .workspace-switcher { display:none!important; }
+}
 body.client-ui .nav-label {
   margin:0 12px 8px!important;
   color:var(--lf-muted)!important;
@@ -217,6 +308,7 @@ body.client-ui :is(button:not(.primary),.button,.secondary):hover:not(:disabled)
 
 body.client-ui .project-table-wrap,
 body.client-ui .table-wrap { overflow:auto!important; border-radius:10px!important; }
+body.client-ui .project-list-mode .project-table tbody tr { animation:none!important; transform:none!important; }
 body.client-ui .project-table th,
 body.client-ui th { background:var(--lf-surface-2)!important; color:var(--lf-muted)!important; }
 body.client-ui .project-table td,
@@ -335,6 +427,8 @@ body.client-ui .overview-published-row small { color:var(--lf-muted)!important; 
 body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!important; font-weight:700!important; }
 body.client-ui .overview-published-row { display:grid!important; grid-template-columns:minmax(0,1fr) minmax(260px,auto)!important; gap:16px!important; }
 body.client-ui .overview-feed-main { display:grid!important; gap:3px!important; min-width:0!important; }
+body.client-ui .overview-feed-platform { display:flex!important; align-items:center!important; gap:8px!important; }
+body.client-ui .overview-feed-platform > span:last-child { min-width:0; }
 body.client-ui .overview-feed-actions { display:flex!important; flex-wrap:wrap!important; align-items:center!important; justify-content:flex-end!important; gap:6px!important; }
 body.client-ui .overview-feed-health.has-error { color:var(--lf-red)!important; }
 body.client-ui .overview-feed-health.is-ok { color:var(--lf-green)!important; }
@@ -371,11 +465,12 @@ body.client-ui .overview-published-row .text-button { color:var(--lf-accent)!imp
 body.client-ui .overview-published-row .overview-feed-actions .text-button.danger { color:var(--lf-red)!important; }
 body.client-ui .overview-published-row .text-button:focus-visible,
 body.client-ui .overview-published .primary:focus-visible { outline:3px solid rgba(4,68,252,.25)!important; outline-offset:3px!important; }
-body.client-ui .traffic-policy-toolbar { display:grid!important; grid-template-columns:minmax(240px,.85fr) minmax(360px,1.5fr) auto!important; align-items:end!important; gap:16px!important; }
-body.client-ui .traffic-policy-toolbar .field { min-width:0!important; }
-body.client-ui .traffic-policy-toolbar .field select { width:100%!important; min-width:0!important; min-height:48px!important; }
+body.client-ui .traffic-policy-toolbar { display:grid!important; grid-template-columns:minmax(240px,.85fr) minmax(360px,1.5fr) auto!important; align-items:start!important; gap:16px!important; }
+body.client-ui .traffic-policy-toolbar .field { min-width:0!important; display:grid!important; align-content:start!important; gap:6px!important; }
+body.client-ui .traffic-policy-toolbar .field>label { min-height:20px!important; line-height:20px!important; margin:0!important; }
+body.client-ui .traffic-policy-toolbar .field select { box-sizing:border-box!important; width:100%!important; min-width:0!important; height:48px!important; min-height:48px!important; padding:0 14px!important; line-height:1.2!important; }
 body.client-ui .traffic-policy-toolbar .field-hint { display:block!important; min-height:18px!important; margin-top:7px!important; }
-body.client-ui .traffic-policy-save { align-self:end!important; min-width:192px!important; min-height:48px!important; white-space:nowrap!important; }
+body.client-ui .traffic-policy-save { align-self:start!important; margin-top:26px!important; min-width:192px!important; min-height:48px!important; height:48px!important; white-space:nowrap!important; }
 @media (max-width:980px) {
   body.client-ui .traffic-policy-toolbar { grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important; }
   body.client-ui .traffic-policy-toolbar .traffic-policy-save { grid-column:1/-1!important; justify-self:start!important; }
@@ -422,6 +517,7 @@ body.client-ui .project-toolbar { grid-template-columns:minmax(260px,1.5fr) repe
 body.client-ui .project-toolbar :is(input,select) { min-height:42px!important; }
 body.client-ui .project-table th { height:46px!important; font-size:11px!important; letter-spacing:.06em!important; text-transform:uppercase!important; }
 body.client-ui .project-table td { height:68px!important; }
+body.client-ui .bulk-panel #applyBulkBtn { align-self:start!important; margin-top:26px!important; min-height:48px!important; height:48px!important; }
 body.client-ui .project-name-link strong { font-size:14px!important; }
 body.client-ui .project-name-link small { color:var(--lf-muted)!important; }
 
@@ -466,6 +562,48 @@ body.client-ui .auth-submit { min-height:48px!important; font-size:15px!importan
   body.client-ui .project-toolbar { grid-template-columns:1fr!important; }
   body.client-ui .publish-row { grid-template-columns:1fr!important; }
   body.client-ui .auth-card { width:min(100% - 24px,460px)!important; padding:26px!important; }
+}
+
+/* The project dashboard has a more specific desktop table rule in the
+   dashboard theme. Repeat the mobile override at the same specificity so the
+   responsive table can actually collapse after desktop columns are hidden. */
+@media(max-width:760px) {
+  body.client-ui .project-list-mode .project-table-wrap { overflow:visible!important; }
+  body.client-ui .project-list-mode .project-table {
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+  }
+  body.client-ui .project-list-mode .project-table :is(th,td) {
+    max-width:0!important;
+    overflow:hidden!important;
+    overflow-wrap:anywhere!important;
+    white-space:normal!important;
+  }
+  body.client-ui .project-list-mode .project-table th:nth-child(1),
+  body.client-ui .project-list-mode .project-table td:nth-child(1) { width:38px!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(2),
+  body.client-ui .project-list-mode .project-table td:nth-child(2) { width:38%!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(5),
+  body.client-ui .project-list-mode .project-table td:nth-child(5) { width:34%!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(7),
+  body.client-ui .project-list-mode .project-table td:nth-child(7) { width:28%!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(5),
+  body.client-ui .project-list-mode .project-table th:nth-child(7) { font-size:0!important; line-height:14px!important; }
+  body.client-ui .project-list-mode .project-table th:nth-child(5)::after { content:"Статус"; font-size:10px; }
+  body.client-ui .project-list-mode .project-table th:nth-child(7)::after { content:"Действия"; font-size:10px; }
+  body.client-ui .project-list-mode .project-status {
+    max-width:100%!important;
+    padding:4px 6px!important;
+    gap:4px!important;
+    font-size:10px!important;
+    line-height:14px!important;
+    white-space:normal!important;
+  }
+  body.client-ui .project-list-mode .project-actions-cell { width:auto!important; white-space:normal!important; }
+  body.client-ui .project-list-mode .project-row-action { width:30px!important; height:30px!important; margin-right:2px!important; }
+  body.client-ui .project-list-mode .project-row-action svg { width:15px!important; height:15px!important; }
+  body.client-ui .project-list-mode .project-row-menu summary { width:30px!important; height:30px!important; }
 }
 
 @media(prefers-reduced-motion:reduce) {

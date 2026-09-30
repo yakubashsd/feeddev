@@ -179,8 +179,11 @@ body.client-ui .source-record .source-next small{display:block!important;line-he
 body.client-ui .source-record .source-next small strong{display:block!important;margin-bottom:3px!important;color:var(--lf-text)!important;font-size:11px!important;font-weight:650!important}
 body.client-ui .object-filter-panel{column-gap:14px!important;row-gap:16px!important;padding:18px 20px 20px!important;align-items:start!important}
 body.client-ui .object-filter-panel .field{display:grid!important;align-content:start!important;gap:6px!important}
-body.client-ui .object-filter-panel .field>label{margin:0!important;min-height:16px!important;line-height:1.3!important}
+body.client-ui .object-filter-panel .field>label{margin:0!important;min-height:20px!important;line-height:20px!important}
+body.client-ui .object-filter-panel .field>input:not([type=range]),body.client-ui .object-filter-panel .field>select{box-sizing:border-box!important;width:100%!important;height:48px!important;min-height:48px!important;padding:0 14px!important;line-height:1.2!important;vertical-align:middle!important}
+body.client-ui .object-filter-panel .field>select{display:block!important}
 body.client-ui .object-filter-panel .range-filter{padding-top:1px!important}
+body.client-ui .object-filter-panel .range-filter>label{min-height:20px!important;line-height:20px!important}
 body.client-ui .object-filter-panel .range-filter-controls{gap:9px!important}
 body.client-ui .object-filter-panel .range-filter-row{gap:9px!important;min-height:32px!important}
 body.client-ui .object-filter-panel .range-filter-row>span{line-height:1!important}
@@ -1129,6 +1132,7 @@ body.client-ui .project-list-mode .project-row-menu summary::-webkit-details-mar
 body.client-ui .project-list-mode .project-row-menu summary:hover{background:#f0f2f5!important}
 body.client-ui .project-list-mode .project-row-menu summary svg{width:18px;height:18px}
 body.client-ui .project-list-mode .project-row-menu-items{position:absolute!important;z-index:10!important;top:calc(100% + 4px)!important;right:0!important;display:grid!important;min-width:184px!important;padding:5px!important;border:1px solid var(--lf-line)!important;border-radius:8px!important;background:var(--lf-surface)!important;box-shadow:0 8px 24px rgba(16,24,40,.14)!important}
+body.client-ui .project-list-mode .project-row-menu-items.is-floating{position:fixed!important;z-index:1000!important;top:var(--lf-menu-top,8px)!important;left:var(--lf-menu-left,8px)!important;right:auto!important;bottom:auto!important;max-height:calc(100dvh - 16px)!important;overflow:auto!important}
 body.client-ui .project-list-mode .project-row-menu-items :is(a,button){display:block!important;width:100%!important;padding:8px 10px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:12px!important;line-height:18px!important;text-align:left!important;text-decoration:none!important}
 body.client-ui .project-list-mode .project-row-menu-items :is(a,button):hover{background:var(--lf-surface-2)!important}
 body.client-ui .project-list-mode .project-row-menu-items button[data-delete-project]{color:#b4232e!important}
@@ -1199,6 +1203,7 @@ body.client-ui[data-theme="dark"] .project-list-mode .project-row-action{backgro
   body.client-ui .project-list-mode .project-table-footer{align-items:flex-start!important}
   body.client-ui .project-list-mode .project-page-size{margin-left:auto!important}
 }
+
 @media(min-width:761px) and (max-width:1100px){
   body.client-ui .app,body.client-ui .app.project-list-mode,body.client-ui .app.feeds-mode,body.client-ui .app.layouts-mode,body.client-ui .app.validator-mode{display:block!important;height:auto!important;min-height:100dvh!important;overflow:visible!important}
   body.client-ui .sidebar{position:fixed!important;z-index:100!important;left:0!important;top:0!important;width:260px!important;height:100dvh!important;padding-inline:14px!important;transform:translateX(-102%);transition:transform .2s ease!important;box-shadow:20px 0 50px rgba(0,0,0,.28)!important}

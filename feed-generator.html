@@ -4581,6 +4581,11 @@
     body.client-ui .project-table-wrap { overflow:auto; border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface); }
     body.client-ui .project-table { min-width:860px; }
     body.client-ui .project-table th { white-space:nowrap; }
+    body.client-ui .detected-source { align-items:stretch!important; }
+    body.client-ui .detected-card { min-height:68px!important; display:flex!important; flex-direction:column!important; justify-content:center!important; }
+    body.client-ui .detected-provider-value { display:flex!important; flex-direction:row!important; align-items:center!important; gap:8px!important; }
+    body.client-ui .detected-provider-value > span:last-child { display:block!important; min-width:0; overflow-wrap:anywhere; }
+    body.client-ui .detected-provider-mark { display:inline-flex!important; flex:0 0 auto; margin:0!important; }
     body.client-ui .project-table td, body.client-ui .project-table th { height:52px; }
     body.client-ui .project-row-action { min-width:36px; min-height:36px; }
     body.client-ui .project-platform { display:flex; align-items:center; gap:9px; min-width:0; }
@@ -4656,9 +4661,23 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="lf-brand-lockup"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-logo.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
-        <small>Рабочая область фидов</small>
+        <small>Генерация и мониторинг фидов</small>
       </div>
-      <a class="workspace-switcher" id="workspaceSwitcher" href="/" aria-label="Вернуться к списку проектов"><span>Рабочая область</span><strong>Все проекты</strong></a>
+      <section class="workspace-switcher" id="workspaceSwitcher" aria-label="Навигация по проектам">
+        <div class="workspace-switcher-head">
+          <span class="workspace-switcher-label" id="workspaceSwitcherLabel">Проекты</span>
+          <a class="workspace-switcher-back" id="workspaceSwitcherBack" href="/" aria-label="Вернуться к списку проектов">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+            <span>Список проектов</span>
+          </a>
+        </div>
+        <label class="workspace-switcher-control" for="sidebarProjectSwitcher">
+          <span>Проект</span>
+          <select id="sidebarProjectSwitcher" aria-label="Переключить проект">
+            <option value="">Все проекты</option>
+          </select>
+        </label>
+      </section>
       <div class="nav-label">Проекты</div>
       <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
       <div class="nav-label nav-label-project" id="projectNavLabel">Текущий проект</div>
@@ -4780,11 +4799,11 @@
         <div class="source-grid">
           <div class="field">
             <label for="sourceName">Название фида</label>
-            <input id="sourceName" placeholder="Например, ЦИАН — основной">
+            <input id="sourceName" autocomplete="off" placeholder="Например, ЦИАН — основной">
           </div>
           <div class="field">
             <label for="feedUrl">Ссылка на исходный фид</label>
-          <input id="feedUrl" type="url" placeholder="https://site.ru/feed.xml" aria-describedby="loadStatus">
+          <input id="feedUrl" type="url" autocomplete="off" placeholder="https://site.ru/feed.xml" aria-describedby="loadStatus">
           </div>
           <div class="field compact">
             <label for="sourcePlatform">Тип фида</label>
@@ -4801,7 +4820,7 @@
         <div id="loadStatus" class="source-status" role="status" aria-live="polite" aria-atomic="true">Начните с постоянной ссылки или XML-файла. Сервис определит формат фида и подсветит его ниже.</div>
         <div class="detected-source" id="detectedSource">
           <div class="detected-card primary"><span>Формат</span><strong id="detectedPlatform">Не загружен</strong></div>
-          <div class="detected-card"><span>Источник</span><strong id="detectedProvider">-</strong></div>
+          <div class="detected-card"><span>Источник</span><strong class="detected-provider-value"><span id="detectedProviderMark" class="detected-provider-mark" aria-hidden="true"></span><span id="detectedProvider">-</span></strong></div>
           <div class="detected-card"><span>Объекты</span><strong id="detectedCount">0</strong></div>
         </div>
         <div class="project-source-list" id="projectSourceList"></div>
@@ -5665,6 +5684,13 @@
       originalObjects = structuredClone(objects);
     }
     let activeSourceId = projectSources.some(source => source.id === appState.activeSourceId) ? appState.activeSourceId : "all";
+    // The source step is an entry point for a new feed, not a persistent
+    // mirror of the feed list. Keep this marker in memory only: after a
+    // reload the form starts clean and existing feeds are opened from the
+    // project feed list instead.
+    let sourceEntrySessionActive = false;
+    let sourceEntryFormTouched = false;
+    if (activePage === "source") activeSourceId = "all";
     appState.publishedFeeds ||= {};
     if (appState.generatedFeedId && !appState.publishedFeeds[activeSourceId]) {
       appState.publishedFeeds[activeSourceId] = { id: appState.generatedFeedId, url: appState.generatedLink, history: appState.publishedHistory || [] };
@@ -5691,6 +5717,8 @@
     }
 
     function prepareNewFeedFlow() {
+      sourceEntrySessionActive = false;
+      sourceEntryFormTouched = false;
       activeSourceId = "all";
       activePlatform = "cian";
       appState.feedUrl = "";
@@ -6360,8 +6388,13 @@
       const activeSource = projectSources.find(item => item.id === activeSourceId);
       const feedUrlInput = document.querySelector("#feedUrl")?.value.trim();
       const feedNameInput = document.querySelector("#feedName")?.value.trim();
-      appState.feedUrl = feedUrlInput || activeSource?.url || appState.feedUrl || "";
-      appState.feedName = feedNameInput || activeSource?.name || appState.feedName || "";
+      const hasSourceContext = Boolean(activeSource || sourceEntrySessionActive);
+      // Typing into the new-feed form is transient. Do not turn an unsubmitted
+      // URL/name into a project feed (or recreate it after a page reload).
+      if (hasSourceContext) {
+        appState.feedUrl = feedUrlInput || activeSource?.url || appState.feedUrl || "";
+        appState.feedName = feedNameInput || activeSource?.name || appState.feedName || "";
+      }
       appState.serverBaseUrl = publicFeedOrigin;
       appState.generatedLink ||= "";
       const serialized = JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, publishedFeeds: appState.publishedFeeds || {} });
@@ -7008,16 +7041,15 @@
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
-      const activeSource = projectSources.find(source => source.id === activeSourceId);
-      if (!activeSource) {
-        node.innerHTML = projectSources.length
-          ? `<div class="source-empty"><strong>Фид для работы не выбран</strong><span>Вернитесь в список фидов и нажмите «Редактировать фид» у нужного источника.</span><button type="button" class="primary" data-source-overview>Открыть список фидов</button></div>`
-          : `<div class="source-empty"><strong>Фидов пока нет</strong><span>Добавьте первый XML-фид проекта. После загрузки он станет текущим и появится здесь как рабочая карточка.</span></div>`;
+      // Existing feeds belong in «Список фидов». Only show a record while
+      // the user is in the same session that just added it.
+      if (!sourceEntrySessionActive) {
+        node.innerHTML = "";
         return;
       }
-      const activePublication = publicationForSource(activeSource.id);
-      if (activePublication.id || activePublication.url || (activeSourceId === activeSource.id && appState.generatedLink)) {
-        node.innerHTML = `<div class="source-empty"><strong>Фид уже опубликован</strong><span>Для повторного редактирования выберите его в разделе «Список фидов» и нажмите «Редактировать фид».</span><button type="button" class="primary" data-source-overview>Открыть список фидов</button></div>`;
+      const activeSource = projectSources.find(source => source.id === activeSourceId);
+      if (!activeSource) {
+        node.innerHTML = "";
         return;
       }
       node.innerHTML = [activeSource].map(source => {
@@ -7108,7 +7140,7 @@
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
-          <td><span class="project-platform">${platformMark(platformKey)}<span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
+          <td><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
           <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
           <td><span class="project-status ${statusTone}"><i aria-hidden="true"></i>${publicationStatus}</span></td>
           <td class="project-updated">${updatedLabel}</td>
@@ -7256,7 +7288,9 @@
       const breadcrumb = document.querySelector("#pageBreadcrumb");
       breadcrumb.hidden = !currentProject || activePage === "projects";
       document.querySelector("#breadcrumbProjectName").textContent = currentProject?.name || "";
-      const activeFeed = projectSources.find(source => source.id === activeSourceId);
+      const activeFeed = activePage === "source" && !sourceEntrySessionActive
+        ? null
+        : projectSources.find(source => source.id === activeSourceId);
       const feedDivider = document.querySelector("#breadcrumbFeedDivider");
       const feedName = document.querySelector("#breadcrumbFeedName");
       if (feedDivider && feedName) {
@@ -7284,12 +7318,20 @@
         if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
-      document.querySelector(".workspace-switcher span").textContent = currentProject ? "ТЕКУЩИЙ ПРОЕКТ · НАЗАД К СПИСКУ" : "ПРОЕКТЫ";
-      document.querySelector(".workspace-switcher strong").textContent = currentProject?.name || "Все проекты";
+      const workspaceLabel = document.querySelector("#workspaceSwitcherLabel");
+      if (workspaceLabel) workspaceLabel.textContent = currentProject ? "Текущий проект" : "Проекты";
+      const workspaceBack = document.querySelector("#workspaceSwitcherBack");
+      if (workspaceBack) workspaceBack.hidden = !currentProject;
       const projectPicker = document.querySelector("#projectSwitcherSelect");
       const pickerProjects = projects.filter(project => project.status !== "archived" || project.id === currentProject?.id);
-      projectPicker.innerHTML = `<option value="">Все проекты</option>${pickerProjects.map(project => `<option value="${escapeXml(project.id)}">${escapeXml(project.name)}</option>`).join("")}`;
+      const pickerOptions = `<option value="">Все проекты</option>${pickerProjects.map(project => `<option value="${escapeXml(project.id)}">${escapeXml(project.name)}</option>`).join("")}`;
+      projectPicker.innerHTML = pickerOptions;
       projectPicker.value = currentProject?.id || "";
+      const sidebarProjectPicker = document.querySelector("#sidebarProjectSwitcher");
+      if (sidebarProjectPicker) {
+        sidebarProjectPicker.innerHTML = pickerOptions;
+        sidebarProjectPicker.value = currentProject?.id || "";
+      }
       const account = sessionState?.user || {};
       const accountName = account.name || account.company || account.email?.split("@")[0] || "Личный кабинет";
       document.querySelector("#accountName").textContent = accountName;
@@ -7343,7 +7385,7 @@
           const issueCount = sourceIssueCount(source.id);
           const nextSync = sourceNextSync(source);
           const healthLabel = source.error ? `Ошибка синхронизации: ${source.error}` : issueCount ? `Ошибки в объявлениях: ${issueCount}` : "Ошибок не найдено";
-          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
         }).join("") : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
       }
       // Bind the primary overview actions directly after each render. The feed
@@ -7437,6 +7479,7 @@
 
     function switchPage(page) {
       if (page === activePage) return;
+      if (page === "source") prepareNewFeedFlow();
       activePage = page;
       syncPageUrl(page);
       renderPage();
@@ -7518,6 +7561,10 @@
       const projectId = event.target.value;
       location.href = projectId ? `/?project=${encodeURIComponent(projectId)}` : "/";
     });
+    document.querySelector("#sidebarProjectSwitcher").addEventListener("change", event => {
+      const projectId = event.target.value;
+      location.href = projectId ? `/?project=${encodeURIComponent(projectId)}` : "/";
+    });
     document.querySelector("#notificationsButton").addEventListener("click", () => showToast("Новых уведомлений пока нет"));
     document.querySelector("#projectList").addEventListener("click", event => {
       const renameButton = event.target.closest("[data-rename-project]");
@@ -7538,6 +7585,45 @@
       const card = event.target.closest("[data-open-project]");
       if (card && !event.target.closest("a, button")) location.href = card.dataset.openProject;
     });
+    function positionProjectRowMenu(details) {
+      if (!(details instanceof HTMLDetailsElement)) return;
+      const panel = details.querySelector(".project-row-menu-items");
+      const summary = details.querySelector("summary");
+      if (!panel || !summary || !details.open) return;
+      panel.classList.add("is-floating");
+      panel.style.setProperty("--lf-menu-top", "8px");
+      panel.style.setProperty("--lf-menu-left", "8px");
+      const anchor = summary.getBoundingClientRect();
+      const size = panel.getBoundingClientRect();
+      const gutter = 8;
+      const maxLeft = Math.max(gutter, window.innerWidth - size.width - gutter);
+      const left = Math.max(gutter, Math.min(anchor.right - size.width, maxLeft));
+      const maxTop = Math.max(gutter, window.innerHeight - size.height - gutter);
+      const below = anchor.bottom + 6;
+      const above = anchor.top - size.height - 6;
+      const top = below + size.height <= window.innerHeight - gutter
+        ? below
+        : Math.max(gutter, above <= maxTop ? above : maxTop);
+      panel.style.setProperty("--lf-menu-top", `${Math.round(top)}px`);
+      panel.style.setProperty("--lf-menu-left", `${Math.round(left)}px`);
+    }
+    function resetProjectRowMenu(details) {
+      if (!(details instanceof HTMLDetailsElement)) return;
+      const panel = details.querySelector(".project-row-menu-items");
+      if (!panel) return;
+      panel.classList.remove("is-floating");
+      panel.style.removeProperty("--lf-menu-top");
+      panel.style.removeProperty("--lf-menu-left");
+    }
+    document.addEventListener("toggle", event => {
+      const details = event.target instanceof HTMLDetailsElement && event.target.matches(".project-row-menu") ? event.target : null;
+      if (!details) return;
+      if (details.open) requestAnimationFrame(() => positionProjectRowMenu(details));
+      else resetProjectRowMenu(details);
+    }, true);
+    const repositionOpenProjectMenus = () => document.querySelectorAll("details.project-row-menu[open]").forEach(positionProjectRowMenu);
+    window.addEventListener("resize", repositionOpenProjectMenus);
+    window.addEventListener("scroll", repositionOpenProjectMenus, true);
     document.querySelector("#projectList").addEventListener("keydown", event => {
       const card = event.target.closest("[data-open-project]");
       if (!card || event.target !== card || !["Enter", " "].includes(event.key)) return;
@@ -7636,9 +7722,16 @@
 
     function renderDetectedSource() {
       const profile = platformProfiles[activePlatform] || platformProfiles.cian;
-      document.querySelector("#detectedPlatform").textContent = (appState.feedUrl || objects.length) ? profile.name : "Не загружен";
-      document.querySelector("#detectedProvider").textContent = providerFromUrl(appState.feedUrl);
-      document.querySelector("#detectedCount").textContent = objects.length;
+      const showSourcePreview = activePage !== "source" || sourceEntrySessionActive;
+      const hasFeed = showSourcePreview && Boolean(appState.feedUrl || objects.length);
+      document.querySelector("#detectedPlatform").textContent = hasFeed ? profile.name : "Не загружен";
+      const providerMark = document.querySelector("#detectedProviderMark");
+      if (providerMark) {
+        providerMark.innerHTML = hasFeed ? platformMark(activePlatform) : "";
+        providerMark.hidden = !hasFeed;
+      }
+      document.querySelector("#detectedProvider").textContent = hasFeed ? providerFromUrl(appState.feedUrl) : "-";
+      document.querySelector("#detectedCount").textContent = hasFeed ? objects.length : "0";
     }
 
     function readMonitoredFeeds() {
@@ -9998,8 +10091,20 @@ ${photos}
       renderIssueFilter();
       renderRows();
       fillForm();
-      if (!document.querySelector("#feedUrl").value) document.querySelector("#feedUrl").value = appState.feedUrl || "";
-      if (!document.querySelector("#feedName").value) document.querySelector("#feedName").value = appState.feedName || defaultFeedName();
+      if (activePage === "source" && !sourceEntrySessionActive && !sourceEntryFormTouched) {
+        document.querySelector("#sourceName").value = "";
+        document.querySelector("#feedUrl").value = "";
+        document.querySelector("#feedName").value = "";
+        document.querySelector("#sourcePlatform").value = "auto";
+        document.querySelector("#sourceInterval").value = "720";
+      }
+      // Never hydrate the new-feed form from a persisted feed while the
+      // source step is open. The canonical feed remains available in the
+      // project feed list and can be reopened there explicitly.
+      if (activePage !== "source") {
+        if (!document.querySelector("#feedUrl").value) document.querySelector("#feedUrl").value = appState.feedUrl || "";
+        if (!document.querySelector("#feedName").value) document.querySelector("#feedName").value = appState.feedName || defaultFeedName();
+      }
       renderGeneratedLink();
       renderQualitySummary();
       renderDetectedSource();
@@ -10320,6 +10425,10 @@ ${photos}
         if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
         else projectSources.push(sourceRecord);
         setSourceContext(id);
+        // A manual addition is visible in this step for the current session.
+        // Background/manual refreshes of an existing feed must stay in the
+        // feed list and must not repopulate the new-feed form.
+        sourceEntrySessionActive = !existingSource;
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
@@ -11105,7 +11214,7 @@ ${photos}
       if (deleteButton) deleteMonitoredFeed(deleteButton.dataset.deleteFeed);
     });
     document.querySelector(".sidebar").addEventListener("click", event => {
-      const projectsLink = event.target.closest("#projectsNav, #workspaceSwitcher");
+      const projectsLink = event.target.closest("#projectsNav, #workspaceSwitcherBack");
       if (projectsLink) {
         event.preventDefault();
         if (currentProject) {
@@ -11281,10 +11390,13 @@ ${photos}
     document.querySelector("#checkFeedsBtn").addEventListener("click", () => checkSavedFeeds());
     document.querySelector("#saveMonitorNotifications").addEventListener("click", saveMonitorNotificationSettings);
     document.querySelector("#feedName").addEventListener("change", () => {
+      sourceEntryFormTouched = true;
       invalidateGeneratedLink();
       save();
     });
+    document.querySelector("#feedUrl").addEventListener("input", () => { sourceEntryFormTouched = true; });
     document.querySelector("#feedUrl").addEventListener("change", save);
+    document.querySelector("#sourceName").addEventListener("input", () => { sourceEntryFormTouched = true; });
     document.querySelector("#monitorFeedUrl").addEventListener("keydown", event => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -11335,6 +11447,7 @@ ${photos}
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
         projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} });
         setSourceContext(sourceId);
+        sourceEntrySessionActive = true;
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
