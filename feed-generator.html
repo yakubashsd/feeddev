@@ -4868,7 +4868,7 @@
         </div>
         <div class="monitor-notification-settings">
           <h3>Уведомления проекта</h3>
-          <p>Настройки применяются ко всем фидам текущего проекта. Сообщение отправляется при появлении новой ошибки или изменении её текста.</p>
+          <p>Настройки применяются ко всем фидам текущего проекта. Один общий бот отправляет сообщение при появлении новой ошибки или изменении её текста.</p>
           <label class="notification-channel"><input id="monitorTelegramEnabled" type="checkbox"><span>Telegram</span></label>
           <div class="field compact">
             <input id="monitorTelegramChatId" type="hidden">
@@ -4877,11 +4877,6 @@
             <a id="telegramConnectLink" hidden target="_blank" rel="noopener noreferrer">Открыть бота</a>
             <button id="confirmTelegram" hidden type="button">Подтвердить получателя</button>
             <button id="disconnectTelegram" hidden type="button">Отключить</button>
-          </div>
-          <label class="notification-channel"><input id="monitorEmailEnabled" type="checkbox"><span>Email</span></label>
-          <div class="field compact">
-            <label for="monitorEmailRecipient">Email получателя</label>
-            <input id="monitorEmailRecipient" type="email" placeholder="feeds@company.ru" autocomplete="email">
           </div>
           <button id="saveMonitorNotifications" type="button">Сохранить уведомления</button>
         </div>
@@ -4906,7 +4901,7 @@
           <button id="checkFeedsBtn" type="button">Проверить сейчас</button>
         </div>
         <div class="feeds-list" id="feedsList"></div>
-        <div class="monitor-note">Для отправки серверу нужны настройки Telegram и SMTP в переменных окружения.</div>
+        <div class="monitor-note">Для алертов о сбоях фидов подключите Telegram в этом разделе. Бот общий для всех пользователей.</div>
       </section>
 
       <section class="validator-panel page-hidden" id="validatorPanel" data-page="feeds">
@@ -7853,12 +7848,10 @@
         const saved = JSON.parse(localStorage.getItem(monitorNotificationsStorageKey) || "{}");
         return {
           telegramEnabled: saved.telegramEnabled !== false,
-          telegramChatId: String(saved.telegramChatId || "").trim(),
-          emailEnabled: saved.emailEnabled === true,
-          emailTo: String(saved.emailTo || "").trim()
+          telegramChatId: String(saved.telegramChatId || "").trim()
         };
       } catch {
-        return { telegramEnabled: true, telegramChatId: "", emailEnabled: false, emailTo: "" };
+        return { telegramEnabled: true, telegramChatId: "" };
       }
     }
 
@@ -7866,30 +7859,21 @@
       const settings = readMonitorNotificationSettings();
       const telegram = document.querySelector("#monitorTelegramEnabled");
       const telegramChatId = document.querySelector("#monitorTelegramChatId");
-      const email = document.querySelector("#monitorEmailEnabled");
-      const recipient = document.querySelector("#monitorEmailRecipient");
       if (telegram) telegram.checked = settings.telegramEnabled;
       if (telegramChatId) telegramChatId.value = settings.telegramChatId;
-      if (email) email.checked = settings.emailEnabled;
-      if (recipient) recipient.value = settings.emailTo;
     }
 
     function saveMonitorNotificationSettings() {
       const settings = {
         telegramEnabled: document.querySelector("#monitorTelegramEnabled").checked,
-        telegramChatId: document.querySelector("#monitorTelegramChatId").value.trim(),
-        emailEnabled: document.querySelector("#monitorEmailEnabled").checked,
-        emailTo: document.querySelector("#monitorEmailRecipient").value.trim()
+        telegramChatId: document.querySelector("#monitorTelegramChatId").value.trim()
       };
-      if (settings.emailEnabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.emailTo)) {
-        showToast("Укажите корректный email получателя");
-        document.querySelector("#monitorEmailRecipient").focus();
-        return;
-      }
       localStorage.setItem(monitorNotificationsStorageKey, JSON.stringify(settings));
       saveMonitoredFeeds(readMonitoredFeeds().map(feed => ({
         ...feed,
         ...settings,
+        emailEnabled: false,
+        emailTo: "",
         projectName: currentProject?.name || "Проект без названия"
       })));
       renderFeedsList();
@@ -7898,7 +7882,7 @@
 
     function saveMonitoredFeeds(feeds) {
       const ownerId = runtimeMode === "external" ? sessionState?.user?.id || "" : "";
-      localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80).map(feed => ({ ...feed, ownerId }))));
+      localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80).map(feed => ({ ...feed, ownerId, emailEnabled: false, emailTo: "" }))));
     }
 
     function hasFeedChanges() {
@@ -7993,15 +7977,12 @@
           <div class="feed-platform">${platformMark(feed.platform)}<span>${escapeXml(platformProfiles[feed.platform]?.name || "Не определено")}</span></div>
           <span class="feed-status ${escapeXml(feed.status || "pending")}">${escapeXml(monitorStatus(feed))}</span>
           <div class="feed-meta">Проверка: ${escapeXml(formatCheckDate(feed.lastChecked))}</div>
-          <div class="feed-notification-channels">${[
-            feed.telegramEnabled ? `Telegram${feed.telegramChatId ? `: ${escapeXml(feed.telegramChatId)}` : ""}` : "",
-            feed.emailEnabled && feed.emailTo ? `Email: ${escapeXml(feed.emailTo)}` : ""
-          ].filter(Boolean).join(" · ") || "Уведомления выключены"}</div>
+          <div class="feed-notification-channels">${feed.telegramEnabled !== false ? `Telegram${feed.telegramChatId ? `: ${escapeXml(feed.telegramChatId)}` : " — подключите получателя"}` : "Telegram отключён"}</div>
           <div class="feed-monitor-actions">
             <button type="button" data-check-feed="${escapeXml(feed.id)}">Проверить</button>
             <button type="button" class="danger" data-delete-feed="${escapeXml(feed.id)}">Удалить</button>
           </div>
-          ${feed.telegramNotifiedAt || feed.emailNotifiedAt ? `<div class="feed-telegram-note">Последнее уведомление: ${escapeXml(formatCheckDate([feed.telegramNotifiedAt, feed.emailNotifiedAt].filter(Boolean).sort().at(-1)))}</div>` : ""}
+          ${feed.telegramNotifiedAt ? `<div class="feed-telegram-note">Последнее уведомление: ${escapeXml(formatCheckDate(feed.telegramNotifiedAt))}</div>` : ""}
           ${feed.notificationError ? `<div class="feed-error">Ошибка уведомления: ${escapeXml(feed.notificationError)}</div>` : ""}
           ${feed.error ? `<div class="feed-error">Сообщение ошибки: ${escapeXml(feed.error)}</div>` : ""}
           ${feed.warnings?.length ? `<div class="feed-error">Проверка состава: ${feed.warnings.map(escapeXml).join(" · ")}</div>` : ""}
@@ -9274,8 +9255,9 @@
         createdAt: existingIndex >= 0 ? feeds[existingIndex].createdAt : new Date().toISOString(),
         projectName: currentProject?.name || "Проект без названия",
         ...notificationSettings,
-        telegramNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].telegramNotifiedAt || "" : "",
-        emailNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].emailNotifiedAt || "" : ""
+        emailEnabled: false,
+        emailTo: "",
+        telegramNotifiedAt: existingIndex >= 0 ? feeds[existingIndex].telegramNotifiedAt || "" : ""
       };
       if (existingIndex >= 0) feeds[existingIndex] = { ...feeds[existingIndex], ...feed };
       else feeds.unshift(feed);
@@ -9354,10 +9336,8 @@
             platform: platformProfiles[feed.platform]?.name || feed.platform || "Не определено",
             url: feed.url,
             error: feed.error,
-            telegramEnabled: feed.telegramEnabled === true,
-            telegramChatId: feed.telegramChatId || "",
-            emailEnabled: feed.emailEnabled === true,
-            emailTo: feed.emailTo || ""
+            telegramEnabled: feed.telegramEnabled !== false,
+            telegramChatId: feed.telegramChatId || ""
           })
         });
         const result = await response.json().catch(() => ({}));
@@ -9384,10 +9364,9 @@
         }
         const checked = await checkMonitoredFeed({ ...feed, status: "checking" });
         const isNewBreakage = checked.status === "bad" && (feed.status !== "bad" || feed.error !== checked.error);
-        if (isNewBreakage && (feed.telegramEnabled || feed.emailEnabled)) {
+        if (isNewBreakage && feed.telegramEnabled !== false) {
           const notification = await sendMonitorAlert(checked);
           if (notification.telegramSent) checked.telegramNotifiedAt = new Date().toISOString();
-          if (notification.emailSent) checked.emailNotifiedAt = new Date().toISOString();
           checked.notificationError = notification.errors?.join(" ") || "";
         }
         next.push(checked);

@@ -7,13 +7,15 @@ const {createMonitor,publicAddress}=require('./feed-monitor');
 test('persistent schedule, XML errors, recovery and one alert per failure',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'feed-monitor-test-'));
   try{
-    let xml='<feed><offer/></feed>',calls=0,alerts=0;
-    const options={file:path.join(dir,'state.json'),load:async()=>{calls++;return xml;},notify:async()=>{alerts++;}};
+    let xml='<feed><offer/></feed>',calls=0,alerts=0,lastNotification=null;
+    const options={file:path.join(dir,'state.json'),load:async()=>{calls++;return xml;},notify:async(payload)=>{alerts++;lastNotification=payload;return {telegramSent:true};}};
     const monitor=createMonitor(options);
     monitor.replace('test',[{id:'a',url:'https://example.com/feed',telegramEnabled:true}]);
+    assert.equal(monitor.read().test[0].emailEnabled,false);
+    assert.equal(monitor.read().test[0].emailTo,'');
     await monitor.run();assert.equal(monitor.read().test[0].status,'ok');
     await createMonitor(options).run();assert.equal(calls,1,'restart must honor last check');
-    xml='<feed><broken></feed>';await monitor.run('test',null,true);assert.equal(monitor.read().test[0].status,'bad');assert.equal(alerts,1);
+    xml='<feed><broken></feed>';await monitor.run('test',null,true);assert.equal(monitor.read().test[0].status,'bad');assert.equal(alerts,1);assert.equal(lastNotification.telegramEnabled,true);
     await monitor.run('test',null,true);assert.equal(alerts,1);
     xml='<feed/>';await monitor.run('test',null,true);assert.equal(monitor.read().test[0].status,'ok');
     xml='<html><body>Login</body></html>';await monitor.run('test',null,true);assert.equal(alerts,2);

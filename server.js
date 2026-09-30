@@ -772,6 +772,8 @@ async function syncPublishedFeed(record) {
   record.lastSuccessAt = now.toISOString();
   record.feedStale = false;
   record.syncFailureCount = 0;
+  record.lastSyncErrorNotification = "";
+  record.telegramSyncNotificationError = "";
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
   console.log(`Feed sync: ${record.slug}, prices: ${result.updated}/${result.checked}, objects: +${result.added}/-${result.removed}`);
@@ -803,6 +805,11 @@ async function runScheduledFeedSync() {
         const retryMinutes = Math.min(60, 2 ** Math.min(5, record.syncFailureCount - 1));
         record.nextRunAt = new Date(attemptedAt.getTime() + retryMinutes * 60 * 1000).toISOString();
         record.feedStale = !record.lastSuccessAt || attemptedAt.getTime() - new Date(record.lastSuccessAt).getTime() > interval * 2 * 60 * 1000;
+        try {
+          await notifyPublishedFeedFailure(record, error);
+        } catch (notificationError) {
+          record.telegramSyncNotificationError = notificationError.message;
+        }
         await persistFeedRecord(record);
         console.error(`Feed sync: ${record.slug}:`, record.autoSyncError);
       }
@@ -933,7 +940,7 @@ async function sendMonitorAlerts(payload = {}) {
   const connection=telegramLinks.status(telegramOwner,payload.projectId || '').connected;
   payload={...payload,telegramChatId:connection?.chatId || ''};
   const result = { telegramSent: false, emailSent: false, errors: [] };
-  if (payload.telegramEnabled) {
+  if (payload.telegramEnabled !== false) {
     try {
       if(!connection)throw Error('Подключите Telegram в настройках проекта.');
       await sendTelegramAlert(payload);
@@ -942,15 +949,25 @@ async function sendMonitorAlerts(payload = {}) {
       result.errors.push(`Telegram: ${error.message}`);
     }
   }
-  if (payload.emailEnabled) {
-    try {
-      await sendEmailAlert(payload);
-      result.emailSent = true;
-    } catch (error) {
-      result.errors.push(`Email: ${error.message}`);
-    }
-  }
   return result;
+}
+
+async function notifyPublishedFeedFailure(record, error) {
+  const message = String(error?.message || error || "Не удалось обновить опубликованный фид").slice(0, 700);
+  if (record.lastSyncErrorNotification === message) return;
+  const result = await sendMonitorAlerts({
+    ownerId: record.ownerId,
+    projectId: record.projectId,
+    projectName: record.projectName || "Проект без названия",
+    name: record.name || record.slug || "Фид",
+    platform: record.platform,
+    url: record.url,
+    error: `Фид не выгружается на площадку: ${message}`,
+    telegramEnabled: true
+  });
+  record.lastSyncErrorNotification = message;
+  record.telegramSyncNotifiedAt = result.telegramSent ? new Date().toISOString() : record.telegramSyncNotifiedAt || "";
+  record.telegramSyncNotificationError = result.errors.join(" ");
 }
 
 function serveStatic(req, res, pathname) {

@@ -62,7 +62,7 @@ function inspectLaunchReadiness(env = process.env) {
     add(destination !== source && !destination.startsWith(`${source}${path.sep}`), "BACKUP_DIR должен находиться вне DATA_DIR.");
   }
   add(Number(env.BACKUP_RETENTION_DAYS || 0) >= 7, "BACKUP_RETENTION_DAYS должен быть не меньше 7 дней.");
-  if (!present(env.TELEGRAM_BOT_TOKEN, 20)) warnings.push("Telegram-уведомления не настроены; email останется единственным каналом алертов.");
+  if (!present(env.TELEGRAM_BOT_TOKEN, 20)) warnings.push("Telegram-уведомления о сбоях фидов не настроены.");
   if (String(env.NODE_ENV || "").toLowerCase() !== "production") warnings.push("Для боевого запуска рекомендуется NODE_ENV=production.");
 
   return {

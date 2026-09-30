@@ -39,6 +39,9 @@ body.client-ui .app.layouts-mode,
 body.client-ui .app.validator-mode,
 body.client-ui .app.project-list-mode {
   background:var(--lf-bg)!important;
+  /* The legacy theme adds a dark frame to .app. Keep the client shell flush
+     with the viewport so no obsolete strip appears above the workspace. */
+  border:0!important;
 }
 
 body.client-ui .sidebar {

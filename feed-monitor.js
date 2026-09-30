@@ -81,7 +81,7 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
     data[project]=feeds.map(f=>{
       const url=new URL(String(f.url));if(!['http:','https:'].includes(url.protocol))throw Error('Нужна HTTP(S)-ссылка');
       const previous=old.find(o=>o.id===f.id&&o.url===url.href);
-      return {...previous,id:String(f.id).slice(0,150),url:url.href,name:String(f.name||'Фид').slice(0,200),projectName:String(f.projectName||'Проект без названия').slice(0,200),platform:String(f.platform||''),telegramEnabled:f.telegramEnabled===true,telegramChatId:String(f.telegramChatId||'').trim().slice(0,100),emailEnabled:f.emailEnabled===true,emailTo:String(f.emailTo||'').trim().slice(0,320),status:previous?.status||'pending'};
+      return {...previous,id:String(f.id).slice(0,150),url:url.href,name:String(f.name||'Фид').slice(0,200),projectName:String(f.projectName||'Проект без названия').slice(0,200),platform:String(f.platform||''),telegramEnabled:f.telegramEnabled!==false,telegramChatId:String(f.telegramChatId||'').trim().slice(0,100),emailEnabled:false,emailTo:'',status:previous?.status||'pending'};
     });write(data);return data[project];
   }
   async function run(project=null,id=null,force=false){
@@ -107,15 +107,14 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
           catch(error){checked.status='bad';checked.error=error.message;}
           const latest=read(),record=latest[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
           const changed=checked.status!==record.status||checked.error!==record.error||JSON.stringify(checked.warnings)!==JSON.stringify(record.warnings||[]);
-          if(checked.status!=='ok'&&(record.telegramEnabled||record.emailEnabled)&&changed){
+          if(checked.status!=='ok'&&record.telegramEnabled&&changed){
             try{
               const notification=await notify({...checked,...record,status:checked.status,error:checked.error,projectId:key});
               if(notification?.telegramSent)checked.telegramNotifiedAt=new Date().toISOString();
-              if(notification?.emailSent)checked.emailNotifiedAt=new Date().toISOString();
               checked.notificationError=notification?.errors?.join(' ')||'';
             }catch(error){checked.notificationError=error.message;}
           }
-          Object.assign(record,{status:checked.status,error:checked.error,warnings:checked.warnings,objectCount:checked.objectCount||record.objectCount,baselineObjectCount:checked.baselineObjectCount||record.baselineObjectCount,lastSuccessAt:checked.lastSuccessAt||record.lastSuccessAt,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,emailNotifiedAt:checked.emailNotifiedAt,notificationError:checked.notificationError});write(latest);
+          Object.assign(record,{status:checked.status,error:checked.error,warnings:checked.warnings,objectCount:checked.objectCount||record.objectCount,baselineObjectCount:checked.baselineObjectCount||record.baselineObjectCount,lastSuccessAt:checked.lastSuccessAt||record.lastSuccessAt,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,notificationError:checked.notificationError,emailEnabled:false,emailTo:''});write(latest);
         }
       }
     }finally{busy=false;}
