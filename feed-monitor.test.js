@@ -4,6 +4,16 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {createMonitor,publicAddress}=require('./feed-monitor');
+
+test('monitor keeps the default safety limit but accepts unlimited demo feeds',()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'listingflow-monitor-limit-'));
+  try{
+    const monitor=createMonitor({file:path.join(dir,'state.json')});
+    const feeds=Array.from({length:81},(_,index)=>({id:String(index),url:`https://example.com/${index}.xml`}));
+    assert.throws(()=>monitor.replace('regular',feeds),/до 80 фидов/);
+    assert.equal(monitor.replace('demo',feeds,{maxFeeds:-1}).length,81);
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
 test('persistent schedule, XML errors, recovery and one alert per failure',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'feed-monitor-test-'));
   try{

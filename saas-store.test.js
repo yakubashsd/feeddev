@@ -39,6 +39,27 @@ test("external accounts are isolated, billed per project and limited by purchase
   }
 });
 
+test("demo account has unlimited projects and feeds without changing limits for other clients", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-demo-unlimited-"));
+  try {
+    const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
+    const demo = await store.register({ email: "DEMO@listingflow.ru", password: "demo-password", name: "Демо", acceptedOffer: true, acceptedPersonalData: true });
+    assert.equal(demo.projectLimit, -1);
+    assert.equal(demo.feedLimit, -1);
+
+    const payment = await store.createPayment(demo.id, 1);
+    await store.completePaymentByProviderTransactionId(payment.id, payment.amount);
+    for (let index = 1; index <= 12; index += 1) await store.createProject(demo.id, `Демо-проект ${index}`);
+    assert.equal((await store.listProjects(demo.id)).length, 12);
+
+    const client = await store.register({ email: "client-limits@example.ru", password: "client-password", name: "Клиент", acceptedOffer: true, acceptedPersonalData: true });
+    assert.equal(client.projectLimit, 1);
+    assert.equal(client.feedLimit, 80);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("Platega checkout uses merchant headers and verifies callback headers", async () => {
   const calls = [];
   const platega = createPlatega({

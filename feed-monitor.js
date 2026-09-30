@@ -75,8 +75,9 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
   let busy=false;
   const read=()=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{};
   const write=data=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(data));fs.renameSync(file+'.tmp',file);};
-  function replace(project,feeds){
-    if(!Array.isArray(feeds)||feeds.length>80)throw Error('Допускается до 80 фидов');
+  function replace(project,feeds,{maxFeeds=80}={}){
+    const limit=Number(maxFeeds)===-1?Infinity:Math.max(1,Number(maxFeeds)||80);
+    if(!Array.isArray(feeds)||feeds.length>limit)throw Error(`Допускается до ${limit} фидов`);
     const data=read(),old=data[project]||[];
     data[project]=feeds.map(f=>{
       const url=new URL(String(f.url));if(!['http:','https:'].includes(url.protocol))throw Error('Нужна HTTP(S)-ссылка');

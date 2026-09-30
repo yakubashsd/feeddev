@@ -547,7 +547,7 @@ function imageContentTypeFromPath(value = "") {
   return "";
 }
 
-function validateFeedPayload(payload) {
+function validateFeedPayload(payload, { unlimitedSources = false } = {}) {
   const xml = String(payload.xml || "").trim();
   const invalid = message => { const error = new Error(message); error.status = 422; throw error; };
   if (!xml) invalid("XML фида пустой.");
@@ -588,7 +588,7 @@ function validateFeedPayload(payload) {
     sourceUrl: String(payload.sourceUrl || "").trim(),
     name: String(payload.name || "").trim(),
     sourceType: String(payload.sourceType || "").trim(),
-    sourceFeeds: Array.isArray(payload.sourceFeeds) ? payload.sourceFeeds.slice(0, 20).map(source => ({
+    sourceFeeds: Array.isArray(payload.sourceFeeds) ? (unlimitedSources ? payload.sourceFeeds : payload.sourceFeeds.slice(0, 20)).map(source => ({
       id: String(source?.id || "").slice(0, 120),
       url: String(source?.url || "").trim(),
       sourceType: String(source?.sourceType || "").trim() === "url" ? "url" : "file",
@@ -612,7 +612,7 @@ function normalizeAutoSyncInterval(value) {
 }
 
 async function saveFeed(req, payload, existingSlug = "", actor = null) {
-  const data = validateFeedPayload(payload);
+  const data = validateFeedPayload(payload, { unlimitedSources: Number(actor?.user?.feedLimit) === -1 });
   const feeds = await readFeeds();
   const now = new Date().toISOString();
   const requestedSlug = existingSlug || payload.slug || data.name || `${data.platform}-${new Date().toISOString().slice(0, 10)}-${crypto.randomBytes(3).toString("hex")}`;
@@ -1438,7 +1438,7 @@ async function handleApi(req, res, url) {
     if(!/^[a-zA-Z0-9_-]{1,100}$/.test(project))return sendError(res,400,'Некорректный проект');
     if(APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, project))return sendError(res,403,'Проект недоступен.');
     if(req.method==='GET')return send(res,200,{feeds:monitor.read()[project]||[],intervalMinutes:MONITOR_INTERVAL_MINUTES});
-    if(req.method==='PUT'){const body=await parseBody(req);return send(res,200,{feeds:monitor.replace(project,body.feeds)});}
+    if(req.method==='PUT'){const body=await parseBody(req);return send(res,200,{feeds:monitor.replace(project,body.feeds,{maxFeeds:actor?.user?.feedLimit})});}
     if(req.method==='POST'){const body=await parseBody(req);await monitor.run(project,body.id||null,true);return send(res,200,{feeds:monitor.read()[project]||[]});}
     return sendError(res,405,'Метод не поддерживается');
   }

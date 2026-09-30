@@ -6288,7 +6288,8 @@
       if (!status || runtimeMode !== "external") return;
       const unitAmount = Number(sessionState?.plan?.unitAmount || 5000);
       if (count && !count.dataset.initialized) {
-        count.value = String(sessionState?.user?.projectLimit || 1);
+        const currentLimit = Number(sessionState?.user?.projectLimit || 1);
+        count.value = String(currentLimit === -1 ? 1 : currentLimit);
         count.dataset.initialized = "true";
       }
       const projectCount = Number(count?.value || 1);
@@ -7955,7 +7956,9 @@
 
     function saveMonitoredFeeds(feeds) {
       const ownerId = runtimeMode === "external" ? sessionState?.user?.id || "" : "";
-      localStorage.setItem(monitoredStorageKey, JSON.stringify(feeds.slice(0, 80).map(feed => ({ ...feed, ownerId, emailEnabled: false, emailTo: "" }))));
+      const feedLimit = Number(sessionState?.user?.feedLimit || 80);
+      const savedFeeds = feedLimit === -1 ? feeds : feeds.slice(0, feedLimit);
+      localStorage.setItem(monitoredStorageKey, JSON.stringify(savedFeeds.map(feed => ({ ...feed, ownerId, emailEnabled: false, emailTo: "" }))));
     }
 
     function hasFeedChanges() {
