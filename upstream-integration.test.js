@@ -32,6 +32,20 @@ test("external clients always hydrate the server project state without a local-v
   assert.match(push, /обновите данные вручную/);
 });
 
+test("open project sessions refresh in-memory state when a colleague saves a newer revision", () => {
+  const boot = html.match(/    async function initializeAuth\([\s\S]*?\n    }\n\n    async function submitLogin/)[0];
+  const workspace = html.match(/    function showWorkspace\([\s\S]*?\n    }\n\n    async function fetchWithTimeout/)[0];
+  const poll = html.match(/    async function pollExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
+  assert.match(boot, /let hydratedProjectState = shouldHydrateProject && await hydrateExternalProjectState\(\)/);
+  assert.match(boot, /!shouldHydrateProject && runtimeMode === "external" && currentProject/);
+  assert.match(boot, /hydratedProjectState[\s\S]*refreshProjectMemoryFromStorage\(\)/);
+  assert.match(workspace, /pollExternalProjectState\(\)\.catch/);
+  assert.match(poll, /remoteRevision <= cloudSaveRevision/);
+  assert.match(poll, /refreshProjectMemoryFromStorage\(\)/);
+  assert.match(poll, /renderAll\(\)/);
+  assert.match(poll, /Проект изменён коллегой/);
+});
+
 test("project boot uses bounded requests and cannot wait forever on project APIs", () => {
   const sync = html.match(/    async function syncExternalProjects\([\s\S]*?\n    }\n\n    function projectStateKeys/)[0];
   const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
@@ -48,7 +62,7 @@ test("project bootstrap has a visible fallback and cannot reload forever", () =>
   assert.doesNotMatch(init, /location\.reload\(\)/);
   assert.match(init, /Список проектов обновлён/);
   assert.match(init, /Данные проекта синхронизированы/);
-  assert.match(init, /needsProjectHydration\(\) && await hydrateExternalProjectState\(\)/);
+  assert.match(init, /shouldHydrateProject && await hydrateExternalProjectState\(\)/);
   assert.match(html, /listingflow-bootstrap-hydrated/);
   assert.match(init, /!bootstrapStageDone\("projects"\) && await syncExternalProjects\(\)/);
   assert.match(init, /markBootstrapStage\("state"\)/);

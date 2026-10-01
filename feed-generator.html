@@ -5518,6 +5518,9 @@
     let cloudSaveRevision = 0;
     let cloudSaveConflict = false;
     let cloudSavedSnapshot = "";
+    let projectStatePushTimer = 0;
+    let projectStatePollTimer = 0;
+    let projectStatePollInFlight = false;
     const projectIndexKey = "feeddev-projects-v1";
     let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
@@ -6122,7 +6125,10 @@
       if (repairedLayouts) showToast(`Обновлены планировки квартир: ${repairedLayouts}`);
       appInitialized = true;
       if (runtimeMode === "external" && currentProject) {
-        window.setInterval(() => pushExternalProjectState().catch(() => {}), 15000);
+        clearInterval(projectStatePushTimer);
+        clearInterval(projectStatePollTimer);
+        projectStatePushTimer = window.setInterval(() => pushExternalProjectState().catch(() => {}), 15000);
+        projectStatePollTimer = window.setInterval(() => pollExternalProjectState().catch(() => {}), 10000);
       }
     }
 
@@ -6323,6 +6329,41 @@
       return true;
     }
 
+    async function pollExternalProjectState() {
+      if (projectStatePollInFlight || document.hidden || runtimeMode !== "external" || !currentProject || !["client", "customer"].includes(sessionState?.role) || cloudSaveConflict) return false;
+      projectStatePollInFlight = true;
+      try {
+        const response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return false;
+        const remote = await response.json();
+        const remoteRevision = Number(remote.revision || 0);
+        if (remoteRevision <= cloudSaveRevision) return false;
+        const remoteState = remote.state || {};
+        const localSnapshot = JSON.stringify(captureProjectBrowserState());
+        if (localSnapshot !== cloudSavedSnapshot) {
+          cloudSaveConflict = true;
+          const indicator = document.querySelector("#cloudSaveStatus");
+          if (indicator) indicator.textContent = "Проект изменён коллегой — обновите данные вручную";
+          showToast("Коллега изменил проект. Сохраните свои правки или обновите страницу, чтобы увидеть новую версию.");
+          return false;
+        }
+        for (const key of projectStateKeys()) {
+          if (Object.hasOwn(remoteState, key)) safeStorageSet(key, remoteState[key]);
+          else localStorage.removeItem(key);
+        }
+        cloudSaveRevision = remoteRevision;
+        cloudSavedSnapshot = JSON.stringify(remoteState);
+        refreshProjectMemoryFromStorage();
+        renderAll();
+        const indicator = document.querySelector("#cloudSaveStatus");
+        if (indicator) indicator.textContent = `Обновлено коллегой в ${new Date(remote.updatedAt || Date.now()).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+        if (activePage === "overview") showToast("Список фидов обновлён — доступны последние изменения коллеги.");
+        return true;
+      } finally {
+        projectStatePollInFlight = false;
+      }
+    }
+
     async function renderBillingPayments() {
       const target = document.querySelector("#billingPayments");
       if (!target || runtimeMode !== "external") return;
@@ -6415,7 +6456,13 @@
           }
           markBootstrapStage("projects");
           updateBootStatus("Загружаю данные проекта…");
-          if (needsProjectHydration() && await hydrateExternalProjectState()) {
+          const shouldHydrateProject = needsProjectHydration();
+          let hydratedProjectState = shouldHydrateProject && await hydrateExternalProjectState();
+          if (!shouldHydrateProject && runtimeMode === "external" && currentProject) {
+            hydratedProjectState = await hydrateExternalProjectState();
+          }
+          if (hydratedProjectState) {
+            refreshProjectMemoryFromStorage();
             markProjectHydrated();
             markBootstrapStage("state");
             updateBootStatus("Данные проекта синхронизированы…");
@@ -6561,6 +6608,46 @@
         pushExternalProjectState({ [storageKey]: serialized }).catch(() => {});
       }
       scheduleProjectStateSync();
+    }
+
+    function refreshProjectMemoryFromStorage() {
+      const nextState = load();
+      appState = nextState;
+      appState.serverBaseUrl = publicFeedOrigin;
+      objects = (Array.isArray(nextState.objects) ? nextState.objects : []).map(dedupeObjectMedia);
+      originalObjects = (Array.isArray(nextState.originalObjects) ? nextState.originalObjects : objects).map(dedupeObjectMedia);
+      activePlatform = nextState.activePlatform || "cian";
+      activeMonitorPlatform = activePlatform;
+      brandProfiles = loadBrandProfiles();
+      changeLog = loadChangeLog();
+      try {
+        const storedStatuses = JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]");
+        publishedComplexes = new Set(Array.isArray(storedStatuses) ? storedStatuses : []);
+      } catch (_) {
+        publishedComplexes = new Set();
+      }
+      try {
+        const storedSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
+        projectSources = Array.isArray(storedSources) ? storedSources : [];
+      } catch (_) {
+        projectSources = [];
+      }
+      activeSourceId = projectSources.some(source => source.id === nextState.activeSourceId) ? nextState.activeSourceId : "all";
+      activeComplexKey = nextState.activeComplexKey || "";
+      selectedId = "";
+      checkedIds = new Set();
+      selectedBrandLayoutUrls = new Set();
+      brandSelectionTouched = false;
+      sourceEntrySessionActive = false;
+      sourceEntryFormTouched = false;
+      appState.publishedFeeds ||= {};
+      if (appState.generatedFeedId && !activeComplexKey && !appState.publishedFeeds[activeSourceId]) {
+        appState.publishedFeeds[activeSourceId] = {
+          id: appState.generatedFeedId,
+          url: appState.generatedLink,
+          history: appState.publishedHistory || []
+        };
+      }
     }
 
     function loadChangeLog() {
