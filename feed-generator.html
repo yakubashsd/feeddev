@@ -3493,7 +3493,24 @@
     .brand-controls .layout-file-control { grid-column: 1 / -1; }
     .brand-controls .field,
     .brand-controls button { min-width: 0; }
+    .brand-action-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      grid-column: 1 / -1;
+      align-items: stretch;
+    }
     #insertBrandPhotoBtn { width: 100%; }
+    #stopBrandPhotoBtn {
+      min-width: 132px;
+      color: #9a3f3f;
+      border-color: #e7b8b8;
+      background: #fff7f7;
+    }
+    #stopBrandPhotoBtn:hover {
+      border-color: #c96b6b;
+      background: #fde9e9;
+    }
 
     .technical-fields {
       display: none;
@@ -5154,7 +5171,10 @@
               </select>
             </div>
             <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
-            <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
+            <div class="brand-action-row">
+              <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
+              <button id="stopBrandPhotoBtn" type="button" class="danger" hidden>Остановить</button>
+            </div>
           </div>
           <div class="template-layer-editor">
             <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Добавьте текст из объявления поверх подложки. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
@@ -5746,6 +5766,7 @@
     let brandPreviewPlacement = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
+    let brandGenerationController = null;
     let brandDialogDragState = null;
     let activeBrandProjectKey = "all";
     let brandProfileHydrating = false;
@@ -8508,6 +8529,17 @@
       return `/api/layout-image-proxy?url=${encodeURIComponent(value)}`;
     }
 
+    function throwIfBrandGenerationStopped(signal) {
+      if (!signal?.aborted) return;
+      const error = new Error("Формирование остановлено пользователем.");
+      error.name = "AbortError";
+      throw error;
+    }
+
+    function isBrandGenerationAbort(error) {
+      return error?.name === "AbortError";
+    }
+
     function loadCanvasImage(src) {
       return new Promise((resolve, reject) => {
         const image = new Image();
@@ -8517,12 +8549,14 @@
       });
     }
 
-    async function loadImageForCanvas(src) {
+    async function loadImageForCanvas(src, { signal } = {}) {
+      throwIfBrandGenerationStopped(signal);
       const value = String(src || "").trim();
       if (!value) throw new Error("Ссылка на изображение пустая.");
       if (value.startsWith("data:")) return loadCanvasImage(value);
 
-      const response = await fetch(value, { cache: "no-store", credentials: "same-origin" });
+      const response = await fetch(value, { cache: "no-store", credentials: "same-origin", signal });
+      throwIfBrandGenerationStopped(signal);
       if (!response.ok) {
         const raw = await response.text().catch(() => "");
         let details = raw.slice(0, 220);
@@ -9112,11 +9146,13 @@
       throw new Error("Итоговая планировка слишком большая. Попробуйте уменьшить исходную картинку или подложку.");
     }
 
-    async function uploadBrandedLayout({ item, sourceUrl, blob, contentType, ext }) {
+    async function uploadBrandedLayout({ item, sourceUrl, blob, contentType, ext }, { signal } = {}) {
+      throwIfBrandGenerationStopped(signal);
       const fileBase64 = await blobToBase64(blob);
       const response = await fetch("/api/layouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal,
         body: JSON.stringify({
           name: `Планировка на подложке ${item.externalId || ""}`.trim(),
           projectId: currentProject?.id || "",
@@ -9130,6 +9166,7 @@
           fileBase64
         })
       });
+      throwIfBrandGenerationStopped(signal);
       const raw = await response.text();
       let result = {};
       try {
@@ -9144,10 +9181,11 @@
       return result;
     }
 
-    async function createBrandedLayoutUrlMap(button, targets) {
+    async function createBrandedLayoutUrlMap(button, targets, { signal } = {}) {
       const urlMap = new Map();
       const skipped = [];
       const canvas = document.createElement("canvas");
+      throwIfBrandGenerationStopped(signal);
       const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
       const projectConfig = { ...brandConfig() };
       await persistActiveBrandProfile();
@@ -9156,15 +9194,22 @@
         const sourceUrl = uniqueUrls[index];
         const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
         try {
+          throwIfBrandGenerationStopped(signal);
           button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
           brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
-          const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl));
+          const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl), { signal });
           drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig, firstItem);
           const output = await brandedLayoutBlob(canvas, activePlatform);
+          throwIfBrandGenerationStopped(signal);
           brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
-          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output });
+          const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output }, { signal });
           urlMap.set(sourceUrl, record.url);
         } catch (error) {
+          if (isBrandGenerationAbort(error)) {
+            error.urlMap = urlMap;
+            error.skipped = skipped;
+            throw error;
+          }
           skipped.push({
             url: sourceUrl,
             ids: targets.filter(item => item.layoutPhoto === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
@@ -9291,17 +9336,43 @@
       return [url, ...current].join("\n");
     }
 
+    function setBrandGenerationUi(running) {
+      const startButton = document.querySelector("#insertBrandPhotoBtn");
+      const stopButton = document.querySelector("#stopBrandPhotoBtn");
+      if (startButton) {
+        startButton.disabled = running;
+        startButton.classList.toggle("loading", running);
+        startButton.setAttribute("aria-busy", String(running));
+      }
+      if (stopButton) {
+        stopButton.hidden = !running;
+        stopButton.disabled = !running;
+      }
+    }
+
+    function applyGeneratedBranding(urlMap, targets) {
+      if (!urlMap?.size) return 0;
+      const targetIds = new Set(targets.map(item => item.externalId));
+      objects = objects.map(item => {
+        if (!targetIds.has(item.externalId) || !urlMap.has(item.layoutPhoto)) return item;
+        return { ...item, photos: prependPhotoUrl(item, urlMap.get(item.layoutPhoto)) };
+      });
+      return targets.filter(item => urlMap.has(item.layoutPhoto)).length;
+    }
+
     async function insertBrandedLayoutsAsFirstPhotos() {
+      if (brandGenerationController) return;
       const ready = assertBrandTargetsReady();
       if (!ready) return;
       const { targets } = ready;
 
       const button = document.querySelector("#insertBrandPhotoBtn");
-      button.disabled = true;
-      button.classList.add("loading");
+      const controller = new AbortController();
+      brandGenerationController = controller;
+      setBrandGenerationUi(true);
 
       try {
-        const { urlMap, skipped } = await createBrandedLayoutUrlMap(button, targets);
+        const { urlMap, skipped } = await createBrandedLayoutUrlMap(button, targets, { signal: controller.signal });
         if (!urlMap.size) {
           const first = skipped[0];
           const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
@@ -9311,12 +9382,7 @@
         }
         rememberGeneratedLayouts(urlMap);
 
-        const targetIds = new Set(targets.map(item => item.externalId));
-        objects = objects.map(item => {
-          if (!targetIds.has(item.externalId) || !urlMap.has(item.layoutPhoto)) return item;
-          return { ...item, photos: prependPhotoUrl(item, urlMap.get(item.layoutPhoto)) };
-        });
-        const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
+        const updatedCount = applyGeneratedBranding(urlMap, targets);
         invalidateGeneratedLink();
         save();
         addChangeLog("Брендированные планировки", `Готовые JPG-макеты добавлены первым изображением у ${updatedCount} объектов.`);
@@ -9325,6 +9391,20 @@
         showToast(`Первое фото добавлено к ${updatedCount} объектам`);
         brandStatus(`Готово: JPG-планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
       } catch (error) {
+        if (isBrandGenerationAbort(error)) {
+          const completed = error.urlMap || new Map();
+          const completedCount = applyGeneratedBranding(completed, targets);
+          if (completedCount) {
+            rememberGeneratedLayouts(completed);
+            invalidateGeneratedLink();
+            save();
+          }
+          brandStatus(completedCount
+            ? `Формирование остановлено. Уже добавлено первых изображений: ${completedCount}.`
+            : "Формирование остановлено. Изображения не добавлены.");
+          showToast("Формирование остановлено");
+          return;
+        }
         const message = error.message || "Не удалось добавить первое фото.";
         const hint = /too large|слишком больш|413|body/i.test(message)
           ? " Итоговое изображение превышает лимит загрузки. Уменьшите исходную планировку или подложку и попробуйте снова."
@@ -9332,8 +9412,8 @@
         brandStatus(`Не удалось добавить первое фото: ${message}.${hint}`);
         showToast("Не удалось добавить первое фото");
       } finally {
-        button.disabled = false;
-        button.classList.remove("loading");
+        if (brandGenerationController === controller) brandGenerationController = null;
+        setBrandGenerationUi(false);
         button.textContent = "Сделать первым изображением";
       }
     }
@@ -11407,6 +11487,10 @@ ${photos}
     });
     document.querySelector("#centerBrandLayoutBtn").addEventListener("click", centerBrandLayout);
     document.querySelector("#insertBrandPhotoBtn").addEventListener("click", insertBrandedLayoutsAsFirstPhotos);
+    document.querySelector("#stopBrandPhotoBtn").addEventListener("click", () => {
+      if (!brandGenerationController) return;
+      brandGenerationController.abort();
+    });
     const brandPreviewCanvas = document.querySelector("#brandPreviewCanvas");
     brandPreviewCanvas.addEventListener("pointerdown", startBrandPreviewDrag);
     brandPreviewCanvas.addEventListener("pointermove", moveBrandPreviewDrag);
