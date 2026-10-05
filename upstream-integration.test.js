@@ -46,6 +46,18 @@ test("open project sessions refresh in-memory state when a colleague saves a new
   assert.match(poll, /Проект изменён коллегой/);
 });
 
+test("project feeds are confirmed in cloud and refreshed when a background tab returns", () => {
+  const persist = html.match(/    async function persistProjectStateNow\([\s\S]*?\n    }\n\n    \/\/ A background tab deliberately does not poll/)[0];
+  assert.match(html, /document\.addEventListener\("visibilitychange"/);
+  assert.match(html, /window\.addEventListener\("pageshow"/);
+  assert.match(html, /window\.addEventListener\("online"/);
+  assert.match(persist, /saveProjectSources\(\)/);
+  assert.match(persist, /await pushExternalProjectState\(\)/);
+  assert.match(persist, /cloudSavedSnapshot === JSON\.stringify\(captureProjectBrowserState\(\)\)/);
+  assert.match(html, /Фид сохранён в проекте «\$\{currentProject\?\.name/);
+  assert.match(html, /не подтверждён в облаке/);
+});
+
 test("project boot uses bounded requests and cannot wait forever on project APIs", () => {
   const sync = html.match(/    async function syncExternalProjects\([\s\S]*?\n    }\n\n    function projectStateKeys/)[0];
   const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];

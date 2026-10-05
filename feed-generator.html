@@ -5859,7 +5859,7 @@
       save();
     }
 
-    function saveCurrentFeedDraft() {
+    async function saveCurrentFeedDraft() {
       const source = projectSources.find(item => item.id === activeSourceId);
       if (!source) {
         showToast("Сначала добавьте или выберите фид");
@@ -5868,10 +5868,13 @@
       source.objectCount = sourceObjects(source.id).length;
       source.updatedAt = new Date().toISOString();
       source.error = "";
-      saveProjectSources();
-      save();
+      const persistence = await persistProjectStateNow();
+      if (!persistence.saved) {
+        showToast("Изменения не подтверждены в облаке. Проверьте соединение и повторите сохранение.");
+        return false;
+      }
       switchPage("overview");
-      showToast(publicationForContext().url ? "Изменения сохранены" : "Фид сохранён в обзоре как черновик");
+      showToast(publicationForContext().url ? "Изменения сохранены в облаке" : `Фид сохранён в проекте «${currentProject?.name || "текущий проект"}»`);
       return true;
     }
 
@@ -6382,6 +6385,31 @@
         target.textContent = error.message;
       }
     }
+
+    async function persistProjectStateNow() {
+      saveProjectSources();
+      save();
+      if (runtimeMode !== "external" || !currentProject) return { saved: true, cloud: false };
+      try {
+        await pushExternalProjectState();
+        return { saved: !cloudSaveConflict && cloudSavedSnapshot === JSON.stringify(captureProjectBrowserState()), cloud: true };
+      } catch (error) {
+        return { saved: false, cloud: true, error };
+      }
+    }
+
+    // A background tab deliberately does not poll. As soon as the user comes
+    // back, however, fetch the authoritative project version immediately
+    // instead of leaving a colleague's newly added feed invisible until the
+    // next timer tick.
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) pollExternalProjectState().catch(() => {});
+    });
+    window.addEventListener("pageshow", () => pollExternalProjectState().catch(() => {}));
+    window.addEventListener("online", () => {
+      pushExternalProjectState().catch(() => {});
+      pollExternalProjectState().catch(() => {});
+    });
 
     document.querySelector("#billingPayments").addEventListener("click", async event => {
       const retry = event.target.closest("[data-payment-retry]");
@@ -10856,9 +10884,8 @@ ${photos}
         // Background/manual refreshes of an existing feed must stay in the
         // feed list and must not repopulate the new-feed form.
         sourceEntrySessionActive = !existingSource;
-        saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
-        save();
+        const persistence = await persistProjectStateNow();
         feedErrorPanelActivated = true;
         feedErrorPanelMinimized = false;
         renderAll();
@@ -10871,13 +10898,18 @@ ${photos}
         const didPublish = autoPublish && await generateFeedLink();
         const brandingNote = brandingResult.decision === "edit" ? " Открыт редактор шаблона." : brandingResult.decision === "later" ? " Шаблон для новых объектов отложен." : brandingResult.applied ? ` Шаблон применён: ${brandingResult.applied}.` : "";
         const published = didPublish ? " Постоянная ссылка обновлена." : autoPublish ? " Публикация не обновлена — проверьте ошибки." : "";
-        setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}${brandingNote}${published}`, "ok");
-        showToast(didPublish ? `Источник и опубликованный фид обновлены: ${parsed.objects.length} квартир` : `Источник обновлён: ${parsed.objects.length} квартир${autoPublish ? ". Публикация требует проверки" : ""}`);
+        const persistenceNote = persistence.cloud
+          ? persistence.saved ? ` Сохранено в проекте «${currentProject?.name || "текущий проект"}».` : " Данные изменены в другой вкладке: обновите страницу перед продолжением."
+          : "";
+        setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}${brandingNote}${published}${persistenceNote}`, persistence.saved ? "ok" : "bad");
+        showToast(persistence.saved
+          ? didPublish ? `Источник и опубликованный фид сохранены: ${parsed.objects.length} квартир` : `Фид сохранён в проекте «${currentProject?.name || "текущий проект"}»`
+          : "Фид загружен, но не подтверждён в облаке. Проверьте соединение и повторите сохранение.");
       } catch (error) {
         if (existingSource) {
           existingSource.error = error.message;
           existingSource.updatedAt = new Date().toISOString();
-          saveProjectSources();
+          await persistProjectStateNow();
           renderProjectSources();
           if (activePage === "overview") renderProjectOverview();
         }
@@ -11791,7 +11823,7 @@ ${photos}
       if (renameButton) renameSourceFeed(renameButton.dataset.sourceRename).catch(error => showToast(error.message));
       if (removeButton) removeSourceFeed(removeButton.dataset.sourceRemove);
     });
-    document.querySelector("#workflowSaveBtn")?.addEventListener("click", saveCurrentFeedDraft);
+    document.querySelector("#workflowSaveBtn")?.addEventListener("click", () => saveCurrentFeedDraft().catch(error => showToast(`Не удалось сохранить изменения: ${error.message}`)));
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);
     document.querySelector("#projectSourceList").addEventListener("change", event => {
       const check = event.target.closest("[data-source-check]");
@@ -11871,17 +11903,19 @@ ${photos}
         projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} });
         setSourceContext(sourceId);
         sourceEntrySessionActive = true;
-        saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
-        save();
+        const persistence = await persistProjectStateNow();
         feedErrorPanelActivated = true;
         feedErrorPanelMinimized = false;
         renderAll();
         const newObjectIds = objects.filter(item => item.externalId && !objectIdsBeforeImport.has(item.externalId)).map(item => item.externalId);
         const brandingResult = await handleNewObjectBranding(newObjectIds);
         const brandingNote = brandingResult.decision === "edit" ? " Открыт редактор шаблона." : brandingResult.decision === "later" ? " Шаблон для новых объектов отложен." : brandingResult.applied ? ` Шаблон применён: ${brandingResult.applied}.` : "";
-        setLoadStatus(`Файл загружен: ${file.name}. Получено квартир: ${next.length}.${brandingNote}`, "ok");
-        showToast(`Файл добавлен: ${next.length} квартир`);
+        const persistenceNote = persistence.cloud
+          ? persistence.saved ? ` Сохранено в проекте «${currentProject?.name || "текущий проект"}».` : " Данные изменены в другой вкладке: обновите страницу перед продолжением."
+          : "";
+        setLoadStatus(`Файл загружен: ${file.name}. Получено квартир: ${next.length}.${brandingNote}${persistenceNote}`, persistence.saved ? "ok" : "bad");
+        showToast(persistence.saved ? `Фид сохранён в проекте «${currentProject?.name || "текущий проект"}»` : "Файл загружен, но не подтверждён в облаке. Проверьте соединение и повторите сохранение.");
       } catch (error) {
         setLoadStatus(`Не удалось загрузить «${file.name}»: ${error.message || "проверьте формат и содержимое файла"}. Выберите корректный XML, JSON или CSV и попробуйте снова.`, "bad");
       } finally {
