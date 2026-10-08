@@ -559,7 +559,10 @@ async function syncPublishedFeed(record) {
   const publishedXml = fs.readFileSync(filePath, "utf8");
   const result = synchronizeFeed(publishedXml, sourceXml);
   if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
-  if (result.updated) {
+  // Structural changes matter as much as price changes: without writing here,
+  // new or removed source objects are only reported in logs while the public
+  // XML remains stale.
+  if (result.updated || result.added || result.removed) {
     const tempPath = `${filePath}.${process.pid}.tmp`;
     fs.writeFileSync(tempPath, result.xml);
     fs.renameSync(tempPath, filePath);
@@ -572,6 +575,7 @@ async function syncPublishedFeed(record) {
     record.sourceType = "url";
   }
   record.autoSyncError = "";
+  record.objectCount = result.outputCount;
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
   console.log(`Feed sync: ${record.slug}, prices updated: ${result.updated}/${result.checked}, added: ${result.added}, removed: ${result.removed}`);
