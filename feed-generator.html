@@ -4563,7 +4563,7 @@
     body.client-ui .workflow-nav button[data-state="active"] {
       background:var(--lf-text); color:var(--lf-surface); border-color:var(--lf-text);
     }
-    body.client-ui .workflow-nav button[aria-current="step"] .step-icon { background:var(--lf-accent); color:#11151a; }
+    body.client-ui .workflow-nav button[aria-current="step"] .step-icon { background:var(--lf-accent); color:#fff; }
     body.client-ui .workflow-nav .step-icon { width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:var(--lf-surface-2);color:var(--lf-muted); }
     body.client-ui .workflow-nav .step-icon svg { width:15px;height:15px; }
     body.client-ui .workflow-nav .step-copy { min-width:0; display:grid; gap:2px; }
@@ -4587,7 +4587,7 @@
     body.client-ui .overview-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
     body.client-ui .overview-card h2 { margin:5px 0 0; font-size:18px; line-height:1.2; letter-spacing:-.3px; }
     body.client-ui .overview-card p { color:var(--lf-muted); line-height:1.6; }
-    body.client-ui .overview-step { display:grid; place-items:center; width:34px; height:34px; border-radius:9px; background:var(--lf-accent); color:#11151a; font-size:11px; font-weight:800; }
+    body.client-ui .overview-step { display:grid; place-items:center; width:34px; height:34px; border-radius:9px; background:var(--lf-accent); color:#fff; font-size:11px; font-weight:800; }
     body.client-ui .overview-next .primary { margin-top:8px; }
     body.client-ui .overview-progress { display:grid; gap:12px; margin-top:18px; }
     body.client-ui .overview-progress-row { display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:9px; font-size:12px; }
@@ -4785,7 +4785,7 @@
     </section>
 
     <section class="landing-bento" id="landingWorkflow" aria-labelledby="workflowTitle">
-      <div class="landing-bento-main"><p class="landing-kicker">Путь к рабочему фиду</p><h2 id="workflowTitle">От исходника до публикации без лишних шагов.</h2><div class="landing-steps"><div><b>01</b><strong>Загрузите XML</strong><span>По ссылке или файлом</span></div><div><b>02</b><strong>Выберите ЖК</strong><span>Оставьте нужные объекты</span></div><div><b>03</b><strong>Исправьте данные</strong><span>Поля и планировки</span></div><div><b>04</b><strong>Опубликуйте</strong><span>Получите постоянную ссылку</span></div></div></div>
+      <div class="landing-bento-main"><p class="landing-kicker">Путь к рабочему фиду</p><h2 id="workflowTitle">От исходника до публикации без лишних шагов.</h2><div class="landing-steps"><div><b>01</b><strong>Добавьте исходный фид</strong><span>По ссылке или файлом</span></div><div><b>02</b><strong>Выберите ЖК</strong><span>Оставьте нужные объекты</span></div><div><b>03</b><strong>Исправьте данные</strong><span>Поля и планировки</span></div><div><b>04</b><strong>Опубликуйте</strong><span>Получите постоянную ссылку</span></div></div></div>
       <div class="landing-bento-side"><span class="landing-feature-icon">⌁</span><h3>Ошибка не останется незамеченной</h3><p>Мониторинг проверяет источник и опубликованный результат. При сбое вы увидите причину в кабинете и сможете подключить уведомления в Telegram.</p><div class="landing-xml-visual"><b>LIVE</b><span>→</span><i>✓</i><i>!</i><i>↻</i></div></div>
     </section>
 
@@ -4956,8 +4956,8 @@
           <form class="support-form" id="supportTicketForm">
             <h3>Новое обращение</h3>
             <p class="support-form-caption">Не отправляйте пароли, коды доступа и платёжные данные.</p>
-            <div class="field"><label for="supportCategory">Тема обращения</label><select id="supportCategory" name="category" required><option value="feed">Фид и данные</option><option value="import">Загрузка XML</option><option value="publication">Проверка и публикация</option><option value="billing">Оплата и тариф</option><option value="account">Аккаунт и доступ</option><option value="other">Другой вопрос</option></select></div>
-            <div class="field"><label for="supportTitle">Кратко опишите проблему</label><input id="supportTitle" name="title" required minlength="4" maxlength="160" placeholder="Например, XML не обновляется"></div>
+            <div class="field"><label for="supportCategory">Тема обращения</label><select id="supportCategory" name="category" required><option value="feed">Фид и данные</option><option value="import">Загрузка исходного фида</option><option value="publication">Проверка и публикация</option><option value="billing">Оплата и тариф</option><option value="account">Аккаунт и доступ</option><option value="other">Другой вопрос</option></select></div>
+            <div class="field"><label for="supportTitle">Кратко опишите проблему</label><input id="supportTitle" name="title" required minlength="4" maxlength="160" placeholder="Например, фид не обновляется"></div>
             <div class="field"><label for="supportDescription">Что произошло и что вы ожидали?</label><textarea id="supportDescription" name="description" required minlength="20" maxlength="5000" rows="6" placeholder="Укажите шаги, проект и текст ошибки. Чем точнее описание, тем быстрее поможем."></textarea></div>
             <div class="support-form-row"><div class="field"><label for="supportContactName">Ваше имя</label><input id="supportContactName" name="contactName" maxlength="120" autocomplete="name" placeholder="Имя"></div><div class="field"><label for="supportContactEmail">Email для ответа</label><input id="supportContactEmail" name="contactEmail" type="email" required maxlength="254" autocomplete="email" placeholder="name@company.ru"></div></div>
             <div class="field"><label for="supportProject">Проект <span>необязательно</span></label><select id="supportProject" name="projectId"><option value="">Не привязывать к проекту</option></select></div>
@@ -4975,7 +4975,7 @@
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте хранятся фиды, объекты, настройки публикации и постоянные ссылки.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, Речной парк"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Фиды проекта</h2>
-        <div class="panel-caption">Добавьте новый фид. После загрузки он станет текущим — дальше проходите шаги только по нему.</div>
+        <div class="panel-caption">Выберите существующий фид или добавьте новый. После выбора настройки применяются только к нему.</div>
         <div class="source-grid">
           <div class="field">
             <label for="sourceName">Название фида</label>
@@ -4997,7 +4997,7 @@
           <button id="importBtn" type="button" aria-describedby="loadStatus">Загрузить XML</button>
           <input id="fileInput" class="file-input" type="file" accept=".json,.xml,.csv,text/xml,application/xml,application/json,text/csv">
         </div>
-        <div id="loadStatus" class="source-status" role="status" aria-live="polite" aria-atomic="true">Начните с постоянной ссылки или XML-файла. Сервис определит формат фида и подсветит его ниже.</div>
+        <div id="loadStatus" class="source-status" role="status" aria-live="polite" aria-atomic="true">Начните с постоянной ссылки или файла исходного фида. Сервис определит формат и покажет его ниже.</div>
         <div class="detected-source" id="detectedSource">
           <div class="detected-card primary"><span>Формат</span><strong id="detectedPlatform">Не загружен</strong></div>
           <div class="detected-card"><span>Источник</span><strong class="detected-provider-value"><span id="detectedProviderMark" class="detected-provider-mark" aria-hidden="true"></span><span id="detectedProvider">-</span></strong></div>
@@ -5315,7 +5315,7 @@
 
       <section class="publish-panel" data-page="results">
         <h2 class="panel-title">Финальная выгрузка</h2>
-        <div class="panel-caption">Последний шаг после проверки: назовите фид и выберите, что нужно сейчас — постоянная ссылка или обычный XML-файл.</div>
+        <div class="panel-caption">Последний шаг после проверки: назовите фид и выберите способ публикации — постоянная ссылка или файл.</div>
         <div class="release-preflight" id="releasePreflight" role="status" aria-live="polite"></div>
         <div class="publish-row">
           <div class="field">
@@ -5342,14 +5342,14 @@
     </main>
 
     <dialog class="usage-guide-dialog" id="usageGuideDialog" aria-labelledby="usageGuideTitle">
-      <div class="usage-guide-head"><div><span class="usage-guide-eyebrow">КРАТКОЕ РУКОВОДСТВО</span><h2 id="usageGuideTitle">От исходного XML до публикации</h2><p>Пройдите шаги по порядку. Планировки можно настроить позже — для первой выгрузки это необязательно.</p></div><button class="usage-guide-close" id="usageGuideClose" type="button" aria-label="Закрыть инструкцию">×</button></div>
+      <div class="usage-guide-head"><div><span class="usage-guide-eyebrow">КРАТКОЕ РУКОВОДСТВО</span><h2 id="usageGuideTitle">От исходного фида до публикации</h2><p>Пройдите шаги по порядку. Планировки можно настроить позже — для первой выгрузки это необязательно.</p></div><button class="usage-guide-close" id="usageGuideClose" type="button" aria-label="Закрыть инструкцию">×</button></div>
       <ol class="usage-guide-steps">
         <li><span class="usage-guide-number">01</span><div><h3>Создайте проект</h3><p>Проект — рабочая область, внутри которой можно хранить несколько фидов разных площадок и редактировать каждый отдельно.</p></div><button type="button" data-guide-go="projects">Открыть проекты <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">02</span><div><h3>Добавьте фид</h3><p>Откройте список фидов, нажмите «Добавить фид», затем вставьте ссылку на XML или загрузите файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="overview">К списку фидов <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">02</span><div><h3>Добавьте фид</h3><p>Откройте список фидов, нажмите «Добавить фид», затем вставьте ссылку на исходный фид или загрузите файл. Выберите площадку и интервал обновления.</p></div><button type="button" data-guide-go="overview">К списку фидов <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">03</span><div><h3>Сверьте дома и секции</h3><p>Убедитесь, что сервис правильно сгруппировал дома и показывает ожидаемое число квартир.</p></div><button type="button" data-guide-go="complexes">К списку домов <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">04</span><div><h3>Проверьте объявления</h3><p>Просмотрите ошибки и обязательные поля, поправьте отдельные объявления или выберите несколько строк для массовых правок.</p></div><button type="button" data-guide-go="apartments">К объявлениям <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number optional">05</span><div><h3>При необходимости оформите планировки</h3><p>Загрузите изображение-подложку, настройте макет на примере квартиры и сформируйте брендированное первое фото.</p></div><button type="button" data-guide-go="branding">К редактору <span aria-hidden="true">→</span></button></li>
-        <li><span class="usage-guide-number">06</span><div><h3>Проверьте и опубликуйте фид</h3><p>На странице публикации исправьте блокирующие замечания, сохраните постоянную ссылку для площадки или скачайте XML-файл.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
+        <li><span class="usage-guide-number">06</span><div><h3>Проверьте и опубликуйте фид</h3><p>На странице публикации исправьте блокирующие замечания, сохраните постоянную ссылку для площадки или скачайте готовый файл.</p></div><button type="button" data-guide-go="results">К публикации <span aria-hidden="true">→</span></button></li>
         <li><span class="usage-guide-number">07</span><div><h3>Следите за обновлениями</h3><p>Мониторинг показывает ошибки и состояние фида. Здесь же можно запустить проверку и настроить уведомления.</p></div><button type="button" data-guide-go="feeds">Открыть мониторинг <span aria-hidden="true">→</span></button></li>
       </ol>
       <div class="usage-guide-foot"><span>Подсказка: сначала выберите проект, затем добавьте новый или ранее сохранённый фид.</span><div><button type="button" data-guide-go="support">Техподдержка</button><button id="usageGuideStart" class="primary" type="button">Начать с добавления фида</button></div></div>
@@ -6361,7 +6361,7 @@
       forgotPasswordLink.textContent = forgot ? "Вернуться ко входу" : "Забыли пароль?";
       const consentField = document.querySelector("#legalConsentField");
       consentField.hidden = !register;
-      consentField.style.display = register ? "flex" : "none";
+      consentField.style.display = register ? "grid" : "none";
       document.querySelector("#offerAcceptance").required = register;
       document.querySelector("#personalDataConsent").required = register;
       document.querySelector("#loginForm h1").textContent = reset ? "Новый пароль" : forgot ? "Восстановление" : register ? "Создать аккаунт" : "Вход в сервис";
@@ -7334,7 +7334,7 @@
         const hasObjects = workingObjects().length > 0;
         rows.innerHTML = `
           <tr>
-            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : `Объявлений пока нет. Добавьте XML в «Источниках видов». <button type="button" data-open-object-source>Открыть источники видов</button>`}</td>
+            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : `Объявлений пока нет. Добавьте исходный фид в «Источниках фидов». <button type="button" data-open-object-source>Открыть источники фидов</button>`}</td>
           </tr>
         `;
         renderSelectAllState();
@@ -7925,7 +7925,7 @@
       });
     }
 
-    const supportCategoryLabels = { feed: "Фид и данные", import: "Загрузка XML", publication: "Проверка и публикация", billing: "Оплата и тариф", account: "Аккаунт и доступ", other: "Другой вопрос" };
+    const supportCategoryLabels = { feed: "Фид и данные", import: "Загрузка исходного фида", publication: "Проверка и публикация", billing: "Оплата и тариф", account: "Аккаунт и доступ", other: "Другой вопрос" };
     const supportStatusLabels = { new: "Новая", in_progress: "В работе", resolved: "Решена" };
     function renderSupportPage() {
       const projectSelect = document.querySelector("#supportProject");

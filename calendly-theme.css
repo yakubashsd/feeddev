@@ -972,3 +972,191 @@ body.client-ui .main {
     width:min(360px,calc(100vw - 28px))!important;
   }
 }
+
+/* Canonical interaction layer
+   ---------------------------
+   Keep these small, explicit rules last in the cascade. Older product
+   themes are still loaded for compatibility, but all client-facing actions
+   and form rhythm should resolve to one predictable visual language. */
+:root { --lf-ease-out:cubic-bezier(.23,1,.32,1); }
+
+body.client-ui :is(
+  button.primary,
+  .button.primary,
+  #newProjectBtn,
+  .project-pagination button.active,
+  #loadUrlBtn,
+  #generateLinkBtn,
+  #applyBulkBtn
+) {
+  color:#fff!important;
+}
+
+body.client-ui .auth-card h1 {
+  margin:0 0 12px!important;
+}
+body.client-ui .auth-card .auth-description {
+  margin:0 0 30px!important;
+  line-height:22px!important;
+}
+body.client-ui .auth-card .lf-brand-lockup {
+  margin:0 0 26px!important;
+}
+body.client-ui .auth-fields {
+  display:grid!important;
+  gap:18px!important;
+}
+body.client-ui .auth-fields > .field:not([hidden]) {
+  display:grid!important;
+  align-content:start!important;
+  gap:8px!important;
+}
+body.client-ui.auth-active .auth-fields > .field[hidden],
+body.client-ui.auth-active #legalConsentField[hidden],
+body.client-ui.auth-active #authSwitch[hidden],
+body.client-ui.auth-active #forgotPasswordLink[hidden] {
+  display:none!important;
+}
+body.client-ui .auth-fields > .field > label {
+  margin:0!important;
+  line-height:20px!important;
+}
+body.client-ui .auth-fields > .field > :is(input,select,textarea) {
+  height:50px!important;
+  min-height:50px!important;
+  margin:0!important;
+  line-height:22px!important;
+}
+body.client-ui .auth-forgot-link {
+  margin:0!important;
+  min-height:24px!important;
+  line-height:20px!important;
+}
+body.client-ui #legalConsentField {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 18px!important;
+  margin-top:2px!important;
+}
+body.client-ui #legalConsentField > label {
+  min-width:0!important;
+  line-height:18px!important;
+}
+body.client-ui #legalConsentField input[type="checkbox"] {
+  width:18px!important;
+  height:18px!important;
+  min-height:18px!important;
+  margin-top:1px!important;
+  flex:0 0 18px!important;
+  accent-color:var(--lf-accent)!important;
+}
+
+body.client-ui .main .field,
+body.client-ui .main .auth-fields .field {
+  align-content:start!important;
+}
+body.client-ui .main .field > label,
+body.client-ui .object-filter-panel .field > label {
+  margin:0 0 2px!important;
+  line-height:20px!important;
+}
+body.client-ui .main .field :is(input,select,textarea) {
+  margin:0!important;
+}
+body.client-ui button[aria-busy="true"]::after {
+  border-color:#fff!important;
+  border-right-color:transparent!important;
+}
+
+@keyframes lf-surface-in {
+  from { opacity:.01; transform:translateY(8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+body.client-ui.auth-active .auth-card,
+body.client-ui .projects-page,
+body.client-ui .source-panel,
+body.client-ui .feeds-panel,
+body.client-ui .validator-panel,
+body.client-ui .complexes-panel,
+body.client-ui .layouts-panel,
+body.client-ui .publish-panel,
+body.client-ui .support-page,
+body.client-ui .billing-page,
+body.client-ui .change-log-panel {
+  animation:lf-surface-in 220ms var(--lf-ease-out) both;
+}
+
+@media (hover:hover) and (pointer:fine) {
+  body.client-ui :is(
+    button.primary,
+    .button.primary,
+    #newProjectBtn,
+    #loadUrlBtn,
+    #generateLinkBtn,
+    #applyBulkBtn
+  ):not(:disabled) {
+    transition:transform 160ms var(--lf-ease-out),background-color 160ms ease,
+      border-color 160ms ease,color 160ms ease,box-shadow 160ms ease!important;
+  }
+  body.client-ui :is(
+    button.primary,
+    .button.primary,
+    #newProjectBtn,
+    #loadUrlBtn,
+    #generateLinkBtn,
+    #applyBulkBtn
+  ):not(:disabled):hover {
+    transform:translateY(-1px);
+  }
+  body.client-ui :is(
+    button.primary,
+    .button.primary,
+    #newProjectBtn,
+    #loadUrlBtn,
+    #generateLinkBtn,
+    #applyBulkBtn
+  ):not(:disabled):active {
+    transform:translateY(0);
+  }
+}
+
+@media (max-width:560px) {
+  body.client-ui #legalConsentField { grid-template-columns:1fr!important; }
+  body.client-ui .auth-card { padding:24px!important; }
+  body.client-ui .auth-card h1 { font-size:30px!important; }
+}
+
+/* The project filters are intentionally stacked on phones. The older
+   project-list selector has higher specificity than the base mobile rule,
+   so repeat it here to prevent clipped selects at narrow widths. */
+@media (max-width:760px) {
+  body.client-ui .project-list-mode .project-toolbar {
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  body.client-ui .project-list-mode .project-toolbar .project-search {
+    grid-column:auto!important;
+  }
+  body.client-ui .project-list-mode .project-toolbar :is(.project-search,select) {
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  body.client-ui.auth-active .auth-card,
+  body.client-ui .projects-page,
+  body.client-ui .source-panel,
+  body.client-ui .feeds-panel,
+  body.client-ui .validator-panel,
+  body.client-ui .complexes-panel,
+  body.client-ui .layouts-panel,
+  body.client-ui .publish-panel,
+  body.client-ui .support-page,
+  body.client-ui .billing-page,
+  body.client-ui .change-log-panel,
+  body.client-ui :is(button.primary,.button.primary,#newProjectBtn,#loadUrlBtn,#generateLinkBtn,#applyBulkBtn) {
+    animation:none!important;
+    transform:none!important;
+  }
+}

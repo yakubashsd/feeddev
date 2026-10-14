@@ -913,7 +913,7 @@ body.admin-ui .button:hover:not(:disabled),body.admin-ui .theme-toggle:hover{bor
 body.admin-ui .button:active:not(:disabled){background:#eef1f4!important}
 body.admin-ui .button:disabled{cursor:not-allowed!important;opacity:.46!important}
 body.admin-ui .button.primary{border-color:#0038d1!important;background:var(--lf-accent)!important;color:#fff!important}
-body.admin-ui .button.primary:hover:not(:disabled){border-color:#b4d718!important;background:var(--lf-accent-hover)!important}
+body.admin-ui .button.primary:hover:not(:disabled){border-color:var(--lf-accent-hover)!important;background:var(--lf-accent-hover)!important}
 body.admin-ui .button.danger{color:#c43f3f!important}
 body.admin-ui :is(button,input,select,a):focus-visible{outline:2px solid rgba(33,104,232,.58)!important;outline-offset:2px!important}
 body.admin-ui .table-wrap{
@@ -1095,7 +1095,7 @@ body.client-ui .project-list-mode .projects-page{max-width:1460px!important;marg
 body.client-ui .project-list-mode .projects-heading{align-items:center!important;gap:24px!important;margin:0 0 22px!important}
 body.client-ui .project-list-mode .projects-heading h1{margin:0!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:36px!important;font-weight:700!important;line-height:1.12!important;letter-spacing:-.6px!important}
 body.client-ui .project-list-mode .projects-heading p{margin:5px 0 0!important;color:var(--lf-muted)!important;font-family:var(--lf-font)!important;font-size:16px!important;line-height:23px!important}
-body.client-ui .project-list-mode #newProjectBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;flex:0 0 auto!important;min-width:182px!important;min-height:46px!important;padding:0 16px!important;border:1px solid #c5eb0a!important;border-radius:7px!important;background:var(--lf-accent)!important;color:#141710!important;font-family:var(--lf-font)!important;font-size:15px!important;font-weight:700!important;line-height:20px!important}
+body.client-ui .project-list-mode #newProjectBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;flex:0 0 auto!important;min-width:182px!important;min-height:46px!important;padding:0 16px!important;border:1px solid var(--lf-accent)!important;border-radius:7px!important;background:var(--lf-accent)!important;color:#fff!important;font-family:var(--lf-font)!important;font-size:15px!important;font-weight:700!important;line-height:20px!important}
 body.client-ui .project-list-mode #newProjectBtn svg{width:18px;height:18px}
 body.client-ui .project-list-mode #newProjectBtn:hover{background:var(--lf-accent-hover)!important}
 body.client-ui .project-list-mode .project-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;margin:0 0 23px!important}
@@ -1131,9 +1131,9 @@ body.client-ui .project-list-mode .project-table td{height:50px!important;paddin
 body.client-ui .project-list-mode .project-table tbody tr:last-child td{border-bottom:0!important}
 body.client-ui .project-list-mode .project-table tbody tr:hover td{background:#fafbfc!important}
 body.client-ui .project-list-mode .project-table .project-select-cell{width:48px!important;padding-right:4px!important;padding-left:14px!important;text-align:center!important}
-body.client-ui .project-list-mode .project-select-cell input{width:16px!important;height:16px!important;min-height:16px!important;margin:0!important;accent-color:#bfe500!important;vertical-align:middle!important}
+body.client-ui .project-list-mode .project-select-cell input{width:16px!important;height:16px!important;min-height:16px!important;margin:0!important;accent-color:var(--lf-accent)!important;vertical-align:middle!important}
 body.client-ui .project-list-mode .project-name-link{display:grid!important;min-width:0!important;color:var(--lf-text)!important;text-decoration:none!important}
-body.client-ui .project-list-mode .project-name-link:hover strong{color:#536d00!important}
+body.client-ui .project-list-mode .project-name-link:hover strong{color:var(--lf-accent)!important}
 body.client-ui .project-list-mode .project-name-link strong{overflow:hidden!important;font-size:14px!important;font-weight:700!important;line-height:18px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 body.client-ui .project-list-mode .project-name-link small{margin-top:1px!important;color:#808898!important;font-size:11px!important;line-height:15px!important}
 body.client-ui .project-list-mode .project-platform{display:flex!important;align-items:center!important;gap:9px!important;min-width:0!important;white-space:nowrap!important}
@@ -1172,12 +1172,12 @@ body.client-ui .project-list-mode .project-table-empty strong{font-size:15px!imp
 body.client-ui .project-list-mode .project-table-empty span{margin-top:4px!important;color:var(--lf-muted)!important;font-size:13px!important;line-height:19px!important}
 body.client-ui .project-list-mode .project-table-footer{display:flex!important;align-items:center!important;gap:14px!important;min-height:70px!important;padding:12px 16px!important;border-top:1px solid var(--lf-line)!important;background:var(--lf-surface)!important}
 body.client-ui .project-list-mode .project-page-summary{flex:1!important;min-width:140px!important;color:#747d8c!important;font-size:12px!important;line-height:18px!important}
-body.client-ui .project-list-mode #projectSelectionSummary:not([hidden]){display:inline-block!important;margin-right:12px!important;color:#536d00!important;font-weight:700!important}
+body.client-ui .project-list-mode #projectSelectionSummary:not([hidden]){display:inline-block!important;margin-right:12px!important;color:var(--lf-accent)!important;font-weight:700!important}
 body.client-ui .project-list-mode .project-pagination{display:flex!important;align-items:center!important;gap:5px!important}
 body.client-ui .project-list-mode .project-pagination button{display:grid!important;place-items:center!important;min-width:36px!important;height:36px!important;padding:0 8px!important;border:1px solid var(--lf-line)!important;border-radius:7px!important;background:var(--lf-surface)!important;color:var(--lf-text)!important;font-family:var(--lf-font)!important;font-size:13px!important;line-height:18px!important}
 body.client-ui .project-list-mode .project-pagination button svg{width:16px;height:16px}
 body.client-ui .project-list-mode .project-pagination button:hover:not(:disabled){background:#f4f6f8!important}
-body.client-ui .project-list-mode .project-pagination button.active{border-color:var(--lf-accent)!important;background:var(--lf-accent)!important;color:#161a12!important;font-weight:700!important}
+body.client-ui .project-list-mode .project-pagination button.active{border-color:var(--lf-accent)!important;background:var(--lf-accent)!important;color:#fff!important;font-weight:700!important}
 body.client-ui .project-list-mode .project-pagination button:disabled{cursor:not-allowed!important;opacity:.4!important}
 body.client-ui .project-list-mode .pagination-ellipsis{padding:0 4px;color:var(--lf-muted)!important}
 body.client-ui .project-list-mode .project-page-size{display:flex!important;align-items:center!important;gap:8px!important;color:#747d8c!important;font-size:12px!important;white-space:nowrap!important}
