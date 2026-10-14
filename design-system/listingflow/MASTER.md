@@ -8,6 +8,7 @@
 
 **Project:** ListingFlow
 **Generated:** 2026-09-21 11:11:17
+**Aligned to runtime tokens:** calendly-theme.css / listingflow-ui.css (see DESIGN.md)
 **Category:** Real Estate/Property
 **Design Dials:** Variance 5/10 (Balanced / Modern) | Motion 3/10 (Subtle) | Density 8/10 (Dense / Dashboard)
 
@@ -19,35 +20,38 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#0F766E` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#14B8A6` | `--color-secondary` |
-| On Secondary | `#0F172A` | `--color-on-secondary` |
-| Accent/CTA | `#0369A1` | `--color-accent` |
-| On Accent/CTA | `#FFFFFF` | `--color-on-accent` |
-| Background | `#F0FDFA` | `--color-background` |
-| Foreground | `#134E4A` | `--color-foreground` |
-| Card | `#FFFFFF` | `--color-card` |
-| Card Foreground | `#134E4A` | `--color-card-foreground` |
-| Muted | `#E8F0F3` | `--color-muted` |
-| Muted Foreground | `#475569` | `--color-muted-foreground` |
-| Border | `#99F6E4` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#0F766E` | `--color-ring` |
+| Primary / Accent (CTA) | `#0444fc` | `--lf-accent` |
+| On Primary | `#FFFFFF` | — |
+| Primary Hover | `#0038d1` | `--lf-accent-hover` |
+| Secondary / Info | `#446bfc` | `--lf-blue` |
+| On Secondary | `#FFFFFF` | — |
+| Background (canvas) | `#f4f8ff` | `--lf-bg` |
+| Foreground (text) | `#11385e` | `--lf-text` |
+| Surface (card) | `#ffffff` | `--lf-surface` |
+| Surface 2 | `#f7faff` | `--lf-surface-2` |
+| Muted | `#f0f5fc` | `--lf-sidebar-2` |
+| Muted Foreground | `#506e8a` | `--lf-muted` |
+| Border | `#d8e6f7` | `--lf-line` |
+| Border Strong | `#b8cde6` | `--lf-line-strong` |
+| Success | `#178a59` | `--lf-green` |
+| Success BG | `#e7f8ef` | `--lf-green-bg` |
+| Warning | `#9b6200` | `--lf-amber` |
+| Warning BG | `#fff5d8` | `--lf-amber-bg` |
+| Destructive | `#c73445` | `--lf-red` |
+| Destructive BG | `#fff0f2` | `--lf-red-bg` |
 
-**Color Notes:** Trust teal + professional blue
+**Color Notes:** Cool scheduling-blue B2B SaaS; light is the default operating mode.
 
 ### Typography
 
-- **Heading Font:** Cinzel
-- **Body Font:** Josefin Sans
-- **Mood:** real estate, luxury, elegant, sophisticated, property, premium
-- **Google Fonts:** [Cinzel + Josefin Sans](https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&display=swap)
+- **Font (all roles):** Circe (local WOFF2, self-hosted — no web font CDN)
+- **Fallback stack:** `"Circe","SF Pro Text","Segoe UI",Arial,sans-serif`
+- **Mood:** operational, precise, trustworthy, real estate, dashboard, dense
+- **Loading:** `@font-face` in `listingflow-ui.css`; preload `Circe-Regular.woff2`
 
 **CSS Import:**
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&display=swap');
+@font-face{font-family:"Circe";src:url("/assets/fonts/Circe-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
 ```
 
 ### Spacing Variables
@@ -82,7 +86,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #0369A1;
+  background: #0444fc;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -99,8 +103,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #0F766E;
-  border: 2px solid #0F766E;
+  color: #0444fc;
+  border: 2px solid #0444fc;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -113,7 +117,7 @@
 
 ```css
 .card {
-  background: #F0FDFA;
+  background: #ffffff;
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -139,9 +143,9 @@
 }
 
 .input:focus {
-  border-color: #0F766E;
+  border-color: #0444fc;
   outline: none;
-  box-shadow: 0 0 0 3px #0F766E20;
+  box-shadow: 0 0 0 3px rgba(4,68,252,.12);
 }
 ```
 

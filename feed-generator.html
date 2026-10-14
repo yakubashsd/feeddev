@@ -2661,7 +2661,7 @@
     .auth-screen {
       min-height: 100vh;
       padding: 24px;
-      border-top: 8px solid var(--brand);
+      border-top: 0;
       background: #f4f4f5;
       background-image: none;
     }
@@ -2708,7 +2708,7 @@
       grid-template-rows: minmax(0, 1fr);
       height: 100vh;
       min-height: 100vh;
-      border-top: 8px solid var(--brand);
+      border-top: 0;
       background: var(--bg);
     }
 
@@ -4528,8 +4528,7 @@
   <link rel="stylesheet" href="usage-guide.css">
   <style id="listingflow-product-redesign">
     /* Hallmark · pre-emit critique: P4 H5 E4 S4 R4 V4 */
-    /* Project navigation lives in the sidebar; avoid a duplicate step bar. */
-    body.client-ui .usage-hint { display:none!important; }
+    /* Onboarding hint sits above the working area; the sidebar keeps navigation. */
     body.client-ui .workflow-nav {
       display:none!important;
       grid-template-columns:repeat(6,minmax(0,1fr));
@@ -4697,7 +4696,6 @@
     body.client-ui .source-status.success, body.client-ui .validation.ok, body.client-ui .validator-result.ok { border-left:3px solid var(--lf-green)!important; }
     @keyframes lfSpin { to { transform:rotate(360deg); } }
   </style>
-  <link rel="stylesheet" href="dashstack-theme.css">
   <link rel="stylesheet" href="calendly-theme.css">
   <link rel="stylesheet" href="landing.css">
 </head>
@@ -9158,7 +9156,7 @@
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, Number(layer.opacity ?? 100) / 100));
         if (layer.type === "rect") {
-          context.fillStyle = layer.fill || "#d5ff19";
+          context.fillStyle = layer.fill || "#4f7dff";
           context.fillRect(x, y, layerWidth, layerHeight);
         } else if (layer.type === "text") {
           context.fillStyle = layer.color || "#11151a";

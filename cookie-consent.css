@@ -1,5 +1,5 @@
 #cookieNotice{position:fixed;z-index:10000;right:20px;bottom:20px;width:min(360px,calc(100vw - 40px));margin:0;padding:14px 16px;border:1px solid #cbdcf0;background:#fff;box-shadow:0 12px 36px rgba(17,56,94,.16);border-radius:12px;color:#506e8a;font:13px/1.4 Circe,system-ui,sans-serif}
-#cookieNotice a{color:#b5ef18}
+#cookieNotice a{color:#0444fc}
 #cookieNotice>div{display:flex;gap:8px;margin-top:12px;flex-wrap:nowrap;justify-content:flex-end}
 #cookieNotice button,#cookiePrefs button{padding:8px 12px;border:1px solid #b8cde6;border-radius:7px;background:#fff;color:#11385e;cursor:pointer;font:700 12px/1.2 Circe,system-ui,sans-serif}
 #cookieNotice button:hover,#cookiePrefs button:hover{border-color:#0444fc}
@@ -8,5 +8,5 @@
 #cookiePrefs::backdrop{background:#08090cb3;backdrop-filter:blur(2px)}
 #cookiePrefs label{display:flex;gap:10px;align-items:flex-start;margin:14px 0}
 #cookiePrefs .cookie-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
-#cookiePrefs input{accent-color:#b5ef18}
+#cookiePrefs input{accent-color:#0444fc}
 @media(max-width:520px){#cookieNotice{right:10px;bottom:10px;width:calc(100vw - 20px);padding:12px 14px}#cookieNotice>div{justify-content:stretch}#cookieNotice button{flex:1}}
