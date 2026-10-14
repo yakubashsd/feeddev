@@ -855,3 +855,120 @@ body.client-ui #layoutsPanel #brandPreviewCanvas.le-fit-mode {
   body.client-ui #layoutsPanel .le-properties { grid-row:3!important; }
   body.client-ui #layoutsPanel .brand-source-panel { grid-row:4!important; }
 }
+
+/* Empty workflow states are the only content shown until a feed is selected.
+   Keep this rule after the shared `.field` alignment rules: otherwise the
+   generated-link field on the publication screen can become visible again
+   while the page is still in its empty state. */
+body.client-ui .requires-feed-selection > :not(.workflow-feed-empty) {
+  display:none!important;
+}
+body.client-ui .main .requires-feed-selection > :not(.workflow-feed-empty) {
+  display:none!important;
+}
+body.client-ui .requires-feed-selection > .workflow-feed-empty {
+  display:grid!important;
+}
+
+/* Use the actual work-column width, not the browser viewport, when the
+   persistent editor occupies the right side of the workspace. At 1280–1550
+   px the main column is narrower than the viewport and a four-column filter
+   grid would otherwise render underneath the editor. */
+body.client-ui .main {
+  container-type:inline-size;
+  container-name:lf-main;
+}
+@container lf-main (max-width:900px) {
+  body.client-ui .object-filter-panel {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-template-areas:"search search" "status rooms" "issue issue" "price price" "area area"!important;
+    gap:16px!important;
+  }
+  body.client-ui .object-filter-panel .field:nth-child(1){grid-area:search!important}
+  body.client-ui .object-filter-panel .field:nth-child(2){grid-area:status!important}
+  body.client-ui .object-filter-panel .field:nth-child(3){grid-area:rooms!important}
+  body.client-ui .object-filter-panel .field:nth-child(4){grid-area:price!important}
+  body.client-ui .object-filter-panel .field:nth-child(5){grid-area:area!important}
+  body.client-ui .object-filter-panel .field:nth-child(6){grid-area:issue!important}
+}
+@container lf-main (max-width:520px) {
+  body.client-ui .object-filter-panel {
+    grid-template-columns:1fr!important;
+    grid-template-areas:"search" "status" "rooms" "issue" "price" "area"!important;
+    gap:14px!important;
+  }
+  body.client-ui .object-filter-panel .range-filter-row {
+    grid-template-columns:34px minmax(0,1fr) 118px!important;
+    gap:8px!important;
+  }
+}
+
+/* The same available-width rule applies to secondary toolbars below the
+   apartments table. Their legacy minimum columns were wider than the editor
+   work column and pushed the last control underneath the inspector. */
+@container lf-main (max-width:900px) {
+  body.client-ui .bulk-panel {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:14px!important;
+  }
+  body.client-ui .bulk-panel .bulk-head,
+  body.client-ui .bulk-panel .bulk-value-field,
+  body.client-ui .bulk-panel #applyBulkBtn {
+    grid-column:1/-1!important;
+  }
+  body.client-ui .bulk-panel #applyBulkBtn {
+    width:100%!important;
+    margin-top:0!important;
+  }
+  body.client-ui .source-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  body.client-ui .source-grid .field:first-child,
+  body.client-ui .source-grid .field:nth-child(2) {
+    grid-column:1/-1!important;
+  }
+  body.client-ui .source-grid > button { width:100%!important; }
+  body.client-ui .publish-row {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:start!important;
+  }
+  body.client-ui .publish-row .field,
+  body.client-ui .publish-row button { min-width:0!important; width:100%!important; }
+  body.client-ui .monitor-add,
+  body.client-ui .validator-toolbar { grid-template-columns:1fr!important; }
+  body.client-ui .monitor-add button,
+  body.client-ui .validator-toolbar button { width:100%!important; }
+  body.client-ui .monitor-notification-settings {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  body.client-ui .monitor-notification-settings :is(h3,p,#saveMonitorNotifications) { grid-column:1/-1!important; }
+  body.client-ui #saveMonitorNotifications { width:100%!important; }
+  body.client-ui .traffic-policy-toolbar { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  body.client-ui .traffic-policy-toolbar .traffic-policy-save { grid-column:1/-1!important; width:100%!important; }
+}
+@container lf-main (max-width:520px) {
+  body.client-ui .bulk-panel,
+  body.client-ui .source-grid,
+  body.client-ui .publish-row,
+  body.client-ui .monitor-notification-settings,
+  body.client-ui .traffic-policy-toolbar { grid-template-columns:1fr!important; }
+  body.client-ui .source-grid > .field,
+  body.client-ui .publish-row > .field,
+  body.client-ui .publish-row > button { grid-column:auto!important; }
+}
+
+/* Mobile uses the stacked shell. Override the desktop editor offset with the
+   same selector specificity so the save bar keeps a usable width instead of
+   collapsing to a narrow strip. Keep the error summary above it. */
+@media (max-width:760px) {
+  body.client-ui .app:not(.feeds-mode):not(.layouts-mode):not(.validator-mode):not(.project-list-mode) .workflow-save-bar {
+    left:14px!important;
+    right:14px!important;
+    width:auto!important;
+  }
+  body.client-ui .feed-error-popover {
+    right:14px!important;
+    bottom:154px!important;
+    width:min(360px,calc(100vw - 28px))!important;
+  }
+}
