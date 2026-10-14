@@ -122,8 +122,11 @@ const mimeTypes = {
 function ensureStorage() {
   fs.mkdirSync(FEEDS_DIR, { recursive: true });
   fs.mkdirSync(LAYOUTS_DIR, { recursive: true });
-  if (!fs.existsSync(INDEX_FILE)) fs.writeFileSync(INDEX_FILE, "[]\n");
-  if (!fs.existsSync(LAYOUTS_INDEX_FILE)) fs.writeFileSync(LAYOUTS_INDEX_FILE, "[]\n");
+  if (!fs.existsSync(INDEX_FILE)) fs.writeFileSync(INDEX_FILE, "[]\n", { mode: 0o600 });
+  if (!fs.existsSync(LAYOUTS_INDEX_FILE)) fs.writeFileSync(LAYOUTS_INDEX_FILE, "[]\n", { mode: 0o600 });
+  for (const file of [INDEX_FILE, LAYOUTS_INDEX_FILE]) {
+    try { fs.chmodSync(file, 0o600); } catch {}
+  }
 }
 
 function usesBlobStorage() {
@@ -174,7 +177,7 @@ function readLocalIndex() {
 
 function writeLocalIndex(feeds) {
   ensureStorage();
-  fs.writeFileSync(INDEX_FILE, `${JSON.stringify(feeds, null, 2)}\n`);
+  fs.writeFileSync(INDEX_FILE, `${JSON.stringify(feeds, null, 2)}\n`, { mode: 0o600 });
 }
 
 function readLocalLayoutsIndex() {
@@ -189,7 +192,7 @@ function readLocalLayoutsIndex() {
 
 function writeLocalLayoutsIndex(layouts) {
   ensureStorage();
-  fs.writeFileSync(LAYOUTS_INDEX_FILE, `${JSON.stringify(layouts, null, 2)}\n`);
+  fs.writeFileSync(LAYOUTS_INDEX_FILE, `${JSON.stringify(layouts, null, 2)}\n`, { mode: 0o600 });
 }
 
 async function readFeeds() {
@@ -226,7 +229,7 @@ async function persistFeedXml(slug, xml) {
   requireWritableStorage();
   if (!usesBlobStorage()) {
     ensureStorage();
-    fs.writeFileSync(path.join(FEEDS_DIR, `${slug}.xml`), xml);
+    fs.writeFileSync(path.join(FEEDS_DIR, `${slug}.xml`), xml, { mode: 0o600 });
     return null;
   }
 
@@ -383,6 +386,27 @@ function protectSensitiveRoute(req, res, pathname) {
   return policy ? enforceRateLimit(req, res, ...policy) : false;
 }
 
+function originMatchesRequest(req, origin) {
+  if (!origin) return true; // non-browser clients and same-origin form posts
+  try {
+    const parsed = new URL(origin);
+    const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const requestProto = forwardedProto || (process.env.VERCEL ? "https" : "http");
+    const host = String(req.headers.host || "").toLowerCase();
+    return ["http:", "https:"].includes(parsed.protocol) && parsed.protocol === `${requestProto}:` && parsed.host.toLowerCase() === host;
+  } catch {
+    return false;
+  }
+}
+
+function protectMutationOrigin(req, res) {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return false;
+  const origin = String(req.headers.origin || "").trim();
+  if (originMatchesRequest(req, origin)) return false;
+  sendError(res, 403, "Недопустимый источник запроса.");
+  return true;
+}
+
 function safeEqual(left, right) {
   const leftBuffer = Buffer.from(String(left));
   const rightBuffer = Buffer.from(String(right));
@@ -438,9 +462,14 @@ async function currentActor(req) {
     const user = await saasStore?.getUser(session.userId);
     return user && user.status !== "blocked" && user.sessionVersion === session.sessionVersion ? { ...session, user } : null;
   }
-  if (session.role === "manager") {
+  // Every staff session is revalidated on every request. Previously only
+  // managers were checked, allowing a deleted owner/admin staff session to
+  // retain privileges until the signed cookie expired.
+  if (session.staffId) {
     const staff = await saasStore?.getStaff(session.staffId);
-    return staff && staff.status === "active" && staff.sessionVersion === session.sessionVersion ? { ...session, ...staff } : null;
+    return staff && staff.status === "active" && staff.sessionVersion === session.sessionVersion && staff.role === session.role
+      ? { ...session, ...staff }
+      : null;
   }
   return session;
 }
@@ -745,7 +774,7 @@ async function syncPublishedFeed(record) {
     }
     record.releases = history.slice(0, 100);
     const tempPath = `${filePath}.${process.pid}.tmp`;
-    fs.writeFileSync(tempPath, result.xml);
+    fs.writeFileSync(tempPath, result.xml, { mode: 0o600 });
     fs.renameSync(tempPath, filePath);
     const publicationHistory = Array.isArray(record.history) ? record.history : [];
     const publicationVersion = Math.max(Number(record.publicationVersion) || 0, ...publicationHistory.map(item => Number(item.version) || 0)) + 1;
@@ -973,7 +1002,7 @@ async function notifyPublishedFeedFailure(record, error) {
 }
 
 function serveStatic(req, res, pathname) {
-  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/dashstack-theme.css','/grovia-workspace.css','/calendly-theme.css','/landing.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
+  if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/legal.html','/legal-documents.html','/cookie-consent.js','/cookie-consent.css','/layout-editor.js','/layout-editor.css','/listingflow-ui.css','/dashstack-theme.css','/grovia-workspace.css','/calendly-theme.css','/landing.css','/monitor-client.js','/usage-guide.js','/usage-guide.css','/robots.txt','/sitemap.xml'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : pathname === "/legal.html" ? path.join(ROOT, "legal-documents.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
@@ -1648,9 +1677,15 @@ async function handleRequest(req, res) {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mc.yandex.ru; connect-src 'self' https://mc.yandex.ru https://yandex.ru https://app.platega.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://app.platega.io https://pay.platega.io");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://mc.yandex.ru; connect-src 'self' https://mc.yandex.ru https://yandex.ru https://app.platega.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://app.platega.io https://pay.platega.io");
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === "/" && !url.searchParams.has("project") && !url.searchParams.has("page")) {
+      res.setHeader("X-Robots-Tag", "index, follow, max-image-preview:large");
+    }
+    if (String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim() === "https") {
+      res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
     const publicFeedMatch = url.pathname.match(/^\/f\/([a-z0-9а-яё-]+)\.(php|xml)$/i);
     const publicLayoutMatch = url.pathname.match(/^\/layouts\/([^/]+)$/i);
 
@@ -1662,7 +1697,10 @@ async function handleRequest(req, res) {
       return servePublicLayout(req, res, publicLayoutMatch[1]);
     }
 
-    if (url.pathname.startsWith("/api/")) return await handleApi(req, res, url);
+    if (url.pathname.startsWith("/api/")) {
+      if (protectMutationOrigin(req, res)) return;
+      return await handleApi(req, res, url);
+    }
     return serveStatic(req, res, decodeURIComponent(url.pathname));
   } catch (error) {
     return sendError(res, error.status || 500, error.message || "Server error");

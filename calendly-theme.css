@@ -781,6 +781,34 @@ body.client-ui .traffic-policy-toolbar {
   grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr) auto!important;
 }
 
+/* Release hardening: auth/landing are mutually exclusive with the workspace,
+   and the mobile shell must not inherit the fixed desktop frame above. */
+body.client-ui.auth-active #appShell,
+body.client-ui.landing-active #appShell { display:none!important; }
+body.client-ui.auth-active .topbar,
+body.client-ui.landing-active .topbar { display:none!important; }
+body.client-ui #themeToggle { display:none!important; }
+@media (max-width:760px) {
+  body.client-ui { min-width:0!important; overflow-x:hidden!important; }
+  body.client-ui .app,
+  body.client-ui .app.project-list-mode,
+  body.client-ui .app.feeds-mode,
+  body.client-ui .app.layouts-mode,
+  body.client-ui .app.validator-mode { display:block!important; width:100%!important; min-width:0!important; height:auto!important; min-height:100dvh!important; overflow:visible!important; }
+  body.client-ui .sidebar { position:fixed!important; z-index:100!important; top:0!important; left:0!important; width:278px!important; height:100dvh!important; transform:translateX(-102%)!important; overflow-y:auto!important; box-shadow:20px 0 50px rgba(17,56,94,.2)!important; }
+  body.client-ui .app.nav-open .sidebar,
+  body.client-ui .sidebar.open { transform:none!important; }
+  body.client-ui .topbar { position:sticky!important; z-index:30!important; top:0!important; left:0!important; right:0!important; width:100%!important; min-width:0!important; height:60px!important; min-height:60px!important; padding:0 14px!important; }
+  body.client-ui .mobile-menu-toggle { display:grid!important; place-items:center!important; }
+  body.client-ui .main { display:block!important; width:100%!important; min-width:0!important; min-height:calc(100dvh - 60px)!important; height:auto!important; padding:76px 14px 28px!important; overflow:visible!important; }
+  body.client-ui .workflow-save-bar { left:14px!important; right:14px!important; bottom:14px!important; width:auto!important; padding:10px!important; }
+  body.client-ui .workflow-save-bar .primary { width:100%!important; }
+  body.client-ui #layoutsPanel .layout-branding { display:block!important; }
+  body.client-ui #layoutsPanel .brand-preview,
+  body.client-ui #layoutsPanel .brand-source-panel,
+  body.client-ui #layoutsPanel .le-properties { width:100%!important; min-width:0!important; max-width:100%!important; margin:0 0 14px!important; }
+}
+
 /* Keep the plan workspace inside the available editor column. The source
    image can be much larger than the viewport; its intrinsic size must never
    push it underneath the inspector or create a second horizontal page. */

@@ -1,3 +1,7 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /data/
+Sitemap: https://listingflow.ru/sitemap.xml
 

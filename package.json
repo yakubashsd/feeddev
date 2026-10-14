@@ -17,6 +17,6 @@
   "dependencies": {
     "@vercel/blob": "^2.6.1",
     "fast-xml-parser": "^5.11.1",
-    "nodemailer": "^10.0.1"
+    "nodemailer": "^7.0.13"
   }
 }

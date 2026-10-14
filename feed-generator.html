@@ -3,9 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
-  <title>Генератор фидов недвижимости</title>
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="googlebot" content="index, follow, max-image-preview:large">
+  <meta name="description" content="ListingFlow помогает застройщикам и агентствам проверять, редактировать, выпускать и контролировать XML-фиды недвижимости для ЦИАН, Авито и Яндекс Недвижимости.">
+  <meta name="theme-color" content="#0444fc">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="ListingFlow">
+  <meta property="og:title" content="ListingFlow — XML-фиды недвижимости без ручной пересборки">
+  <meta property="og:description" content="Загрузите исходный XML, исправьте данные, выпустите отдельные фиды по ЖК и контролируйте публикацию в одном сервисе.">
+  <meta property="og:url" content="https://listingflow.ru/">
+  <meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://listingflow.ru/">
+  <title>ListingFlow — создание и мониторинг XML-фидов недвижимости</title>
   <link rel="icon" type="image/png" href="/assets/listingflow-mark.png">
   <link rel="preload" href="/assets/fonts/Circe-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <style>
@@ -4665,6 +4675,7 @@
 <body class="client-ui">
   <div id="bootScreen" role="status" aria-live="polite"><span class="boot-status">Проверяю доступ…</span></div>
   <main class="landing-screen" id="landingScreen" hidden>
+    <a class="landing-skip-link" href="#landingMain">Перейти к содержанию</a>
     <header class="landing-nav">
       <a class="landing-brand" href="/" aria-label="ListingFlow — на главную">
         <img src="/assets/listingflow-mark.png" alt="">
@@ -4676,57 +4687,72 @@
         <a href="#landingPrice">Тариф</a>
         <a href="#landingFaq">FAQ</a>
       </nav>
-      <button class="landing-nav-cta" type="button" data-landing-auth="register">Добавить фид <span aria-hidden="true">↗</span></button>
+      <div class="landing-nav-actions">
+        <button class="landing-login" type="button" data-landing-auth="login">Войти</button>
+        <button class="landing-nav-cta" type="button" data-landing-auth="register">Проверить XML <span aria-hidden="true">↗</span></button>
+      </div>
     </header>
 
-    <section class="landing-hero" aria-labelledby="landingTitle">
+    <section class="landing-hero" id="landingMain" aria-labelledby="landingTitle">
       <div class="landing-hero-copy">
-        <p class="landing-kicker">Сервис управления фидами</p>
-        <h1 id="landingTitle">Фиды, которые<br><span>доходят до площадки.</span></h1>
-        <p class="landing-lead">Создавайте, публикуйте и контролируйте XML‑фиды недвижимости из одного рабочего пространства. ListingFlow показывает проблему до того, как её заметит площадка.</p>
+        <p class="landing-kicker">XML‑фиды для застройщиков и агентств</p>
+        <h1 id="landingTitle">Подготовьте фид к публикации <span>без ручной пересборки XML.</span></h1>
+        <p class="landing-lead">Загрузите XML по ссылке или файлом. ListingFlow определит формат, сгруппирует объекты по ЖК, подсветит ошибки и выдаст постоянную ссылку для площадки.</p>
         <div class="landing-actions">
-          <button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Начать работу <span aria-hidden="true">→</span></button>
-          <a class="landing-button landing-button-secondary" href="#landingWorkflow"><span aria-hidden="true">▶</span> Посмотреть, как это работает</a>
+          <button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Проверить свой XML <span aria-hidden="true">→</span></button>
+          <a class="landing-button landing-button-secondary" href="#landingBenefits">Посмотреть возможности</a>
         </div>
-        <p class="landing-note">Один проект · генерация · публикация · мониторинг</p>
+        <p class="landing-note">ЦИАН · Авито Недвижимость · Яндекс Недвижимость</p>
       </div>
       <div class="landing-product-shot" aria-label="Пример рабочего пространства ListingFlow">
         <div class="landing-shot-top"><span class="landing-shot-brand"><img src="/assets/listingflow-mark.png" alt=""> ListingFlow</span><span class="landing-shot-action">＋ Добавить фид</span></div>
         <div class="landing-shot-body">
           <aside><strong>Рабочая область</strong><span class="is-active">▦ Фиды</span><span>⌁ Площадки</span><span>⌁ Мониторинг</span><span>✓ Проверка</span></aside>
-          <div class="landing-shot-content"><div class="landing-shot-heading"><div><b>Фиды проекта</b><small>Все источники под контролем</small></div><span>Состояние в реальном времени</span></div>
+          <div class="landing-shot-content"><div class="landing-shot-heading"><div><b>Фиды проекта</b><small>Источники и выпуски в одном месте</small></div><span>Проверка по расписанию</span></div>
             <div class="landing-feed-row"><i class="landing-feed-icon">⌂</i><div><b>Жилая недвижимость</b><small>XML · готов к публикации</small></div><em class="status-live">● Опубликован</em><span>›</span></div>
             <div class="landing-feed-row"><i class="landing-feed-icon">▤</i><div><b>Новостройки</b><small>XML · обновляется</small></div><em class="status-blue">● В обработке</em><span>›</span></div>
             <div class="landing-feed-row"><i class="landing-feed-icon">⌁</i><div><b>Коммерческая недвижимость</b><small>XML · нужна проверка</small></div><em class="status-error">● Требует внимания</em><span>›</span></div>
-            <div class="landing-shot-foot"><strong>Публикация на площадки</strong><span>ЦИАН</span><span>Авито</span><span>Яндекс</span><span>Домклик</span></div>
+            <div class="landing-shot-foot"><strong>Форматы публикации</strong><span>ЦИАН</span><span>Авито</span><span>Яндекс Недвижимость</span></div>
           </div>
         </div>
       </div>
     </section>
 
+    <section class="landing-proof" aria-label="Проверяемые возможности ListingFlow">
+      <div><strong>3</strong><span>готовых формата площадок</span></div>
+      <div><strong>до 100</strong><span>версий выпуска с откатом</span></div>
+      <div><strong>от 30 мин</strong><span>между синхронизациями</span></div>
+      <div><strong>1 ссылка</strong><span>на каждый опубликованный фид</span></div>
+    </section>
+
     <section class="landing-section" id="landingBenefits" aria-labelledby="benefitsTitle">
-      <div class="landing-section-heading"><p class="landing-kicker">Всё необходимое в одном месте</p><h2 id="benefitsTitle">От исходного XML<br>до стабильной публикации.</h2></div>
+      <div class="landing-section-heading"><div><p class="landing-kicker">Вместо таблиц, чатов и ручных правок</p><h2 id="benefitsTitle">Один кабинет для подготовки и выпуска фидов.</h2></div><p class="landing-section-intro">ListingFlow создан специально для недвижимости: понимает площадки, жилые комплексы, квартиры и планировки — без универсальных конструкторов и ручной работы с тегами.</p></div>
       <div class="landing-benefits">
-        <article><span class="landing-feature-icon">▤</span><h3>Генерация XML‑фидов</h3><p>Создавайте корректные фиды из своих объектов с гибкими настройками и понятной структурой.</p></article>
-        <article><span class="landing-feature-icon">↑</span><h3>Публикация на площадки</h3><p>Одна ссылка для каждой площадки. Обновления и версии остаются под вашим контролем.</p></article>
-        <article><span class="landing-feature-icon">⌁</span><h3>Валидация и мониторинг</h3><p>Проверяйте формат, следите за выгрузкой и оперативно узнавайте об ошибках.</p></article>
+        <article><span class="landing-feature-icon">▤</span><h3>Разделяйте фид по ЖК</h3><p>Если в исходном XML несколько проектов, выберите нужный ЖК и выпустите для него отдельный управляемый фид.</p></article>
+        <article><span class="landing-feature-icon">✓</span><h3>Исправляйте данные массово</h3><p>Отфильтруйте квартиры, замените значения сразу у группы объектов и проверьте обязательные поля до публикации.</p></article>
+        <article><span class="landing-feature-icon">↗</span><h3>Передавайте постоянную ссылку</h3><p>Площадка получает один адрес XML. Новые версии публикуются по нему же, а при необходимости выпуск можно откатить.</p></article>
       </div>
     </section>
 
     <section class="landing-bento" id="landingWorkflow" aria-labelledby="workflowTitle">
-      <div class="landing-bento-main"><p class="landing-kicker">Понятный рабочий процесс</p><h2 id="workflowTitle">От загрузки до результата<br>за несколько шагов.</h2><div class="landing-steps"><div><b>01</b><strong>Добавьте источник</strong><span>Ссылка или XML‑файл</span></div><div><b>02</b><strong>Настройте фид</strong><span>Поля, объекты и правила</span></div><div><b>03</b><strong>Опубликуйте</strong><span>Готовая ссылка для площадки</span></div></div></div>
-      <div class="landing-bento-side"><span class="landing-feature-icon">✓</span><h3>Надёжная передача данных</h3><p>Проверяем структуру и состав фида, чтобы ваши объявления доходили до площадки в нужном формате.</p><div class="landing-xml-visual"><b>XML</b><span>→</span><i>●</i><i>●</i><i>●</i></div></div>
+      <div class="landing-bento-main"><p class="landing-kicker">Путь к рабочему фиду</p><h2 id="workflowTitle">От исходника до публикации без лишних шагов.</h2><div class="landing-steps"><div><b>01</b><strong>Загрузите XML</strong><span>По ссылке или файлом</span></div><div><b>02</b><strong>Выберите ЖК</strong><span>Оставьте нужные объекты</span></div><div><b>03</b><strong>Исправьте данные</strong><span>Поля и планировки</span></div><div><b>04</b><strong>Опубликуйте</strong><span>Получите постоянную ссылку</span></div></div></div>
+      <div class="landing-bento-side"><span class="landing-feature-icon">⌁</span><h3>Ошибка не останется незамеченной</h3><p>Мониторинг проверяет источник и опубликованный XML. При сбое вы увидите причину в кабинете и сможете подключить уведомления в Telegram.</p><div class="landing-xml-visual"><b>XML</b><span>→</span><i>✓</i><i>!</i><i>↻</i></div></div>
     </section>
 
-    <section class="landing-price" id="landingPrice" aria-labelledby="priceTitle"><div><p class="landing-kicker">Простой тариф без лишнего</p><h2 id="priceTitle">5 000 ₽ <small>за проект / 30 дней</small></h2><p>Редактор, проверка, публикация фидов, мониторинг и уведомления — в одном доступе.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Создать рабочую область <span aria-hidden="true">→</span></button></section>
+    <section class="landing-difference" aria-labelledby="differenceTitle">
+      <div class="landing-difference-copy"><p class="landing-kicker">Почему ListingFlow</p><h2 id="differenceTitle">Не просто конвертер XML, а рабочий процесс команды.</h2><p>Исходный файл остаётся нетронутым. Правки, настройки площадок, версии выпуска и состояние фидов хранятся в проекте и доступны коллегам из разных сессий.</p><a href="#landingPrice">Посмотреть состав тарифа <span aria-hidden="true">→</span></a></div>
+      <div class="landing-checklist" role="list"><div role="listitem"><span>01</span><strong>Исходный XML сохраняется для сравнения и отката</strong></div><div role="listitem"><span>02</span><strong>Ручные правки сохраняются между синхронизациями</strong></div><div role="listitem"><span>03</span><strong>Проект и фиды синхронизируются между коллегами</strong></div><div role="listitem"><span>04</span><strong>История выпусков показывает, что и когда опубликовано</strong></div></div>
+    </section>
 
-    <section class="landing-faq" id="landingFaq" aria-labelledby="faqTitle"><div class="landing-section-heading"><p class="landing-kicker">Вопросы перед стартом</p><h2 id="faqTitle">Всё прозрачно<br>до начала работы.</h2></div><div class="landing-faq-list"><details><summary>Для каких площадок подходит ListingFlow?</summary><p>Сервис помогает готовить и контролировать XML‑фиды для популярных площадок недвижимости. Формат и состояние каждого источника видны в рабочей области.</p></details><details><summary>Можно ли начать с уже готового XML?</summary><p>Да. Добавьте постоянную ссылку или загрузите XML — сервис определит формат и покажет результат проверки.</p></details><details><summary>Как я узнаю об ошибке?</summary><p>Ошибки видны в карточке фида и в мониторинге. Для каждого проекта можно подключить уведомления в Telegram.</p></details></div></section>
+    <section class="landing-price" id="landingPrice" aria-labelledby="priceTitle"><div><p class="landing-kicker">Один понятный тариф</p><h2 id="priceTitle">5 000 ₽ <small>за проект / 30 дней</small></h2><p>Фиды проекта, массовые правки, оформление планировок, проверка, постоянные ссылки, история выпусков и мониторинг.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Начать с первого фида <span aria-hidden="true">→</span></button></section>
 
-    <section class="landing-final"><div><img src="/assets/listingflow-mark.png" alt=""><h2>Начните работать<br>с фидами увереннее.</h2><p>Один понятный сервис вместо разрозненных таблиц, ссылок и ручных проверок.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Добавить первый фид <span aria-hidden="true">→</span></button></section>
-    <footer class="landing-footer"><span>© ListingFlow</span><span>Генерация и мониторинг фидов</span><a href="/legal.html">Документы</a></footer>
+    <section class="landing-faq" id="landingFaq" aria-labelledby="faqTitle"><div class="landing-section-heading"><div><p class="landing-kicker">Вопросы перед стартом</p><h2 id="faqTitle">Всё важное — до загрузки фида.</h2></div></div><div class="landing-faq-list"><details><summary>Какие форматы поддерживает ListingFlow?</summary><p>Постоянные публикации доступны для ЦИАН, Авито Недвижимости и Яндекс Недвижимости. Для Домклик можно подготовить и скачать тестовый XML; постоянная публикация откроется после подтверждения схемы площадкой.</p></details><details><summary>Что делать, если в одном XML несколько жилых комплексов?</summary><p>После загрузки ListingFlow сгруппирует объекты по ЖК. Вы сможете выбрать конкретный проект, отредактировать только его квартиры и выпустить отдельный фид.</p></details><details><summary>Изменится ли мой исходный файл?</summary><p>Нет. ListingFlow хранит исходную версию отдельно. Изменения применяются к рабочей копии и опубликованным выпускам внутри проекта.</p></details><details><summary>Гарантирует ли сервис приём фида площадкой?</summary><p>Нет: финальное решение всегда принимает площадка. ListingFlow проверяет структуру и обязательные поля по встроенным правилам, чтобы найти типовые ошибки до отправки.</p></details><details><summary>Как я узнаю, что источник или публикация перестали работать?</summary><p>Состояние видно в списке фидов и разделе мониторинга. Для проекта можно подключить Telegram-бота и получать уведомления о сбоях.</p></details><details><summary>Что входит в 5 000 ₽?</summary><p>Один проект на 30 дней: работа с его фидами и объектами, массовые правки, оформление планировок, публикация, версии, мониторинг и техническая поддержка.</p></details></div></section>
+
+    <section class="landing-final"><div><img src="/assets/listingflow-mark.png" alt=""><h2>Загрузите фид и увидьте, что требует исправления.</h2><p>Регистрация открывает рабочую область: добавьте источник, выберите ЖК и пройдите весь путь до готовой ссылки.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Проверить свой XML <span aria-hidden="true">→</span></button></section>
+    <footer class="landing-footer"><span>© ListingFlow</span><span>Создание и мониторинг XML‑фидов недвижимости</span><span><button type="button" data-landing-auth="login">Войти</button><a href="/legal.html">Документы</a></span></footer>
   </main>
   <section class="auth-screen" id="authScreen" hidden>
-    <form class="auth-card" id="loginForm">
+    <form class="auth-card" id="loginForm" novalidate>
       <div class="lf-brand-lockup" aria-label="ListingFlow"><span class="lf-brand-mark" aria-hidden="true"><img src="/assets/listingflow-mark.png" alt=""></span><strong class="lf-brand-name">Listing<span>Flow</span></strong></div>
       <h1>Вход в сервис</h1>
       <p class="auth-description">Введите данные доступа к рабочей области фидов.</p>
@@ -6112,6 +6138,8 @@
       landingScreen.hidden = !showLanding;
       authScreen.hidden = showLanding;
       appShell.hidden = true;
+      document.body.classList.add("auth-active");
+      document.body.classList.toggle("landing-active", showLanding);
       if (runtimeMode === "external" && authFormMode !== "reset") setAuthFormMode("login");
       loginError.textContent = message;
       document.querySelector("#loginPassword").value = "";
@@ -6123,6 +6151,7 @@
       landingScreen.hidden = true;
       authScreen.hidden = true;
       appShell.hidden = false;
+      document.body.classList.remove("auth-active", "landing-active");
       const repairedLayouts = repairLegacyProfitbaseLayouts();
       renderAll();
       if (repairedLayouts) showToast(`Обновлены планировки квартир: ${repairedLayouts}`);
@@ -6523,7 +6552,12 @@
         const register = runtimeMode === "external" && authFormMode === "register";
         const forgot = runtimeMode === "external" && authFormMode === "forgot";
         const reset = runtimeMode === "external" && authFormMode === "reset";
+        const username = document.querySelector("#loginUsername").value.trim();
         const password = document.querySelector("#loginPassword").value;
+        if (!username && !reset) throw new Error(register || forgot ? "Укажите email." : "Укажите логин.");
+        if ((register || reset) && (password.length < 12 || password.length > 128)) throw new Error("Пароль должен содержать от 12 до 128 символов.");
+        if (!register && !forgot && !reset && !password) throw new Error("Укажите пароль.");
+        if (register && !document.querySelector("#loginName").value.trim()) throw new Error("Укажите имя.");
         if (register && !document.querySelector("#offerAcceptance").checked) throw new Error("Для регистрации необходимо принять публичную оферту.");
         if (register && !document.querySelector("#personalDataConsent").checked) throw new Error("Для регистрации отдельно подтвердите согласие на обработку персональных данных.");
         if (reset && password !== document.querySelector("#loginPasswordConfirm").value) throw new Error("Пароли не совпадают.");
@@ -6533,8 +6567,8 @@
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username: document.querySelector("#loginUsername").value.trim(),
-            email: document.querySelector("#loginUsername").value.trim(),
+            username,
+            email: username,
             name: document.querySelector("#loginName").value.trim(),
             password,
             acceptedOffer: register ? document.querySelector("#offerAcceptance").checked : false,
@@ -11957,18 +11991,11 @@ ${photos}
     });
 
     const themeButton = document.querySelector("#themeToggle");
-    let savedTheme = "light";
-    try { savedTheme = localStorage.getItem("listingflow-theme") === "dark" ? "dark" : "light"; } catch {}
-    document.body.dataset.theme = savedTheme;
-    themeButton.setAttribute("aria-pressed", String(savedTheme === "dark"));
-    themeButton.setAttribute("aria-label", savedTheme === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
-    themeButton.addEventListener("click", () => {
-      const next = document.body.dataset.theme === "dark" ? "light" : "dark";
-      document.body.dataset.theme = next;
-      try { localStorage.setItem("listingflow-theme", next); } catch {}
-      themeButton.setAttribute("aria-pressed", String(next === "dark"));
-      themeButton.setAttribute("aria-label", next === "dark" ? "Включить светлую тему" : "Включить тёмную тему");
-    });
+    // The product ships one light theme. Remove stale dark-theme state from
+    // older sessions so it cannot reintroduce the legacy palette.
+    document.body.dataset.theme = "light";
+    try { localStorage.removeItem("listingflow-theme"); } catch {}
+    themeButton?.setAttribute("aria-pressed", "false");
 
     loginForm.addEventListener("submit", submitLogin);
     document.querySelector("#logoutButton").addEventListener("click", logout);

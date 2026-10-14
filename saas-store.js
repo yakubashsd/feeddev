@@ -12,6 +12,8 @@ const DEMO_UNLIMITED_EMAIL = "demo@listingflow.ru";
 const FILE_NAME = "saas-store.enc";
 const BLOB_PATH = "private/saas-store.enc";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 12;
+const MAX_PASSWORD_LENGTH = 128;
 
 function emptyState() { return { version: 3, users: [], staff: [], projects: [], payments: [], passwordResets: [], paymentLogs: [], audit: [] }; }
 function migrateState(value) {
@@ -113,7 +115,7 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
   async function register({ email, password, name, company = "", phone = "", acceptedOffer = false, acceptedPersonalData = false, offerVersion = "2026-09-22", privacyVersion = "2026-09-22", consentVersion = "2026-09-22" }) {
     email = normalizeEmail(email); name = String(name || "").trim();
     if (!EMAIL_RE.test(email)) throw new Error("Укажите корректный email.");
-    if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов.");
+    if (String(password).length < MIN_PASSWORD_LENGTH || String(password).length > MAX_PASSWORD_LENGTH) throw new Error(`Пароль должен содержать от ${MIN_PASSWORD_LENGTH} до ${MAX_PASSWORD_LENGTH} символов.`);
     if (!name) throw new Error("Укажите имя.");
     if (acceptedOffer !== true) throw new Error("Для регистрации необходимо принять публичную оферту.");
     if (acceptedPersonalData !== true) throw new Error("Отметьте отдельное согласие на обработку персональных данных.");
@@ -148,7 +150,7 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     return result;
   }
   async function resetPassword(token, password) {
-    if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов.");
+    if (String(password).length < MIN_PASSWORD_LENGTH || String(password).length > MAX_PASSWORD_LENGTH) throw new Error(`Пароль должен содержать от ${MIN_PASSWORD_LENGTH} до ${MAX_PASSWORD_LENGTH} символов.`);
     const tokenHash = crypto.createHash("sha256").update(String(token || "")).digest("hex");
     return mutate(async state => {
       const reset = state.passwordResets.find(item => item.tokenHash === tokenHash && new Date(item.expiresAt) > new Date());
@@ -277,7 +279,7 @@ async function deleteProject(userId, projectId) {
     return mutate(async state => { const project = state.projects.find(item => item.id === projectId); if (!project) throw new Error("Проект не найден."); if (changes.status && ["active", "archived"].includes(changes.status)) project.status = changes.status; if (changes.name !== undefined && String(changes.name).trim()) project.name = String(changes.name).trim().slice(0, 100); project.updatedAt = new Date().toISOString(); audit(state, actor, "update", "project", project.id, { status: project.status }); return project; });
   }
   async function createStaff({ email, password, name, role = "manager" }, actor = "owner") {
-    email = normalizeEmail(email); if (!EMAIL_RE.test(email)) throw new Error("Укажите корректный email."); if (String(password).length < 8) throw new Error("Пароль должен содержать не менее 8 символов."); if (!String(name || "").trim()) throw new Error("Укажите имя.");
+    email = normalizeEmail(email); if (!EMAIL_RE.test(email)) throw new Error("Укажите корректный email."); if (String(password).length < MIN_PASSWORD_LENGTH || String(password).length > MAX_PASSWORD_LENGTH) throw new Error(`Пароль должен содержать от ${MIN_PASSWORD_LENGTH} до ${MAX_PASSWORD_LENGTH} символов.`); if (!String(name || "").trim()) throw new Error("Укажите имя.");
     return mutate(async state => { if (state.users.some(user => user.email === email) || state.staff.some(user => user.email === email)) throw new Error("Аккаунт с таким email уже существует."); const staff = { id: crypto.randomUUID(), email, name: String(name).trim().slice(0, 120), role: role === "owner" ? "owner" : "manager", status: "active", passwordHash: hashPassword(password), createdAt: new Date().toISOString() }; state.staff.push(staff); audit(state, actor, "create", "staff", staff.id, { role: staff.role }); return publicStaff(staff); });
   }
   async function deleteStaff(staffId, actor = "owner") { return mutate(async state => { const before = state.staff.length; state.staff = state.staff.filter(item => item.id !== staffId); if (state.staff.length === before) return false; audit(state, actor, "delete", "staff", staffId); return true; }); }

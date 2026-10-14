@@ -74,7 +74,7 @@ const downloadBuffer=(url,maxBytes)=>downloadResource(url,{maxBytes,binary:true}
 function createMonitor({file,notify=async()=>{},load=download,loadImage=downloadBuffer,intervalMs=3600000}) {
   let busy=false;
   const read=()=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{};
-  const write=data=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(data));fs.renameSync(file+'.tmp',file);};
+  const write=data=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(data),{mode:0o600});fs.renameSync(file+'.tmp',file);try{fs.chmodSync(file,0o600);}catch{}};
   function replace(project,feeds,{maxFeeds=80}={}){
     const limit=Number(maxFeeds)===-1?Infinity:Math.max(1,Number(maxFeeds)||80);
     if(!Array.isArray(feeds)||feeds.length>limit)throw Error(`Допускается до ${limit} фидов`);
