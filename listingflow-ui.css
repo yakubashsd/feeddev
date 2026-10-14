@@ -63,7 +63,7 @@ body.admin-ui[data-theme="dark"] th{background:var(--lf-surface-2)!important;col
 .lf-brand-mark svg{width:19px;height:19px;stroke-width:2}
 .lf-brand-name{color:#fff;font-size:21px;font-weight:800;letter-spacing:0;white-space:nowrap}.lf-brand-name span{color:var(--lf-accent)}
 .aggregator-mark{display:grid;place-items:center;width:24px;height:24px;flex:0 0 24px;border-radius:7px;background:#eef0f3;color:#222833;font-size:10px;font-weight:800;line-height:1}
-.aggregator-mark.cian{background:#e8f0ff;color:#1769e8}.aggregator-mark.yandex{background:#fff1d9;color:#d79300}.aggregator-mark.domclick{background:#e6f7ee;color:#199659}.aggregator-mark.auto{background:#eef0f3;color:#707785}
+.aggregator-mark.cian{background:#e8f0ff;color:#1769e8}.aggregator-mark.yandex{background:#fff1d9;color:#d79300}.aggregator-mark.domclick{background:#e6f7ee;color:#199659}.aggregator-mark.auto{background:#eef0f3;color:#707785}.aggregator-mark.auto svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .aggregator-mark.avito{grid-template-columns:repeat(2,5px);grid-template-rows:repeat(2,5px);gap:2px;background:#fff}.aggregator-mark.avito i{display:block;width:5px;height:5px;border-radius:50%;background:#2979ff}.aggregator-mark.avito i:nth-child(2){background:#a23cff}.aggregator-mark.avito i:nth-child(3){background:#11c76f}.aggregator-mark.avito i:nth-child(4){background:#ff425b}
 
 /* Client application shell */

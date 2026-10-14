@@ -4719,18 +4719,18 @@
     </section>
 
     <section class="landing-proof" aria-label="Проверяемые возможности ListingFlow">
-      <div><strong>3</strong><span>готовых формата площадок</span></div>
-      <div><strong>до 100</strong><span>версий выпуска с откатом</span></div>
-      <div><strong>от 30 мин</strong><span>между синхронизациями</span></div>
-      <div><strong>1 ссылка</strong><span>на каждый опубликованный фид</span></div>
+      <div><span class="landing-proof-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m8 10 4 2 4-2M12 12v5"/></svg></span><strong>3</strong><span>готовых формата площадок</span></div>
+      <div><span class="landing-proof-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-4 3 2 4-6"/></svg></span><strong>до 100</strong><span>версий выпуска с откатом</span></div>
+      <div><span class="landing-proof-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span><strong>от 30 мин</strong><span>между синхронизациями</span></div>
+      <div><span class="landing-proof-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M8 16h8a4 4 0 0 0 0-8H8a4 4 0 0 0 0 8Z"/><path d="M8 12h8M12 8v8"/></svg></span><strong>1 ссылка</strong><span>на каждый опубликованный фид</span></div>
     </section>
 
     <section class="landing-section" id="landingBenefits" aria-labelledby="benefitsTitle">
       <div class="landing-section-heading"><div><p class="landing-kicker">Вместо таблиц, чатов и ручных правок</p><h2 id="benefitsTitle">Один кабинет для подготовки и выпуска фидов.</h2></div><p class="landing-section-intro">ListingFlow создан специально для недвижимости: понимает площадки, жилые комплексы, квартиры и планировки — без универсальных конструкторов и ручной работы с тегами.</p></div>
       <div class="landing-benefits">
-        <article><span class="landing-feature-icon">▤</span><h3>Разделяйте публикации по ЖК</h3><p>Если в источнике несколько проектов, выберите нужный ЖК и выпустите для него отдельный управляемый фид.</p></article>
-        <article><span class="landing-feature-icon">✓</span><h3>Исправляйте данные массово</h3><p>Отфильтруйте квартиры, замените значения сразу у группы объектов и проверьте обязательные поля до публикации.</p></article>
-        <article><span class="landing-feature-icon">↗</span><h3>Передавайте постоянную ссылку</h3><p>Площадка получает один стабильный адрес. Новые версии публикуются по нему же, а при необходимости выпуск можно откатить.</p></article>
+        <article><span class="landing-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg></span><h3>Разделяйте публикации по ЖК</h3><p>Если в источнике несколько проектов, выберите нужный ЖК и выпустите для него отдельный управляемый фид.</p></article>
+        <article><span class="landing-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 12h9M5 18h6"/><path d="m17 14 3 3-3 3m3-3h-7"/></svg></span><h3>Исправляйте данные массово</h3><p>Отфильтруйте квартиры, замените значения сразу у группы объектов и проверьте обязательные поля до публикации.</p></article>
+        <article><span class="landing-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M14 5h5v5M19 5l-8 8"/><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg></span><h3>Передавайте постоянную ссылку</h3><p>Площадка получает один стабильный адрес. Новые версии публикуются по нему же, а при необходимости выпуск можно откатить.</p></article>
       </div>
     </section>
 
@@ -5718,12 +5718,13 @@
     };
     function platformMark(platform = "auto") {
       const normalized = platformProfiles[platform] ? platform : "auto";
-      const letters = { cian: "Ц", avito: "А", yandex: "Я", domclick: "Д", auto: "↗" };
+      const letters = { cian: "Ц", avito: "А", yandex: "Я", domclick: "Д", auto: "" };
       if (platformIcons[normalized]) {
         const fallback = letters[normalized];
         return `<span class="aggregator-mark ${normalized} has-favicon" aria-hidden="true"><img src="${platformIcons[normalized]}" alt="" loading="lazy" onerror="this.remove();this.parentElement.textContent='${fallback}'"></span>`;
       }
       if (normalized === "avito") return '<span class="aggregator-mark avito" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+      if (normalized === "auto") return '<span class="aggregator-mark auto" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8"/><path d="M5 5h4M5 9v10h10v-4"/></svg></span>';
       return `<span class="aggregator-mark ${normalized}" aria-hidden="true">${letters[normalized]}</span>`;
     }
     const defaultDescription = "Продается квартира в современном жилом комплексе в районе Лесобазы. Для жителей предусмотрены детские и спортивные площадки, приватные дворы-парки и комфортные зоны отдыха. Квартиры отличаются высокими потолками, панорамными окнами и предчистовой отделкой.";

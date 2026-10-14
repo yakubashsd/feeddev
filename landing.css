@@ -29,6 +29,11 @@ html{scroll-behavior:smooth;overflow-x:clip}body.client-ui:has(.landing-screen:n
 @media(max-width:1080px){.landing-channels{grid-template-columns:1fr;padding-block:64px}.landing-channels-copy{max-width:760px}}
 @media(max-width:720px){.landing-branding-showcase{padding:54px 0 64px}.landing-branding-visual{padding:10px;border-radius:12px}.landing-channels{padding:54px 0 64px}.landing-channel-chart{padding:18px 14px}.landing-chart-row{grid-template-columns:100px minmax(0,1fr) 34px;gap:8px}}
 
+/* Open-source Lucide-style marks keep the proof strip crisp and self-hosted. */
+.landing-proof-icon{display:grid;place-items:center;width:38px;height:38px;margin-bottom:8px;border:1px solid var(--landing-line);border-radius:10px;background:var(--landing-soft);color:var(--landing-blue)}
+.landing-proof-icon svg,.landing-feature-icon svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.landing-feature-icon svg{width:24px;height:24px}
+
 /* The legacy workspace uses a fixed, non-scrolling frame. The public landing
    page is a document and must own the viewport scroll instead. */
 body.client-ui:has(.landing-screen:not([hidden])){height:auto!important;min-height:100%;overflow-x:clip!important;overflow-y:auto!important}
