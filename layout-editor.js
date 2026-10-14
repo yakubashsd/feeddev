@@ -70,7 +70,7 @@
   const layerState=document.createElement('input');layerState.id='templateCanvasColor';layerState.type='color';layerState.value='#ffffff';layerState.hidden=true;root.append(layerState);
   const opacityState=document.createElement('input');opacityState.id='templateCanvasOpacity';opacityState.type='hidden';opacityState.value='100';root.append(opacityState);
   const fontState=document.createElement('input');fontState.id='templateFontFamily';fontState.type='hidden';fontState.value='Circe';root.append(fontState);
-  let selected = 'layout', selectedCustomId='', textTarget = document.querySelector('#templateHeadline'), drag = null, zoom=1;
+  let selected = 'layout', selectedCustomId='', textTarget = document.querySelector('#templateHeadline'), drag = null, zoom=1, fitMode=true;
   let spaceHeld=false,pan=null;
   let projectFonts=[];
   // The project snapshot is the durable source for custom fonts. IndexedDB is
@@ -176,7 +176,7 @@
   document.querySelector('#le-redo').onclick=()=>travel(future,history);
   document.querySelector('#le-preview').onclick=()=>brandPreviewImages?openBrandPreviewDialog():showToast('Добавьте планировку или графическую подложку для предпросмотра');
   toolbar.addEventListener('click',e=>{const add=e.target.closest('[data-add-layer]');if(add){if(readLayers().length>=40){showToast('Достигнут предел: 40 дополнительных слоёв');return}baseline=snapshot();const type=add.dataset.addLayer,id=`layer-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,layers=readLayers();layers.push({id,type,name:type==='text'?`Текст ${layers.filter(x=>x.type==='text').length+1}`:`Фигура ${layers.filter(x=>x.type==='rect').length+1}`,text:'Новый текст',x:type==='text'?12:8,y:type==='text'?72:10,width:type==='text'?55:34,height:type==='text'?14:18,fontSize:36,color:'#11151a',fill:'#4f7dff',opacity:100,weight:700});writeLayers(layers);chooseCustom(id);redraw();commit();properties.querySelector('[data-prop="text"]')?.focus();return}if(e.target.closest('#le-zoom-in'))setZoom(zoom+.1);if(e.target.closest('#le-zoom-out'))setZoom(zoom-.1);if(e.target.closest('#le-fit'))fitCanvas();if(e.target.closest('#le-grid')){grid.hidden=!grid.hidden;e.target.closest('#le-grid').setAttribute('aria-pressed',String(!grid.hidden));stage.classList.toggle('show-grid',!grid.hidden)}if(e.target.closest('#le-export')){redraw();canvas.toBlob(blob=>{if(!blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`listingflow-layout-${new Date().toISOString().slice(0,10)}.png`;a.click();URL.revokeObjectURL(a.href)},'image/png')}});
-  function setZoom(value){zoom=Math.max(.25,Math.min(2,Math.round(value*100)/100));canvas.classList.toggle('le-fit-mode',zoom<=1);canvas.style.maxWidth='none';canvas.style.maxHeight='none';canvas.style.width=`${Math.round(canvas.width*zoom)}px`;canvas.style.height='auto';toolbar.querySelector('.le-zoom-value').textContent=`${Math.round(zoom*100)}%`;selectionBox()}
+  function setZoom(value, {fit=false} = {}){zoom=Math.max(.25,Math.min(2,Math.round(value*100)/100));fitMode=fit;canvas.classList.toggle('le-fit-mode',fitMode);canvas.style.maxWidth='none';canvas.style.maxHeight='none';canvas.style.width=`${Math.round(canvas.width*zoom)}px`;canvas.style.height='auto';toolbar.querySelector('.le-zoom-value').textContent=`${Math.round(zoom*100)}%`;selectionBox()}
   function fitCanvas(){
     if(!canvas.width||!canvas.height||!stage.clientWidth)return;
     // The editor can be opened after its panel was initially hidden. In that
@@ -184,9 +184,9 @@
     // keeps its intrinsic image size, which makes the right side disappear
     // behind the inspector. Fit against both dimensions whenever the stage or
     // the rendered image changes.
-    const availableWidth=Math.max(280,stage.clientWidth-32);
-    const availableHeight=Math.max(280,Math.min(560,window.innerHeight-300));
-    setZoom(Math.min(1,availableWidth/canvas.width,availableHeight/canvas.height));
+    const availableWidth=Math.max(1,stage.clientWidth-32);
+    const availableHeight=Math.max(1,stage.clientHeight-32);
+    setZoom(Math.min(1,availableWidth/canvas.width,availableHeight/canvas.height), {fit:true});
   }
   document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.matches('input,textarea,select,button')){spaceHeld=true;e.preventDefault()}});
   document.addEventListener('keyup',e=>{if(e.code==='Space')spaceHeld=false});
@@ -235,9 +235,9 @@
   });
   new ResizeObserver(selectionBox).observe(canvas);
   new MutationObserver(()=>{
-    if(projectKey!==activeBrandProjectKey){projectKey=activeBrandProjectKey;history.length=0;future.length=0;selectedCustomId='';selected='layout';baseline=snapshot();buttons();renderLayerTree();renderInspector();hydrateProjectFonts();if(zoom<=1)requestAnimationFrame(fitCanvas);}
-    if(zoom<=1)requestAnimationFrame(fitCanvas);
+    if(projectKey!==activeBrandProjectKey){projectKey=activeBrandProjectKey;history.length=0;future.length=0;selectedCustomId='';selected='layout';baseline=snapshot();buttons();renderLayerTree();renderInspector();hydrateProjectFonts();if(fitMode)requestAnimationFrame(fitCanvas);}
+    if(fitMode)requestAnimationFrame(fitCanvas);
     selectionBox();
   }).observe(canvas,{attributes:true,attributeFilter:['width','height']});
-  choose('layout');renderLayerTree();hydrateProjectFonts();redraw();requestAnimationFrame(fitCanvas);new ResizeObserver(()=>{if(zoom<1)fitCanvas()}).observe(stage);
+  choose('layout');renderLayerTree();hydrateProjectFonts();redraw();requestAnimationFrame(fitCanvas);new ResizeObserver(()=>{if(fitMode)fitCanvas()}).observe(stage);
 })();

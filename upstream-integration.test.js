@@ -116,6 +116,14 @@ test("layout editor applies the size value and exposes a working canvas resize h
   assert.match(html, /\["\[", "\]"\]/);
 });
 
+test("layout editor fits the background by default but keeps manual zoom usable", () => {
+  assert.match(layoutEditor, /zoom=1, fitMode=true/);
+  assert.match(layoutEditor, /canvas\.classList\.toggle\('le-fit-mode',fitMode\)/);
+  assert.match(layoutEditor, /setZoom\(Math\.min\(1,availableWidth\/canvas\.width,availableHeight\/canvas\.height\), \{fit:true\}\)/);
+  assert.match(layoutEditor, /if\(fitMode\)requestAnimationFrame\(fitCanvas\)/);
+  assert.match(layoutEditor, /new ResizeObserver\(\(\)=>\{if\(fitMode\)fitCanvas\(\)\}\)\.observe\(stage\)/);
+});
+
 test("layout preview really scales a plan without a backdrop", () => {
   const calls = [];
   const context = vm.createContext({
