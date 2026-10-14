@@ -17,6 +17,10 @@ test("project drafts are encrypted, isolated and replaced atomically", async () 
       store.put(userId, projectId, { draft: "second", count: 2 })
     ]);
     assert.deepEqual((await store.get(userId, projectId)).state, { draft: "second", count: 2 });
+    // A fresh process/browser session reading the same server data directory
+    // must receive the exact saved project snapshot.
+    const secondSessionStore = createProjectStateStore({ dataDir: dir, secret: "project-secret" });
+    assert.deepEqual((await secondSessionStore.get(userId, projectId)).state, { draft: "second", count: 2 });
     const raw = fs.readFileSync(path.join(dir, "project-state", `${userId}-${projectId}.enc`), "utf8");
     assert.equal(raw.includes("second"), false);
     assert.equal(await store.remove(userId, projectId), true);

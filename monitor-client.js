@@ -8,6 +8,11 @@
   if (!monitorPanel || !feedsNav || typeof saveMonitoredFeeds !== 'function') return;
   const localSave=saveMonitoredFeeds;
   let ready=false,queue=Promise.resolve();
+  const storeServerFeeds=feeds=>{
+    if(typeof window!=='undefined') window.listingFlowServerMonitorFeeds=Array.isArray(feeds)?feeds:[];
+    if(runtimeMode!=='external') localSave(feeds);
+    if(typeof renderMonitorNotificationSettings==='function') renderMonitorNotificationSettings();
+  };
   const endpoint=()=>'/api/monitor?project='+encodeURIComponent(currentProject?.id||'default');
   const note=document.querySelector('.monitor-note');
   let serviceHealthNote='';
@@ -59,27 +64,29 @@
     if(!currentProject)return;
     try{
       await queue;
-      let result=await request();
-      if(!ready&& !result.feeds.length && readMonitoredFeeds().length)result=await request('PUT',{feeds:readMonitoredFeeds()});
-      ready=true;localSave(result.feeds);renderFeedsList();
+      // The monitor is account/project data. Never resurrect a browser-local
+      // list when the server is empty: a different browser must see the same
+      // authoritative state and a new project must start empty.
+      const result=await request();
+      ready=true;storeServerFeeds(result.feeds);renderFeedsList();
       await refreshServiceHealth();
       if (note) note.textContent=serviceHealthNote;
     }catch(error){if (note) note.textContent=error.message;}
   }
   saveMonitoredFeeds=function(feeds){
-    localSave(feeds);
     queue=queue.then(async()=>{
-      const result=await request('PUT',{feeds});ready=true;localSave(result.feeds);renderFeedsList();
-    }).catch(error=>{if (note) note.textContent='Не удалось сохранить на сервере: '+error.message;showToast('Изменения мониторинга пока сохранены только в браузере');});
+      const result=await request('PUT',{feeds});ready=true;storeServerFeeds(result.feeds);renderFeedsList();
+    }).catch(error=>{if (note) note.textContent='Не удалось сохранить на сервере: '+error.message;showToast('Изменения мониторинга не сохранены. Проверьте соединение и повторите попытку.');});
   };
   checkSavedFeeds=async function(id=''){
     const button=document.querySelector('#checkFeedsBtn');
     if (!button) return;
     button.disabled=true;
-    try{await queue;const result=await request('POST',{id});localSave(result.feeds);renderFeedsList();showToast('Серверная проверка завершена');}
+    try{await queue;const result=await request('POST',{id});storeServerFeeds(result.feeds);renderFeedsList();showToast('Серверная проверка завершена');}
     catch(error){showToast(error.message);}finally{button.disabled=false;}
   };
   feedsNav.addEventListener('click',refresh);
+  window.addEventListener('listingflow:workspace-ready',()=>refresh());
   monitorPanel.querySelector('.panel-caption')?.replaceChildren(document.createTextNode('Добавьте постоянные ссылки: сервис проверяет XML, состав фида и доступность изображений по расписанию, а о новых ошибках отправляет уведомление.'));
   setInterval(()=>{if(activePage==='feeds')refresh();},30000);
 })();

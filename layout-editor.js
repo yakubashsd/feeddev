@@ -73,6 +73,16 @@
   let selected = 'layout', selectedCustomId='', textTarget = document.querySelector('#templateHeadline'), drag = null, zoom=1;
   let spaceHeld=false,pan=null;
   let projectFonts=[];
+  // The project snapshot is the durable source for custom fonts. IndexedDB is
+  // retained only as a legacy/local cache for older drafts.
+  window.listingFlowGetProjectFonts=()=>projectFonts;
+  window.listingFlowSetProjectFonts=async fonts=>{
+    const next=Array.isArray(fonts)?fonts.slice(0,10):[];
+    projectFonts=next;
+    await Promise.all(projectFonts.map(registerProjectFont));
+    renderInspector();
+    redraw();
+  };
   const ids = ['brandSize','brandOffsetX','brandOffsetY','templateHeadline','templateSubline','templateTextColor','templateTextSize','templateTextX','templateTextY','templateFontFamily','templateCanvasLayers','templateCanvasColor','templateCanvasOpacity'];
   const history = [], future = [];
   const snapshot = () => Object.fromEntries(ids.map(id => [id, document.getElementById(id)?.value ?? '']));
@@ -95,7 +105,7 @@
   const fontStack=value=>`"${cleanFontName(value)||'Circe'}", Circe, Arial, sans-serif`;
   const fontOptions=current=>['Circe',...projectFonts.map(font=>font.name)].filter((name,index,all)=>all.indexOf(name)===index).map(name=>`<option value="${escapeAttr(name)}" ${name===current?'selected':''}>${escapeText(name)}</option>`).join('');
   async function registerProjectFont(font){const encoded=String(font.dataUrl||'').split(',')[1]||'',binary=atob(encoded),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const face=new FontFace(font.name,bytes.buffer);await face.load();document.fonts.add(face);return font;}
-  async function readProjectFonts(){if(!activeBrandProjectKey||activeBrandProjectKey==='all')return[];const db=await openBrandAssetsDb();return new Promise((resolve,reject)=>{const request=db.transaction('fonts','readonly').objectStore('fonts').get(activeBrandProjectKey);request.onsuccess=()=>resolve(Array.isArray(request.result)?request.result:[]);request.onerror=()=>reject(request.error||new Error('Не удалось загрузить шрифты проекта.'))}).finally(()=>db.close())}
+  async function readProjectFonts(){if(!activeBrandProjectKey||activeBrandProjectKey==='all')return[];const serverFonts=brandProfiles?.[activeBrandProjectKey]?.fonts;if(Array.isArray(serverFonts)&&serverFonts.length)return serverFonts;const db=await openBrandAssetsDb();return new Promise((resolve,reject)=>{const request=db.transaction('fonts','readonly').objectStore('fonts').get(activeBrandProjectKey);request.onsuccess=()=>resolve(Array.isArray(request.result)?request.result:[]);request.onerror=()=>reject(request.error||new Error('Не удалось загрузить шрифты проекта.'))}).finally(()=>db.close())}
   async function writeProjectFonts(fonts){if(!activeBrandProjectKey||activeBrandProjectKey==='all')return;const db=await openBrandAssetsDb();return new Promise((resolve,reject)=>{const request=db.transaction('fonts','readwrite').objectStore('fonts').put(fonts,activeBrandProjectKey);request.onsuccess=()=>resolve();request.onerror=()=>reject(request.error||new Error('Не удалось сохранить шрифт.'))}).finally(()=>db.close())}
   async function hydrateProjectFonts(){try{projectFonts=await readProjectFonts();await Promise.all(projectFonts.map(registerProjectFont));renderInspector();redraw()}catch(error){showToast(error.message||'Не удалось загрузить шрифты проекта')}}
   function renderLayerTree(){const target=properties.querySelector('.le-user-layers'),layers=readLayers();target.innerHTML=layers.map((layer,index)=>`<div class="le-user-layer ${layer.id===selectedCustomId?'selected':''}"><button type="button" data-select-custom="${escapeAttr(layer.id)}" title="Выбрать ${escapeAttr(layer.name)}"><span class="le-layer-icon">${layer.type==='text'?'T':'▰'}</span><span>${escapeText(layer.name)}</span></button><span class="le-layer-actions"><button type="button" data-layer-up="${escapeAttr(layer.id)}" aria-label="Переместить выше" ${index===layers.length-1?'disabled':''}>↑</button><button type="button" data-layer-down="${escapeAttr(layer.id)}" aria-label="Переместить ниже" ${index===0?'disabled':''}>↓</button><button type="button" data-layer-delete="${escapeAttr(layer.id)}" aria-label="Удалить слой">×</button></span></div>`).join('');const n=3+layers.length;properties.querySelector('.le-layer-count').textContent=`${n} ${n===1?'слой':n<5?'слоя':'слоёв'}`;}

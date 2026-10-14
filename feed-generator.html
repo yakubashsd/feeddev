@@ -5577,8 +5577,13 @@
       try { localStorage.setItem(projectIndexKey, JSON.stringify(projects)); } catch (_) { /* account state remains authoritative */ }
     }
     const requestedProject = new URLSearchParams(location.search).get("project");
-    const currentProject = projects.find(project => project.id === requestedProject);
-    const projectSuffix = currentProject && currentProject.id !== "legacy" ? "-" + currentProject.id : "";
+    // The server owns the project list.  The local list is only a bootstrap
+    // hint and may be empty on a new browser (or stale after a colleague
+    // creates/renames a project), so keep the selected project mutable and
+    // resolve it again after /api/projects returns.
+    let currentProject = projects.find(project => project.id === requestedProject) || null;
+    const projectIdForStorage = /^[a-f0-9-]{20,}$/i.test(String(requestedProject || "")) ? requestedProject : "";
+    const projectSuffix = projectIdForStorage ? "-" + projectIdForStorage : "";
     const storageKey = "feed-generator-cian-v2" + projectSuffix;
     const legacyStorageKey = "feed-generator-cian-v1";
     const publishedStorageKey = "feed-generator-published-v1" + projectSuffix;
@@ -6178,6 +6183,7 @@
       document.body.classList.remove("auth-active", "landing-active");
       const repairedLayouts = repairLegacyProfitbaseLayouts();
       renderAll();
+      window.dispatchEvent(new Event("listingflow:workspace-ready"));
       if (repairedLayouts) showToast(`Обновлены планировки квартир: ${repairedLayouts}`);
       appInitialized = true;
       if (runtimeMode === "external" && currentProject) {
@@ -6226,6 +6232,7 @@
 
     function configureExternalMode(state) {
       runtimeMode = state.mode || "internal";
+      if (runtimeMode === "external") window.listingFlowServerMonitorFeeds = [];
       window.listingFlowBillingMode = state.billingMode || "manual";
       window.listingFlowSupportEmail = state.supportEmail || "";
       const external = runtimeMode === "external";
@@ -6298,10 +6305,11 @@
       if (!response.ok) throw new Error("Не удалось загрузить проекты аккаунта.");
       const result = await response.json();
       const next = Array.isArray(result.projects) ? result.projects : [];
-      if (JSON.stringify(next) === JSON.stringify(projects)) return false;
+      const changed = JSON.stringify(next) !== JSON.stringify(projects);
       projects = next;
-      localStorage.setItem(projectIndexKey, JSON.stringify(next));
-      return true;
+      currentProject = next.find(project => project.id === requestedProject) || null;
+      if (changed) localStorage.setItem(projectIndexKey, JSON.stringify(next));
+      return changed;
     }
 
     function projectStateKeys() {
@@ -6368,7 +6376,17 @@
     async function hydrateExternalProjectState() {
       if (runtimeMode !== "external" || !currentProject || !["client", "customer"].includes(sessionState?.role)) return false;
       const response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
-      if (!response.ok) return false;
+      if (!response.ok) {
+        // A stale browser snapshot must never be presented as current data.
+        // A fully expired account may still open the shell for billing/read-only
+        // navigation, but its local project payload is not usable there.
+        if (response.status === 402) {
+          for (const key of projectStateKeys()) localStorage.removeItem(key);
+          refreshProjectMemoryFromStorage();
+          return true;
+        }
+        throw new Error("Не удалось загрузить данные проекта с сервера.");
+      }
       const remote = await response.json();
       cloudSaveRevision = Number(remote.revision || 0);
       cloudSavedSnapshot = JSON.stringify(remote.state || {});
@@ -8203,6 +8221,9 @@
 
     function readMonitoredFeeds() {
       try {
+        if (runtimeMode === "external" && Array.isArray(window.listingFlowServerMonitorFeeds)) {
+          return window.listingFlowServerMonitorFeeds;
+        }
         const parsed = JSON.parse(localStorage.getItem(monitoredStorageKey));
         return Array.isArray(parsed) ? parsed : [];
       } catch {
@@ -8212,6 +8233,13 @@
 
     function readMonitorNotificationSettings() {
       try {
+        if (runtimeMode === "external" && Array.isArray(window.listingFlowServerMonitorFeeds)) {
+          const first = window.listingFlowServerMonitorFeeds[0] || {};
+          return {
+            telegramEnabled: first.telegramEnabled !== false,
+            telegramChatId: String(first.telegramChatId || "").trim()
+          };
+        }
         const saved = JSON.parse(localStorage.getItem(monitorNotificationsStorageKey) || "{}");
         return {
           telegramEnabled: saved.telegramEnabled !== false,
@@ -8251,7 +8279,12 @@
       const ownerId = runtimeMode === "external" ? sessionState?.user?.id || "" : "";
       const feedLimit = Number(sessionState?.user?.feedLimit || 80);
       const savedFeeds = feedLimit === -1 ? feeds : feeds.slice(0, feedLimit);
-      localStorage.setItem(monitoredStorageKey, JSON.stringify(savedFeeds.map(feed => ({ ...feed, ownerId, emailEnabled: false, emailTo: "" }))));
+      const normalized = savedFeeds.map(feed => ({ ...feed, ownerId, emailEnabled: false, emailTo: "" }));
+      if (runtimeMode === "external" && Array.isArray(window.listingFlowServerMonitorFeeds)) {
+        window.listingFlowServerMonitorFeeds = normalized;
+        return;
+      }
+      localStorage.setItem(monitoredStorageKey, JSON.stringify(normalized));
     }
 
     function hasFeedChanges() {
@@ -8814,10 +8847,16 @@
         canvasColor: config.canvasColor,
         canvasOpacity: config.canvasOpacity,
         autoApplyBranding: brandProfiles[activeBrandProjectKey]?.autoApplyBranding !== false,
-        generatedLayouts: brandProfiles[activeBrandProjectKey]?.generatedLayouts || {}
+        generatedLayouts: brandProfiles[activeBrandProjectKey]?.generatedLayouts || {},
+        fonts: Array.isArray(window.listingFlowGetProjectFonts?.()) ? window.listingFlowGetProjectFonts().slice(0, 10) : (brandProfiles[activeBrandProjectKey]?.fonts || []),
+        // Keep the source asset in the encrypted project snapshot as well as
+        // the legacy IndexedDB cache. A second browser must be able to render
+        // the same branding without relying on this device's storage.
+        badgeDataUrl: brandBadgeDataUrl || ""
       };
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
+      if (runtimeMode === "external" && currentProject) save();
     }
 
     async function restoreBrandProfile(projectKey) {
@@ -8849,7 +8888,7 @@
       document.querySelector("#brandBadgeFileInput").value = "";
 
       try {
-        brandBadgeDataUrl = await readBrandAsset(activeBrandProjectKey);
+        brandBadgeDataUrl = profile.badgeDataUrl || await readBrandAsset(activeBrandProjectKey);
         brandBadgeFileName = profile.fileName || "";
         document.querySelector("#brandBadgePickedFile").textContent = brandBadgeDataUrl
           ? `${brandBadgeFileName || "Подложка фида"} · сохранено для текущего фида`
@@ -11640,6 +11679,12 @@ ${photos}
         return;
       }
       brandBadgeDataUrl = await fileToDataUrl(file);
+      if (brandBadgeDataUrl.length > 11 * 1024 * 1024) {
+        event.target.value = "";
+        brandBadgeDataUrl = "";
+        alert("Размер подложки не должен превышать 8 МБ.");
+        return;
+      }
       brandBadgeFileName = file.name;
       activeBrandProjectKey = currentFeedProjectKey();
       document.querySelector("#brandBadgePickedFile").textContent = `${file.name} · текущий фид`;

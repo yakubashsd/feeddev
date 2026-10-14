@@ -32,6 +32,12 @@ test("external clients always hydrate the server project state without a local-v
   assert.match(push, /обновите данные вручную/);
 });
 
+test("a direct project URL can hydrate on a fresh browser without a local project index", () => {
+  assert.match(html, /let currentProject = projects\.find\(project => project\.id === requestedProject\) \|\| null/);
+  assert.match(html, /const projectIdForStorage = \/\^\[a-f0-9-\]\{20,\}/);
+  assert.match(html, /currentProject = next\.find\(project => project\.id === requestedProject\) \|\| null/);
+});
+
 test("open project sessions refresh in-memory state when a colleague saves a newer revision", () => {
   const boot = html.match(/    async function initializeAuth\([\s\S]*?\n    }\n\n    async function submitLogin/)[0];
   const workspace = html.match(/    function showWorkspace\([\s\S]*?\n    }\n\n    async function fetchWithTimeout/)[0];
