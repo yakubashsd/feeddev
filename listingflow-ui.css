@@ -1337,3 +1337,41 @@ body.admin-ui .drawer :is(h2,h3){line-height:1.3;}
   body.admin-ui .toolbar .search{flex-basis:100%!important;}
   body.admin-ui .field :is(input,select,textarea){font-size:16px!important;min-height:44px!important;}
 }
+
+/* Client shell alignment: use the same light, blue ListingFlow language as the
+   public landing while keeping the editor canvas and application behaviour intact. */
+body.client-ui{
+  --lf-bg:#f4f8ff;--lf-surface:#fff;--lf-surface-2:#f7faff;--lf-sidebar:#fff;
+  --lf-sidebar-2:#f7faff;--lf-text:#11385e;--lf-muted:#506e8a;--lf-line:#d9e6f5;
+  --lf-line-strong:#b9d1ed;--lf-blue:#0444fc;--lf-blue-bg:#eaf1ff;--lf-shadow:0 12px 34px rgba(17,56,94,.08);
+  background:var(--lf-bg)!important;color:var(--lf-text)!important;
+}
+body.client-ui .app{background:var(--lf-bg)!important}
+body.client-ui .sidebar{background:#fff!important;color:var(--lf-text)!important;border-right:1px solid var(--lf-line)!important;box-shadow:8px 0 28px rgba(17,56,94,.04)!important}
+body.client-ui .lf-brand-name{color:var(--lf-text)!important}.client-ui .lf-brand-name span{color:var(--lf-blue)!important}
+body.client-ui .workspace-switcher{border-color:var(--lf-line)!important;border-radius:14px!important;background:var(--lf-surface-2)!important;color:var(--lf-text)!important}
+body.client-ui .workspace-switcher span{color:var(--lf-muted)!important}
+body.client-ui .workspace-switcher select{border-color:var(--lf-line-strong)!important;background:#fff!important;color:var(--lf-text)!important}
+body.client-ui .sidebar .nav-item,body.client-ui .logout-btn{color:var(--lf-muted)!important;border-radius:10px!important}
+body.client-ui .sidebar .nav-item:hover,body.client-ui .logout-btn:hover{background:var(--lf-blue-bg)!important;color:var(--lf-text)!important}
+body.client-ui .sidebar .nav-item.active{border-color:#c5d8f7!important;background:var(--lf-blue-bg)!important;color:var(--lf-blue)!important}
+body.client-ui .nav-label{color:#7893ad!important}.client-ui .nav-label-secondary{border-color:var(--lf-line)!important}
+body.client-ui .nav-workflow-items{border-color:var(--lf-line)!important}.client-ui .nav-workflow-items .nav-item::before{background:var(--lf-line)!important}
+body.client-ui .nav-step{border-color:var(--lf-line-strong)!important;color:var(--lf-muted)!important;background:#fff!important}
+body.client-ui .nav-workflow-items .nav-item.active .nav-step{border-color:var(--lf-blue)!important;background:var(--lf-blue)!important;color:#fff!important}
+body.client-ui .workspace-note{border-color:var(--lf-line)!important;background:var(--lf-surface-2)!important;color:var(--lf-muted)!important}
+body.client-ui .main{background:var(--lf-bg)!important}
+body.client-ui .topbar{background:rgba(255,255,255,.96)!important;border-bottom-color:var(--lf-line)!important}
+body.client-ui .topbar h1{color:var(--lf-text)!important;font-size:17px!important;font-weight:750!important}
+body.client-ui .topbar .subtitle{color:var(--lf-muted)!important}
+body.client-ui .top-status{border-color:#b9e6ce!important;background:#effaf3!important;color:#13743e!important}
+body.client-ui :is(.projects-page,.source-panel,.feeds-panel,.validator-panel,.complexes-panel,.table-wrap,.bulk-panel,.layouts-panel,.change-log-panel,.quality-panel,.publish-panel,.billing-page,.monitor-card,.monitor-feed){border-color:var(--lf-line)!important;border-radius:14px!important;background:var(--lf-surface)!important;box-shadow:var(--lf-shadow)!important}
+body.client-ui :is(.panel-title,.projects-heading h2,.catalog-head .panel-title,.table-headline>.panel-title,.quality-title){color:var(--lf-text)!important}
+body.client-ui :is(input,select,textarea,.field input,.field select,.field textarea){border-color:var(--lf-line-strong)!important;border-radius:9px!important;background:#fff!important;color:var(--lf-text)!important}
+body.client-ui :is(button.primary,.primary){border-color:var(--lf-blue)!important;background:var(--lf-blue)!important;color:#fff!important;box-shadow:0 8px 18px rgba(4,68,252,.16)!important}
+body.client-ui :is(button.primary,.primary):hover{background:#0038d2!important}
+body.client-ui :is(.panel-caption,.subtitle,.muted,.layout-meta,.layout-url,.field label){color:var(--lf-muted)!important}
+body.client-ui .project-metric{border-color:var(--lf-line)!important;border-radius:12px!important;background:#fff!important;box-shadow:var(--lf-shadow)!important}
+body.client-ui .project-metric strong{color:var(--lf-text)!important}
+body.client-ui .project-metric::before{background:var(--lf-blue)!important}
+@media(max-width:760px){body.client-ui .sidebar{background:#fff!important;box-shadow:12px 0 32px rgba(17,56,94,.14)!important}.client-ui .topbar{background:rgba(255,255,255,.98)!important}.client-ui .mobile-menu-toggle{border-color:var(--lf-line)!important;background:#fff!important;color:var(--lf-text)!important}}
