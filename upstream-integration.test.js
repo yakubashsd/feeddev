@@ -93,6 +93,13 @@ test("account notification preferences are shared while project data stays scope
   assert.match(html, /const storageKey = "feed-generator-cian-v2" \+ projectSuffix/);
 });
 
+test("client history is a separate server-backed section", () => {
+  assert.match(html, /data-nav="history"/);
+  assert.match(html, /data-page="history"/);
+  assert.match(html, /\/api\/feed-history/);
+  assert.match(html, /Все изменения фидов сохраняются на сервере аккаунта/);
+});
+
 test("layout editor applies the size value and exposes a working canvas resize handle", () => {
   const draw = clientFunction("drawBrandedLayout");
   const startDrag = clientFunction("startBrandPreviewDrag");

@@ -43,3 +43,26 @@ body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice{left:auto!import
 body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice[hidden]{display:none!important}
 body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice>div{margin-top:12px!important;justify-content:flex-end!important}
 @media(max-width:520px){body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice{right:10px!important;bottom:10px!important;width:calc(100vw - 20px)!important;padding:12px 14px!important}body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice>div{justify-content:stretch!important}body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice button{flex:1}}
+
+/* Motion language: one authored hero arrival, then quiet scroll reveals for the story. */
+.landing-screen{--landing-ease-out:cubic-bezier(0.23,1,0.32,1);--landing-ease-in-out:cubic-bezier(0.77,0,0.175,1)}
+.landing-motion-enabled .landing-hero-copy{animation:landingHeroCopyIn 620ms var(--landing-ease-out) both}
+.landing-motion-enabled .landing-product-shot{animation:landingHeroShotIn 720ms var(--landing-ease-out) 70ms both}
+.landing-motion-enabled .landing-reveal:not(.is-visible){opacity:0;transform:translateY(24px)}
+.landing-motion-enabled .landing-reveal.is-visible{animation:landingRevealIn 540ms var(--landing-ease-out) var(--landing-reveal-delay,0ms) both}
+.landing-motion-enabled .landing-channel-chart .landing-chart-row b i{transform:scaleX(0);transform-origin:left center;transition:transform 650ms var(--landing-ease-out)}
+.landing-motion-enabled .landing-channel-chart.is-visible .landing-chart-row b i{transform:scaleX(1)}
+@keyframes landingHeroCopyIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes landingHeroShotIn{from{opacity:0;transform:translateY(26px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes landingRevealIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@media (hover:hover) and (pointer:fine){
+  .landing-feed-row{transition:transform 180ms var(--landing-ease-out),background-color 180ms ease}
+  .landing-feed-row:hover{transform:translateX(4px);background:var(--landing-bg)}
+  .landing-channel-logos span{transition:transform 160ms var(--landing-ease-out),border-color 160ms ease,box-shadow 160ms ease}
+  .landing-channel-logos span:hover{transform:translateY(-2px);border-color:#b8cfee;box-shadow:0 8px 18px rgba(17,56,94,.08)}
+}
+@media(prefers-reduced-motion:reduce){
+  .landing-motion-enabled .landing-hero-copy,.landing-motion-enabled .landing-product-shot,.landing-motion-enabled .landing-reveal.is-visible{animation:none;opacity:1;transform:none}
+  .landing-motion-enabled .landing-channel-chart .landing-chart-row b i{transform:none;transition:none}
+  .landing-feed-row,.landing-channel-logos span{transition:none!important}
+}

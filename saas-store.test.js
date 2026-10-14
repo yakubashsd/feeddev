@@ -61,6 +61,31 @@ test("demo account has unlimited projects and feeds without changing limits for 
   }
 });
 
+test("feed history is persisted per client and can be filtered by project and feed", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listingflow-feed-history-"));
+  try {
+    const store = createSaasStore({ dataDir: dir, secret: "test-secret", blobEnabled: () => false });
+    const first = await store.register({ email: "history-one@example.ru", password: "history-password", name: "Первый", acceptedOffer: true, acceptedPersonalData: true });
+    const second = await store.register({ email: "history-two@example.ru", password: "history-password", name: "Второй", acceptedOffer: true, acceptedPersonalData: true });
+    const project = await store.createProject(first.id, "История проекта");
+    await store.recordFeedHistory(first.id, "feed-a", "create", { projectId: project.id, feedName: "Основной фид", objectCount: 12, xml: "не должен попасть в запись" });
+    await store.recordFeedHistory(first.id, "feed-a", "edit", { projectId: project.id, feedName: "Основной фид", revision: 2 });
+    await store.recordFeedHistory(first.id, "feed-b", "sync_error", { projectId: project.id, feedName: "Второй фид", error: "Источник недоступен" });
+    await store.recordFeedHistory(second.id, "feed-a", "create", { projectId: project.id, feedName: "Чужой фид" });
+
+    const history = await store.listFeedHistory(first.id, { projectId: project.id });
+    assert.equal(history.length, 3);
+    assert.equal(history[0].action, "sync_error");
+    assert.equal(history[0].userId, undefined);
+    assert.equal(history[1].details.revision, 2);
+    assert.equal(history[2].details.xml, undefined);
+    assert.equal((await store.listFeedHistory(first.id, { projectId: project.id, feedId: "feed-a", limit: 1 })).length, 1);
+    assert.equal((await store.listFeedHistory(second.id, { projectId: project.id })).length, 1);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("Platega checkout uses merchant headers and verifies callback headers", async () => {
   const calls = [];
   const platega = createPlatega({

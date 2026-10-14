@@ -4491,6 +4491,35 @@
       .feed-error-popover { right:14px; bottom:14px; width:min(360px,calc(100vw - 28px)); }
       .feed-error-body { max-height:250px; }
     }
+    body.client-ui .history-page { max-width:1460px; margin:0 auto 24px; }
+    body.client-ui .history-page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin:0 0 20px; }
+    body.client-ui .history-page-heading .panel-title { margin:6px 0 7px; font-size:clamp(26px,3vw,38px); line-height:1.05; letter-spacing:-1px; }
+    body.client-ui .history-page-heading .panel-caption { margin:0; max-width:760px; }
+    body.client-ui .history-toolbar { display:flex; align-items:flex-end; gap:18px; margin-bottom:16px; padding:16px 18px; border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface); box-shadow:var(--lf-shadow); }
+    body.client-ui .history-toolbar .field { min-width:260px; margin:0; }
+    body.client-ui .history-toolbar .field span { display:block; margin-bottom:7px; color:var(--lf-muted); font-size:11px; font-weight:700; }
+    body.client-ui .history-toolbar select { width:100%; }
+    body.client-ui .history-server-note { margin-bottom:11px; color:var(--lf-muted); font-size:12px; }
+    body.client-ui .feed-history-list { display:grid; gap:0; padding:4px 22px; border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface); box-shadow:var(--lf-shadow); }
+    body.client-ui .feed-history-item { display:grid; grid-template-columns:18px minmax(0,1fr); gap:14px; padding:18px 0; border-bottom:1px solid var(--lf-line); }
+    body.client-ui .feed-history-item:last-child { border-bottom:0; }
+    body.client-ui .feed-history-marker { width:10px; height:10px; margin-top:5px; border:3px solid var(--lf-blue); border-radius:50%; box-shadow:0 0 0 3px var(--lf-blue-bg); }
+    body.client-ui .feed-history-copy { min-width:0; display:grid; gap:5px; }
+    body.client-ui .feed-history-copy strong { font-size:14px; line-height:1.25; }
+    body.client-ui .feed-history-feed { color:var(--lf-blue); font-size:12px; font-weight:700; }
+    body.client-ui .feed-history-copy p { margin:0; color:var(--lf-muted); font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+    body.client-ui .feed-history-copy time { color:var(--lf-muted); font-size:11px; }
+    body.client-ui .feed-history-empty, body.client-ui .feed-history-error, body.client-ui .feed-history-loading { display:grid; gap:7px; padding:48px 20px; color:var(--lf-muted); text-align:center; }
+    body.client-ui .feed-history-empty strong, body.client-ui .feed-history-error strong { color:var(--lf-text); font-size:15px; }
+    body.client-ui .feed-history-error button { justify-self:center; margin-top:8px; }
+    @media(max-width:720px) {
+      body.client-ui .history-page-heading { align-items:flex-start; flex-direction:column; gap:14px; }
+      body.client-ui .history-page-heading > button { width:100%; }
+      body.client-ui .history-toolbar { align-items:stretch; flex-direction:column; gap:10px; }
+      body.client-ui .history-toolbar .field { min-width:0; }
+      body.client-ui .history-server-note { margin:0; }
+      body.client-ui .feed-history-list { padding:4px 14px; }
+    }
 
   </style>
   <link rel="stylesheet" href="cookie-consent.css">
@@ -4842,6 +4871,7 @@
       <div class="nav-label nav-label-secondary" id="projectControlLabel">Контроль фида</div>
       <button type="button" class="nav-item" data-nav="strategy"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/></svg><span class="nav-text">Стратегия публикации</span></button>
       <button type="button" class="nav-item" data-nav="feeds"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/><path d="M6 9h2m3-4h2m3 7h2"/></svg><span class="nav-text">Мониторинг и ошибки</span></button>
+      <button type="button" class="nav-item" data-nav="history"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/><path d="M4 5.5 2.5 4M20 5.5 21.5 4"/></svg><span class="nav-text">История изменений</span></button>
       <div class="nav-label nav-label-secondary">Помощь</div>
       <button type="button" class="nav-item" data-nav="support"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22a10 10 0 1 0-10-10v4a2 2 0 0 0 2 2h2v-6H4a8 8 0 0 1 16 0h-2v6h2a2 2 0 0 0 2-2v-4"/><path d="M9 18c.7 1.3 1.7 2 3 2h2"/></svg><span class="nav-text">Техподдержка</span></button>
       <div class="sidebar-spacer"></div>
@@ -4938,6 +4968,11 @@
           </form>
           <section class="support-history" aria-labelledby="supportHistoryTitle"><div class="support-history-heading"><div><h3 id="supportHistoryTitle">Мои обращения</h3><p>Статус и номер сохраняются в истории аккаунта.</p></div><button class="support-refresh" id="supportRefresh" type="button" aria-label="Обновить список обращений" title="Обновить список">↻</button></div><div id="supportTicketList" aria-live="polite"><p class="support-loading">Загружаем обращения…</p></div></section>
         </div>
+      </section>
+      <section class="history-page page-hidden" data-page="history" aria-labelledby="historyPageTitle">
+        <header class="history-page-heading"><div><span class="eyebrow">Контроль проекта</span><h2 class="panel-title" id="historyPageTitle">История изменений</h2><p class="panel-caption">Все изменения фидов сохраняются на сервере аккаунта и доступны после входа с любого браузера.</p></div><button type="button" id="feedHistoryRefresh">Обновить</button></header>
+        <div class="history-toolbar"><label class="field compact" for="feedHistoryFilter"><span>Фид</span><select id="feedHistoryFilter"><option value="">Все фиды</option></select></label><span class="history-server-note">События не зависят от локального кэша.</span></div>
+        <div id="feedHistoryList" class="feed-history-list" aria-live="polite"><p class="feed-history-loading">Загружаем историю…</p></div>
       </section>
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте хранятся фиды, объекты, настройки публикации и постоянные ссылки.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, Речной парк"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
@@ -5801,7 +5836,7 @@
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     const requestedPage = new URLSearchParams(location.search).get("page");
-    let activePage = requestedPage === "support" ? "support" : currentProject && ["overview", "complexes", "apartments", "branding", "results", "strategy", "feeds", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "overview" : "projects";
+    let activePage = requestedPage === "support" ? "support" : currentProject && ["overview", "complexes", "apartments", "branding", "results", "strategy", "feeds", "history", "billing"].includes(requestedPage) ? requestedPage : currentProject ? "overview" : "projects";
     let projectPage = 1;
     const selectedProjectIds = new Set();
     let sortState = { key: "", direction: "asc" };
@@ -5833,6 +5868,7 @@
     let pendingSingleEdit = null;
     let publishedComplexes = new Set(JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]"));
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
+    let feedHistoryRequestId = 0;
     if (!projectSources.length && appState.feedUrl) {
       projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "720", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} }];
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
@@ -6158,6 +6194,44 @@
     const loginButton = document.querySelector("#loginButton");
     const landingScreen = document.querySelector("#landingScreen");
     let appInitialized = false;
+    let landingMotionObserver = null;
+
+    function setupLandingMotion() {
+      if (!landingScreen || landingScreen.hidden) return;
+      const targets = [
+        ...landingScreen.querySelectorAll(
+          ".landing-proof > div, .landing-section-heading, .landing-benefits article, " +
+          ".landing-branding-copy, .landing-branding-visual, .landing-channels-copy, " +
+          ".landing-channel-chart, .landing-bento-main, .landing-bento-side, " +
+          ".landing-difference-copy, .landing-checklist, .landing-price, .landing-faq, .landing-final"
+        )
+      ];
+      if (!targets.length) return;
+      landingMotionObserver?.disconnect();
+      landingScreen.classList.remove("landing-motion-enabled");
+      targets.forEach((element, index) => {
+        element.classList.add("landing-reveal");
+        element.classList.remove("is-visible");
+        element.style.setProperty("--landing-reveal-delay", `${Math.min(index * 45, 220)}ms`);
+      });
+      landingScreen.classList.add("landing-motion-enabled");
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      if (reducedMotion || !("IntersectionObserver" in window)) {
+        targets.forEach(element => element.classList.add("is-visible"));
+        return;
+      }
+      landingMotionObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          landingMotionObserver?.unobserve(entry.target);
+        });
+      }, { rootMargin: "0px 0px -12% 0px", threshold: 0.12 });
+      targets.forEach(element => {
+        if (element.getBoundingClientRect().top < window.innerHeight * 0.92) element.classList.add("is-visible");
+        else landingMotionObserver.observe(element);
+      });
+    }
 
     function showLogin(message = "") {
       window.clearTimeout(bootWatchdog);
@@ -6169,6 +6243,7 @@
       appShell.hidden = true;
       document.body.classList.add("auth-active");
       document.body.classList.toggle("landing-active", showLanding);
+      if (showLanding) window.requestAnimationFrame(setupLandingMotion);
       if (runtimeMode === "external" && authFormMode !== "reset") setAuthFormMode("login");
       loginError.textContent = message;
       document.querySelector("#loginPassword").value = "";
@@ -6337,7 +6412,11 @@
       try {
         response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
         method: "PUT", credentials: "same-origin", keepalive: true,
-        headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` }, body: JSON.stringify({ state })
+        headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` }, body: JSON.stringify({
+          state,
+          feedId: activeSourceId && activeSourceId !== "all" ? activeSourceId : "",
+          feedName: projectSources.find(source => source.id === activeSourceId)?.name || ""
+        })
         });
       } catch (error) {
         if (indicator) indicator.textContent = "Нет связи с облаком — повторим автоматически";
@@ -7620,7 +7699,7 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
-      const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", history: "История изменений", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!(sessionState?.subscriptionActive || sessionState?.trialActive) || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -7669,7 +7748,7 @@
         if (itemLabel && stateText) item.setAttribute("aria-label", `${itemLabel} — ${stateText}`);
         if (item.dataset.nav === activePage) item.setAttribute("aria-current", "page");
         else item.removeAttribute("aria-current");
-        item.hidden = item.dataset.nav === "source" ? true : item.dataset.nav === "complexes" ? !currentProject || !showComplexesStep : item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : !currentProject;
+        item.hidden = item.dataset.nav === "source" ? true : item.dataset.nav === "complexes" ? !currentProject || !showComplexesStep : item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : item.dataset.nav === "history" ? !currentProject : !currentProject;
       });
       const visibleWorkflowNavItems = [...document.querySelectorAll(".nav-workflow-items [data-nav]")].filter(item => !item.hidden);
       visibleWorkflowNavItems.forEach((item, index) => {
@@ -7745,6 +7824,7 @@
       if (activePage === "billing") renderBilling();
       if (activePage === "results") { renderReleasePreflight(); renderReleaseHistory(); }
       if (activePage === "strategy") renderTrafficPolicy();
+      if (activePage === "history") renderFeedHistory();
       if (activePage === "support") renderSupportPage();
     }
 
@@ -7882,6 +7962,62 @@
       }
     }
 
+    const feedHistoryActionLabels = {
+      create: "Фид добавлен", update: "Фид сохранён", edit: "Изменения сохранены", rename: "Фид переименован",
+      rollback: "Версия восстановлена", release_delete: "Версия удалена", sync: "Фид обновлён по расписанию", sync_error: "Ошибка обновления фида"
+    };
+    function feedHistoryDetailsLabel(entry) {
+      const details = entry.details || {};
+      if (entry.action === "rename") return `«${details.oldName || "Без названия"}» → «${details.newName || entry.feedName || "Без названия"}»`;
+      if (entry.action === "rollback") return `Восстановлена версия ${details.version || "—"}.`;
+      if (entry.action === "release_delete") return `Удалена версия ${details.version || "—"}.`;
+      if (entry.action === "edit") return `Ревизия проекта №${details.revision || "—"}.`;
+      if (entry.action === "sync") return `Изменено: ${details.updated || 0}, добавлено: ${details.added || 0}, удалено: ${details.removed || 0}.`;
+      if (entry.action === "sync_error") return String(details.error || "Источник не ответил.");
+      const objectCount = Number(details.objectCount || 0);
+      return `${details.platform ? `${details.platform} · ` : ""}${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}.`;
+    }
+    async function renderFeedHistory() {
+      const list = document.querySelector("#feedHistoryList");
+      const filter = document.querySelector("#feedHistoryFilter");
+      if (!list || !currentProject) return;
+      if (runtimeMode !== "external") {
+        list.innerHTML = '<div class="feed-history-empty"><strong>История изменений доступна в клиентском кабинете</strong><span>Внутренний режим используется только для администрирования сервиса.</span></div>';
+        return;
+      }
+      const requestId = ++feedHistoryRequestId;
+      const selectedFeedId = filter?.value || "";
+      const sourceOptions = projectSources.map(source => `<option value="${escapeXml(source.id)}">${escapeXml(source.name || platformProfiles[source.platform]?.name || "Без названия")}</option>`).join("");
+      if (filter) {
+        filter.innerHTML = `<option value="">Все фиды</option>${sourceOptions}`;
+        filter.value = selectedFeedId;
+      }
+      list.innerHTML = '<p class="feed-history-loading">Загружаем историю…</p>';
+      try {
+        const query = new URLSearchParams({ projectId: currentProject.id, limit: "200" });
+        if (selectedFeedId) query.set("feedId", selectedFeedId);
+        const response = await fetch(`/api/feed-history?${query.toString()}`, { credentials: "same-origin", cache: "no-store" });
+        const result = await response.json().catch(() => ({}));
+        if (requestId !== feedHistoryRequestId) return;
+        if (!response.ok) throw new Error(result.error || "Не удалось загрузить историю изменений.");
+        const history = Array.isArray(result.history) ? result.history : [];
+        if (!history.length) {
+          list.innerHTML = '<div class="feed-history-empty"><strong>Изменений пока нет</strong><span>Когда вы добавите, сохраните или обновите фид, событие появится здесь.</span></div>';
+          return;
+        }
+        list.innerHTML = history.map(entry => {
+          const date = new Date(entry.createdAt);
+          const dateLabel = Number.isNaN(date.getTime()) ? "" : new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(date);
+          const label = feedHistoryActionLabels[entry.action] || "Изменение фида";
+          return `<article class="feed-history-item"><span class="feed-history-marker" aria-hidden="true"></span><div class="feed-history-copy"><strong>${escapeXml(label)}</strong><span class="feed-history-feed">${escapeXml(entry.feedName || entry.feedId || "Фид")}</span><p>${escapeXml(feedHistoryDetailsLabel(entry))}</p><time datetime="${escapeXml(entry.createdAt || "")}">${escapeXml(dateLabel)}</time></div></article>`;
+        }).join("");
+      } catch (error) {
+        if (requestId !== feedHistoryRequestId) return;
+        list.innerHTML = `<div class="feed-history-error"><strong>Историю не удалось загрузить</strong><span>${escapeXml(error.message || "Попробуйте обновить страницу.")}</span><button type="button" id="feedHistoryRetry">Попробовать ещё раз</button></div>`;
+        document.querySelector("#feedHistoryRetry")?.addEventListener("click", () => renderFeedHistory(), { once: true });
+      }
+    }
+
     function syncPageUrl(page) {
       const nextUrl = new URL(window.location.href);
       if (page === "support") {
@@ -7891,7 +8027,7 @@
         if (nextUrl.href !== window.location.href) history.pushState({ listingflowPage: page }, "", nextUrl);
         return;
       }
-      if (!currentProject || !["overview", "source", "complexes", "apartments", "branding", "results", "strategy", "feeds", "billing"].includes(page)) return;
+      if (!currentProject || !["overview", "source", "complexes", "apartments", "branding", "results", "strategy", "feeds", "history", "billing"].includes(page)) return;
       nextUrl.searchParams.set("project", currentProject.id);
       if (page === "source") nextUrl.searchParams.delete("page");
       else nextUrl.searchParams.set("page", page);
@@ -7950,7 +8086,7 @@
         return;
       }
       const route = url.searchParams.get("page");
-      activePage = route === "support" ? "support" : currentProject && ["overview", "complexes", "apartments", "branding", "results", "strategy", "feeds", "billing"].includes(route) ? route : currentProject ? "overview" : "projects";
+      activePage = route === "support" ? "support" : currentProject && ["overview", "complexes", "apartments", "branding", "results", "strategy", "feeds", "history", "billing"].includes(route) ? route : currentProject ? "overview" : "projects";
       renderPage();
     });
     document.querySelectorAll("[data-step]").forEach(button => {
@@ -11832,6 +11968,8 @@ ${photos}
       const expanded = workflow.classList.toggle("expanded");
       event.currentTarget.setAttribute("aria-expanded", String(expanded));
     });
+    document.querySelector("#feedHistoryRefresh")?.addEventListener("click", () => renderFeedHistory());
+    document.querySelector("#feedHistoryFilter")?.addEventListener("change", () => renderFeedHistory());
     document.querySelector("#supportRefresh").addEventListener("click", loadSupportTickets);
     document.querySelector("#supportTicketForm").addEventListener("submit", async event => {
       event.preventDefault();

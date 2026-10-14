@@ -640,7 +640,7 @@ function normalizeAutoSyncInterval(value) {
   return [30, 60, 120, 180, 360, 720, 1440].includes(minutes) ? minutes : 0;
 }
 
-async function saveFeed(req, payload, existingSlug = "", actor = null) {
+async function saveFeed(req, payload, existingSlug = "", actor = null, historyAction = "") {
   const data = validateFeedPayload(payload, { unlimitedSources: Number(actor?.user?.feedLimit) === -1 });
   const feeds = await readFeeds();
   if (APP_MODE === "external" && !existingSlug && Number(actor?.user?.feedLimit) !== -1) {
@@ -737,7 +737,11 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
   };
 
   await persistFeedRecord(record);
-  if (APP_MODE === "external" && actor?.userId) await saasStore.recordAudit(actor.userId, existing ? "publish_update" : "publish", "feed", slug, { projectId: record.projectId, platform: record.platform, objectCount: record.objectCount, releaseCount: record.releases.length }).catch(error => console.error("Audit log:", error.message));
+  if (APP_MODE === "external" && actor?.userId) {
+    const action = historyAction || (existing ? "update" : "create");
+    await saasStore.recordFeedHistory(actor.userId, record.sourceId || record.slug, action, { projectId: record.projectId, feedName: record.name, platform: record.platform, objectCount: record.objectCount, releaseCount: record.releases.length }).catch(error => console.error("Feed history:", error.message));
+    await saasStore.recordAudit(actor.userId, existing ? "publish_update" : "publish", "feed", slug, { projectId: record.projectId, platform: record.platform, objectCount: record.objectCount, releaseCount: record.releases.length }).catch(error => console.error("Audit log:", error.message));
+  }
   return record;
 }
 
@@ -814,6 +818,9 @@ async function syncPublishedFeed(record) {
   record.telegramSyncNotificationError = "";
   record.updatedAt = now.toISOString();
   await persistFeedRecord(record);
+  if (APP_MODE === "external" && record.ownerId && (result.updated || result.added || result.removed)) {
+    await saasStore.recordFeedHistory(record.ownerId, record.sourceId || record.slug, "sync", { projectId: record.projectId, feedName: record.name, platform: record.platform, updated: result.updated, added: result.added, removed: result.removed, objectCount: result.outputCount }).catch(error => console.error("Feed history:", error.message));
+  }
   console.log(`Feed sync: ${record.slug}, prices: ${result.updated}/${result.checked}, objects: +${result.added}/-${result.removed}`);
 }
 
@@ -849,6 +856,9 @@ async function runScheduledFeedSync() {
           record.telegramSyncNotificationError = notificationError.message;
         }
         await persistFeedRecord(record);
+        if (APP_MODE === "external" && record.ownerId) {
+          await saasStore.recordFeedHistory(record.ownerId, record.sourceId || record.slug, "sync_error", { projectId: record.projectId, feedName: record.name, platform: record.platform, error: record.autoSyncError, failureCount: record.syncFailureCount }).catch(historyError => console.error("Feed history:", historyError.message));
+        }
         console.error(`Feed sync: ${record.slug}:`, record.autoSyncError);
       }
     }
@@ -1312,6 +1322,7 @@ async function handleApi(req, res, url) {
     const archive = {
       service: "ListingFlow", exportedAt, account: actor.user, projects, projectStates,
       payments: await saasStore.listPayments(actor.userId),
+      feedHistory: await saasStore.listFeedHistory(actor.userId),
       feeds: allFeeds.filter(feed => feed.ownerId === actor.userId),
       layouts: allLayouts.filter(layout => layout.ownerId === actor.userId),
       monitoring: Object.fromEntries(projects.map(project => [project.id, monitor.read()[project.id] || []])),
@@ -1358,6 +1369,10 @@ async function handleApi(req, res, url) {
     try {
       const saved = await projectStateStore.put(actor.userId, projectStateMatch[1], payload.state, expected === undefined ? undefined : Number(expected));
       await saasStore.recordAudit(actor.userId, "save", "project-state", projectStateMatch[1], { revision: saved.revision }).catch(error => console.error("Audit log:", error.message));
+      const changedFeedId = String(payload.feedId || "").trim();
+      if (changedFeedId && changedFeedId !== "all") {
+        await saasStore.recordFeedHistory(actor.userId, changedFeedId, "edit", { projectId: projectStateMatch[1], feedName: String(payload.feedName || "").trim(), revision: saved.revision }).catch(error => console.error("Feed history:", error.message));
+      }
       res.setHeader("ETag", `"${saved.revision}"`);
       return send(res, 200, saved);
     } catch (error) {
@@ -1378,7 +1393,7 @@ async function handleApi(req, res, url) {
     const release = (feed.releases || []).find(item => item.id === releaseMatch[2]);
     if (!release) return sendError(res, 404, "Выпуск не найден.");
     const xml = await readReleaseXml(feed, release);
-    const restored = await saveFeed(req, { ...feed, xml, platform: release.platform, objectCount: release.objectCount, projectId: feed.projectId, sourceUrl: feed.sourceUrl, sourceType: feed.sourceType }, feed.slug, actor);
+    const restored = await saveFeed(req, { ...feed, xml, platform: release.platform, objectCount: release.objectCount, projectId: feed.projectId, sourceUrl: feed.sourceUrl, sourceType: feed.sourceType }, feed.slug, actor, "rollback");
     await saasStore.recordAudit(actor.userId, "rollback", "feed", feed.slug, { releaseId: release.id, version: release.version, projectId: feed.projectId }).catch(error => console.error("Audit log:", error.message));
     return send(res, 200, restored);
   }
@@ -1463,6 +1478,15 @@ async function handleApi(req, res, url) {
 
   if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !hasWorkspaceAccess(actor.user) && (!hasSubscriptionReadAccess(actor.user) || req.method !== "GET") && !["/api/billing/payments", "/api/projects", "/api/support/tickets", "/api/account/export", "/api/account/deletion-request"].includes(url.pathname)) {
     return sendError(res, 402, "Тестовый период закончился. Оплатите тариф от 5 000 ₽ в месяц, чтобы продолжить.");
+  }
+
+  if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/feed-history") {
+    if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам сервиса.");
+    const projectId = String(url.searchParams.get("projectId") || "").trim();
+    if (projectId && !await saasStore.hasProject(actor.userId, projectId)) return sendError(res, 403, "Проект недоступен.");
+    const feedId = String(url.searchParams.get("feedId") || "").trim();
+    const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 200) || 200));
+    return send(res, 200, { history: await saasStore.listFeedHistory(actor.userId, { projectId, feedId, limit }) });
   }
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {
@@ -1571,6 +1595,7 @@ async function handleApi(req, res, url) {
     const version = Number(historyDeleteMatch[2]);
     record.history = (Array.isArray(record.history) ? record.history : []).filter(item => Number(item.version) !== version);
     await persistFeedRecord(record);
+    if (APP_MODE === "external" && actor?.userId) await saasStore.recordFeedHistory(actor.userId, record.sourceId || record.slug, "release_delete", { projectId: record.projectId, feedName: record.name, platform: record.platform, version }).catch(error => console.error("Feed history:", error.message));
     return send(res, 200, { history: record.history });
   }
 
@@ -1582,9 +1607,11 @@ async function handleApi(req, res, url) {
     const feeds = await readFeeds();
     const record = feeds.find(feed => feed.slug === renameFeedMatch[1]);
     if (!record || (APP_MODE === "external" && record.ownerId !== actor?.userId)) return sendError(res, 404, "Фид не найден.");
+    const previousName = record.name || "";
     record.name = name;
     record.updatedAt = new Date().toISOString();
     await persistFeedRecord(record);
+    if (APP_MODE === "external" && actor?.userId) await saasStore.recordFeedHistory(actor.userId, record.sourceId || record.slug, "rename", { projectId: record.projectId, feedName: record.name, oldName: previousName, newName: name }).catch(error => console.error("Feed history:", error.message));
     return send(res, 200, record);
   }
 

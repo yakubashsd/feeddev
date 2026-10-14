@@ -49,6 +49,16 @@ test("landing CSS has explicit narrow viewport protections", () => {
   assert.match(css, /prefers-reduced-motion/);
 });
 
+test("landing motion is progressive, purposeful and reduced-motion safe", () => {
+  assert.match(html, /function setupLandingMotion\(\)/);
+  assert.match(html, /landing-motion-enabled/);
+  assert.match(html, /IntersectionObserver/);
+  assert.match(css, /landingHeroCopyIn/);
+  assert.match(css, /landingRevealIn/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.doesNotMatch(css, /transition:\s*all/);
+});
+
 test("auth screen cannot leave the workspace shell visible", () => {
   assert.match(html, /document\.body\.classList\.add\("auth-active"\)/);
   assert.match(html, /document\.body\.classList\.remove\("auth-active", "landing-active"\)/);

@@ -18,11 +18,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 12;
 const MAX_PASSWORD_LENGTH = 128;
 
-function emptyState() { return { version: 3, users: [], staff: [], projects: [], payments: [], passwordResets: [], paymentLogs: [], audit: [] }; }
+function emptyState() { return { version: 3, users: [], staff: [], projects: [], payments: [], passwordResets: [], paymentLogs: [], audit: [], feedHistory: [] }; }
 function migrateState(value) {
   const state = value && typeof value === "object" ? value : emptyState();
   state.version = 3;
-  for (const key of ["users", "staff", "projects", "payments", "passwordResets", "paymentLogs", "audit"]) state[key] = Array.isArray(state[key]) ? state[key] : [];
+  for (const key of ["users", "staff", "projects", "payments", "passwordResets", "paymentLogs", "audit", "feedHistory"]) state[key] = Array.isArray(state[key]) ? state[key] : [];
   for (const project of state.projects) {
     project.status ||= "active";
     project.updatedAt ||= project.createdAt || new Date().toISOString();
@@ -290,9 +290,48 @@ async function deleteProject(userId, projectId) {
   async function deleteStaff(staffId, actor = "owner") { return mutate(async state => { const before = state.staff.length; state.staff = state.staff.filter(item => item.id !== staffId); if (state.staff.length === before) return false; audit(state, actor, "delete", "staff", staffId); return true; }); }
 
   async function listPayments(userId) { const state = await read(); return state.payments.filter(payment => payment.userId === userId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).map(({ userId: _, ...payment }) => payment); }
+  function safeFeedHistoryDetails(details = {}) {
+    const blocked = new Set(["xml", "sourceUrl", "url", "password", "token", "secret"]);
+    return Object.fromEntries(Object.entries(details).slice(0, 20).flatMap(([key, value]) => {
+      if (blocked.has(String(key))) return [];
+      if (typeof value === "string") return [[String(key).slice(0, 60), value.slice(0, 500)]];
+      if (typeof value === "number" && Number.isFinite(value)) return [[String(key).slice(0, 60), value]];
+      if (typeof value === "boolean") return [[String(key).slice(0, 60), value]];
+      return [];
+    }));
+  }
+  async function recordFeedHistory(userId, feedId, action, details = {}) {
+    return mutate(async state => {
+      const safeUserId = String(userId || "");
+      const safeFeedId = String(feedId || "").slice(0, 160);
+      if (!safeUserId || !safeFeedId) return false;
+      const entry = {
+        id: crypto.randomUUID(), userId: safeUserId, feedId: safeFeedId,
+        projectId: String(details.projectId || "").slice(0, 120),
+        feedName: String(details.feedName || "").slice(0, 160),
+        action: String(action || "update").slice(0, 60),
+        details: safeFeedHistoryDetails(details),
+        createdAt: new Date().toISOString()
+      };
+      state.feedHistory.unshift(entry);
+      state.feedHistory = state.feedHistory.slice(0, 5000);
+      return true;
+    });
+  }
+  async function listFeedHistory(userId, { projectId = "", feedId = "", limit = 200 } = {}) {
+    const state = await read();
+    const safeProjectId = String(projectId || "");
+    const safeFeedId = String(feedId || "");
+    const safeLimit = Math.max(1, Math.min(500, Number(limit) || 200));
+    return state.feedHistory
+      .filter(item => item.userId === String(userId || "") && (!safeProjectId || item.projectId === safeProjectId) && (!safeFeedId || item.feedId === safeFeedId))
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+      .slice(0, safeLimit)
+      .map(({ userId: _, ...item }) => item);
+  }
   async function recordAudit(actor, action, entityType, entityId, details = {}) { return mutate(async state => { audit(state, actor, action, entityType, entityId, details); return true; }); }
 
-  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, revokeSessions, listProjects, createProject, deleteProject, renameProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
+  return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, revokeSessions, listProjects, createProject, deleteProject, renameProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, recordFeedHistory, listFeedHistory, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
 }
 function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
 function isTrialActive(user) { return user?.status === "trial" && Boolean(user.trialUntil) && new Date(user.trialUntil) > new Date(); }
