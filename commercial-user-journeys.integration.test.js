@@ -65,7 +65,7 @@ test("commercial user journeys work end-to-end and tenants stay isolated", async
   assert.equal(wrongLogin.response.status, 401);
 
   const unpaidProject = await request("/api/projects", { method: "POST", cookie: cookieA, body: { name: "Без оплаты" } });
-  assert.equal(unpaidProject.response.status, 402);
+  assert.equal(unpaidProject.response.status, 201);
 
   const userA = (await store.adminSnapshot()).users.find(user => user.email === "client-a@example.ru");
   const payment = await store.createPayment(userA.id, 1);
@@ -88,9 +88,7 @@ test("commercial user journeys work end-to-end and tenants stay isolated", async
   assert.equal(activeSession.data.subscriptionActive, true);
   assert.equal(activeSession.data.user.projectLimit, 1);
 
-  const projectAResult = await request("/api/projects", { method: "POST", cookie: cookieA, body: { name: "Проект клиента А" } });
-  assert.equal(projectAResult.response.status, 201);
-  const projectA = projectAResult.data;
+  const projectA = unpaidProject.data;
   const overLimit = await request("/api/projects", { method: "POST", cookie: cookieA, body: { name: "Лишний проект" } });
   assert.equal(overLimit.response.status, 409);
 

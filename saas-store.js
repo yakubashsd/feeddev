@@ -8,6 +8,9 @@ const PLAN = Object.freeze({ code: "projects", name: "Проекты", unitAmoun
 const UNLIMITED_PROJECT_LIMIT = -1;
 const UNLIMITED_FEED_LIMIT = -1;
 const DEFAULT_FEED_LIMIT = 80;
+const TRIAL_DAYS = 14;
+const TRIAL_PROJECT_LIMIT = 1;
+const TRIAL_FEED_LIMIT = 1;
 const DEMO_UNLIMITED_EMAIL = "demo@listingflow.ru";
 const FILE_NAME = "saas-store.enc";
 const BLOB_PATH = "private/saas-store.enc";
@@ -52,7 +55,8 @@ function verifyPassword(password, stored) {
 function isDemoUnlimitedUser(user = {}) { return normalizeEmail(user.email) === DEMO_UNLIMITED_EMAIL; }
 function publicUser(user = {}) {
   const unlimited = isDemoUnlimitedUser(user);
-  return { id: user.id, role: "client", email: user.email, name: user.name, company: user.company || "", phone: user.phone || "", status: user.status, projectLimit: unlimited ? UNLIMITED_PROJECT_LIMIT : Number(user.projectLimit || 1), feedLimit: unlimited ? UNLIMITED_FEED_LIMIT : DEFAULT_FEED_LIMIT, subscriptionUntil: user.subscriptionUntil || null, sessionVersion: Number(user.sessionVersion || 1), createdAt: user.createdAt, updatedAt: user.updatedAt || user.createdAt };
+  const trial = isTrialActive(user);
+  return { id: user.id, role: "client", email: user.email, name: user.name, company: user.company || "", phone: user.phone || "", status: user.status, projectLimit: unlimited ? UNLIMITED_PROJECT_LIMIT : trial ? TRIAL_PROJECT_LIMIT : Number(user.projectLimit || 1), feedLimit: unlimited ? UNLIMITED_FEED_LIMIT : trial ? TRIAL_FEED_LIMIT : DEFAULT_FEED_LIMIT, subscriptionUntil: user.subscriptionUntil || null, trialUntil: user.trialUntil || null, trialActive: trial, sessionVersion: Number(user.sessionVersion || 1), createdAt: user.createdAt, updatedAt: user.updatedAt || user.createdAt };
 }
 function publicStaff(staff) { return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, status: staff.status, sessionVersion: Number(staff.sessionVersion || 1), createdAt: staff.createdAt }; }
 function isUnlimitedProjectLimit(value) { return Number(value) === UNLIMITED_PROJECT_LIMIT; }
@@ -122,7 +126,8 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     return mutate(async state => {
       if (state.users.some(user => user.email === email) || state.staff.some(user => user.email === email)) throw new Error("Аккаунт с таким email уже существует.");
       const now = new Date().toISOString();
-      const user = { id: crypto.randomUUID(), email, name: name.slice(0, 120), company: String(company).trim().slice(0, 160), phone: String(phone).trim().slice(0, 40), passwordHash: hashPassword(password), status: "pending_payment", projectLimit: 1, subscriptionUntil: null, offerAcceptedAt: now, personalDataConsentAt: now, offerVersion: String(offerVersion).slice(0, 40), privacyVersion: String(privacyVersion).slice(0, 40), consentVersion: String(consentVersion).slice(0, 40), createdAt: now, updatedAt: now };
+      const trialUntil = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const user = { id: crypto.randomUUID(), email, name: name.slice(0, 120), company: String(company).trim().slice(0, 160), phone: String(phone).trim().slice(0, 40), passwordHash: hashPassword(password), status: "trial", projectLimit: TRIAL_PROJECT_LIMIT, feedLimit: TRIAL_FEED_LIMIT, subscriptionUntil: null, trialUntil, offerAcceptedAt: now, personalDataConsentAt: now, offerVersion: String(offerVersion).slice(0, 40), privacyVersion: String(privacyVersion).slice(0, 40), consentVersion: String(consentVersion).slice(0, 40), createdAt: now, updatedAt: now };
       state.users.push(user); audit(state, user.id, "register", "client", user.id, { offerVersion: user.offerVersion, privacyVersion: user.privacyVersion, consentVersion: user.consentVersion }); return publicUser(user);
     });
   }
@@ -183,7 +188,7 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     return mutate(async state => {
       const user = state.users.find(item => item.id === userId);
       if (!user || user.status === "blocked") throw new Error("Аккаунт недоступен.");
-      if (!isSubscriptionActive(user)) throw new Error("Сначала оплатите тариф.");
+      if (!hasWorkspaceAccess(user)) throw new Error("Тестовый период закончился. Оплатите тариф, чтобы продолжить.");
       const limit = projectLimitForUser(user);
       if (state.projects.filter(project => project.userId === userId && project.status !== "archived").length >= limit) throw new Error(`На тарифе доступно проектов: ${limit} (учитываются только активные).`);
       const now = new Date().toISOString(); const project = { id: crypto.randomUUID(), userId, name: name.slice(0, 100), status: "active", createdAt: now, updatedAt: now };
@@ -290,6 +295,8 @@ async function deleteProject(userId, projectId) {
   return { register, authenticate, authenticateStaff, requestPasswordReset, resetPassword, getUser, getStaff, revokeSessions, listProjects, createProject, deleteProject, renameProject, ownsProject, hasProject, restoreProject, createPayment, listPayments, completePayment, completePaymentByProviderTransactionId, attachPaymentProviderTransaction, setPaymentProviderStatus, logPaymentEvent, recordAudit, adminSnapshot, updateUser, updateProject, createStaff, deleteStaff };
 }
 function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
+function isTrialActive(user) { return user?.status === "trial" && Boolean(user.trialUntil) && new Date(user.trialUntil) > new Date(); }
+function hasWorkspaceAccess(user) { return isSubscriptionActive(user) || isTrialActive(user); }
 const SUBSCRIPTION_GRACE_DAYS = 7;
 function subscriptionGraceUntil(user) {
   if (!user?.subscriptionUntil) return null;
@@ -298,5 +305,5 @@ function subscriptionGraceUntil(user) {
   until.setUTCDate(until.getUTCDate() + SUBSCRIPTION_GRACE_DAYS);
   return until.toISOString();
 }
-function hasSubscriptionReadAccess(user) { return isSubscriptionActive(user) || (user?.status === "active" && Boolean(subscriptionGraceUntil(user)) && new Date(subscriptionGraceUntil(user)) > new Date()); }
-module.exports = { PLAN, DEFAULT_FEED_LIMIT, UNLIMITED_FEED_LIMIT, createSaasStore, hashPassword, verifyPassword, isSubscriptionActive, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail, isDemoUnlimitedUser };
+function hasSubscriptionReadAccess(user) { return hasWorkspaceAccess(user) || (user?.status === "active" && Boolean(subscriptionGraceUntil(user)) && new Date(subscriptionGraceUntil(user)) > new Date()); }
+module.exports = { PLAN, DEFAULT_FEED_LIMIT, UNLIMITED_FEED_LIMIT, TRIAL_DAYS, TRIAL_PROJECT_LIMIT, TRIAL_FEED_LIMIT, createSaasStore, hashPassword, verifyPassword, isSubscriptionActive, isTrialActive, hasWorkspaceAccess, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail, isDemoUnlimitedUser };

@@ -17,7 +17,8 @@ test("external accounts are isolated, billed per project and limited by purchase
     assert.deepEqual(accepted.details, { offerVersion: "2026-09-22", privacyVersion: "2026-09-22", consentVersion: "2026-09-22" });
     assert.ok(await store.authenticate("USER@example.ru", "long-password"));
     assert.equal(await store.authenticate("user@example.ru", "wrong-password"), null);
-    await assert.rejects(store.createProject(user.id, "Первый"), /оплатите/);
+    const trialProject = await store.createProject(user.id, "Пробный");
+    assert.ok(trialProject.id);
 
     const payment = await store.createPayment(user.id, 10);
     assert.equal(payment.amount, 50000);
@@ -27,7 +28,7 @@ test("external accounts are isolated, billed per project and limited by purchase
     await store.completePaymentByProviderTransactionId(payment.id, 50000);
     assert.equal((await store.getUser(user.id)).subscriptionUntil, firstUntil, "repeated callback must be idempotent");
 
-    const project = await store.createProject(user.id, "Проект 1");
+    const project = trialProject;
     assert.equal(await store.ownsProject(user.id, project.id), true);
     for (let index = 2; index <= 10; index += 1) await store.createProject(user.id, `Проект ${index}`);
     await assert.rejects(store.createProject(user.id, "Проект 11"), /доступно проектов: 10/);
@@ -54,7 +55,7 @@ test("demo account has unlimited projects and feeds without changing limits for 
 
     const client = await store.register({ email: "client-limits@example.ru", password: "client-password", name: "Клиент", acceptedOffer: true, acceptedPersonalData: true });
     assert.equal(client.projectLimit, 1);
-    assert.equal(client.feedLimit, 80);
+    assert.equal(client.feedLimit, 1);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

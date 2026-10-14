@@ -785,6 +785,10 @@ body.client-ui .traffic-policy-toolbar {
    and the mobile shell must not inherit the fixed desktop frame above. */
 body.client-ui.auth-active #appShell,
 body.client-ui.landing-active #appShell { display:none!important; }
+/* `.app` has an !important display rule for the workspace frame, so the
+   native [hidden] attribute needs an explicit override in public/auth modes. */
+body.client-ui.auth-active #appShell[hidden],
+body.client-ui.landing-active #appShell[hidden] { display:none!important; }
 body.client-ui.auth-active .topbar,
 body.client-ui.landing-active .topbar { display:none!important; }
 body.client-ui #themeToggle { display:none!important; }

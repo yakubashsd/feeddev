@@ -43,6 +43,8 @@ test("landing copy matches implemented capabilities and avoids unsupported promi
 test("landing CSS has explicit narrow viewport protections", () => {
   assert.match(css, /@media\(max-width:420px\)/);
   assert.match(css, /overflow-x:clip/);
+  assert.match(css, /overflow-y:auto!important/);
+  assert.match(css, /height:auto!important/);
   assert.match(css, /grid-template-columns:1fr/);
   assert.match(css, /prefers-reduced-motion/);
 });
@@ -52,5 +54,6 @@ test("auth screen cannot leave the workspace shell visible", () => {
   assert.match(html, /document\.body\.classList\.remove\("auth-active", "landing-active"\)/);
   const calendly = fs.readFileSync(path.join(__dirname, "calendly-theme.css"), "utf8");
   assert.match(calendly, /body\.client-ui\.auth-active #appShell/);
+  assert.match(calendly, /body\.client-ui\.landing-active #appShell\[hidden\]/);
   assert.match(calendly, /body\.client-ui #themeToggle\s*\{\s*display:none/);
 });

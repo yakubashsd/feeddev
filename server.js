@@ -12,7 +12,7 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
 const { XMLParser, XMLValidator } = require("fast-xml-parser");
-const { PLAN, createSaasStore, isSubscriptionActive, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail } = require("./saas-store");
+const { PLAN, createSaasStore, isSubscriptionActive, isTrialActive, hasWorkspaceAccess, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail } = require("./saas-store");
 const { createProjectStateStore } = require("./project-state-store");
 const { createSupportTicketStore } = require("./support-tickets");
 const { createPlatega } = require("./platega");
@@ -643,6 +643,13 @@ function normalizeAutoSyncInterval(value) {
 async function saveFeed(req, payload, existingSlug = "", actor = null) {
   const data = validateFeedPayload(payload, { unlimitedSources: Number(actor?.user?.feedLimit) === -1 });
   const feeds = await readFeeds();
+  if (APP_MODE === "external" && !existingSlug && Number(actor?.user?.feedLimit) !== -1) {
+    const projectFeeds = feeds.filter(feed => feed.ownerId === actor?.userId && feed.projectId === String(payload.projectId || ""));
+    const allowedFeeds = Number(actor?.user?.feedLimit || 0);
+    if (projectFeeds.length >= allowedFeeds) throw new Error(actor?.user?.trialActive
+      ? "В тестовом периоде доступен один фид. Оплатите тариф, чтобы добавить больше."
+      : `На тарифе доступно фидов: ${allowedFeeds}.`);
+  }
   const now = new Date().toISOString();
   const requestedSlug = existingSlug || payload.slug || data.name || `${data.platform}-${new Date().toISOString().slice(0, 10)}-${crypto.randomBytes(3).toString("hex")}`;
   let slug = makeSlug(requestedSlug);
@@ -1075,6 +1082,8 @@ async function handleApi(req, res, url) {
       role: actor?.role || null,
       user: actor?.user || null,
       subscriptionActive: actor?.user ? isSubscriptionActive(actor.user) : APP_MODE === "internal",
+      trialActive: actor?.user ? isTrialActive(actor.user) : false,
+      trialUntil: actor?.user?.trialUntil || null,
       subscriptionReadOnly: actor?.user ? hasSubscriptionReadAccess(actor.user) && !isSubscriptionActive(actor.user) : false,
       subscriptionGraceUntil: actor?.user && hasSubscriptionReadAccess(actor.user) && !isSubscriptionActive(actor.user) ? subscriptionGraceUntil(actor.user) : null,
       plan: APP_MODE === "external" ? PLAN : null,
@@ -1343,7 +1352,7 @@ async function handleApi(req, res, url) {
       return send(res, 200, result);
     }
     if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 409, "Архивный проект доступен только для просмотра.");
-    if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для сохранения проекта оплатите тариф.");
+    if (!hasWorkspaceAccess(actor.user)) return sendError(res, 402, "Тестовый период закончился. Оплатите тариф, чтобы продолжить.");
     const payload = await parseBody(req);
     const expected = req.headers["if-match"]?.replace(/^\"|\"$/g, "");
     try {
@@ -1365,7 +1374,7 @@ async function handleApi(req, res, url) {
     if (!feed) return sendError(res, 404, "Фид не найден.");
     if (req.method === "GET" && !releaseMatch[2]) return send(res, 200, { releases: (feed.releases || []).map(({ id, version, createdAt, objectCount, platform, checksum }) => ({ id, version, createdAt, objectCount, platform, checksum })) });
     if (req.method !== "POST" || !releaseMatch[2]) return sendError(res, 405, "Метод не поддерживается.");
-    if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для отката выпуска продлите тариф.");
+    if (!hasWorkspaceAccess(actor.user)) return sendError(res, 402, "Тестовый период закончился. Оплатите тариф, чтобы продолжить.");
     const release = (feed.releases || []).find(item => item.id === releaseMatch[2]);
     if (!release) return sendError(res, 404, "Выпуск не найден.");
     const xml = await readReleaseXml(feed, release);
@@ -1384,7 +1393,7 @@ async function handleApi(req, res, url) {
   const restoreProjectMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)\/restore$/i) : null;
   if (restoreProjectMatch && req.method === "POST") {
     if (!["client", "customer"].includes(actor.role)) return sendError(res, 403, "Раздел доступен клиентам.");
-    if (!isSubscriptionActive(actor.user)) return sendError(res, 402, "Для восстановления проекта продлите подписку.");
+    if (!hasWorkspaceAccess(actor.user)) return sendError(res, 402, "Тестовый период закончился. Оплатите тариф, чтобы продолжить.");
     try {
       const restored = await saasStore.restoreProject(actor.userId, restoreProjectMatch[1]);
       return send(res, restored ? 200 : 404, restored ? { restored: true } : { error: "Проект не найден." });
@@ -1452,8 +1461,8 @@ async function handleApi(req, res, url) {
     return sendError(res, 403, "Раздел доступен клиентам.");
   }
 
-  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !isSubscriptionActive(actor.user) && (!hasSubscriptionReadAccess(actor.user) || req.method !== "GET") && !["/api/billing/payments", "/api/projects", "/api/support/tickets", "/api/account/export", "/api/account/deletion-request"].includes(url.pathname)) {
-    return sendError(res, 402, "Для работы с сервисом оплатите тариф от 5 000 ₽ в месяц.");
+  if (APP_MODE === "external" && ["client", "customer"].includes(actor.role) && !hasWorkspaceAccess(actor.user) && (!hasSubscriptionReadAccess(actor.user) || req.method !== "GET") && !["/api/billing/payments", "/api/projects", "/api/support/tickets", "/api/account/export", "/api/account/deletion-request"].includes(url.pathname)) {
+    return sendError(res, 402, "Тестовый период закончился. Оплатите тариф от 5 000 ₽ в месяц, чтобы продолжить.");
   }
 
   if (req.method === "GET" && url.pathname === "/api/feeds") {

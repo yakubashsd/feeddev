@@ -4749,7 +4749,7 @@
     <section class="landing-faq" id="landingFaq" aria-labelledby="faqTitle"><div class="landing-section-heading"><div><p class="landing-kicker">Вопросы перед стартом</p><h2 id="faqTitle">Всё важное — до загрузки фида.</h2></div></div><div class="landing-faq-list"><details><summary>Какие форматы поддерживает ListingFlow?</summary><p>Постоянные публикации доступны для ЦИАН, Авито Недвижимости и Яндекс Недвижимости. Для Домклик можно подготовить и скачать тестовый XML; постоянная публикация откроется после подтверждения схемы площадкой.</p></details><details><summary>Что делать, если в одном XML несколько жилых комплексов?</summary><p>После загрузки ListingFlow сгруппирует объекты по ЖК. Вы сможете выбрать конкретный проект, отредактировать только его квартиры и выпустить отдельный фид.</p></details><details><summary>Изменится ли мой исходный файл?</summary><p>Нет. ListingFlow хранит исходную версию отдельно. Изменения применяются к рабочей копии и опубликованным выпускам внутри проекта.</p></details><details><summary>Гарантирует ли сервис приём фида площадкой?</summary><p>Нет: финальное решение всегда принимает площадка. ListingFlow проверяет структуру и обязательные поля по встроенным правилам, чтобы найти типовые ошибки до отправки.</p></details><details><summary>Как я узнаю, что источник или публикация перестали работать?</summary><p>Состояние видно в списке фидов и разделе мониторинга. Для проекта можно подключить Telegram-бота и получать уведомления о сбоях.</p></details><details><summary>Что входит в 5 000 ₽?</summary><p>Один проект на 30 дней: работа с его фидами и объектами, массовые правки, оформление планировок, публикация, версии, мониторинг и техническая поддержка.</p></details></div></section>
 
     <section class="landing-final"><div><img src="/assets/listingflow-mark.png" alt=""><h2>Загрузите фид и увидьте, что требует исправления.</h2><p>Регистрация открывает рабочую область: добавьте источник, выберите ЖК и пройдите весь путь до готовой ссылки.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Проверить свой XML <span aria-hidden="true">→</span></button></section>
-    <footer class="landing-footer"><span>© ListingFlow</span><span>Создание и мониторинг XML‑фидов недвижимости</span><span><button type="button" data-landing-auth="login">Войти</button><a href="/legal.html">Документы</a></span></footer>
+    <footer class="landing-footer"><span>© ListingFlow</span><span>Создание и мониторинг XML‑фидов недвижимости</span><span>ИП Якубаш Сергей Дмитриевич · Тюменская область, г. Тюмень, ул. Клары Цеткин, 61к1 · <a href="mailto:demo@listingflow.ru">demo@listingflow.ru</a> · <a href="tel:+79044612705">+7 904 461‑27‑05</a></span><span><button type="button" data-landing-auth="login">Войти</button><a href="/legal.html">Документы</a></span></footer>
   </main>
   <section class="auth-screen" id="authScreen" hidden>
     <form class="auth-card" id="loginForm" novalidate>
@@ -6293,7 +6293,7 @@
     }
 
     async function pushExternalProjectState(overrides = {}) {
-      if (runtimeMode !== "external" || !currentProject || !sessionState?.subscriptionActive) return;
+      if (runtimeMode !== "external" || !currentProject || !(sessionState?.subscriptionActive || sessionState?.trialActive)) return;
       if (cloudSaveConflict) return;
       const state = captureProjectBrowserState(overrides);
       if (!Object.keys(state).length) return;
@@ -6480,6 +6480,9 @@
       } else if (sessionState?.subscriptionReadOnly && sessionState?.subscriptionGraceUntil) {
         status.textContent = `Тариф закончился ${new Date(until).toLocaleDateString("ru-RU")}. До ${new Date(sessionState.subscriptionGraceUntil).toLocaleDateString("ru-RU")} доступен просмотр проектов и выпусков; редактирование отключено.`;
         button.textContent = onlineBilling ? "Продлить доступ" : "Запросить счёт";
+      } else if (sessionState?.trialActive && sessionState?.user?.trialUntil) {
+        status.textContent = `Пробный доступ активен до ${new Date(sessionState.user.trialUntil).toLocaleDateString("ru-RU")}: один проект и один фид без оплаты.`;
+        button.textContent = onlineBilling ? "Оплатить и продолжить" : "Запросить счёт";
       } else {
         status.textContent = onlineBilling ? "Доступ пока не оплачен. После подтверждения платежа можно создать выбранное количество проектов." : "Онлайн-касса пока не подключена. Мы выставим счёт вручную и активируем доступ после оплаты.";
         button.textContent = onlineBilling ? `Оплатить ${(unitAmount * projectCount).toLocaleString("ru-RU")} ₽ онлайн` : "Запросить счёт";
@@ -6527,7 +6530,7 @@
           markBootstrapStage("state");
           showWorkspace();
           await hydratePublishedFeedState();
-          if (runtimeMode === "external" && !state.subscriptionActive && activePage !== "support") {
+          if (runtimeMode === "external" && !(state.subscriptionActive || state.trialActive) && activePage !== "support") {
             switchPage(state.subscriptionReadOnly ? (currentProject ? "apartments" : "projects") : "billing");
           }
           renderBilling();
@@ -7577,11 +7580,11 @@
       if (activePage === "validator") activePage = "feeds";
       const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
-      const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!sessionState?.subscriptionActive || currentProject.status === "archived");
+      const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!(sessionState?.subscriptionActive || sessionState?.trialActive) || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
       const saveIndicator = document.querySelector("#cloudSaveStatus");
       if (projectReadOnly && saveIndicator) saveIndicator.textContent = currentProject.status === "archived" ? "Архивный проект · просмотр" : sessionState?.subscriptionReadOnly ? "Тариф истёк · льготный просмотр" : "Доступ ограничен · продлите тариф";
-      else if (saveIndicator && runtimeMode === "external" && currentProject && sessionState?.subscriptionActive && !cloudSaveConflict) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Сохраняю проект в облако";
+      else if (saveIndicator && runtimeMode === "external" && currentProject && (sessionState?.subscriptionActive || sessionState?.trialActive) && !cloudSaveConflict) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Сохраняю проект в облако";
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", false);
       shell.classList.toggle("project-list-mode", activePage === "projects");
@@ -8068,7 +8071,7 @@
       event.preventDefault();
       const name = document.querySelector("#projectName").value.trim();
       if (!name) return;
-      if (runtimeMode === "external" && !sessionState?.subscriptionActive) {
+      if (runtimeMode === "external" && !(sessionState?.subscriptionActive || sessionState?.trialActive)) {
         document.querySelector("#projectDialog").close();
         switchPage("billing");
         return;
@@ -12009,8 +12012,8 @@ ${photos}
   <script src="monitor-client.js"></script>
   <script src="usage-guide.js"></script>
   <div id="cookieNotice" hidden>
-    ListingFlow использует обязательные cookies для входа. Яндекс Метрика и Webvisor включатся только с вашего согласия. <a href="/legal.html#cookies">Подробнее</a>
-    <div><button type="button" id="acceptAnalytics">Разрешить аналитику</button><button type="button" id="declineAnalytics">Только необходимые</button><button type="button" id="openCookiePrefs">Настроить</button></div>
+    ListingFlow использует обязательные cookies для входа. Аналитика включается только с вашего согласия. <a href="/legal.html#cookies">Подробнее</a>
+    <div><button type="button" id="acceptAnalytics">Принять</button><button type="button" id="declineAnalytics">Отклонить</button></div>
   </div>
   <dialog id="cookiePrefs" aria-labelledby="cookiePrefsTitle"><form method="dialog"><h2 id="cookiePrefsTitle">Настройки cookies</h2><p>Обязательные cookies нужны для входа и всегда включены. Выберите аналитические инструменты отдельно.</p><label><input id="analyticsConsent" type="checkbox"><span><strong>Яндекс Метрика</strong><br>Посещение страниц и карта кликов.</span></label><label><input id="webvisorConsent" type="checkbox"><span><strong>Webvisor</strong><br>Запись взаимодействия с интерфейсом для анализа ошибок.</span></label><div class="cookie-dialog-actions"><button type="button" id="cancelCookiePrefs">Отмена</button><button type="button" id="saveCookiePrefs" class="primary">Сохранить выбор</button></div></form></dialog>
   <script src="cookie-consent.js" defer></script>
