@@ -43,7 +43,7 @@
 
   function save(value) {
     const previous = read();
-    localStorage.setItem(key, JSON.stringify({ ...value, version, savedAt: new Date().toISOString() }));
+    try { localStorage.setItem(key, JSON.stringify({ ...value, version, savedAt: new Date().toISOString() })); } catch {}
     notice.hidden = true;
     if (dialog.open) dialog.close();
     if (previous?.analytics && !value.analytics && window.ym) {

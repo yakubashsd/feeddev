@@ -35,5 +35,6 @@ body.client-ui:has(.landing-screen:not([hidden])){height:auto!important;min-heig
 
 /* Keep consent unobtrusive on the public entry point. */
 body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice{left:auto!important;right:20px!important;bottom:20px!important;width:min(360px,calc(100vw - 40px))!important;max-width:none!important;padding:14px 16px!important;display:block!important;font-size:13px!important;line-height:1.4!important}
+body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice[hidden]{display:none!important}
 body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice>div{margin-top:12px!important;justify-content:flex-end!important}
 @media(max-width:520px){body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice{right:10px!important;bottom:10px!important;width:calc(100vw - 20px)!important;padding:12px 14px!important}body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice>div{justify-content:stretch!important}body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice button{flex:1}}
