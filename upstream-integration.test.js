@@ -7,6 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const html = fs.readFileSync(path.join(__dirname, "feed-generator.html"), "utf8");
 const layoutEditor = fs.readFileSync(path.join(__dirname, "layout-editor.js"), "utf8");
+const server = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
 
 function clientFunction(name) {
   const start = html.indexOf(`    function ${name}(`);
@@ -69,6 +70,13 @@ test("project boot uses bounded requests and cannot wait forever on project APIs
   const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
   assert.match(sync, /fetchWithTimeout\("\/api\/projects"/);
   assert.match(hydrate, /fetchWithTimeout\(`\/api\/projects\/\$\{encodeURIComponent\(currentProject\.id\)\}\/state`/);
+});
+
+test("project state polling uses conditional requests instead of downloading unchanged drafts", () => {
+  const poll = html.match(/async function pollExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
+  assert.match(poll, /If-None-Match/);
+  assert.match(poll, /response\.status === 304/);
+  assert.match(server, /req\.headers\["if-none-match"\] === etag/);
 });
 
 test("project bootstrap has a visible fallback and cannot reload forever", () => {

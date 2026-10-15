@@ -5,6 +5,8 @@ const http = require('node:http');
 const https = require('node:https');
 const net = require('node:net');
 const { XMLParser, XMLValidator } = require('fast-xml-parser');
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 8, maxFreeSockets: 4 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 8, maxFreeSockets: 4 });
 const imageUrls = value => {
   const found = [];
   const visit = (node, key = '') => {
@@ -56,7 +58,7 @@ async function downloadResource(url, { redirects=0, maxBytes=20*1024*1024, binar
   const ownLocal=localOrigin && target.origin===new URL(localOrigin).origin && ['localhost','127.0.0.1'].includes(target.hostname);
   if(!addresses.length||(!ownLocal&&addresses.some(a=>!publicAddress(a.address))))throw Error('Адрес внутренней сети недоступен для мониторинга');
   return new Promise((resolve,reject)=>{
-    const request=(target.protocol==='https:'?https:http).get(target, {lookup:(_host,options,callback)=>options.all?callback(null,[addresses[0]]):callback(null,addresses[0].address,4)}, response=>{
+    const request=(target.protocol==='https:'?https:http).get(target, {agent: target.protocol === 'https:' ? httpsAgent : httpAgent, lookup:(_host,options,callback)=>options.all?callback(null,[addresses[0]]):callback(null,addresses[0].address,4)}, response=>{
       if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){response.resume();if(redirects>=3)return reject(Error('Слишком много перенаправлений'));resolve(downloadResource(new URL(response.headers.location,target).href,{redirects:redirects+1,maxBytes,binary,timeoutMs}));return;}
       if(response.statusCode!==200){response.resume();reject(Error(`HTTP ${response.statusCode}`));return;}
       let size=0;const chunks=[];

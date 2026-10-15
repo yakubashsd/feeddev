@@ -71,16 +71,37 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
   if (!secret) throw new Error("Для внешнего режима задайте SAAS_DATA_SECRET.");
   const filePath = path.join(dataDir, FILE_NAME);
   let writeQueue = Promise.resolve();
+  let localCache = null;
+  let localCacheStamp = "";
+  let blobCache = null;
+  let blobCacheExpiresAt = 0;
+
+  function fileStamp() {
+    try {
+      const stat = fs.statSync(filePath);
+      return `${stat.mtimeMs}:${stat.size}`;
+    } catch {
+      return "missing";
+    }
+  }
+
   const blobApi = () => require("@vercel/blob");
 
   async function read() {
     try {
       if (!blobEnabled()) {
         if (!fs.existsSync(filePath)) return emptyState();
-        return migrateState(decrypt(fs.readFileSync(filePath, "utf8"), secret));
+        const stamp = fileStamp();
+        if (localCache && localCacheStamp === stamp) return localCache;
+        localCache = migrateState(decrypt(fs.readFileSync(filePath, "utf8"), secret));
+        localCacheStamp = stamp;
+        return localCache;
       }
+      if (blobCache && blobCacheExpiresAt > Date.now()) return blobCache;
       const result = await blobApi().get(BLOB_PATH, { access: "private", useCache: false });
-      return result?.stream ? migrateState(decrypt(await new Response(result.stream).text(), secret)) : emptyState();
+      blobCache = result?.stream ? migrateState(decrypt(await new Response(result.stream).text(), secret)) : emptyState();
+      blobCacheExpiresAt = Date.now() + 2000;
+      return blobCache;
     } catch (error) {
       if (error.code === "ENOENT" || error.status === 404) return emptyState();
       throw error;
@@ -93,9 +114,13 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
       const tempPath = `${filePath}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
       fs.writeFileSync(tempPath, `${encoded}\n`, { mode: 0o600 });
       fs.renameSync(tempPath, filePath);
+      localCache = state;
+      localCacheStamp = fileStamp();
       return;
     }
     await blobApi().put(BLOB_PATH, encoded, { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "text/plain; charset=utf-8" });
+    blobCache = state;
+    blobCacheExpiresAt = Date.now() + 2000;
   }
   function mutate(callback) {
     const operation = writeQueue.then(async () => {

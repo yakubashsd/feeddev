@@ -6,11 +6,34 @@ function createProjectStateStore({ dataDir, secret }) {
   if (!secret) throw new Error("Для хранилища проектов задайте SAAS_DATA_SECRET.");
   const root = path.join(dataDir, "project-state");
   const queues = new Map();
+  const cache = new Map();
 
   function key() { return crypto.createHash("sha256").update(String(secret)).digest(); }
   function file(userId, projectId) {
     if (!/^[a-f0-9-]{20,}$/i.test(userId) || !/^[a-f0-9-]{20,}$/i.test(projectId)) throw new Error("Некорректный идентификатор проекта.");
     return path.join(root, `${userId}-${projectId}.enc`);
+  }
+
+  function stamp(target) {
+    try {
+      const stat = fs.statSync(target);
+      return `${stat.mtimeMs}:${stat.size}`;
+    } catch {
+      return "missing";
+    }
+  }
+
+  function readRecord(target) {
+    const currentStamp = stamp(target);
+    const cached = cache.get(target);
+    if (cached?.stamp === currentStamp) return cached.record;
+    if (currentStamp === "missing") {
+      cache.delete(target);
+      return null;
+    }
+    const record = decrypt(fs.readFileSync(target, "utf8"));
+    cache.set(target, { stamp: currentStamp, record });
+    return record;
   }
   function encrypt(value) {
     const iv = crypto.randomBytes(12);
@@ -26,8 +49,8 @@ function createProjectStateStore({ dataDir, secret }) {
   }
   async function get(userId, projectId) {
     const target = file(userId, projectId);
-    if (!fs.existsSync(target)) return { state: null, updatedAt: null, revision: 0 };
-    const record = decrypt(fs.readFileSync(target, "utf8"));
+    const record = readRecord(target);
+    if (!record) return { state: null, updatedAt: null, revision: 0 };
     return { state: record.state || {}, updatedAt: record.updatedAt || null, revision: Number(record.revision || 1) };
   }
   function put(userId, projectId, state, expectedRevision) {
@@ -36,7 +59,7 @@ function createProjectStateStore({ dataDir, secret }) {
     const previous = queues.get(target) || Promise.resolve();
     const operation = previous.then(async () => {
       fs.mkdirSync(root, { recursive: true });
-      const current = fs.existsSync(target) ? decrypt(fs.readFileSync(target, "utf8")) : null;
+      const current = readRecord(target);
       const currentRevision = Number(current?.revision || 0);
       if (expectedRevision !== undefined && Number(expectedRevision) !== currentRevision) {
         const conflict = new Error("Состояние проекта уже изменилось на другом устройстве.");
@@ -48,6 +71,7 @@ function createProjectStateStore({ dataDir, secret }) {
       const temp = `${target}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
       fs.writeFileSync(temp, `${encrypt(record)}\n`, { mode: 0o600 });
       fs.renameSync(temp, target);
+      cache.set(target, { stamp: stamp(target), record });
       return { updatedAt: record.updatedAt, revision: record.revision };
     });
     queues.set(target, operation.catch(() => {}));
@@ -57,6 +81,7 @@ function createProjectStateStore({ dataDir, secret }) {
     const target = file(userId, projectId);
     if (!fs.existsSync(target)) return false;
     fs.unlinkSync(target);
+    cache.delete(target);
     return true;
   }
   return { get, put, remove };

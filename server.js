@@ -9,6 +9,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const zlib = require("zlib");
 const nodemailer = require("nodemailer");
 const { del, list, put } = require("@vercel/blob");
 const { XMLParser, XMLValidator } = require("fast-xml-parser");
@@ -88,6 +89,61 @@ const platega = createPlatega({
   paymentMethod: process.env.PLATEGA_PAYMENT_METHOD
 });
 const PLATEGA_CHECKOUT_READY = BILLING_MODE === "platega" && platega.configured() && ONLINE_RECEIPTS_READY;
+const INDEX_CACHE_TTL_MS = 2000;
+const BLOB_INDEX_CACHE_TTL_MS = 5000;
+const staticAssetCache = new Map();
+let feedIndexCache = { value: null, expiresAt: 0 };
+let layoutsIndexCache = { value: null, expiresAt: 0 };
+
+function invalidateFeedIndexCache() {
+  feedIndexCache = { value: null, expiresAt: 0 };
+}
+
+function invalidateLayoutsIndexCache() {
+  layoutsIndexCache = { value: null, expiresAt: 0 };
+}
+
+function localFileStamp(filePath) {
+  try {
+    const stat = fs.statSync(filePath);
+    return `${stat.mtimeMs}:${stat.size}`;
+  } catch {
+    return "missing";
+  }
+}
+
+function cachedStaticAsset(filePath) {
+  const stamp = localFileStamp(filePath);
+  const cached = staticAssetCache.get(filePath);
+  if (cached?.stamp === stamp) return cached;
+  const body = fs.readFileSync(filePath);
+  const next = {
+    stamp,
+    body,
+    etag: `"${crypto.createHash("sha1").update(body).digest("hex")}"`
+  };
+  staticAssetCache.set(filePath, next);
+  return next;
+}
+
+function sendStaticAsset(req, res, asset, type, cacheControl = "public, max-age=300") {
+  if (req.headers["if-none-match"] === asset.etag) {
+    res.writeHead(304, { ETag: asset.etag, "Cache-Control": cacheControl });
+    return res.end();
+  }
+  const headers = {
+    "Content-Type": type,
+    "Cache-Control": cacheControl,
+    ETag: asset.etag,
+    Vary: "Accept-Encoding"
+  };
+  const acceptsGzip = /gzip/i.test(String(req.headers["accept-encoding"] || ""));
+  const body = acceptsGzip && asset.body.length > 1024 ? zlib.gzipSync(asset.body, { level: 6 }) : asset.body;
+  if (body !== asset.body) headers["Content-Encoding"] = "gzip";
+  headers["Content-Length"] = String(body.length);
+  res.writeHead(200, headers);
+  return res.end(body);
+}
 async function telegramApi(method, body={}) {
   if(!TELEGRAM_BOT_TOKEN)throw Error('Бот ещё не настроен. Обратитесь к администратору.');
   const response=await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
@@ -178,6 +234,7 @@ function readLocalIndex() {
 function writeLocalIndex(feeds) {
   ensureStorage();
   fs.writeFileSync(INDEX_FILE, `${JSON.stringify(feeds, null, 2)}\n`, { mode: 0o600 });
+  invalidateFeedIndexCache();
 }
 
 function readLocalLayoutsIndex() {
@@ -193,11 +250,20 @@ function readLocalLayoutsIndex() {
 function writeLocalLayoutsIndex(layouts) {
   ensureStorage();
   fs.writeFileSync(LAYOUTS_INDEX_FILE, `${JSON.stringify(layouts, null, 2)}\n`, { mode: 0o600 });
+  invalidateLayoutsIndexCache();
 }
 
 async function readFeeds() {
   if (!usesBlobStorage() && !canUseLocalStorage()) return [];
-  if (!usesBlobStorage()) return readLocalIndex();
+  const now = Date.now();
+  if (!usesBlobStorage()) {
+    const stamp = localFileStamp(INDEX_FILE);
+    if (feedIndexCache.value && feedIndexCache.stamp === stamp && feedIndexCache.expiresAt > now) return feedIndexCache.value;
+    const value = readLocalIndex();
+    feedIndexCache = { value, stamp, expiresAt: now + INDEX_CACHE_TTL_MS };
+    return value;
+  }
+  if (feedIndexCache.value && feedIndexCache.expiresAt > now) return feedIndexCache.value;
 
   const result = await list({ prefix: "feed-records/", limit: 1000 });
   const records = await Promise.all(result.blobs.map(async blob => {
@@ -205,14 +271,24 @@ async function readFeeds() {
     return response.ok ? response.json() : null;
   }));
 
-  return records
+  const value = records
     .filter(Boolean)
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  feedIndexCache = { value, expiresAt: now + BLOB_INDEX_CACHE_TTL_MS };
+  return value;
 }
 
 async function readLayouts() {
   if (!usesBlobStorage() && !canUseLocalStorage()) return [];
-  if (!usesBlobStorage()) return readLocalLayoutsIndex();
+  const now = Date.now();
+  if (!usesBlobStorage()) {
+    const stamp = localFileStamp(LAYOUTS_INDEX_FILE);
+    if (layoutsIndexCache.value && layoutsIndexCache.stamp === stamp && layoutsIndexCache.expiresAt > now) return layoutsIndexCache.value;
+    const value = readLocalLayoutsIndex();
+    layoutsIndexCache = { value, stamp, expiresAt: now + INDEX_CACHE_TTL_MS };
+    return value;
+  }
+  if (layoutsIndexCache.value && layoutsIndexCache.expiresAt > now) return layoutsIndexCache.value;
 
   const result = await list({ prefix: "layout-records/", limit: 1000 });
   const records = await Promise.all(result.blobs.map(async blob => {
@@ -220,9 +296,11 @@ async function readLayouts() {
     return response.ok ? response.json() : null;
   }));
 
-  return records
+  const value = records
     .filter(Boolean)
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  layoutsIndexCache = { value, expiresAt: now + BLOB_INDEX_CACHE_TTL_MS };
+  return value;
 }
 
 async function persistFeedXml(slug, xml) {
@@ -258,6 +336,7 @@ async function persistFeedRecord(record) {
     contentType: "application/json; charset=utf-8",
     cacheControlMaxAge: 60
   });
+  invalidateFeedIndexCache();
 }
 
 async function persistLayoutFile(fileName, bytes, contentType) {
@@ -293,6 +372,7 @@ async function persistLayoutRecord(record) {
     contentType: "application/json; charset=utf-8",
     cacheControlMaxAge: 60
   });
+  invalidateLayoutsIndexCache();
 }
 
 async function deleteLayoutRecord(id) {
@@ -311,6 +391,7 @@ async function deleteLayoutRecord(id) {
     del(`layouts/${target.fileName}`),
     del(`layout-records/${target.id}.json`)
   ]);
+  invalidateLayoutsIndexCache();
   return true;
 }
 
@@ -337,14 +418,22 @@ async function readReleaseXml(feed, release) {
 }
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
-  res.writeHead(status, {
+  const serialized = type.includes("json") ? JSON.stringify(body) : body;
+  const rawBody = Buffer.isBuffer(serialized) ? serialized : Buffer.from(String(serialized ?? ""));
+  const acceptsGzip = /gzip/i.test(String(res.req?.headers?.["accept-encoding"] || ""));
+  const compressedBody = acceptsGzip && rawBody.length > 1024 ? zlib.gzipSync(rawBody, { level: 6 }) : rawBody;
+  const headers = {
     "Content-Type": type,
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, If-Match"
-  });
-  res.end(type.includes("json") ? JSON.stringify(body) : body);
+    "Access-Control-Allow-Headers": "Content-Type, If-Match",
+    Vary: "Accept-Encoding",
+    "Content-Length": String(compressedBody.length)
+  };
+  if (compressedBody !== rawBody) headers["Content-Encoding"] = "gzip";
+  res.writeHead(status, headers);
+  res.end(compressedBody);
 }
 
 function sendError(res, status, message) {
@@ -1028,7 +1117,7 @@ function serveStatic(req, res, pathname) {
     const escapeHtml = value => String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
     const email = escapeHtml(LEGAL.email);
     const emailHref = LEGAL.email ? `mailto:${encodeURIComponent(LEGAL.email)}` : "#";
-    const html = fs.readFileSync(filePath, "utf8")
+    const html = cachedStaticAsset(filePath).body.toString("utf8")
       .replaceAll("@@LEGAL_ADDRESS@@", escapeHtml(LEGAL.address || "не указан"))
       .replaceAll("@@LEGAL_PHONE@@", escapeHtml(LEGAL.phone || "не указан"))
       .replaceAll("@@LEGAL_EMAIL@@", email || "не указан")
@@ -1047,11 +1136,10 @@ function serveStatic(req, res, pathname) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     return res.end(html);
   }
-  res.writeHead(200, {
-    "Content-Type": mimeTypes[ext] || "application/octet-stream",
-    "Cache-Control": "no-store"
-  });
-  fs.createReadStream(filePath).pipe(res);
+  const cacheControl = ext === ".html" || pathname === "/"
+    ? "public, max-age=0, must-revalidate"
+    : "public, max-age=300, must-revalidate";
+  return sendStaticAsset(req, res, cachedStaticAsset(filePath), mimeTypes[ext] || "application/octet-stream", cacheControl);
 }
 
 async function handleApi(req, res, url) {
@@ -1359,7 +1447,12 @@ async function handleApi(req, res, url) {
     if (req.method === "GET") {
       if (!hasSubscriptionReadAccess(actor.user)) return sendError(res, 402, "Льготный период закончился. Продлите тариф, чтобы открыть проекты.");
       const result = await projectStateStore.get(actor.userId, projectStateMatch[1]);
-      res.setHeader("ETag", `"${result.revision}"`);
+      const etag = `"${result.revision}"`;
+      if (req.headers["if-none-match"] === etag) {
+        res.writeHead(304, { ETag: etag, "Cache-Control": "no-store" });
+        return res.end();
+      }
+      res.setHeader("ETag", etag);
       return send(res, 200, result);
     }
     if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 409, "Архивный проект доступен только для просмотра.");

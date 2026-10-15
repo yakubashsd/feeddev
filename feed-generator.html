@@ -6484,7 +6484,12 @@
       if (projectStatePollInFlight || document.hidden || runtimeMode !== "external" || !currentProject || !["client", "customer"].includes(sessionState?.role) || cloudSaveConflict) return false;
       projectStatePollInFlight = true;
       try {
-        const response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+        const response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: cloudSaveRevision > 0 ? { "If-None-Match": `\"${cloudSaveRevision}\"` } : {}
+        });
+        if (response.status === 304) return false;
         if (!response.ok) return false;
         const remote = await response.json();
         const remoteRevision = Number(remote.revision || 0);
