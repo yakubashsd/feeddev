@@ -4737,12 +4737,12 @@
               <span id="brandBadgePickedFile">Подложка не выбрана</span>
             </div>
             <select id="brandPosition" class="technical-fields" aria-hidden="true">
-              <option value="top-center" selected>По центру</option>
+              <option value="center-right" selected>Правая белая зона</option>
             </select>
-            <input id="brandMargin" class="technical-fields" type="hidden" value="0">
+            <input id="brandMargin" class="technical-fields" type="hidden" value="4">
             <div class="field compact">
               <label for="brandSize">Размер рамки, %</label>
-              <input id="brandSize" type="number" min="20" max="95" value="78">
+              <input id="brandSize" type="number" min="20" max="95" value="40">
             </div>
             <div class="field compact">
               <label for="brandOffsetX">Сдвиг X, %</label>
@@ -4752,6 +4752,28 @@
               <label for="brandOffsetY">Сдвиг Y, %</label>
               <input id="brandOffsetY" type="number" min="-60" max="60" step="1" value="0">
             </div>
+            <details id="brandSafeZone" class="brand-safe-zone" open>
+              <summary>Безопасная зона планировки</summary>
+              <p class="field-hint">Планировка будет вписана внутрь этой области и не выйдет за её границы.</p>
+              <div class="brand-safe-grid">
+                <div class="field compact">
+                  <label for="brandSafeX">X, %</label>
+                  <input id="brandSafeX" type="number" min="0" max="95" step="1" value="56">
+                </div>
+                <div class="field compact">
+                  <label for="brandSafeY">Y, %</label>
+                  <input id="brandSafeY" type="number" min="0" max="95" step="1" value="10">
+                </div>
+                <div class="field compact">
+                  <label for="brandSafeWidth">Ширина, %</label>
+                  <input id="brandSafeWidth" type="number" min="5" max="100" step="1" value="40">
+                </div>
+                <div class="field compact">
+                  <label for="brandSafeHeight">Высота, %</label>
+                  <input id="brandSafeHeight" type="number" min="5" max="100" step="1" value="80">
+                </div>
+              </div>
+            </details>
             <div class="field compact">
               <label for="brandScope">Применить</label>
               <select id="brandScope">
@@ -6619,7 +6641,7 @@
     function layoutGroupsFromFeed() {
       const groups = new Map();
       objects.forEach(item => {
-        const url = String(item.layoutPhoto || "").trim();
+        const url = sourceLayoutPhoto(item);
         if (!url) return;
         if (!groups.has(url)) {
           groups.set(url, {
@@ -6688,7 +6710,7 @@
 
     function selectBrandLayoutFromObject(item) {
       if (!item) return;
-      const layoutUrl = String(item.layoutPhoto || "").trim();
+      const layoutUrl = sourceLayoutPhoto(item);
       brandSelectionTouched = true;
       selectedBrandLayoutUrls = layoutUrl ? new Set([layoutUrl]) : new Set();
       if (!layoutUrl) {
@@ -6702,14 +6724,14 @@
         ? objects
         : scope === "checked"
           ? objects.filter(item => checkedIds.has(item.externalId))
-          : objects.filter(item => selectedBrandLayoutUrls.has(item.layoutPhoto));
-      return source.filter(item => String(item.layoutPhoto || "").trim());
+          : objects.filter(item => selectedBrandLayoutUrls.has(sourceLayoutPhoto(item)));
+      return source.filter(item => sourceLayoutPhoto(item));
     }
 
     function brandPreviewTarget() {
       const selectedUrl = [...selectedBrandLayoutUrls][0];
-      return objects.find(item => item.layoutPhoto === selectedUrl)
-        || objects.find(item => item.layoutPhoto);
+      return objects.find(item => sourceLayoutPhoto(item) === selectedUrl)
+        || objects.find(item => sourceLayoutPhoto(item));
     }
 
     function proxyImageUrl(url) {
@@ -6762,12 +6784,21 @@
         if (!Number.isFinite(number)) return fallback;
         return Math.min(max, Math.max(min, number));
       };
+      const position = document.querySelector("#brandPosition")?.value || "center-right";
+      const rightZone = position.endsWith("-right");
+      const vertical = position.split("-")[0] || "top";
+      const safeXPercent = clamp(document.querySelector("#brandSafeX")?.value, 0, 95, 56);
+      const safeYPercent = clamp(document.querySelector("#brandSafeY")?.value, 0, 95, 10);
       return {
-        position: document.querySelector("#brandPosition")?.value || "top-left",
-        widthPercent: clamp(document.querySelector("#brandSize")?.value, 20, 95, 78),
+        position,
+        widthPercent: clamp(document.querySelector("#brandSize")?.value, 20, 95, 40),
         marginPercent: clamp(document.querySelector("#brandMargin")?.value, 0, 20, 4),
-        offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, -60, 60, 0),
-        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0),
+        offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, rightZone ? -4 : -60, rightZone ? 4 : 60, 0),
+        offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, vertical === "center" ? -30 : -60, vertical === "center" ? 30 : 60, 0),
+        safeXPercent,
+        safeYPercent,
+        safeWidthPercent: clamp(document.querySelector("#brandSafeWidth")?.value, 5, 100 - safeXPercent, 40),
+        safeHeightPercent: clamp(document.querySelector("#brandSafeHeight")?.value, 5, 100 - safeYPercent, 80),
         headline: document.querySelector("#templateHeadline")?.value || "",
         subline: document.querySelector("#templateSubline")?.value || "",
         textColor: document.querySelector("#templateTextColor")?.value || "#111111",
@@ -6780,9 +6811,12 @@
     function setBrandOffsets(x, y) {
       const xInput = document.querySelector("#brandOffsetX");
       const yInput = document.querySelector("#brandOffsetY");
-      const clamp = (value) => Math.min(60, Math.max(-60, Math.round(value)));
-      if (xInput) xInput.value = clamp(x);
-      if (yInput) yInput.value = clamp(y);
+      const position = document.querySelector("#brandPosition")?.value || "center-right";
+      const horizontalLimit = position.endsWith("-right") ? 4 : 60;
+      const verticalLimit = position.startsWith("center-") ? 30 : 60;
+      const clamp = (value, limit) => Math.min(limit, Math.max(-limit, Math.round(value)));
+      if (xInput) xInput.value = clamp(x, horizontalLimit);
+      if (yInput) yInput.value = clamp(y, verticalLimit);
     }
 
     function brandProjectLabel(projectKey = activeBrandProjectKey) {
@@ -6799,6 +6833,10 @@
         marginPercent: config.marginPercent,
         offsetXPercent: config.offsetXPercent,
         offsetYPercent: config.offsetYPercent,
+        safeXPercent: config.safeXPercent,
+        safeYPercent: config.safeYPercent,
+        safeWidthPercent: config.safeWidthPercent,
+        safeHeightPercent: config.safeHeightPercent,
         headline: config.headline,
         subline: config.subline,
         textColor: config.textColor,
@@ -6816,16 +6854,36 @@
       brandPreviewImages = null;
       brandBadgeDataUrl = "";
       brandBadgeFileName = "";
-      const profile = brandProfiles[activeBrandProjectKey] || {};
+      const savedProfile = brandProfiles[activeBrandProjectKey] || {};
+      const isLegacyCenterPlacement = savedProfile.position === "top-center"
+        && Number(savedProfile.widthPercent || 78) >= 70
+        && Number(savedProfile.offsetXPercent || 0) === 0
+        && Number(savedProfile.offsetYPercent || 0) === 0;
+      const profile = isLegacyCenterPlacement
+        ? {
+          ...savedProfile,
+          position: "center-right",
+          widthPercent: 40,
+          marginPercent: 4,
+          safeXPercent: 56,
+          safeYPercent: 10,
+          safeWidthPercent: 40,
+          safeHeightPercent: 80
+        }
+        : savedProfile;
       const setValue = (selector, value, fallback) => {
         const input = document.querySelector(selector);
         if (input) input.value = value ?? fallback;
       };
-      setValue("#brandPosition", profile.position, "top-center");
-      setValue("#brandSize", profile.widthPercent, 78);
-      setValue("#brandMargin", profile.marginPercent, 0);
+      setValue("#brandPosition", profile.position, "center-right");
+      setValue("#brandSize", profile.widthPercent, 40);
+      setValue("#brandMargin", profile.marginPercent, 4);
       setValue("#brandOffsetX", profile.offsetXPercent, 0);
       setValue("#brandOffsetY", profile.offsetYPercent, 0);
+      setValue("#brandSafeX", profile.safeXPercent, 56);
+      setValue("#brandSafeY", profile.safeYPercent, 10);
+      setValue("#brandSafeWidth", profile.safeWidthPercent, 40);
+      setValue("#brandSafeHeight", profile.safeHeightPercent, 80);
       setValue("#templateHeadline", profile.headline, "");
       setValue("#templateSubline", profile.subline, "");
       setValue("#templateTextColor", profile.textColor, "#111111");
@@ -6846,6 +6904,7 @@
       } finally {
         brandProfileHydrating = false;
       }
+      if (isLegacyCenterPlacement) await persistActiveBrandProfile();
       renderBrandPreview();
     }
 
@@ -6923,22 +6982,28 @@
       const width = badgeImage.naturalWidth || badgeImage.width;
       const height = badgeImage.naturalHeight || badgeImage.height;
       const source = visibleImageBounds(baseImage);
-      const frameWidth = Math.round(width * (config.widthPercent / 100));
-      const frameHeight = Math.round(height * (config.widthPercent / 100));
+      const safe = {
+        x: Math.round(width * (config.safeXPercent / 100)),
+        y: Math.round(height * (config.safeYPercent / 100)),
+        width: Math.round(width * (config.safeWidthPercent / 100)),
+        height: Math.round(height * (config.safeHeightPercent / 100))
+      };
+      const scale = Math.min(1, config.widthPercent / Math.max(1, config.safeWidthPercent));
+      const frameWidth = Math.max(1, Math.round(safe.width * scale));
+      const frameHeight = Math.max(1, Math.round(safe.height * scale));
       const ratio = Math.min(frameWidth / Math.max(1, source.sw), frameHeight / Math.max(1, source.sh));
       const layoutWidth = Math.round(source.sw * ratio);
       const layoutHeight = Math.round(source.sh * ratio);
-      const margin = Math.round(width * (config.marginPercent / 100));
-      const horizontal = config.position.split("-")[1] || "left";
-      const vertical = config.position.split("-")[0] || "top";
-      const baseX = horizontal === "right" ? width - frameWidth - margin : horizontal === "center" ? Math.round((width - frameWidth) / 2) : margin;
-      const baseY = vertical === "bottom" ? height - frameHeight - margin : margin;
-      const frameX = baseX + Math.round(width * ((config.offsetXPercent || 0) / 100));
-      const frameY = baseY + Math.round(height * ((config.offsetYPercent || 0) / 100));
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const proposedX = safe.x + Math.round((safe.width - layoutWidth) / 2) + Math.round(width * ((config.offsetXPercent || 0) / 100));
+      const proposedY = safe.y + Math.round((safe.height - layoutHeight) / 2) + Math.round(height * ((config.offsetYPercent || 0) / 100));
+      const frameX = clamp(proposedX, safe.x, safe.x + safe.width - layoutWidth);
+      const frameY = clamp(proposedY, safe.y, safe.y + safe.height - layoutHeight);
       return {
         source,
-        x: frameX + Math.round((frameWidth - layoutWidth) / 2),
-        y: frameY + Math.round((frameHeight - layoutHeight) / 2),
+        safe,
+        x: frameX,
+        y: frameY,
         width: layoutWidth,
         height: layoutHeight
       };
@@ -7022,12 +7087,13 @@
       }
       try {
         brandStatus("Готовлю предпросмотр...");
+        const sourceUrl = sourceLayoutPhoto(target);
         const [baseImage, badgeImage] = await Promise.all([
-          loadImageForCanvas(proxyImageUrl(target.layoutPhoto)),
+          loadImageForCanvas(proxyImageUrl(sourceUrl)),
           loadImageForCanvas(brandBadgeDataUrl)
         ]);
         if (requestId !== brandPreviewRequestId) return;
-        brandPreviewImages = { baseImage, badgeImage, target, targetId: target.externalId || "" };
+        brandPreviewImages = { baseImage, badgeImage, target, sourceUrl, targetId: target.externalId || "" };
         drawBrandPreviewFrame();
         brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст JPG-ссылки на готовые макеты.`);
       } catch (error) {
@@ -7130,7 +7196,7 @@
 
     async function centerBrandLayout() {
       const position = document.querySelector("#brandPosition");
-      if (position) position.value = "top-center";
+      if (position) position.value = "center-right";
       setBrandOffsets(0, 0);
       drawBrandPreviewFrame() || renderBrandPreview();
       await persistActiveBrandProfile();
@@ -7194,10 +7260,11 @@
       const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
       const projectConfig = { ...brandConfig() };
       await persistActiveBrandProfile();
-      const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
+      const sourceUrlForItem = item => sourceLayoutPhoto(item);
+      const uniqueUrls = [...new Set(targets.map(sourceUrlForItem).filter(Boolean))];
       for (let index = 0; index < uniqueUrls.length; index += 1) {
         const sourceUrl = uniqueUrls[index];
-        const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
+        const firstItem = targets.find(item => sourceUrlForItem(item) === sourceUrl) || targets[0];
         try {
           button.textContent = `Подложка ${index + 1}/${uniqueUrls.length}`;
           brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
@@ -7210,7 +7277,7 @@
         } catch (error) {
           skipped.push({
             url: sourceUrl,
-            ids: targets.filter(item => item.layoutPhoto === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
+            ids: targets.filter(item => sourceUrlForItem(item) === sourceUrl).map(item => item.externalId).filter(Boolean).slice(0, 6),
             message: error.message || "ссылка недоступна"
           });
         }
@@ -7243,7 +7310,7 @@
     }
 
     function prependPhotoUrl(item, url) {
-      const current = photoList(item).filter(photoUrl => photoUrl !== url);
+      const current = photoList(item).filter(photoUrl => photoUrl !== url && !isBrandedLayoutUrl(photoUrl));
       return [url, ...current].join("\n");
     }
 
@@ -7268,10 +7335,11 @@
 
         const targetIds = new Set(targets.map(item => item.externalId));
         objects = objects.map(item => {
-          if (!targetIds.has(item.externalId) || !urlMap.has(item.layoutPhoto)) return item;
-          return { ...item, photos: prependPhotoUrl(item, urlMap.get(item.layoutPhoto)) };
+          const sourceUrl = sourceLayoutPhoto(item);
+          if (!targetIds.has(item.externalId) || !urlMap.has(sourceUrl)) return item;
+          return { ...item, photos: prependPhotoUrl(item, urlMap.get(sourceUrl)) };
         });
-        const updatedCount = targets.filter(item => urlMap.has(item.layoutPhoto)).length;
+        const updatedCount = targets.filter(item => urlMap.has(sourceLayoutPhoto(item))).length;
         invalidateGeneratedLink();
         save();
         addChangeLog("Брендированные планировки", `Готовые JPG-макеты добавлены первым изображением у ${updatedCount} объектов.`);
@@ -7832,15 +7900,15 @@
     }
 
     function isBrandedLayoutUrl(url = "") {
-      return /\/layouts\/branded-|branded-/i.test(String(url));
+      return /\/layouts\/(?:branded-|planirovka-na-podlozhke-)|(?:^|[\/_-])(?:branded-|planirovka-na-podlozhke-)/i.test(String(url));
     }
 
     function feedImageList(item) {
-      const layout = String(item.layoutPhoto || "").trim();
+      const layout = sourceLayoutPhoto(item);
       const photos = photoList(item).filter(url => url !== layout);
       const branded = photos.filter(isBrandedLayoutUrl);
       const otherPhotos = photos.filter(url => !isBrandedLayoutUrl(url));
-      if (branded.length) return [...branded, layout, ...otherPhotos].filter(Boolean);
+      if (branded.length) return [branded[0], layout, ...otherPhotos].filter(Boolean);
       return [layout, ...photos].filter(Boolean);
     }
 
@@ -7853,7 +7921,7 @@
         return;
       }
       const original = originalObjects.find(source => source.externalId === item.externalId) || item;
-      const sourceUrl = String(original.layoutPhoto || item.layoutPhoto || "").trim();
+      const sourceUrl = sourceLayoutPhoto(original) || sourceLayoutPhoto(item);
       const brandedUrl = photoList(item).find(isBrandedLayoutUrl) || "";
       const imageOrder = feedImageList(item).slice(0, 4);
       const imageCard = (title, url, emptyText) => `
@@ -7888,7 +7956,12 @@
 
     function buildCianXml(items = objects) {
       const body = items.map(item => {
-        const photos = photoList(item);
+        const layout = sourceLayoutPhoto(item);
+        const branded = photoList(item).filter(isBrandedLayoutUrl);
+        const photos = [
+          branded[0] || "",
+          ...photoList(item).filter(url => url !== layout && !isBrandedLayoutUrl(url))
+        ].filter(Boolean);
         const photoXml = photos.map((url, index) => `      <PhotoSchema>
         <FullUrl>${escapeXml(url)}</FullUrl>
         <IsDefault>${index === 0 ? 1 : 0}</IsDefault>
@@ -7906,8 +7979,8 @@
     </Phones>
     <TotalArea>${escapeXml(item.totalArea || "")}</TotalArea>
     <LayoutPhoto>
-      <FullUrl>${escapeXml(item.layoutPhoto || "")}</FullUrl>
-      <IsDefault>1</IsDefault>
+      <FullUrl>${escapeXml(layout)}</FullUrl>
+      <IsDefault>${layout ? 1 : 0}</IsDefault>
     </LayoutPhoto>
     <Photos>
 ${photoXml}
@@ -8744,12 +8817,70 @@ ${photos}
       return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "";
     }
 
+    function layoutPhotoKind(url = "") {
+      const value = String(url || "").trim();
+      if (!value) return "unknown";
+      if (isBrandedLayoutUrl(value)) return "branded";
+      const pathname = (() => {
+        try {
+          return new URL(value).pathname.toLowerCase();
+        } catch {
+          return value.split(/[?#]/, 1)[0].toLowerCase();
+        }
+      })();
+      const hasToken = pattern => new RegExp(`(?:^|[\\/_-])(?:${pattern})(?=$|[\\/_-]|\\.)`, "i").test(pathname);
+      if (hasToken("floor(?:[\\s_-]?plan)?|section|entrance|podjezd|podezd")) return "floor";
+      if (hasToken("preset|apartment|apartments|flat|flats|unit")) return "apartment";
+      if (hasToken("layout|layouts|plan|plans")) return "generic";
+      return "unknown";
+    }
+
+    function preferredLayoutPhoto(explicit = "", images = []) {
+      const candidates = [explicit, ...images].map(url => String(url || "").trim()).filter(Boolean);
+      const usable = candidates.filter(url => layoutPhotoKind(url) !== "floor");
+      return usable.find(url => layoutPhotoKind(url) === "apartment")
+        || usable.find(url => layoutPhotoKind(url) === "generic")
+        || usable[0]
+        || "";
+    }
+
+    function repairLegacyLayoutPhoto(item) {
+      const current = String(item.layoutPhoto || "").trim();
+      if (!current || layoutPhotoKind(current) !== "branded") return item;
+      const preferred = preferredLayoutPhoto("", photoList(item));
+      if (!preferred || preferred === current || layoutPhotoKind(preferred) !== "apartment") return item;
+      return {
+        ...item,
+        layoutPhoto: preferred,
+        photos: photoList(item).filter(url => !isBrandedLayoutUrl(url)).join("\n")
+      };
+    }
+
+    function sourceLayoutPhoto(item = {}) {
+      const current = String(item.layoutPhoto || "").trim();
+      if (!current) return "";
+      if (layoutPhotoKind(current) !== "branded") return current;
+      const preferred = preferredLayoutPhoto("", photoList(item));
+      return ["apartment", "generic"].includes(layoutPhotoKind(preferred)) ? preferred : "";
+    }
+
+    function repairStoredLayoutPhotos() {
+      let repaired = false;
+      const repair = item => {
+        const next = repairLegacyLayoutPhoto(item);
+        if (next !== item) repaired = true;
+        return next;
+      };
+      objects = objects.map(repair);
+      originalObjects = originalObjects.map(repair);
+      if (repaired) save();
+    }
+
     function inferLayoutPhoto(node) {
       const explicit = textOf(node, ["LayoutPhoto FullUrl", "LayoutPhoto", "layout-photo"]);
-      if (explicit) return explicit;
-      return Array.from(node.querySelectorAll("Images Image, image, Photo"))
+      const images = Array.from(node.querySelectorAll("Images Image, image, Photo"))
         .map(el => el.getAttribute("url") || el.textContent.trim()).filter(Boolean)
-        .find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url)) || "";
+      return preferredLayoutPhoto(explicit, images);
     }
 
     function parseXmlFile(text, sourceUrl = "") {
@@ -8982,7 +9113,7 @@ ${photos}
       }
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandSafeX", "#brandSafeY", "#brandSafeWidth", "#brandSafeHeight", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
         drawBrandPreviewFrame() || renderBrandPreview();
       });
@@ -9196,6 +9327,7 @@ ${photos}
     loginForm.addEventListener("submit", submitLogin);
     document.querySelector("#logoutButton").addEventListener("click", logout);
     window.setInterval(syncDueProjectSource, 60000);
+    repairStoredLayoutPhotos();
     initializeAuth();
   </script>
   <link rel="stylesheet" href="layout-editor.css">

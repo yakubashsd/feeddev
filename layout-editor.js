@@ -17,13 +17,13 @@
   checkButton.onclick=async()=>{
     if(!brandPreviewImages){showToast('Сначала загрузите подложку и выберите планировку');return;}
     const grid=checkDialog.querySelector('.le-check-grid');grid.replaceChildren();checkDialog.showModal();
-    const candidates=[...new Map(objects.filter(o=>o.layoutPhoto).map(o=>[o.layoutPhoto,o])).values()].sort((a,b)=>Number(a.totalArea)-Number(b.totalArea));
+    const candidates=[...new Map(objects.filter(o=>sourceLayoutPhoto(o)).map(o=>[sourceLayoutPhoto(o),o])).values()].sort((a,b)=>Number(a.totalArea)-Number(b.totalArea));
     const samples=[...new Set([candidates[0],candidates[Math.floor(candidates.length/2)],candidates.at(-1)])].filter(Boolean);
     const config=brandConfig(),badge=brandPreviewImages.badgeImage;
     await Promise.all(samples.map(async item=>{
       const figure=document.createElement('figure'),c=document.createElement('canvas'),caption=document.createElement('figcaption');
       caption.textContent=`${item.totalArea || '—'} м² · ID ${item.externalId} · Загрузка…`;figure.append(c,caption);grid.append(figure);
-      try {const img=await loadImageForCanvas(item.layoutPhoto);drawBrandedLayout(img,badge,c,config,item);caption.textContent=`${item.totalArea || '—'} м² · ID ${item.externalId}`;}catch(error){c.remove();caption.textContent=`ID ${item.externalId}: изображение недоступно`;}
+      try {const img=await loadImageForCanvas(sourceLayoutPhoto(item));drawBrandedLayout(img,badge,c,config,item);caption.textContent=`${item.totalArea || '—'} м² · ID ${item.externalId}`;}catch(error){c.remove();caption.textContent=`ID ${item.externalId}: изображение недоступно`;}
     }));
   };
   const properties = document.createElement('aside');
@@ -57,6 +57,10 @@
   const outline = document.createElement('div');
   outline.className = 'le-selection';
   stage.append(outline);
+  const safeOutline = document.createElement('div');
+  safeOutline.className = 'le-safe-zone';
+  safeOutline.innerHTML = '<span>Безопасная зона</span>';
+  stage.append(safeOutline);
   canvas.setAttribute('aria-label', 'Макет: выберите планировку или текст, перемещайте мышью или стрелками');
   const search = document.createElement('input');
   search.id = 'le-search'; search.type = 'search'; search.placeholder = 'Найти образец по ЖК, площади или ID'; search.setAttribute('aria-label', search.placeholder);
@@ -65,7 +69,7 @@
   search.addEventListener('input', filter);
   new MutationObserver(filter).observe(document.querySelector('#brandLayoutPicker'), {childList:true});
   let selected = 'layout', textTarget = document.querySelector('#templateHeadline'), drag = null;
-  const ids = ['brandSize','brandOffsetX','brandOffsetY','templateHeadline','templateSubline','templateTextColor','templateTextSize','templateTextX','templateTextY'];
+  const ids = ['brandSize','brandOffsetX','brandOffsetY','brandSafeX','brandSafeY','brandSafeWidth','brandSafeHeight','templateHeadline','templateSubline','templateTextColor','templateTextSize','templateTextX','templateTextY'];
   const history = [], future = [];
   const snapshot = () => Object.fromEntries(ids.map(id => [id, document.getElementById(id).value]));
   let baseline = snapshot(), projectKey = '';
@@ -92,6 +96,13 @@
     const c=brandConfig(); return {x:canvas.width*c.textXPercent/100,y:canvas.height*c.textYPercent/100,width:Math.max(40,canvas.width*(1-c.textXPercent/50)),height:c.textSize*(c.subline?1.9:1)};
   }
   function selectionBox() {
+    const placement = brandPreviewImages ? brandedLayoutPlacement(brandPreviewImages.baseImage, brandPreviewImages.badgeImage) : null;
+    const safe = placement?.safe;
+    safeOutline.hidden = !safe;
+    if (safe) {
+      const r=canvas.getBoundingClientRect(), s=stage.getBoundingClientRect();
+      Object.assign(safeOutline.style,{left:`${r.left-s.left+safe.x*r.width/canvas.width}px`,top:`${r.top-s.top+safe.y*r.height/canvas.height}px`,width:`${safe.width*r.width/canvas.width}px`,height:`${safe.height*r.height/canvas.height}px`});
+    }
     const b=bounds(); outline.hidden=!b || selected==='background'; if(!b)return;
     const r=canvas.getBoundingClientRect(), s=stage.getBoundingClientRect();
     Object.assign(outline.style,{left:`${r.left-s.left+b.x*r.width/canvas.width}px`,top:`${r.top-s.top+b.y*r.height/canvas.height}px`,width:`${b.width*r.width/canvas.width}px`,height:`${b.height*r.height/canvas.height}px`});
@@ -103,8 +114,8 @@
   document.querySelector('#le-undo').onclick=()=>travel(history,future);
   document.querySelector('#le-redo').onclick=()=>travel(future,history);
   document.querySelector('#le-preview').onclick=openBrandPreviewDialog;
-  document.querySelector('#centerBrandLayoutBtn').addEventListener('click',()=>{document.querySelector('#brandOffsetX').value=0;document.querySelector('#brandOffsetY').value=(100-brandConfig().widthPercent)/2;drawBrandPreviewFrame();commit();});
-  document.querySelector('#centerBrandLayoutBtn').textContent='По центру холста';
+  document.querySelector('#centerBrandLayoutBtn').addEventListener('click',()=>{document.querySelector('#brandPosition').value='center-right';document.querySelector('#brandOffsetX').value=0;document.querySelector('#brandOffsetY').value=0;drawBrandPreviewFrame();commit();});
+  document.querySelector('#centerBrandLayoutBtn').textContent='В правую белую зону';
   // Replace the old whole-canvas drag with element hit testing and resize handles.
   canvas.removeEventListener('pointerdown',startBrandPreviewDrag);
   canvas.removeEventListener('pointermove',moveBrandPreviewDrag);
