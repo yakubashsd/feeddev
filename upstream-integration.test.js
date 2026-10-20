@@ -110,30 +110,29 @@ test("client history is a separate server-backed section", () => {
 
 test("layout editor applies the size value and exposes a working canvas resize handle", () => {
   const draw = clientFunction("drawBrandedLayout");
-  const startDrag = clientFunction("startBrandPreviewDrag");
-  const moveDrag = clientFunction("moveBrandPreviewDrag");
-  const endDrag = html.match(/    async function endBrandPreviewDrag\([\s\S]*?\n    }\n\n    async function openBrandPreviewDialog/)[0];
-  assert.match(draw, /frameSize = Math\.max\(20, Math\.min\(95, Number\(config\.widthPercent\)/);
+  assert.match(draw, /placementInsideSafeZone\(baseImage, width, height, config\)/);
+  assert.match(draw, /placement\.source\.sw/);
   assert.doesNotMatch(draw, /width \* \.78 \/ source\.sw/);
   assert.match(draw, /canvas\._brandLayoutPlacement = placement/);
-  assert.match(startDrag, /mode: resize \? "resize" : "move"/);
-  assert.match(moveDrag, /brandDragState\.mode === "resize"/);
-  assert.match(moveDrag, /sizeInput\.value = nextSize/);
-  assert.match(endDrag, /Размер планировки сохранён/);
-  assert.match(html, /brandPreviewCanvas\.addEventListener\("pointerleave"/);
+  assert.match(layoutEditor, /drag\.resize/);
+  assert.match(layoutEditor, /set\('brandSize'/);
+  assert.doesNotMatch(html, /brandDragState/);
   assert.match(html, /\["\[", "\]"\]/);
 });
 
 test("branding editor exposes an editable safe placement zone and keeps guide pixels out of exports", () => {
-  const rect = clientFunction("safeZoneRect");
+  const rect = clientFunction("safeZoneRectForSize");
   const safeZone = clientFunction("drawSafeZoneGuide");
   const frame = clientFunction("drawBrandPreviewFrame");
-  assert.match(rect, /safeZoneSizePercent/);
+  assert.match(rect, /safeZoneWidthPercent/);
+  assert.match(rect, /safeZoneHeightPercent/);
   assert.match(safeZone, /safeZoneRect\(canvas, config\)/);
   assert.match(safeZone, /strokeRect\(rect\.x, rect\.y/);
   assert.match(frame, /drawSafeZoneGuide\(canvas, config\)/);
   assert.match(html, /class="brand-safe-zone-hint"/);
   assert.match(html, /id="brandSafeSize"/);
+  assert.match(html, /id="brandSafeWidth"/);
+  assert.match(html, /id="brandSafeHeight"/);
   assert.match(html, /id="brandSafeOffsetX"/);
   assert.match(html, /id="brandSafeOffsetY"/);
   assert.match(html, /brandedLayoutBlob\(canvas, activePlatform, projectConfig\)/);
@@ -141,18 +140,48 @@ test("branding editor exposes an editable safe placement zone and keeps guide pi
   assert.match(layoutEditor, /drag\.safeZone/);
 });
 
-test("safe placement zone uses the same editable square for preview and export", () => {
+test("safe placement zone keeps legacy size profiles compatible", () => {
   const context = vm.createContext({ Math });
-  vm.runInContext(clientFunction("safeZoneRect"), context);
-  const rect = context.safeZoneRect({ width: 1200, height: 800 }, {
+  vm.runInContext(clientFunction("safeZoneRectForSize"), context);
+  const rect = context.safeZoneRectForSize(1200, 800, {
     safeZoneSizePercent: 70,
     safeZoneOffsetXPercent: 10,
     safeZoneOffsetYPercent: -10
   });
-  assert.equal(rect.width, 560);
+  assert.equal(rect.width, 840);
   assert.equal(rect.height, 560);
-  assert.equal(rect.x, 440);
+  assert.equal(rect.x, 300);
   assert.equal(rect.y, 40);
+});
+
+test("safe placement zone is rectangular and clamps the plan inside it on every platform", () => {
+  const context = vm.createContext({ Math });
+  vm.runInContext(clientFunction("safeZoneRectForSize"), context);
+  vm.runInContext(clientFunction("placementInsideSafeZone"), context);
+  context.visibleImageBounds = image => ({ sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight });
+  const rect = context.safeZoneRectForSize(1200, 800, {
+    safeZoneWidthPercent: 70,
+    safeZoneHeightPercent: 50,
+    safeZoneOffsetXPercent: 0,
+    safeZoneOffsetYPercent: 0
+  });
+  assert.equal(rect.x, 180);
+  assert.equal(rect.y, 200);
+  assert.equal(rect.width, 840);
+  assert.equal(rect.height, 400);
+  const placement = context.placementInsideSafeZone({ naturalWidth: 1800, naturalHeight: 900 }, 1200, 800, {
+    widthPercent: 100,
+    offsetXPercent: 60,
+    offsetYPercent: -60,
+    safeZoneWidthPercent: 70,
+    safeZoneHeightPercent: 50,
+    safeZoneOffsetXPercent: 0,
+    safeZoneOffsetYPercent: 0
+  });
+  assert.ok(placement.x >= rect.x);
+  assert.ok(placement.y >= rect.y);
+  assert.ok(placement.x + placement.width <= rect.x + rect.width);
+  assert.ok(placement.y + placement.height <= rect.y + rect.height);
 });
 
 test("layout editor fits the background by default but keeps manual zoom usable", () => {
@@ -172,7 +201,7 @@ test("layout preview really scales a plan without a backdrop", () => {
     templateText: value => value,
     canvasFontStack: value => value
   });
-  vm.runInContext(clientFunction("drawBrandedLayout"), context);
+  vm.runInContext([clientFunction("safeZoneRectForSize"), clientFunction("placementInsideSafeZone"), clientFunction("drawBrandedLayout")].join("\n"), context);
   const canvas = {
     getContext: () => ({ clearRect: () => {}, save: () => {}, restore: () => {}, fillRect: () => {}, drawImage: (...args) => calls.push(args) }),
     width: 0,
@@ -181,13 +210,13 @@ test("layout preview really scales a plan without a backdrop", () => {
   const base = { naturalWidth: 100, naturalHeight: 200 };
   const config = { widthPercent: 38, offsetXPercent: 0, offsetYPercent: 0, canvasOpacity: 100, canvasColor: "#fff", headline: "", subline: "", canvasLayers: [] };
   context.drawBrandedLayout(base, null, canvas, config, {}, "cian");
-  assert.equal(Math.round(canvas._brandLayoutPlacement.width), 38);
-  assert.equal(Math.round(canvas._brandLayoutPlacement.height), 76);
-  assert.equal(calls.at(-1).at(-2), 38);
+  assert.equal(Math.round(canvas._brandLayoutPlacement.width), 33);
+  assert.equal(Math.round(canvas._brandLayoutPlacement.height), 67);
+  assert.equal(Math.round(calls.at(-1).at(-2)), 33);
   config.widthPercent = 78;
   context.drawBrandedLayout(base, null, canvas, config, {}, "cian");
-  assert.equal(Math.round(canvas._brandLayoutPlacement.width), 78);
-  assert.equal(Math.round(canvas._brandLayoutPlacement.height), 156);
+  assert.equal(Math.round(canvas._brandLayoutPlacement.width), 69);
+  assert.equal(Math.round(canvas._brandLayoutPlacement.height), 137);
 });
 
 test("editor uses the rendered plan placement and does not add a second stale outline", () => {

@@ -5233,8 +5233,8 @@
             </select>
             <input id="brandMargin" class="technical-fields" type="hidden" value="0">
             <div class="field compact">
-              <label for="brandSize">Размер рамки, %</label>
-              <input id="brandSize" type="number" min="20" max="95" value="78">
+              <label for="brandSize">Размер планировки в зоне, %</label>
+              <input id="brandSize" type="number" min="10" max="100" value="78">
             </div>
             <div class="field compact">
               <label for="brandOffsetX">Сдвиг X, %</label>
@@ -5245,16 +5245,21 @@
               <input id="brandOffsetY" type="number" min="-60" max="60" step="1" value="0">
             </div>
             <div class="field compact safe-zone-control">
-              <label for="brandSafeSize">Безопасная зона, %</label>
-              <input id="brandSafeSize" type="number" min="40" max="100" step="1" value="88">
+              <label for="brandSafeWidth">Ширина зоны, %</label>
+              <input id="brandSafeWidth" type="number" min="10" max="100" step="1" value="88">
             </div>
             <div class="field compact safe-zone-control">
-              <label for="brandSafeOffsetX">Зона X, %</label>
+              <label for="brandSafeHeight">Высота зоны, %</label>
+              <input id="brandSafeHeight" type="number" min="10" max="100" step="1" value="88">
+            </div>
+            <div class="field compact safe-zone-control">
+              <label for="brandSafeOffsetX">Положение X, %</label>
               <input id="brandSafeOffsetX" type="number" min="-30" max="30" step="1" value="0">
             </div>
             <div class="field compact safe-zone-control">
-              <label for="brandSafeOffsetY">Зона Y, %</label>
+              <label for="brandSafeOffsetY">Положение Y, %</label>
               <input id="brandSafeOffsetY" type="number" min="-30" max="30" step="1" value="0">
+              <input id="brandSafeSize" type="hidden" value="88">
             </div>
             <div class="field compact">
               <label for="brandScope">Применить</label>
@@ -5271,11 +5276,12 @@
             </div>
           </div>
           <div class="template-layer-editor">
-            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Добавьте текст из объявления поверх подложки. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
+            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Рабочая область устроена как в графическом редакторе: безопасная зона — контейнер для планировки, остальные слои можно добавлять, выбирать и менять местами. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
             <div class="layer-list" aria-label="Слои шаблона">
               <div><b>1</b><span><strong>Подложка</strong><small>Фоновое изображение</small></span></div>
-              <div><b>2</b><span><strong>Планировка</strong><small>Изображение из фида</small></span></div>
-              <div><b>3</b><span><strong>Текст объявления</strong><small>Динамические поля</small></span></div>
+              <div><b>2</b><span><strong>Безопасная зона</strong><small>Контейнер для всех планировок</small></span></div>
+              <div><b>3</b><span><strong>Планировка</strong><small>Изображение из фида</small></span></div>
+              <div><b>4</b><span><strong>Текст объявления</strong><small>Динамические поля</small></span></div>
             </div>
             <div class="template-text-controls">
               <div class="field span-2"><label for="templateHeadline">Заголовок</label><input id="templateHeadline" placeholder="{{rooms}}-комн. · {{area}} м²"></div>
@@ -5300,7 +5306,7 @@
             <div class="brand-preview-help">
               <strong>Предпросмотр первого изображения</strong>
               <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
-              <div class="brand-safe-zone-hint"><span aria-hidden="true">◌</span> Безопасная зона редактируется в слое справа: задайте размер и положение. При выгрузке в ЦИАН композиция будет вписана в неё, чтобы планировка не обрезалась.</div>
+              <div class="brand-safe-zone-hint"><span aria-hidden="true">◌</span> Безопасная зона работает для всех площадок: задайте её ширину, высоту и положение, а планировка автоматически впишется внутрь без обрезания.</div>
               <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
@@ -5866,7 +5872,6 @@
     let selectedBrandLayoutUrls = new Set();
     let brandSelectionTouched = false;
     let groupEditorSnapshot = null;
-    let brandDragState = null;
     let brandPreviewPlacement = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
@@ -8949,13 +8954,24 @@
         if (!Number.isFinite(number)) return fallback;
         return Math.min(max, Math.max(min, number));
       };
+      const legacySafeSize = clamp(document.querySelector("#brandSafeSize")?.value, 10, 100, 88);
+      const safeZoneWidthPercent = clamp(document.querySelector("#brandSafeWidth")?.value, 10, 100, legacySafeSize);
+      const safeZoneHeightPercent = clamp(document.querySelector("#brandSafeHeight")?.value, 10, 100, legacySafeSize);
+      const legacySafeSizeInput = document.querySelector("#brandSafeSize");
+      if (legacySafeSizeInput && document.activeElement !== legacySafeSizeInput) {
+        legacySafeSizeInput.value = String(Math.round((safeZoneWidthPercent + safeZoneHeightPercent) / 2));
+      }
       return {
         position: document.querySelector("#brandPosition")?.value || "top-left",
-        widthPercent: clamp(document.querySelector("#brandSize")?.value, 20, 95, 78),
+        widthPercent: clamp(document.querySelector("#brandSize")?.value, 10, 100, 78),
         marginPercent: clamp(document.querySelector("#brandMargin")?.value, 0, 20, 4),
         offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, -60, 60, 0),
         offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0),
-        safeZoneSizePercent: clamp(document.querySelector("#brandSafeSize")?.value, 40, 100, 88),
+        safeZoneWidthPercent,
+        safeZoneHeightPercent,
+        // Kept for drafts created before the editor gained independent width
+        // and height controls.
+        safeZoneSizePercent: Math.round((safeZoneWidthPercent + safeZoneHeightPercent) / 2),
         safeZoneOffsetXPercent: clamp(document.querySelector("#brandSafeOffsetX")?.value, -30, 30, 0),
         safeZoneOffsetYPercent: clamp(document.querySelector("#brandSafeOffsetY")?.value, -30, 30, 0),
         headline: document.querySelector("#templateHeadline")?.value || "",
@@ -8994,6 +9010,8 @@
         offsetXPercent: config.offsetXPercent,
         offsetYPercent: config.offsetYPercent,
         safeZoneSizePercent: config.safeZoneSizePercent,
+        safeZoneWidthPercent: config.safeZoneWidthPercent,
+        safeZoneHeightPercent: config.safeZoneHeightPercent,
         safeZoneOffsetXPercent: config.safeZoneOffsetXPercent,
         safeZoneOffsetYPercent: config.safeZoneOffsetYPercent,
         headline: config.headline,
@@ -9036,7 +9054,10 @@
       setValue("#brandMargin", profile.marginPercent, 0);
       setValue("#brandOffsetX", profile.offsetXPercent, 0);
       setValue("#brandOffsetY", profile.offsetYPercent, 0);
-      setValue("#brandSafeSize", profile.safeZoneSizePercent, 88);
+      const legacySafeSize = profile.safeZoneSizePercent ?? 88;
+      setValue("#brandSafeWidth", profile.safeZoneWidthPercent ?? legacySafeSize, 88);
+      setValue("#brandSafeHeight", profile.safeZoneHeightPercent ?? legacySafeSize, 88);
+      setValue("#brandSafeSize", legacySafeSize, 88);
       setValue("#brandSafeOffsetX", profile.safeZoneOffsetXPercent, 0);
       setValue("#brandSafeOffsetY", profile.safeZoneOffsetYPercent, 0);
       setValue("#templateHeadline", profile.headline, "");
@@ -9158,33 +9179,57 @@
       return bounds;
     }
 
-    function brandedLayoutPlacement(baseImage, badgeImage, config = brandConfig(), platform = activePlatform) {
-      const width = badgeImage.naturalWidth || badgeImage.width;
-      const height = badgeImage.naturalHeight || badgeImage.height;
-      const sourceWidth = baseImage.naturalWidth || baseImage.width;
-      const sourceHeight = baseImage.naturalHeight || baseImage.height;
-      const source = platform === "cian"
-        ? visibleImageBounds(baseImage)
-        : { sx: 0, sy: 0, sw: sourceWidth, sh: sourceHeight };
-      const frameWidth = Math.round(width * (config.widthPercent / 100));
-      const frameHeight = Math.round(height * (config.widthPercent / 100));
+    function safeZoneRectForSize(width, height, config = brandConfig()) {
+      const legacy = Number(config.safeZoneSizePercent);
+      const widthPercent = Math.max(10, Math.min(100, Number(config.safeZoneWidthPercent) || legacy || 88));
+      const heightPercent = Math.max(10, Math.min(100, Number(config.safeZoneHeightPercent) || legacy || 88));
+      const zoneWidth = width * widthPercent / 100;
+      const zoneHeight = height * heightPercent / 100;
+      const offsetX = width * (Number(config.safeZoneOffsetXPercent) || 0) / 100;
+      const offsetY = height * (Number(config.safeZoneOffsetYPercent) || 0) / 100;
+      const x = (width - zoneWidth) / 2 + offsetX;
+      const y = (height - zoneHeight) / 2 + offsetY;
+      return {
+        x: Math.max(0, Math.min(width - zoneWidth, x)),
+        y: Math.max(0, Math.min(height - zoneHeight, y)),
+        width: zoneWidth,
+        height: zoneHeight
+      };
+    }
+
+    function placementInsideSafeZone(baseImage, width, height, config = brandConfig()) {
+      const sourceWidth = baseImage.naturalWidth || baseImage.width || 1;
+      const sourceHeight = baseImage.naturalHeight || baseImage.height || 1;
+      // Trimmed bounds are used for every platform. The safe zone must protect
+      // visible plan content, not transparent/white margins from a source file.
+      const source = visibleImageBounds(baseImage);
+      const zone = safeZoneRectForSize(width, height, config);
+      const frameScale = Math.max(10, Math.min(100, Number(config.widthPercent) || 78)) / 100;
+      const frameWidth = zone.width * frameScale;
+      const frameHeight = zone.height * frameScale;
       const ratio = Math.min(frameWidth / Math.max(1, source.sw), frameHeight / Math.max(1, source.sh));
-      const layoutWidth = Math.round(source.sw * ratio);
-      const layoutHeight = Math.round(source.sh * ratio);
-      const margin = Math.round(width * (config.marginPercent / 100));
-      const horizontal = config.position.split("-")[1] || "left";
-      const vertical = config.position.split("-")[0] || "top";
-      const baseX = horizontal === "right" ? width - frameWidth - margin : horizontal === "center" ? Math.round((width - frameWidth) / 2) : margin;
-      const baseY = vertical === "bottom" ? height - frameHeight - margin : margin;
-      const frameX = baseX + Math.round(width * ((config.offsetXPercent || 0) / 100));
-      const frameY = baseY + Math.round(height * ((config.offsetYPercent || 0) / 100));
+      const layoutWidth = Math.max(1, Math.round(source.sw * ratio));
+      const layoutHeight = Math.max(1, Math.round(source.sh * ratio));
+      const offsetX = zone.width * (Number(config.offsetXPercent) || 0) / 100;
+      const offsetY = zone.height * (Number(config.offsetYPercent) || 0) / 100;
+      const x = zone.x + (zone.width - layoutWidth) / 2 + offsetX;
+      const y = zone.y + (zone.height - layoutHeight) / 2 + offsetY;
       return {
         source,
-        x: frameX + Math.round((frameWidth - layoutWidth) / 2),
-        y: frameY + Math.round((frameHeight - layoutHeight) / 2),
+        x: Math.max(zone.x, Math.min(zone.x + zone.width - layoutWidth, x)),
+        y: Math.max(zone.y, Math.min(zone.y + zone.height - layoutHeight, y)),
         width: layoutWidth,
-        height: layoutHeight
+        height: layoutHeight,
+        safeZone: zone,
+        sourceWidth,
+        sourceHeight
       };
+    }
+
+    function brandedLayoutPlacement(baseImage, badgeImage, config = brandConfig()) {
+      const width = badgeImage.naturalWidth || badgeImage.width;
+      const height = badgeImage.naturalHeight || badgeImage.height;
+      return placementInsideSafeZone(baseImage, width, height, config);
     }
 
     function templateText(value, item = {}) {
@@ -9236,18 +9281,11 @@
         placement = brandedLayoutPlacement(baseImage, badgeImage, config, platform);
         context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
       } else if (baseImage) {
-        const source = visibleImageBounds(baseImage);
-        // The size control must work with or without a graphic backdrop. Previously
-        // this branch used a hard-coded 78%, so the inspector and resize handle
-        // appeared to change while the actual plan never changed size.
-        const frameSize = Math.max(20, Math.min(95, Number(config.widthPercent) || 78)) / 100;
-        const ratio = Math.min(width * frameSize / source.sw, height * frameSize / source.sh);
-        const drawWidth = source.sw * ratio;
-        const drawHeight = source.sh * ratio;
-        const x = (width - drawWidth) / 2 + width * config.offsetXPercent / 100;
-        const y = (height - drawHeight) / 2 + height * config.offsetYPercent / 100;
-        placement = { source, x, y, width: drawWidth, height: drawHeight };
-        context.drawImage(baseImage, source.sx, source.sy, source.sw, source.sh, x, y, drawWidth, drawHeight);
+        // A plan is always fitted into the same safe zone, even when there is
+        // no uploaded backdrop yet. This makes the editor and every export
+        // platform follow one predictable composition rule.
+        placement = placementInsideSafeZone(baseImage, width, height, config);
+        context.drawImage(baseImage, placement.source.sx, placement.source.sy, placement.source.sw, placement.source.sh, placement.x, placement.y, placement.width, placement.height);
       } else if (!badgeImage) {
         context.fillStyle = "#8a919e";
         context.font = "500 22px Circe, Arial, sans-serif";
@@ -9293,23 +9331,12 @@
     }
 
     function safeZoneRect(canvas, config = brandConfig()) {
-      const sizePercent = Math.max(40, Math.min(100, Number(config.safeZoneSizePercent) || 88));
-      const side = Math.min(canvas.width, canvas.height) * sizePercent / 100;
-      const offsetX = canvas.width * (Number(config.safeZoneOffsetXPercent) || 0) / 100;
-      const offsetY = canvas.height * (Number(config.safeZoneOffsetYPercent) || 0) / 100;
-      const x = (canvas.width - side) / 2 + offsetX;
-      const y = (canvas.height - side) / 2 + offsetY;
-      return {
-        x: Math.max(0, Math.min(canvas.width - side, x)),
-        y: Math.max(0, Math.min(canvas.height - side, y)),
-        width: side,
-        height: side
-      };
+      return safeZoneRectForSize(canvas.width, canvas.height, config);
     }
 
-    // The safe area is an editor-only guide. Its size and position are stored
-    // in the feed profile and the same rectangle is used by the CIAN export
-    // path, so the generated image keeps the plan inside the chosen bounds.
+    // The safe area is the editor's layout container. It is painted as a guide
+    // only; the guide itself never enters the generated image. The same
+    // rectangle is used while placing the plan for every export platform.
     function drawSafeZoneGuide(canvas, config = brandConfig()) {
       if (!canvas || !canvas.width || !canvas.height) return;
       const context = canvas.getContext("2d");
@@ -9428,77 +9455,6 @@
       }
     }
 
-    function startBrandPreviewDrag(event) {
-      const canvas = document.querySelector("#brandPreviewCanvas");
-      if (!canvas || !brandPreviewImages?.baseImage || !brandPreviewPlacement) return;
-      event.preventDefault();
-      const config = brandConfig();
-      const rect = canvas.getBoundingClientRect();
-      const handleX = rect.left + (brandPreviewPlacement.x + brandPreviewPlacement.width) / canvas.width * rect.width;
-      const handleY = rect.top + (brandPreviewPlacement.y + brandPreviewPlacement.height) / canvas.height * rect.height;
-      const handleRadius = Math.max(16, Math.min(28, Math.min(rect.width, rect.height) * .045));
-      const resize = Math.hypot(event.clientX - handleX, event.clientY - handleY) <= handleRadius;
-      brandDragState = {
-        pointerId: event.pointerId,
-        clientX: event.clientX,
-        clientY: event.clientY,
-        offsetX: config.offsetXPercent,
-        offsetY: config.offsetYPercent,
-        widthPercent: config.widthPercent,
-        placement: { ...brandPreviewPlacement },
-        mode: resize ? "resize" : "move",
-        moved: false
-      };
-      canvas.classList.toggle("resizing", resize);
-      canvas.classList.add("dragging");
-      canvas.setPointerCapture?.(event.pointerId);
-    }
-
-    function moveBrandPreviewDrag(event) {
-      const canvas = document.querySelector("#brandPreviewCanvas");
-      if (!brandDragState) {
-        if (!canvas || !brandPreviewPlacement) return;
-        const rect = canvas.getBoundingClientRect();
-        const handleX = rect.left + (brandPreviewPlacement.x + brandPreviewPlacement.width) / canvas.width * rect.width;
-        const handleY = rect.top + (brandPreviewPlacement.y + brandPreviewPlacement.height) / canvas.height * rect.height;
-        const handleRadius = Math.max(16, Math.min(28, Math.min(rect.width, rect.height) * .045));
-        canvas.classList.toggle("resize-ready", Math.hypot(event.clientX - handleX, event.clientY - handleY) <= handleRadius);
-        return;
-      }
-      if (brandDragState.pointerId !== event.pointerId) return;
-      const rect = canvas.getBoundingClientRect();
-      const distance = Math.hypot(event.clientX - brandDragState.clientX, event.clientY - brandDragState.clientY);
-      if (distance > 4) brandDragState.moved = true;
-      if (brandDragState.mode === "resize") {
-        const pointX = (event.clientX - rect.left) / Math.max(1, rect.width) * canvas.width;
-        const pointY = (event.clientY - rect.top) / Math.max(1, rect.height) * canvas.height;
-        const startDiagonal = Math.max(1, Math.hypot(brandDragState.placement.width, brandDragState.placement.height));
-        const nextDiagonal = Math.max(1, Math.hypot(pointX - brandDragState.placement.x, pointY - brandDragState.placement.y));
-        const nextSize = Math.round(Math.max(20, Math.min(95, brandDragState.widthPercent * nextDiagonal / startDiagonal)));
-        const sizeInput = document.querySelector("#brandSize");
-        if (sizeInput) sizeInput.value = nextSize;
-        drawBrandPreviewFrame();
-        return;
-      }
-      const dxPercent = ((event.clientX - brandDragState.clientX) / Math.max(1, rect.width)) * 100;
-      const dyPercent = ((event.clientY - brandDragState.clientY) / Math.max(1, rect.height)) * 100;
-      setBrandOffsets(brandDragState.offsetX + dxPercent, brandDragState.offsetY + dyPercent);
-      drawBrandPreviewFrame();
-    }
-
-    async function endBrandPreviewDrag(event) {
-      if (!brandDragState || brandDragState.pointerId !== event.pointerId) return;
-      const shouldOpenPreview = event.type === "pointerup" && !brandDragState.moved;
-      const mode = brandDragState.mode;
-      document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging", "resizing");
-      brandDragState = null;
-      await persistActiveBrandProfile();
-      brandStatus(mode === "resize"
-        ? `Размер планировки сохранён: ${document.querySelector("#brandSize")?.value || 78}%. Он будет применён ко всем макетам текущего фида.`
-        : `Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам текущего фида.`);
-      if (shouldOpenPreview) openBrandPreviewDialog();
-    }
-
     async function openBrandPreviewDialog() {
       const dialog = document.querySelector("#brandPreviewDialog");
       const dialogCanvas = document.querySelector("#brandPreviewDialogCanvas");
@@ -9567,32 +9523,19 @@
     }
 
     function feedSafeLayoutCanvas(sourceCanvas, config = brandConfig()) {
-      const targetSize = 1024;
-      const safeSize = Math.round(targetSize * Math.max(40, Math.min(100, Number(config.safeZoneSizePercent) || 88)) / 100);
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
-      canvas.width = targetSize;
-      canvas.height = targetSize;
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, targetSize, targetSize);
-
-      const sourceWidth = sourceCanvas.width || targetSize;
-      const sourceHeight = sourceCanvas.height || targetSize;
-      const ratio = Math.min(safeSize / sourceWidth, safeSize / sourceHeight);
-      const width = Math.round(sourceWidth * ratio);
-      const height = Math.round(sourceHeight * ratio);
-      const offsetX = targetSize * (Number(config.safeZoneOffsetXPercent) || 0) / 100;
-      const offsetY = targetSize * (Number(config.safeZoneOffsetYPercent) || 0) / 100;
-      const zoneX = (targetSize - safeSize) / 2 + offsetX;
-      const zoneY = (targetSize - safeSize) / 2 + offsetY;
-      const x = Math.round(Math.max(0, Math.min(targetSize - width, zoneX + (safeSize - width) / 2)));
-      const y = Math.round(Math.max(0, Math.min(targetSize - height, zoneY + (safeSize - height) / 2)));
-      context.drawImage(sourceCanvas, x, y, width, height);
+      canvas.width = sourceCanvas.width || 1200;
+      canvas.height = sourceCanvas.height || 800;
+      // The safe zone is already baked into the composition. Keep the export
+      // dimensions and the backdrop intact instead of applying a second,
+      // platform-specific square crop after rendering.
+      context.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
       return canvas;
     }
 
     async function brandedLayoutBlob(canvas, platform = activePlatform, config = brandConfig()) {
-      const exportCanvas = platform === "cian" ? feedSafeLayoutCanvas(canvas, config) : canvas;
+      const exportCanvas = feedSafeLayoutCanvas(canvas, config);
       const variants = [
         ["image/jpeg", .86, "jpg"],
         ["image/jpeg", .74, "jpg"],
@@ -11953,7 +11896,7 @@ ${photos}
       }
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandSafeSize", "#brandSafeOffsetX", "#brandSafeOffsetY", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandSafeSize", "#brandSafeWidth", "#brandSafeHeight", "#brandSafeOffsetX", "#brandSafeOffsetY", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
         drawBrandPreviewFrame() || renderBrandPreview();
       });
@@ -11973,13 +11916,6 @@ ${photos}
       brandGenerationController.abort();
     });
     const brandPreviewCanvas = document.querySelector("#brandPreviewCanvas");
-    brandPreviewCanvas.addEventListener("pointerdown", startBrandPreviewDrag);
-    brandPreviewCanvas.addEventListener("pointermove", moveBrandPreviewDrag);
-    brandPreviewCanvas.addEventListener("pointerup", endBrandPreviewDrag);
-    brandPreviewCanvas.addEventListener("pointercancel", endBrandPreviewDrag);
-    brandPreviewCanvas.addEventListener("pointerleave", () => {
-      if (!brandDragState) brandPreviewCanvas.classList.remove("resize-ready");
-    });
     brandPreviewCanvas.addEventListener("keydown", event => {
       if (["[", "]"].includes(event.key) && brandPreviewImages?.baseImage) {
         event.preventDefault();
@@ -12335,7 +12271,7 @@ ${photos}
     }, 30000);
     initializeAuth();
   </script>
-  <script src="layout-editor.js"></script>
+  <script src="layout-editor.js?v=20261020-safe-zone-editor"></script>
   <script src="monitor-client.js"></script>
   <script src="usage-guide.js"></script>
   <div id="cookieNotice" hidden>
