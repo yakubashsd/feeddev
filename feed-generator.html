@@ -8829,7 +8829,7 @@ ${photos}
         }
       })();
       const hasToken = pattern => new RegExp(`(?:^|[\\/_-])(?:${pattern})(?=$|[\\/_-]|\\.)`, "i").test(pathname);
-      if (hasToken("floor(?:[\\s_-]?plan)?|section|entrance|podjezd|podezd")) return "floor";
+      if (hasToken("floor(?:[\\s_-]?(?:plan|scheme|layout))?|floorplan|etazh(?:ny|n)?|этаж(?:н(?:ый|ая|ые)|а)?|level|section|entrance|podjezd|podezd|building(?:[\\s_-]?(?:plan|scheme|layout))?|house(?:[\\s_-]?(?:plan|scheme|layout))?|masterplan|siteplan")) return "floor";
       if (hasToken("preset|apartment|apartments|flat|flats|unit")) return "apartment";
       if (hasToken("layout|layouts|plan|plans")) return "generic";
       return "unknown";
@@ -8840,15 +8840,22 @@ ${photos}
       const usable = candidates.filter(url => layoutPhotoKind(url) !== "floor");
       return usable.find(url => layoutPhotoKind(url) === "apartment")
         || usable.find(url => layoutPhotoKind(url) === "generic")
-        || usable[0]
         || "";
     }
 
     function repairLegacyLayoutPhoto(item) {
       const current = String(item.layoutPhoto || "").trim();
-      if (!current || layoutPhotoKind(current) !== "branded") return item;
+      if (!current) return item;
       const preferred = preferredLayoutPhoto("", photoList(item));
-      if (!preferred || preferred === current || layoutPhotoKind(preferred) !== "apartment") return item;
+      const currentKind = layoutPhotoKind(current);
+      const preferredKind = layoutPhotoKind(preferred);
+      const shouldReplace = currentKind === "branded"
+        || currentKind === "floor"
+        || (currentKind !== "apartment" && preferredKind === "apartment");
+      if (!shouldReplace || preferred === current) {
+        if (currentKind !== "floor") return item;
+        return { ...item, layoutPhoto: "" };
+      }
       return {
         ...item,
         layoutPhoto: preferred,
@@ -8859,7 +8866,11 @@ ${photos}
     function sourceLayoutPhoto(item = {}) {
       const current = String(item.layoutPhoto || "").trim();
       if (!current) return "";
-      if (layoutPhotoKind(current) !== "branded") return current;
+      const currentKind = layoutPhotoKind(current);
+      if (["apartment", "generic"].includes(currentKind)) {
+        const preferred = preferredLayoutPhoto("", photoList(item));
+        return layoutPhotoKind(preferred) === "apartment" ? preferred : current;
+      }
       const preferred = preferredLayoutPhoto("", photoList(item));
       return ["apartment", "generic"].includes(layoutPhotoKind(preferred)) ? preferred : "";
     }
