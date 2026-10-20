@@ -8853,9 +8853,15 @@ ${photos}
       const shouldReplace = currentKind === "branded"
         || currentKind === "floor"
         || (currentKind !== "apartment" && preferredKind === "apartment");
+      if (currentKind === "floor") {
+        return {
+          ...item,
+          layoutPhoto: preferred,
+          photos: photoList(item).filter(url => !isBrandedLayoutUrl(url)).join("\n")
+        };
+      }
       if (!shouldReplace || preferred === current) {
-        if (currentKind !== "floor") return item;
-        return { ...item, layoutPhoto: "" };
+        return item;
       }
       return {
         ...item,
