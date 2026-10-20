@@ -217,6 +217,19 @@ test("CIAN uses branded layout as the only default image and retains the origina
   assert.match(xml, /<FullUrl>https:\/\/img.test\/original.jpg<\/FullUrl>/);
 });
 
+test("imported branded layouts are not regenerated or reported as missing", () => {
+  const context = vm.createContext({
+    photoList: item => String(item.photos || "").split(/\n+/).filter(Boolean),
+    isBrandedLayoutUrl: url => /branded-|planirovka-na-podlozhke-/i.test(String(url))
+  });
+  vm.runInContext(clientFunction("hasBrandedLayout"), context);
+  assert.equal(context.hasBrandedLayout({ layoutPhoto: "https://feeds.test/layouts/branded-42.jpg", photos: "" }), true);
+  assert.equal(context.hasBrandedLayout({ layoutPhoto: "https://img.test/original.jpg", photos: "https://feeds.test/layouts/branded-42.jpg" }), true);
+  assert.equal(context.hasBrandedLayout({ layoutPhoto: "https://img.test/original.jpg", photos: "https://img.test/flat.jpg" }), false);
+  assert.match(html, /item\.layoutPhoto && !hasBrandedLayout\(item\)/);
+  assert.doesNotMatch(html, /item\.layoutPhoto && !photoList\(item\)\.some\(isBrandedLayoutUrl\)/);
+});
+
 test("publication records URL sources, manual objects and explicit exclusions separately", () => {
   const context = vm.createContext({
     activeSourceId: "all",

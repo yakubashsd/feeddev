@@ -9602,10 +9602,10 @@
       const profile = activeBrandProfile();
       if (profile.autoApplyBranding === false || !brandingTemplateEnabled(profile)) return { applied: 0, skipped: [] };
       const ids = new Set(newObjectIds || []);
-      const beforeKnown = objects.filter(item => ids.has(item.externalId) && photoList(item).some(isBrandedLayoutUrl)).length;
+      const beforeKnown = objects.filter(item => ids.has(item.externalId) && hasBrandedLayout(item)).length;
       objects = applyKnownBranding(objects);
-      const afterKnown = objects.filter(item => ids.has(item.externalId) && photoList(item).some(isBrandedLayoutUrl)).length;
-      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !photoList(item).some(isBrandedLayoutUrl));
+      const afterKnown = objects.filter(item => ids.has(item.externalId) && hasBrandedLayout(item)).length;
+      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasBrandedLayout(item));
       const reused = Math.max(0, afterKnown - beforeKnown);
       if (!targets.length) { save(); return { applied: reused, skipped: [] }; }
       if (!brandBadgeDataUrl) return { applied: reused, skipped: [{ message: "Подложка недоступна в этом браузере", ids: targets.map(item => item.externalId).slice(0, 6) }] };
@@ -9625,7 +9625,7 @@
 
     function requestNewObjectBranding(newObjectIds) {
       const ids = new Set(newObjectIds || []);
-      const candidates = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !photoList(item).some(isBrandedLayoutUrl));
+      const candidates = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasBrandedLayout(item));
       if (!candidates.length || !brandingTemplateEnabled() || activeBrandProfile().autoApplyBranding === false) return Promise.resolve("skip");
       let dialog = document.querySelector("#newObjectBrandingDialog");
       if (!dialog) {
@@ -10381,6 +10381,14 @@
       return /\/layouts\/(?:branded-|planirovka-na-podlozhke-)|(?:branded-|planirovka-na-podlozhke-)/i.test(String(url));
     }
 
+    // A generated cover can be stored either in the regular photo list or in
+    // layoutPhoto when a published feed is imported again. Treat both forms
+    // as the same branded result so a sync never generates a duplicate cover
+    // and validation does not report a false missing-template error.
+    function hasBrandedLayout(item) {
+      return isBrandedLayoutUrl(item?.layoutPhoto || "") || photoList(item).some(isBrandedLayoutUrl);
+    }
+
     function feedImageList(item) {
       const layout = String(item.layoutPhoto || "").trim();
       const photos = photoList(item).filter(url => url !== layout);
@@ -10694,7 +10702,7 @@ ${photos}
       const profile = activeBrandProfile();
       if (brandingTemplateEnabled(profile)) {
         const missingTemplateIds = currentObjects
-          .filter(item => String(item.layoutPhoto || "").trim() && !photoList(item).some(isBrandedLayoutUrl))
+          .filter(item => String(item.layoutPhoto || "").trim() && !hasBrandedLayout(item))
           .map(item => item.externalId || "без ID");
         if (missingTemplateIds.length) add("error", "Не применён шаблон планировки", `У ${missingTemplateIds.length} квартир есть исходная планировка, но нет сформированной обложки. Откройте «Оформление планировок» и повторите формирование — после этого новые объекты будут получать шаблон автоматически.`, missingTemplateIds);
       }
