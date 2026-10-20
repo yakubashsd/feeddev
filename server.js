@@ -120,7 +120,10 @@ function cachedStaticAsset(filePath) {
   const next = {
     stamp,
     body,
-    etag: `"${crypto.createHash("sha1").update(body).digest("hex")}"`
+    etag: `"${crypto.createHash("sha1").update(body).digest("hex")}"`,
+    // Compression is intentionally lazy: most small assets are served as-is,
+    // while large assets are compressed once and reused for subsequent hits.
+    gzipBody: null
   };
   staticAssetCache.set(filePath, next);
   return next;
@@ -138,8 +141,12 @@ function sendStaticAsset(req, res, asset, type, cacheControl = "public, max-age=
     Vary: "Accept-Encoding"
   };
   const acceptsGzip = /gzip/i.test(String(req.headers["accept-encoding"] || ""));
-  const body = acceptsGzip && asset.body.length > 1024 ? zlib.gzipSync(asset.body, { level: 6 }) : asset.body;
-  if (body !== asset.body) headers["Content-Encoding"] = "gzip";
+  let body = asset.body;
+  if (acceptsGzip && asset.body.length > 1024) {
+    asset.gzipBody ||= zlib.gzipSync(asset.body, { level: 6 });
+    body = asset.gzipBody;
+    headers["Content-Encoding"] = "gzip";
+  }
   headers["Content-Length"] = String(body.length);
   res.writeHead(200, headers);
   return res.end(body);

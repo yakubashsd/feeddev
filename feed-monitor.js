@@ -29,8 +29,8 @@ function listingCount(parsed) {
   return listing === undefined ? 0 : Array.isArray(listing) ? listing.length : 1;
 }
 
-function validateContent(xml) {
-  const parsed=new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);
+function validateContent(xml, parsed=null) {
+  parsed ||= new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);
   const ads=parsed?.Ads?.Ad;
   if(ads){
     const items=Array.isArray(ads)?ads:[ads];
@@ -75,8 +75,30 @@ const download=url=>downloadResource(url,{maxBytes:100*1024*1024,timeoutMs:12000
 const downloadBuffer=(url,maxBytes)=>downloadResource(url,{maxBytes,binary:true});
 function createMonitor({file,notify=async()=>{},load=download,loadImage=downloadBuffer,intervalMs=3600000}) {
   let busy=false;
-  const read=()=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{};
-  const write=data=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(data),{mode:0o600});fs.renameSync(file+'.tmp',file);try{fs.chmodSync(file,0o600);}catch{}};
+  // The monitor state is read by every API request and by the scheduler. Keep a
+  // small mtime-aware cache so repeated reads do not parse the same JSON over
+  // and over again, while still picking up changes made by another process.
+  let cachedData=null;
+  let cachedStamp='';
+  const stamp=()=>{try{const stat=fs.statSync(file);return `${stat.mtimeMs}:${stat.size}`;}catch{return 'missing';}};
+  const read=()=>{
+    const currentStamp=stamp();
+    if(cachedData&&cachedStamp===currentStamp)return cachedData;
+    if(currentStamp==='missing'){cachedData={};cachedStamp=currentStamp;return cachedData;}
+    try{cachedData=JSON.parse(fs.readFileSync(file,'utf8'));}
+    catch{cachedData={};}
+    cachedStamp=currentStamp;
+    return cachedData;
+  };
+  const write=data=>{
+    fs.mkdirSync(path.dirname(file),{recursive:true});
+    const temporary=`${file}.${process.pid}.${Math.random().toString(16).slice(2)}.tmp`;
+    fs.writeFileSync(temporary,JSON.stringify(data),{mode:0o600});
+    fs.renameSync(temporary,file);
+    try{fs.chmodSync(file,0o600);}catch{}
+    cachedData=data;
+    cachedStamp=stamp();
+  };
   function replace(project,feeds,{maxFeeds=80}={}){
     const limit=Number(maxFeeds)===-1?Infinity:Math.max(1,Number(maxFeeds)||80);
     if(!Array.isArray(feeds)||feeds.length>limit)throw Error(`Допускается до ${limit} фидов`);
@@ -89,6 +111,7 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
   }
   async function run(project=null,id=null,force=false){
     if(busy)throw Error('Проверка уже выполняется');busy=true;
+    let changedChecks=false;
     try{
       const data=read();
       for(const [key,feeds] of Object.entries(data)){
@@ -98,8 +121,11 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
           if(!force&&Date.now()-Date.parse(feed.lastChecked||0)<intervalMs)continue;
           const checked={...feed,lastChecked:new Date().toISOString(),status:'ok',error:'',warnings:[]};
           try{
-            const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');validateContent(xml);
-            const parsed=new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);const count=listingCount(parsed);
+            const xml=await load(feed.url);const result=XMLValidator.validate(xml);if(result!==true||!xml.trim().startsWith('<')||/<html[\s>]/i.test(xml))throw Error('Ответ не является корректным XML-фидом');
+            // Parse once per feed. Validation and object counting previously
+            // performed two full XML parses, which was noticeable for large
+            // source feeds.
+            const parsed=new XMLParser({ignoreAttributes:false,trimValues:true}).parse(xml);validateContent(xml,parsed);const count=listingCount(parsed);
             checked.objectCount=count;checked.baselineObjectCount=Number(feed.baselineObjectCount||count);
             if(feed.baselineObjectCount&&count>0&&count<Number(feed.baselineObjectCount)*0.5)checked.warnings.push(`Количество объявлений снизилось с ${feed.baselineObjectCount} до ${count}`);
             const urls=imageUrls(parsed);const failed=[];
@@ -108,7 +134,7 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
             checked.status=checked.warnings.length?'warning':'ok';checked.lastSuccessAt=checked.lastChecked;
           }
           catch(error){checked.status='bad';checked.error=error.message;}
-          const latest=read(),record=latest[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
+          const record=data[key]?.find(f=>f.id===feed.id&&f.url===feed.url);if(!record)continue;
           const changed=checked.status!==record.status||checked.error!==record.error||JSON.stringify(checked.warnings)!==JSON.stringify(record.warnings||[]);
           if(checked.status!=='ok'&&record.telegramEnabled&&changed){
             try{
@@ -117,9 +143,16 @@ function createMonitor({file,notify=async()=>{},load=download,loadImage=download
               checked.notificationError=notification?.errors?.join(' ')||'';
             }catch(error){checked.notificationError=error.message;}
           }
-          Object.assign(record,{status:checked.status,error:checked.error,warnings:checked.warnings,objectCount:checked.objectCount||record.objectCount,baselineObjectCount:checked.baselineObjectCount||record.baselineObjectCount,lastSuccessAt:checked.lastSuccessAt||record.lastSuccessAt,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,notificationError:checked.notificationError,emailEnabled:false,emailTo:''});write(latest);
+          Object.assign(record,{status:checked.status,error:checked.error,warnings:checked.warnings,objectCount:checked.objectCount||record.objectCount,baselineObjectCount:checked.baselineObjectCount||record.baselineObjectCount,lastSuccessAt:checked.lastSuccessAt||record.lastSuccessAt,lastChecked:checked.lastChecked,telegramNotifiedAt:checked.telegramNotifiedAt,notificationError:checked.notificationError,emailEnabled:false,emailTo:''});
+          changedChecks=true;
         }
       }
+      // Persist all checks in one atomic write instead of parsing and rewriting
+      // the JSON state after every feed.
+      // Avoid touching mtime when every feed is still inside its interval;
+      // scheduled ticks happen every minute and should remain read-only in
+      // that common case.
+      if(changedChecks)write(data);
     }finally{busy=false;}
   }
   return {read,replace,run};

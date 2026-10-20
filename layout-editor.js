@@ -113,6 +113,17 @@
   function drawCustom(ctx,w,h){for(const layer of readLayers()){const x=w*Number(layer.x||0)/100,y=h*Number(layer.y||0)/100,lw=w*Number(layer.width||30)/100,lh=h*Number(layer.height||12)/100;ctx.save();ctx.globalAlpha=Number(layer.opacity??100)/100;if(layer.type==='rect'){ctx.fillStyle=layer.fill||'#4f7dff';ctx.fillRect(x,y,lw,lh)}else{ctx.fillStyle=layer.color||'#11151a';ctx.textBaseline='top';ctx.font=`${layer.weight||700} ${Number(layer.fontSize)||36}px ${fontStack(layer.fontFamily)}`;String(layer.text||'Текст').split('\n').forEach((line,i)=>ctx.fillText(line,x,y+i*(Number(layer.fontSize)||36)*1.2,lw))}ctx.restore()}}
   function fontControls(current,custom=false){return `<div class="le-font-controls"><label class="le-field">Шрифт<select ${custom?'data-prop="fontFamily"':'id="le-base-font"'}>${fontOptions(current||'Circe')}</select></label><div class="le-font-upload"><input class="le-font-file" type="file" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" hidden><button type="button" data-upload-font>Загрузить шрифт</button><div class="le-font-requirements"><strong>Требования к файлу</strong><ul><li>Формат WOFF2 рекомендуется; также подходят WOFF, TTF и OTF.</li><li>Размер — не более 3 МБ. Один файл — одно начертание.</li><li>Шрифт должен содержать кириллицу и цифры.</li><li>Загружайте только шрифты, которые разрешено использовать в рекламе.</li></ul></div></div></div>`}
   function renderInspector(){const box=properties.querySelector('.le-inspector'),layer=activeCustom();if(selected==='background'){box.innerHTML=`<label class="le-field">Цвет основы<input id="le-bg-color" type="color" value="${layerState.value}"></label><label class="le-field">Непрозрачность<input id="le-bg-opacity" type="range" min="0" max="100" value="${opacityState.value}"><span>${opacityState.value}%</span></label><p class="le-hint">Цвет основы виден через прозрачные участки загруженной подложки. 100% создаёт сплошной фон.</p>`}else if(layer){box.innerHTML=`<label class="le-field">Имя слоя<input data-prop="name" value="${escapeAttr(layer.name)}"></label>${layer.type==='text'?`<label class="le-field">Текст<textarea data-prop="text" rows="3" maxlength="300">${escapeText(layer.text)}</textarea></label><div class="le-token-fields"><button type="button" data-custom-token="price">+ Цена</button><button type="button" data-custom-token="area">+ Площадь</button><button type="button" data-custom-token="rooms">+ Комнаты</button><button type="button" data-custom-token="complex">+ Проект</button></div>${fontControls(layer.fontFamily||'Circe',true)}<label class="le-field">Цвет текста<input data-prop="color" type="color" value="${layer.color||'#11151a'}"></label><label class="le-field">Кегль<input data-prop="fontSize" type="number" min="10" max="180" value="${layer.fontSize||36}"></label>`:`<label class="le-field">Заливка<input data-prop="fill" type="color" value="${layer.fill||'#4f7dff'}"></label>`}<div class="le-property-grid"><label class="le-field">X, %<input data-prop="x" type="number" min="0" max="100" value="${layer.x}"></label><label class="le-field">Y, %<input data-prop="y" type="number" min="0" max="100" value="${layer.y}"></label><label class="le-field">Ширина, %<input data-prop="width" type="number" min="1" max="100" value="${layer.width}"></label><label class="le-field">Высота, %<input data-prop="height" type="number" min="1" max="100" value="${layer.height}"></label></div><label class="le-field">Непрозрачность<input data-prop="opacity" type="range" min="0" max="100" value="${layer.opacity}"><span>${layer.opacity}%</span></label>`}else if(selected==='text'){box.innerHTML=`${fontControls(fontState.value)}<p class="le-hint">Данные объявления подставляются автоматически. Добавьте отдельный текстовый слой кнопкой «＋ Текст», чтобы свободно оформлять макет.</p>`}else{box.innerHTML=`<p class="le-hint">Перемещайте планировку на холсте. Размер, точное смещение и загрузка подложки находятся в свойствах слоя выше.</p>`}}
+  // Keep numeric inspector fields in sync during pointer drags without
+  // rebuilding the whole inspector tree on every pointermove event. Replacing
+  // the DOM while dragging was a major source of jank and also interrupted
+  // text input/focus in custom layers.
+  function syncCustomGeometryFields(layer){
+    if(!layer)return;
+    for(const prop of ['x','y','width','height']){
+      const field=properties.querySelector(`[data-prop="${prop}"]`);
+      if(field&&document.activeElement!==field)field.value=layer[prop];
+    }
+  }
   function choose(layer) {
     selected=layer;
     selectedCustomId='';
@@ -214,16 +225,21 @@
     const resize=Math.hypot((x-b.x-b.width)*r.width/canvas.width,(y-b.y-b.height)*r.height/canvas.height)<20;
     baseline=snapshot();drag={x:e.clientX,y:e.clientY,config:brandConfig(),resize,layer:activeCustom()?{...activeCustom()}:null};canvas.setPointerCapture(e.pointerId);canvas.focus();e.preventDefault();
   });
+  let dragRedrawFrame=0;
+  function scheduleDragRedraw(){
+    if(dragRedrawFrame)return;
+    dragRedrawFrame=requestAnimationFrame(()=>{dragRedrawFrame=0;redraw();selectionBox();});
+  }
   canvas.addEventListener('pointermove',e=>{
     if(!drag)return;const r=canvas.getBoundingClientRect(),dx=(e.clientX-drag.x)/r.width*100,dy=(e.clientY-drag.y)/r.height*100,c=drag.config;
     const set=(id,v,min,max)=>document.getElementById(id).value=Math.round(Math.max(min,Math.min(max,v)));
-    if(drag.layer){const start=drag.layer,layers=readLayers().map(layer=>layer.id===start.id?drag.resize?{...layer,width:Math.max(5,Math.min(100,start.width+dx)),height:Math.max(5,Math.min(100,start.height+dy))}:{...layer,x:Math.max(0,Math.min(100-start.width,start.x+dx)),y:Math.max(0,Math.min(100-start.height,start.y+dy))}:layer);writeLayers(layers);renderInspector();}
+    if(drag.layer){const start=drag.layer,layers=readLayers().map(layer=>layer.id===start.id?drag.resize?{...layer,width:Math.max(5,Math.min(100,start.width+dx)),height:Math.max(5,Math.min(100,start.height+dy))}:{...layer,x:Math.max(0,Math.min(100-start.width,start.x+dx)),y:Math.max(0,Math.min(100-start.height,start.y+dy))}:layer);writeLayers(layers);syncCustomGeometryFields(layers.find(layer=>layer.id===start.id));}
     else if(drag.resize){if(selected==='layout')set('brandSize',c.widthPercent+dx,20,95);else set('templateTextSize',c.textSize+dy*2,16,120);}
     else if(selected==='text'){set('templateTextX',c.textXPercent+dx,0,95);set('templateTextY',c.textYPercent+dy,0,95);}
     else setBrandOffsets(c.offsetXPercent+dx,c.offsetYPercent+dy);
-    redraw();selectionBox();
+    scheduleDragRedraw();
   });
-  function finish(){if(!drag)return;drag=null;commit();}
+  function finish(){if(!drag)return;drag=null;if(dragRedrawFrame){cancelAnimationFrame(dragRedrawFrame);dragRedrawFrame=0;}redraw();commit();}
   canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
   panel.addEventListener('keydown',e=>{
     if(e.target.matches('input,textarea,select'))return;

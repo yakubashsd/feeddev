@@ -5857,6 +5857,8 @@
     let brandPreviewPlacement = null;
     let brandPreviewImages = null;
     let brandPreviewRequestId = 0;
+    let brandPreviewAssetRevision = 0;
+    let brandPreviewSourceSignature = "";
     let brandGenerationController = null;
     let brandDialogDragState = null;
     let activeBrandProjectKey = "all";
@@ -9002,6 +9004,7 @@
       activeBrandProjectKey = projectKey || currentFeedProjectKey();
       brandProfileHydrating = true;
       brandPreviewImages = null;
+      brandPreviewSourceSignature = "";
       brandBadgeDataUrl = "";
       brandBadgeFileName = "";
       const profile = brandProfiles[activeBrandProjectKey] || {};
@@ -9028,6 +9031,7 @@
 
       try {
         brandBadgeDataUrl = profile.badgeDataUrl || await readBrandAsset(activeBrandProjectKey);
+        brandPreviewAssetRevision += 1;
         brandBadgeFileName = profile.fileName || "";
         document.querySelector("#brandBadgePickedFile").textContent = brandBadgeDataUrl
           ? `${brandBadgeFileName || "Подложка фида"} · сохранено для текущего фида`
@@ -9049,9 +9053,20 @@
       restoreBrandProfile(key);
     }
 
+    // Trimming transparent/solid margins is intentionally done once per image.
+    // The editor calls this helper on every drag/resize frame; scanning a large
+    // plan pixel-by-pixel there would otherwise block the main thread and make
+    // the canvas feel sticky. WeakMap keeps the cache scoped to the decoded
+    // image and lets the browser reclaim it when the image is replaced.
+    const visibleImageBoundsCache = new WeakMap();
     function visibleImageBounds(image) {
-      const width = image.naturalWidth || image.width;
-      const height = image.naturalHeight || image.height;
+      if (!image || (typeof image !== "object" && typeof image !== "function")) {
+        return { sx: 0, sy: 0, sw: 1, sh: 1 };
+      }
+      const width = Math.max(1, image.naturalWidth || image.width || 1);
+      const height = Math.max(1, image.naturalHeight || image.height || 1);
+      const cached = visibleImageBoundsCache.get(image);
+      if (cached && cached.width === width && cached.height === height) return cached.bounds;
       const trimCanvas = document.createElement("canvas");
       trimCanvas.width = width;
       trimCanvas.height = height;
@@ -9061,7 +9076,9 @@
       try {
         data = trimContext.getImageData(0, 0, width, height).data;
       } catch {
-        return { sx: 0, sy: 0, sw: width, sh: height };
+        const bounds = { sx: 0, sy: 0, sw: width, sh: height };
+        visibleImageBoundsCache.set(image, { width, height, bounds });
+        return bounds;
       }
       // Different feeds wrap plans in different transparent or opaque margins.
       // Compare pixels with the corner background so a white JPG is trimmed too.
@@ -9104,13 +9121,19 @@
           }
         }
       }
-      if (maxX < 0 || maxY < 0) return { sx: 0, sy: 0, sw: width, sh: height };
+      if (maxX < 0 || maxY < 0) {
+        const bounds = { sx: 0, sy: 0, sw: width, sh: height };
+        visibleImageBoundsCache.set(image, { width, height, bounds });
+        return bounds;
+      }
       const padding = 4;
       const sx = Math.max(0, minX - padding);
       const sy = Math.max(0, minY - padding);
       const ex = Math.min(width, maxX + padding);
       const ey = Math.min(height, maxY + padding);
-      return { sx, sy, sw: Math.max(1, ex - sx), sh: Math.max(1, ey - sy) };
+      const bounds = { sx, sy, sw: Math.max(1, ex - sx), sh: Math.max(1, ey - sy) };
+      visibleImageBoundsCache.set(image, { width, height, bounds });
+      return bounds;
     }
 
     function brandedLayoutPlacement(baseImage, badgeImage, config = brandConfig(), platform = activePlatform) {
@@ -9279,11 +9302,26 @@
     async function renderBrandPreview() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas) return;
+      const target = brandPreviewTarget();
+      // renderAll() is used by navigation, filters and cloud refreshes. If the
+      // selected object and badge have not changed, keep the decoded images and
+      // redraw only the current frame instead of issuing another fetch for the
+      // same plan on every UI update.
+      const sourceSignature = [
+        target?.externalId || "",
+        target?.layoutPhoto || "",
+        activePlatform,
+        brandPreviewAssetRevision
+      ].join("|");
+      if (brandPreviewImages && brandPreviewSourceSignature === sourceSignature) {
+        drawBrandPreviewFrame();
+        return;
+      }
       const requestId = ++brandPreviewRequestId;
       brandPreviewImages = null;
+      brandPreviewSourceSignature = sourceSignature;
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, canvas.width, canvas.height);
-      const target = brandPreviewTarget();
       if (!brandBadgeDataUrl) {
         try {
           const baseImage = target ? await loadImageForCanvas(proxyImageUrl(target.layoutPhoto)) : null;
@@ -11799,6 +11837,7 @@ ${photos}
       try {
         await deleteBrandAsset(projectKey);
         brandBadgeDataUrl = "";
+        brandPreviewAssetRevision += 1;
         brandBadgeFileName = "";
         document.querySelector("#brandBadgeFileInput").value = "";
         document.querySelector("#brandBadgePickedFile").textContent = "Подложка не выбрана";
@@ -11814,6 +11853,7 @@ ${photos}
       const file = event.target.files[0];
       if (!file) {
         brandBadgeDataUrl = "";
+        brandPreviewAssetRevision += 1;
         brandBadgeFileName = "";
         document.querySelector("#brandBadgePickedFile").textContent = "Подложка не выбрана";
         updateBrandBadgeControls();
@@ -11826,9 +11866,11 @@ ${photos}
         return;
       }
       brandBadgeDataUrl = await fileToDataUrl(file);
+      brandPreviewAssetRevision += 1;
       if (brandBadgeDataUrl.length > 11 * 1024 * 1024) {
         event.target.value = "";
         brandBadgeDataUrl = "";
+        brandPreviewAssetRevision += 1;
         alert("Размер подложки не должен превышать 8 МБ.");
         return;
       }

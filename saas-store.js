@@ -32,15 +32,15 @@ function migrateState(value) {
 }
 function normalizeEmail(value) { return String(value || "").trim().toLowerCase(); }
 function deriveKey(secret) { return crypto.createHash("sha256").update(String(secret)).digest(); }
-function encrypt(value, secret) {
+function encrypt(value, secretOrKey) {
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", deriveKey(secret), iv);
+  const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.isBuffer(secretOrKey) ? secretOrKey : deriveKey(secretOrKey), iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]);
   return Buffer.concat([iv, cipher.getAuthTag(), ciphertext]).toString("base64");
 }
-function decrypt(value, secret) {
+function decrypt(value, secretOrKey) {
   const bytes = Buffer.from(String(value).trim(), "base64");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", deriveKey(secret), bytes.subarray(0, 12));
+  const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.isBuffer(secretOrKey) ? secretOrKey : deriveKey(secretOrKey), bytes.subarray(0, 12));
   decipher.setAuthTag(bytes.subarray(12, 28));
   return JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]).toString("utf8"));
 }
@@ -70,6 +70,7 @@ function projectLimitForUser(user) {
 function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN) }) {
   if (!secret) throw new Error("Для внешнего режима задайте SAAS_DATA_SECRET.");
   const filePath = path.join(dataDir, FILE_NAME);
+  const encryptionKey = deriveKey(secret);
   let writeQueue = Promise.resolve();
   let localCache = null;
   let localCacheStamp = "";
@@ -90,16 +91,20 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
   async function read() {
     try {
       if (!blobEnabled()) {
-        if (!fs.existsSync(filePath)) return emptyState();
         const stamp = fileStamp();
+        if (stamp === "missing") {
+          localCache = null;
+          localCacheStamp = stamp;
+          return emptyState();
+        }
         if (localCache && localCacheStamp === stamp) return localCache;
-        localCache = migrateState(decrypt(fs.readFileSync(filePath, "utf8"), secret));
+        localCache = migrateState(decrypt(fs.readFileSync(filePath, "utf8"), encryptionKey));
         localCacheStamp = stamp;
         return localCache;
       }
       if (blobCache && blobCacheExpiresAt > Date.now()) return blobCache;
       const result = await blobApi().get(BLOB_PATH, { access: "private", useCache: false });
-      blobCache = result?.stream ? migrateState(decrypt(await new Response(result.stream).text(), secret)) : emptyState();
+      blobCache = result?.stream ? migrateState(decrypt(await new Response(result.stream).text(), encryptionKey)) : emptyState();
       blobCacheExpiresAt = Date.now() + 2000;
       return blobCache;
     } catch (error) {
@@ -108,7 +113,7 @@ function createSaasStore({ dataDir, secret, blobEnabled = () => Boolean(process.
     }
   }
   async function write(state) {
-    const encoded = encrypt(state, secret);
+    const encoded = encrypt(state, encryptionKey);
     if (!blobEnabled()) {
       fs.mkdirSync(dataDir, { recursive: true });
       const tempPath = `${filePath}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;

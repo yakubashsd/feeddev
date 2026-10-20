@@ -7,8 +7,9 @@ function createProjectStateStore({ dataDir, secret }) {
   const root = path.join(dataDir, "project-state");
   const queues = new Map();
   const cache = new Map();
+  const encryptionKey = crypto.createHash("sha256").update(String(secret)).digest();
 
-  function key() { return crypto.createHash("sha256").update(String(secret)).digest(); }
+  function key() { return encryptionKey; }
   function file(userId, projectId) {
     if (!/^[a-f0-9-]{20,}$/i.test(userId) || !/^[a-f0-9-]{20,}$/i.test(projectId)) throw new Error("Некорректный идентификатор проекта.");
     return path.join(root, `${userId}-${projectId}.enc`);

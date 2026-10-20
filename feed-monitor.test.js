@@ -24,7 +24,9 @@ test('persistent schedule, XML errors, recovery and one alert per failure',async
     assert.equal(monitor.read().test[0].emailEnabled,false);
     assert.equal(monitor.read().test[0].emailTo,'');
     await monitor.run();assert.equal(monitor.read().test[0].status,'ok');
+    const stateStamp=fs.statSync(options.file).mtimeMs;
     await createMonitor(options).run();assert.equal(calls,1,'restart must honor last check');
+    assert.equal(fs.statSync(options.file).mtimeMs,stateStamp,'scheduled ticks should not rewrite unchanged monitor state');
     xml='<feed><broken></feed>';await monitor.run('test',null,true);assert.equal(monitor.read().test[0].status,'bad');assert.equal(alerts,1);assert.equal(lastNotification.telegramEnabled,true);
     await monitor.run('test',null,true);assert.equal(alerts,1);
     xml='<feed/>';await monitor.run('test',null,true);assert.equal(monitor.read().test[0].status,'ok');
