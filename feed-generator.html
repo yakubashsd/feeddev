@@ -5244,6 +5244,18 @@
               <label for="brandOffsetY">Сдвиг Y, %</label>
               <input id="brandOffsetY" type="number" min="-60" max="60" step="1" value="0">
             </div>
+            <div class="field compact safe-zone-control">
+              <label for="brandSafeSize">Безопасная зона, %</label>
+              <input id="brandSafeSize" type="number" min="40" max="100" step="1" value="88">
+            </div>
+            <div class="field compact safe-zone-control">
+              <label for="brandSafeOffsetX">Зона X, %</label>
+              <input id="brandSafeOffsetX" type="number" min="-30" max="30" step="1" value="0">
+            </div>
+            <div class="field compact safe-zone-control">
+              <label for="brandSafeOffsetY">Зона Y, %</label>
+              <input id="brandSafeOffsetY" type="number" min="-30" max="30" step="1" value="0">
+            </div>
             <div class="field compact">
               <label for="brandScope">Применить</label>
               <select id="brandScope">
@@ -5288,7 +5300,7 @@
             <div class="brand-preview-help">
               <strong>Предпросмотр первого изображения</strong>
               <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
-              <div class="brand-safe-zone-hint"><span aria-hidden="true">◌</span> Пунктирная рамка — рекомендуемая безопасная зона. Держите планировку и текст внутри неё.</div>
+              <div class="brand-safe-zone-hint"><span aria-hidden="true">◌</span> Безопасная зона редактируется в слое справа: задайте размер и положение. При выгрузке в ЦИАН композиция будет вписана в неё, чтобы планировка не обрезалась.</div>
               <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
@@ -8943,6 +8955,9 @@
         marginPercent: clamp(document.querySelector("#brandMargin")?.value, 0, 20, 4),
         offsetXPercent: clamp(document.querySelector("#brandOffsetX")?.value, -60, 60, 0),
         offsetYPercent: clamp(document.querySelector("#brandOffsetY")?.value, -60, 60, 0),
+        safeZoneSizePercent: clamp(document.querySelector("#brandSafeSize")?.value, 40, 100, 88),
+        safeZoneOffsetXPercent: clamp(document.querySelector("#brandSafeOffsetX")?.value, -30, 30, 0),
+        safeZoneOffsetYPercent: clamp(document.querySelector("#brandSafeOffsetY")?.value, -30, 30, 0),
         headline: document.querySelector("#templateHeadline")?.value || "",
         subline: document.querySelector("#templateSubline")?.value || "",
         textColor: document.querySelector("#templateTextColor")?.value || "#111111",
@@ -8978,6 +8993,9 @@
         marginPercent: config.marginPercent,
         offsetXPercent: config.offsetXPercent,
         offsetYPercent: config.offsetYPercent,
+        safeZoneSizePercent: config.safeZoneSizePercent,
+        safeZoneOffsetXPercent: config.safeZoneOffsetXPercent,
+        safeZoneOffsetYPercent: config.safeZoneOffsetYPercent,
         headline: config.headline,
         subline: config.subline,
         textColor: config.textColor,
@@ -9018,6 +9036,9 @@
       setValue("#brandMargin", profile.marginPercent, 0);
       setValue("#brandOffsetX", profile.offsetXPercent, 0);
       setValue("#brandOffsetY", profile.offsetYPercent, 0);
+      setValue("#brandSafeSize", profile.safeZoneSizePercent, 88);
+      setValue("#brandSafeOffsetX", profile.safeZoneOffsetXPercent, 0);
+      setValue("#brandSafeOffsetY", profile.safeZoneOffsetYPercent, 0);
       setValue("#templateHeadline", profile.headline, "");
       setValue("#templateSubline", profile.subline, "");
       setValue("#templateTextColor", profile.textColor, "#111111");
@@ -9255,7 +9276,7 @@
 
     function drawBrandSelection(canvas) {
       const placement = canvas?._brandLayoutPlacement;
-      if (!canvas || !placement) return;
+      if (!canvas || !placement || canvas.dataset.selectedLayer === "safe-zone") return;
       const context = canvas.getContext("2d");
       const handleSize = Math.max(12, Math.round(Math.min(canvas.width, canvas.height) * .016));
       context.save();
@@ -9271,29 +9292,52 @@
       context.restore();
     }
 
-    // The export path keeps a centred 88% safe area for CIAN. Show the same
-    // inset as an editor-only guide so the user can position the plan and text
-    // without guessing. The guide is painted after the preview and is never
-    // included in generated images, which are rendered on a fresh canvas.
-    function drawSafeZoneGuide(canvas) {
+    function safeZoneRect(canvas, config = brandConfig()) {
+      const sizePercent = Math.max(40, Math.min(100, Number(config.safeZoneSizePercent) || 88));
+      const side = Math.min(canvas.width, canvas.height) * sizePercent / 100;
+      const offsetX = canvas.width * (Number(config.safeZoneOffsetXPercent) || 0) / 100;
+      const offsetY = canvas.height * (Number(config.safeZoneOffsetYPercent) || 0) / 100;
+      const x = (canvas.width - side) / 2 + offsetX;
+      const y = (canvas.height - side) / 2 + offsetY;
+      return {
+        x: Math.max(0, Math.min(canvas.width - side, x)),
+        y: Math.max(0, Math.min(canvas.height - side, y)),
+        width: side,
+        height: side
+      };
+    }
+
+    // The safe area is an editor-only guide. Its size and position are stored
+    // in the feed profile and the same rectangle is used by the CIAN export
+    // path, so the generated image keeps the plan inside the chosen bounds.
+    function drawSafeZoneGuide(canvas, config = brandConfig()) {
       if (!canvas || !canvas.width || !canvas.height) return;
       const context = canvas.getContext("2d");
-      const insetX = canvas.width * .06;
-      const insetY = canvas.height * .06;
+      const rect = safeZoneRect(canvas, config);
       context.save();
       context.strokeStyle = "rgba(41, 91, 219, .72)";
       context.lineWidth = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * .002));
       context.setLineDash([Math.max(8, Math.round(Math.min(canvas.width, canvas.height) * .012)), Math.max(6, Math.round(Math.min(canvas.width, canvas.height) * .008))]);
-      context.strokeRect(insetX, insetY, canvas.width - insetX * 2, canvas.height - insetY * 2);
+      context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      if (canvas.dataset.selectedLayer === "safe-zone") {
+        const handleSize = Math.max(14, Math.round(Math.min(canvas.width, canvas.height) * .02));
+        context.setLineDash([]);
+        context.fillStyle = "#5488ff";
+        context.fillRect(rect.x + rect.width - handleSize / 2, rect.y + rect.height - handleSize / 2, handleSize, handleSize);
+        context.strokeStyle = "#ffffff";
+        context.lineWidth = Math.max(1, context.lineWidth / 2);
+        context.strokeRect(rect.x + rect.width - handleSize / 2, rect.y + rect.height - handleSize / 2, handleSize, handleSize);
+      }
       context.restore();
     }
 
     function drawBrandPreviewFrame() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas || !brandPreviewImages) return false;
-      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas, brandConfig());
+      const config = brandConfig();
+      drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas, config);
       brandPreviewPlacement = canvas._brandLayoutPlacement || null;
-      drawSafeZoneGuide(canvas);
+      drawSafeZoneGuide(canvas, config);
       drawBrandSelection(canvas);
       return true;
     }
@@ -9522,9 +9566,9 @@
       });
     }
 
-    function feedSafeLayoutCanvas(sourceCanvas) {
+    function feedSafeLayoutCanvas(sourceCanvas, config = brandConfig()) {
       const targetSize = 1024;
-      const safeSize = Math.round(targetSize * .88);
+      const safeSize = Math.round(targetSize * Math.max(40, Math.min(100, Number(config.safeZoneSizePercent) || 88)) / 100);
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       canvas.width = targetSize;
@@ -9537,14 +9581,18 @@
       const ratio = Math.min(safeSize / sourceWidth, safeSize / sourceHeight);
       const width = Math.round(sourceWidth * ratio);
       const height = Math.round(sourceHeight * ratio);
-      const x = Math.round((targetSize - width) / 2);
-      const y = Math.round((targetSize - height) / 2);
+      const offsetX = targetSize * (Number(config.safeZoneOffsetXPercent) || 0) / 100;
+      const offsetY = targetSize * (Number(config.safeZoneOffsetYPercent) || 0) / 100;
+      const zoneX = (targetSize - safeSize) / 2 + offsetX;
+      const zoneY = (targetSize - safeSize) / 2 + offsetY;
+      const x = Math.round(Math.max(0, Math.min(targetSize - width, zoneX + (safeSize - width) / 2)));
+      const y = Math.round(Math.max(0, Math.min(targetSize - height, zoneY + (safeSize - height) / 2)));
       context.drawImage(sourceCanvas, x, y, width, height);
       return canvas;
     }
 
-    async function brandedLayoutBlob(canvas, platform = activePlatform) {
-      const exportCanvas = platform === "cian" ? feedSafeLayoutCanvas(canvas) : canvas;
+    async function brandedLayoutBlob(canvas, platform = activePlatform, config = brandConfig()) {
+      const exportCanvas = platform === "cian" ? feedSafeLayoutCanvas(canvas, config) : canvas;
       const variants = [
         ["image/jpeg", .86, "jpg"],
         ["image/jpeg", .74, "jpg"],
@@ -9610,7 +9658,7 @@
           brandStatus(`Создаю планировку на подложке ${index + 1} из ${uniqueUrls.length}...`);
           const baseImage = await loadImageForCanvas(proxyImageUrl(sourceUrl), { signal });
           drawBrandedLayout(baseImage, badgeImage, canvas, projectConfig, firstItem);
-          const output = await brandedLayoutBlob(canvas, activePlatform);
+          const output = await brandedLayoutBlob(canvas, activePlatform, projectConfig);
           throwIfBrandGenerationStopped(signal);
           brandStatus(`Загружаю планировку на подложке ${index + 1} из ${uniqueUrls.length} (${Math.round(output.blob.size / 1024 / 1024 * 10) / 10} МБ)...`);
           const record = await uploadBrandedLayout({ item: firstItem, sourceUrl, ...output }, { signal });
@@ -11905,7 +11953,7 @@ ${photos}
       }
       renderBrandPreview();
     });
-    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
+    ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandSafeSize", "#brandSafeOffsetX", "#brandSafeOffsetY", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
         drawBrandPreviewFrame() || renderBrandPreview();
       });

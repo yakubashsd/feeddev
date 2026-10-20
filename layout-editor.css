@@ -36,6 +36,8 @@ body:has(#layoutsPanel:not(.page-hidden)) .workflow-nav { display:none!important
 .le-layers button[aria-pressed=true] { background:#161616; color:white; }
 #layoutsPanel .brand-controls, #layoutsPanel .template-text-controls { display:grid; grid-template-columns:1fr 1fr; padding:0; background:none; border:0; gap:12px; }
 #layoutsPanel .brand-controls > *, #layoutsPanel .template-text-controls > * { grid-column:auto; min-width:0; }
+#layoutsPanel .safe-zone-control { padding:10px; border:1px solid #dbe7ff; border-radius:8px; background:#f6f9ff; }
+#layoutsPanel #brandPreviewCanvas[data-selected-layer="safe-zone"] { cursor:crosshair; }
 #layoutsPanel .brand-controls .layout-file-control, #layoutsPanel .brand-controls > button, #layoutsPanel .template-text-controls .span-2 { grid-column:1/-1; }
 #layoutsPanel .layout-file-control { display:grid; gap:8px; }
 #layoutsPanel .layout-file-control span { white-space:normal; overflow-wrap:anywhere; }

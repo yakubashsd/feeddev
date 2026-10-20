@@ -124,13 +124,35 @@ test("layout editor applies the size value and exposes a working canvas resize h
   assert.match(html, /\["\[", "\]"\]/);
 });
 
-test("branding editor shows the safe placement zone without exporting it", () => {
+test("branding editor exposes an editable safe placement zone and keeps guide pixels out of exports", () => {
+  const rect = clientFunction("safeZoneRect");
   const safeZone = clientFunction("drawSafeZoneGuide");
   const frame = clientFunction("drawBrandPreviewFrame");
-  assert.match(safeZone, /strokeRect\(insetX, insetY/);
-  assert.match(frame, /drawSafeZoneGuide\(canvas\)/);
+  assert.match(rect, /safeZoneSizePercent/);
+  assert.match(safeZone, /safeZoneRect\(canvas, config\)/);
+  assert.match(safeZone, /strokeRect\(rect\.x, rect\.y/);
+  assert.match(frame, /drawSafeZoneGuide\(canvas, config\)/);
   assert.match(html, /class="brand-safe-zone-hint"/);
-  assert.match(html, /editor-only guide/);
+  assert.match(html, /id="brandSafeSize"/);
+  assert.match(html, /id="brandSafeOffsetX"/);
+  assert.match(html, /id="brandSafeOffsetY"/);
+  assert.match(html, /brandedLayoutBlob\(canvas, activePlatform, projectConfig\)/);
+  assert.match(layoutEditor, /data-layer="safe-zone"/);
+  assert.match(layoutEditor, /drag\.safeZone/);
+});
+
+test("safe placement zone uses the same editable square for preview and export", () => {
+  const context = vm.createContext({ Math });
+  vm.runInContext(clientFunction("safeZoneRect"), context);
+  const rect = context.safeZoneRect({ width: 1200, height: 800 }, {
+    safeZoneSizePercent: 70,
+    safeZoneOffsetXPercent: 10,
+    safeZoneOffsetYPercent: -10
+  });
+  assert.equal(rect.width, 560);
+  assert.equal(rect.height, 560);
+  assert.equal(rect.x, 440);
+  assert.equal(rect.y, 40);
 });
 
 test("layout editor fits the background by default but keeps manual zoom usable", () => {
