@@ -327,23 +327,29 @@ async function persistFeedXml(slug, xml) {
   });
 }
 
-async function persistFeedRecord(record) {
-  requireWritableStorage();
-  if (!usesBlobStorage()) {
-    const feeds = readLocalIndex().filter(feed => feed.slug !== record.slug);
-    feeds.unshift(record);
-    writeLocalIndex(feeds);
-    return;
-  }
+let feedRecordWriteQueue = Promise.resolve();
 
-  await put(`feed-records/${record.slug}.json`, JSON.stringify(record), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json; charset=utf-8",
-    cacheControlMaxAge: 60
+async function persistFeedRecord(record) {
+  const operation = feedRecordWriteQueue.then(async () => {
+    requireWritableStorage();
+    if (!usesBlobStorage()) {
+      const feeds = readLocalIndex().filter(feed => feed.slug !== record.slug);
+      feeds.unshift(record);
+      writeLocalIndex(feeds);
+      return;
+    }
+
+    await put(`feed-records/${record.slug}.json`, JSON.stringify(record), {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json; charset=utf-8",
+      cacheControlMaxAge: 60
+    });
+    invalidateFeedIndexCache();
   });
-  invalidateFeedIndexCache();
+  feedRecordWriteQueue = operation.catch(() => {});
+  return operation;
 }
 
 async function persistLayoutFile(fileName, bytes, contentType) {
@@ -842,6 +848,7 @@ async function saveFeed(req, payload, existingSlug = "", actor = null, historyAc
 }
 
 let feedSyncRunning = false;
+const FEED_SYNC_CONCURRENCY = Math.max(1, Math.min(4, Number(process.env.FEED_SYNC_CONCURRENCY || 3) || 3));
 
 async function syncPublishedFeed(record) {
   const configuredSources = Array.isArray(record.sourceFeeds) && record.sourceFeeds.length
@@ -926,6 +933,7 @@ async function runScheduledFeedSync() {
   try {
     const now = Date.now();
     const feeds = await readFeeds();
+    const dueRecords = [];
     for (const record of feeds) {
       const interval = normalizeAutoSyncInterval(record.autoSyncIntervalMinutes);
       const hasUrlSource = record.sourceType === "url" && record.sourceUrl
@@ -933,31 +941,45 @@ async function runScheduledFeedSync() {
       if (!interval || !hasUrlSource) continue;
       const dueAt = new Date(record.nextRunAt || record.nextAutoSyncAt || record.updatedAt || 0).getTime();
       if (Number.isFinite(dueAt) && dueAt > now) continue;
-      try {
-        record.autoSyncIntervalMinutes = interval;
-        await syncPublishedFeed(record);
-      } catch (error) {
-        const attemptedAt = new Date();
-        record.lastAutoSyncAt = attemptedAt.toISOString();
-        record.nextAutoSyncAt = new Date(attemptedAt.getTime() + interval * 60 * 1000).toISOString();
-        record.autoSyncError = error.message || "Не удалось обновить источник";
-        record.lastSyncErrorAt = attemptedAt.toISOString();
-        record.syncFailureCount = Number(record.syncFailureCount || 0) + 1;
-        const retryMinutes = Math.min(60, 2 ** Math.min(5, record.syncFailureCount - 1));
-        record.nextRunAt = new Date(attemptedAt.getTime() + retryMinutes * 60 * 1000).toISOString();
-        record.feedStale = !record.lastSuccessAt || attemptedAt.getTime() - new Date(record.lastSuccessAt).getTime() > interval * 2 * 60 * 1000;
-        try {
-          await notifyPublishedFeedFailure(record, error);
-        } catch (notificationError) {
-          record.telegramSyncNotificationError = notificationError.message;
-        }
-        await persistFeedRecord(record);
-        if (APP_MODE === "external" && record.ownerId) {
-          await saasStore.recordFeedHistory(record.ownerId, record.sourceId || record.slug, "sync_error", { projectId: record.projectId, feedName: record.name, platform: record.platform, error: record.autoSyncError, failureCount: record.syncFailureCount }).catch(historyError => console.error("Feed history:", historyError.message));
-        }
-        console.error(`Feed sync: ${record.slug}:`, record.autoSyncError);
-      }
+      record.autoSyncIntervalMinutes = interval;
+      dueRecords.push({ record, interval });
     }
+
+    // Different feeds use different source URLs and files. Process a small
+    // bounded number in parallel, while persistFeedRecord serializes index
+    // updates so two completed syncs cannot overwrite each other's metadata.
+    let nextIndex = 0;
+    const worker = async () => {
+      while (nextIndex < dueRecords.length) {
+        const current = dueRecords[nextIndex++];
+        const { record, interval } = current;
+        try {
+          await syncPublishedFeed(record);
+        } catch (error) {
+          const attemptedAt = new Date();
+          record.lastAutoSyncAt = attemptedAt.toISOString();
+          record.nextAutoSyncAt = new Date(attemptedAt.getTime() + interval * 60 * 1000).toISOString();
+          record.autoSyncError = error.message || "Не удалось обновить источник";
+          record.lastSyncErrorAt = attemptedAt.toISOString();
+          record.syncFailureCount = Number(record.syncFailureCount || 0) + 1;
+          const retryMinutes = Math.min(60, 2 ** Math.min(5, record.syncFailureCount - 1));
+          record.nextRunAt = new Date(attemptedAt.getTime() + retryMinutes * 60 * 1000).toISOString();
+          record.feedStale = !record.lastSuccessAt || attemptedAt.getTime() - new Date(record.lastSuccessAt).getTime() > interval * 2 * 60 * 1000;
+          try {
+            await notifyPublishedFeedFailure(record, error);
+          } catch (notificationError) {
+            record.telegramSyncNotificationError = notificationError.message;
+          }
+          await persistFeedRecord(record);
+          if (APP_MODE === "external" && record.ownerId) {
+            await saasStore.recordFeedHistory(record.ownerId, record.sourceId || record.slug, "sync_error", { projectId: record.projectId, feedName: record.name, platform: record.platform, error: record.autoSyncError, failureCount: record.syncFailureCount }).catch(historyError => console.error("Feed history:", historyError.message));
+          }
+          console.error(`Feed sync: ${record.slug}:`, record.autoSyncError);
+        }
+      }
+    };
+    const workerCount = Math.min(FEED_SYNC_CONCURRENCY, dueRecords.length);
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
   } finally {
     feedSyncRunning = false;
   }
