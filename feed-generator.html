@@ -5288,6 +5288,7 @@
             <div class="brand-preview-help">
               <strong>Предпросмотр первого изображения</strong>
               <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+              <div class="brand-safe-zone-hint"><span aria-hidden="true">◌</span> Пунктирная рамка — рекомендуемая безопасная зона. Держите планировку и текст внутри неё.</div>
               <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
           </div>
@@ -9270,11 +9271,29 @@
       context.restore();
     }
 
+    // The export path keeps a centred 88% safe area for CIAN. Show the same
+    // inset as an editor-only guide so the user can position the plan and text
+    // without guessing. The guide is painted after the preview and is never
+    // included in generated images, which are rendered on a fresh canvas.
+    function drawSafeZoneGuide(canvas) {
+      if (!canvas || !canvas.width || !canvas.height) return;
+      const context = canvas.getContext("2d");
+      const insetX = canvas.width * .06;
+      const insetY = canvas.height * .06;
+      context.save();
+      context.strokeStyle = "rgba(41, 91, 219, .72)";
+      context.lineWidth = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * .002));
+      context.setLineDash([Math.max(8, Math.round(Math.min(canvas.width, canvas.height) * .012)), Math.max(6, Math.round(Math.min(canvas.width, canvas.height) * .008))]);
+      context.strokeRect(insetX, insetY, canvas.width - insetX * 2, canvas.height - insetY * 2);
+      context.restore();
+    }
+
     function drawBrandPreviewFrame() {
       const canvas = document.querySelector("#brandPreviewCanvas");
       if (!canvas || !brandPreviewImages) return false;
       drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, canvas, brandConfig());
       brandPreviewPlacement = canvas._brandLayoutPlacement || null;
+      drawSafeZoneGuide(canvas);
       drawBrandSelection(canvas);
       return true;
     }

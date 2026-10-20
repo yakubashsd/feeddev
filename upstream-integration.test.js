@@ -124,6 +124,15 @@ test("layout editor applies the size value and exposes a working canvas resize h
   assert.match(html, /\["\[", "\]"\]/);
 });
 
+test("branding editor shows the safe placement zone without exporting it", () => {
+  const safeZone = clientFunction("drawSafeZoneGuide");
+  const frame = clientFunction("drawBrandPreviewFrame");
+  assert.match(safeZone, /strokeRect\(insetX, insetY/);
+  assert.match(frame, /drawSafeZoneGuide\(canvas\)/);
+  assert.match(html, /class="brand-safe-zone-hint"/);
+  assert.match(html, /editor-only guide/);
+});
+
 test("layout editor fits the background by default but keeps manual zoom usable", () => {
   assert.match(layoutEditor, /zoom=1, fitMode=true/);
   assert.match(layoutEditor, /canvas\.classList\.toggle\('le-fit-mode',fitMode\)/);

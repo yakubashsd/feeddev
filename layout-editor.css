@@ -23,8 +23,10 @@ body:has(#layoutsPanel:not(.page-hidden)) .workflow-nav { display:none!important
 #layoutsPanel .brand-controls > .le-precise, #layoutsPanel .template-text-controls > .le-precise { grid-column:1/-1; }
 .le-precise > div { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 #layoutsPanel .brand-preview-help { margin-top:16px; font-size:12px; }
+#layoutsPanel .brand-preview-help .brand-safe-zone-hint { display:flex; align-items:flex-start; gap:6px; color:#365fae; }
+#layoutsPanel .brand-preview-help .brand-safe-zone-hint span { flex:0 0 auto; color:#5488ff; font-size:16px; line-height:1; }
 #layoutsPanel .brand-preview-help strong { display:none; }
-#layoutsPanel .brand-preview-help > div:last-child { display:none; }
+#layoutsPanel .brand-preview-help > div:last-child:not(.brand-safe-zone-hint) { display:none; }
 .le-selection { position:absolute; border:1px solid #111; pointer-events:none; box-sizing:border-box; }
 .le-selection:after { content:''; position:absolute; width:10px; height:10px; background:white; border:1px solid #111; right:-6px; bottom:-6px; }
 .le-properties { grid-column:2; grid-row:2/4; background:white; border:1px solid #ddd; border-radius:12px; padding:16px; min-width:0; }
