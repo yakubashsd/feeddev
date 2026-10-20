@@ -8829,6 +8829,7 @@ ${photos}
         }
       })();
       const hasToken = pattern => new RegExp(`(?:^|[\\/_-])(?:${pattern})(?=$|[\\/_-]|\\.)`, "i").test(pathname);
+      if (/\/uploads\/layout(?:s)?\//i.test(pathname)) return "floor";
       if (hasToken("floor(?:[\\s_-]?(?:plan|scheme|layout))?|floorplan|etazh(?:ny|n)?|этаж(?:н(?:ый|ая|ые)|а)?|level|section|entrance|podjezd|podezd|building(?:[\\s_-]?(?:plan|scheme|layout))?|house(?:[\\s_-]?(?:plan|scheme|layout))?|masterplan|siteplan")) return "floor";
       if (hasToken("preset|apartment|apartments|flat|flats|unit")) return "apartment";
       if (hasToken("layout|layouts|plan|plans")) return "generic";
