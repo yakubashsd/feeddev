@@ -7344,8 +7344,12 @@
         }
 
         const targetIds = new Set(targets.map(item => item.externalId));
+        const skippedIds = new Set(skipped.flatMap(entry => entry.ids || []));
         objects = objects.map(item => {
           const sourceUrl = sourceLayoutPhoto(item);
+          if (skippedIds.has(item.externalId)) {
+            return { ...item, photos: photoList(item).filter(photoUrl => !isBrandedLayoutUrl(photoUrl)).join("\n") };
+          }
           if (!targetIds.has(item.externalId) || !urlMap.has(sourceUrl)) return item;
           return { ...item, photos: prependPhotoUrl(item, urlMap.get(sourceUrl)) };
         });
@@ -7356,9 +7360,9 @@
         await loadLayouts({ silent: true });
         renderAll();
         showToast(`Первое фото добавлено к ${updatedCount} объектам`);
-        brandStatus(`Готово: JPG-планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
-        brandLayoutsDirty = false;
-        return true;
+        brandLayoutsDirty = skipped.length > 0;
+        brandStatus(`${skipped.length ? "Частично готово" : "Готово"}: JPG-планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
+        return skipped.length === 0;
       } catch (error) {
         const message = error.message || "Не удалось добавить первое фото.";
         const hint = /too large|слишком больш|413|body/i.test(message)
