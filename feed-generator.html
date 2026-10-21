@@ -5314,6 +5314,17 @@
     let pendingSingleEdit = null;
     let publishedComplexes = new Set(JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]"));
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
+    const legacyPublishedSourceUrl = "https://feeds.sozdateli.ru/f/https-pb19924-profitbase-ru-export-avito-02e9e7c3e7cf0a68cbcfefdb04a6fa26-scheme.php";
+    const canonicalProfitbaseSourceUrl = "https://pb19924.profitbase.ru/export/avito/02e9e7c3e7cf0a68cbcfefdb04a6fa26?scheme=https";
+    let migratedLegacySourceId = "";
+    projectSources = projectSources.map(source => {
+      if (normalizeFeedUrl(source.url) !== normalizeFeedUrl(legacyPublishedSourceUrl)) return source;
+      migratedLegacySourceId = source.id;
+      return { ...source, url: canonicalProfitbaseSourceUrl, updatedAt: "", error: "" };
+    });
+    if (normalizeFeedUrl(appState.feedUrl) === normalizeFeedUrl(legacyPublishedSourceUrl)) {
+      appState.feedUrl = canonicalProfitbaseSourceUrl;
+    }
     if (!projectSources.length && appState.feedUrl) {
       projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "manual", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "" }];
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
@@ -9507,6 +9518,12 @@ ${photos}
     document.querySelector("#logoutButton").addEventListener("click", logout);
     window.setInterval(syncDueProjectSource, 60000);
     repairStoredLayoutPhotos();
+    if (migratedLegacySourceId) {
+      document.querySelector("#feedUrl").value = canonicalProfitbaseSourceUrl;
+      saveProjectSources();
+      save();
+      window.setTimeout(() => loadFeedFromUrl(migratedLegacySourceId), 50);
+    }
     initializeAuth();
   </script>
   <link rel="stylesheet" href="layout-editor.css">
