@@ -463,7 +463,6 @@ function validateFeedPayload(payload) {
   if (!xml.includes("<") || !xml.includes(">")) throw new Error("Содержимое не похоже на XML.");
   const platform = String(payload.platform || "cian").trim() || "cian";
   const sourceUrl = String(payload.sourceUrl || "").trim();
-  assertBrandedLayoutsHaveApartmentSource(xml, sourceUrl);
   return {
     xml,
     platform,

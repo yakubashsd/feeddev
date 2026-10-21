@@ -8895,9 +8895,16 @@ ${photos}
       } catch (error) {
         console.warn("Server publish failed:", error);
         const message = error?.message || "Не удалось опубликовать фид";
-        document.querySelector("#generatedLink").classList.remove("ready");
-        document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}. Проверьте подключение Vercel Blob и повторите попытку.`;
-        document.querySelector("#generatedLinkInput").value = "";
+        const existingLink = appState.generatedLink || document.querySelector("#generatedLink").dataset.url || "";
+        if (existingLink) {
+          document.querySelector("#generatedLink").dataset.url = existingLink;
+          document.querySelector("#generatedLink").textContent = `Ссылка сохранена без изменений: ${message}`;
+          document.querySelector("#generatedLinkInput").value = existingLink;
+        } else {
+          document.querySelector("#generatedLink").classList.remove("ready");
+          document.querySelector("#generatedLink").textContent = `Ссылка не создана: ${message}`;
+          document.querySelector("#generatedLinkInput").value = "";
+        }
         showToast(`Не удалось создать ссылку: ${message}`);
         return;
       } finally {
