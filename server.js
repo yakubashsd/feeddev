@@ -427,15 +427,47 @@ function imageContentTypeFromPath(value = "") {
   return "";
 }
 
+function urlsFromXmlFragment(xml) {
+  return [...String(xml || "").matchAll(/\burl\s*=\s*(["'])(.*?)\1/gi)]
+    .map((match) => match[2].trim())
+    .filter(Boolean);
+}
+
+function assertBrandedLayoutsHaveApartmentSource(xml, sourceUrl) {
+  const isProfitbaseFeed = /profitbase\.ru/i.test(String(sourceUrl || "")) || /profitbase\.ru/i.test(xml);
+  if (!isProfitbaseFeed) return;
+
+  const ads = String(xml).match(/<Ad\b[^>]*>[\s\S]*?<\/Ad>/gi) || [];
+  const invalidAds = [];
+  for (const ad of ads) {
+    const imageUrls = urlsFromXmlFragment(ad);
+    const hasBrandedLayout = imageUrls.some((url) => /\/layouts\/planirovka-na-podlozhke-/i.test(url));
+    const hasApartmentSource = imageUrls.some((url) => /\/uploads\/preset\//i.test(url));
+    if (hasBrandedLayout && !hasApartmentSource) {
+      const id = ad.match(/\b(?:Id|id)\s*=\s*["']([^"']+)/)?.[1] || "без ID";
+      invalidAds.push(id);
+    }
+  }
+
+  if (invalidAds.length) {
+    throw new Error(
+      `Нельзя опубликовать: у ${invalidAds.length} брендированных объектов нет исходной квартирной планировки (${invalidAds.slice(0, 5).join(", ")}). ` +
+      "Обновите источник Profitbase и пересоберите макеты."
+    );
+  }
+}
+
 function validateFeedPayload(payload) {
   const xml = String(payload.xml || "").trim();
   if (!xml) throw new Error("XML фида пустой.");
   if (!xml.includes("<") || !xml.includes(">")) throw new Error("Содержимое не похоже на XML.");
   const platform = String(payload.platform || "cian").trim() || "cian";
+  const sourceUrl = String(payload.sourceUrl || "").trim();
+  assertBrandedLayoutsHaveApartmentSource(xml, sourceUrl);
   return {
     xml,
     platform,
-    sourceUrl: String(payload.sourceUrl || "").trim(),
+    sourceUrl,
     name: String(payload.name || "").trim(),
     sourceType: String(payload.sourceType || "").trim()
   };
