@@ -8554,6 +8554,7 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || url;
         appState.feedName = currentProject?.name || defaultFeedName(url);
+        await restorePublishedFeedIdentity(url);
         const sourceRecord = {
           id,
           name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
@@ -8678,6 +8679,58 @@ ${photos}
       }
     }
 
+    function normalizeFeedUrl(value = "") {
+      try {
+        const url = new URL(String(value).trim());
+        url.hash = "";
+        return url.toString().replace(/\/$/, "");
+      } catch {
+        return String(value || "").trim().replace(/\/$/, "");
+      }
+    }
+
+    function feedSlugFromUrl(value = "") {
+      try {
+        const pathname = new URL(String(value).trim()).pathname;
+        const match = pathname.match(/\/f\/([^/]+)\.php$/i);
+        return match ? decodeURIComponent(match[1]) : "";
+      } catch {
+        return "";
+      }
+    }
+
+    async function restorePublishedFeedIdentity(sourceUrl = "") {
+      const source = String(sourceUrl || appState.feedUrl || document.querySelector("#feedUrl")?.value || "").trim();
+      if (!source) return;
+      const requestedSlug = feedSlugFromUrl(source);
+      const hasCurrentIdentity = Boolean(appState.generatedFeedId && appState.generatedLink);
+      if (hasCurrentIdentity && !requestedSlug) return;
+      try {
+        const response = await fetch("/api/feeds", { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json();
+        const feeds = Array.isArray(result.feeds) ? result.feeds : [];
+        if (!feeds.length) return;
+        const normalizedSource = normalizeFeedUrl(source);
+        const projectId = currentProject?.id || "";
+        const projectFeeds = projectId
+          ? feeds.filter(feed => String(feed.projectId || "") === projectId)
+          : [];
+        const sourceFeeds = feeds.filter(feed =>
+          normalizeFeedUrl(feed.sourceUrl) === normalizedSource || normalizeFeedUrl(feed.url) === normalizedSource
+        );
+        const matched = (requestedSlug && feeds.find(feed => feed.slug === requestedSlug))
+          || (hasCurrentIdentity ? null : projectFeeds.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0])
+          || (hasCurrentIdentity ? null : sourceFeeds.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0]);
+        if (!matched?.slug) return;
+        appState.generatedFeedId = matched.slug;
+        appState.generatedLink = matched.url || `${appState.serverBaseUrl || location.origin}/f/${matched.slug}.php`;
+        appState.serverBaseUrl = new URL(appState.generatedLink, location.origin).origin;
+      } catch {
+        // A missing feed index must not block local editing or a new publication.
+      }
+    }
+
     async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
       const payload = {
         platform,
@@ -8717,6 +8770,7 @@ ${photos}
       }
       const xml = buildXml(objects, activePlatform);
       const button = document.querySelector("#generateLinkBtn");
+      await restorePublishedFeedIdentity(appState.feedUrl || document.querySelector("#feedUrl")?.value || "");
       const hadPublishedId = Boolean(appState.generatedFeedId);
       button.disabled = true;
       button.classList.add("loading");
