@@ -7896,7 +7896,7 @@
     }
 
     function photoList(item) {
-      return String(item.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean).filter(url => layoutPhotoKind(url) !== "floor");
+      return String(item.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean);
     }
 
     function isBrandedLayoutUrl(url = "") {
