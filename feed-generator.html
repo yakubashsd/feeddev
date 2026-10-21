@@ -7335,7 +7335,17 @@
 
       try {
         const { urlMap, skipped } = await createBrandedLayoutUrlMap(button, targets);
+        const targetIds = new Set(targets.map(item => item.externalId));
+        const skippedIds = new Set(skipped.flatMap(entry => entry.ids || []));
         if (!urlMap.size) {
+          if (skippedIds.size) {
+            objects = objects.map(item => skippedIds.has(item.externalId)
+              ? { ...item, photos: unbrandedPhotoUrls(item).join("\n") }
+              : item);
+            invalidateGeneratedLink();
+            save();
+            renderAll();
+          }
           const first = skipped[0];
           const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
           brandStatus(`Не удалось добавить первое фото: все ссылки недоступны или не ведут на изображение.${details}`);
@@ -7343,8 +7353,6 @@
           return false;
         }
 
-        const targetIds = new Set(targets.map(item => item.externalId));
-        const skippedIds = new Set(skipped.flatMap(entry => entry.ids || []));
         objects = objects.map(item => {
           const sourceUrl = sourceLayoutPhoto(item);
           if (skippedIds.has(item.externalId)) {
@@ -7922,6 +7930,50 @@
 
     function isBrandedLayoutUrl(url = "") {
       return /\/layouts\/(?:branded-|planirovka-na-podlozhke-)|(?:^|[\/_-])(?:branded-|planirovka-na-podlozhke-)/i.test(String(url));
+    }
+
+    function unbrandedPhotoUrls(item = {}) {
+      return photoList(item).filter(url => !isBrandedLayoutUrl(url));
+    }
+
+    function sameUrlList(first = [], second = []) {
+      return first.length === second.length && first.every((url, index) => url === second[index]);
+    }
+
+    function isManualLayoutUrl(url = "") {
+      const value = String(url || "").trim();
+      return Boolean(value) && !isBrandedLayoutUrl(value) && layoutPhotoKind(value) !== "floor";
+    }
+
+    function cleanImageOverrides(overrides = {}) {
+      const next = { ...overrides };
+      const overriddenPhotos = photoList({ photos: next.photos });
+      if (overriddenPhotos.some(isBrandedLayoutUrl)) delete next.photos;
+      else if (overriddenPhotos.length) next.photos = overriddenPhotos.join("\n");
+      else delete next.photos;
+      if (!isManualLayoutUrl(next.layoutPhoto)) delete next.layoutPhoto;
+      return next;
+    }
+
+    function sanitizeSourceImages(item = {}) {
+      const photos = unbrandedPhotoUrls(item);
+      const layoutPhoto = preferredLayoutPhoto(item.layoutPhoto, photos);
+      return { ...item, layoutPhoto, photos: photos.join("\n") };
+    }
+
+    function applySourceOverrides(sourceItem = {}, overrides = {}) {
+      const cleanOverrides = cleanImageOverrides(overrides);
+      const sourcePhotos = unbrandedPhotoUrls(sourceItem);
+      const overridePhotos = photoList({ photos: cleanOverrides.photos });
+      const sourceUrls = new Set(sourcePhotos);
+      const extraPhotos = overridePhotos.filter(url => !sourceUrls.has(url));
+      const item = {
+        ...sourceItem,
+        ...cleanOverrides,
+        photos: [...sourcePhotos, ...extraPhotos].join("\n"),
+        ...(Object.keys(cleanOverrides).length ? { _overrides: cleanOverrides } : {})
+      };
+      return repairLegacyLayoutPhoto(item);
     }
 
     function feedImageList(item) {
@@ -8544,10 +8596,19 @@ ${photos}
             const original = originalById.get(item.externalId);
             const belongs = item._sourceId === id || (item._sourceIds || []).includes(id);
             if (!belongs || !original) return;
-            const changed = { ...(item._overrides || {}) };
+            const changed = cleanImageOverrides(item._overrides);
             Object.keys(item).forEach(field => {
-              if (!field.startsWith("_") && String(item[field] ?? "") !== String(original[field] ?? "")) changed[field] = item[field];
+              if (field.startsWith("_") || ["photos", "layoutPhoto"].includes(field)) return;
+              if (String(item[field] ?? "") !== String(original[field] ?? "")) changed[field] = item[field];
             });
+            const currentPhotos = unbrandedPhotoUrls(item);
+            const originalPhotos = unbrandedPhotoUrls(original);
+            if (!sameUrlList(currentPhotos, originalPhotos)) changed.photos = currentPhotos.join("\n");
+            else delete changed.photos;
+            const currentLayout = String(item.layoutPhoto || "").trim();
+            const originalLayout = String(original.layoutPhoto || "").trim();
+            if (isManualLayoutUrl(currentLayout) && currentLayout !== originalLayout) changed.layoutPhoto = currentLayout;
+            else delete changed.layoutPhoto;
             if (Object.keys(changed).length) sourceOverrides.set(item.externalId, changed);
           });
         }
@@ -8557,9 +8618,10 @@ ${photos}
           else if (sourceIds.length) result.push({ ...item, _sourceId: sourceIds[0], _sourceIds: sourceIds });
           return result;
         }, []);
-        parsed.objects.forEach(sourceItem => {
+        parsed.objects.forEach(rawSourceItem => {
+          const sourceItem = sanitizeSourceImages(rawSourceItem);
           const overrides = sourceOverrides.get(sourceItem.externalId) || {};
-          const item = { ...sourceItem, ...overrides, ...(Object.keys(overrides).length ? { _overrides: overrides } : {}) };
+          const item = applySourceOverrides(sourceItem, overrides);
           const duplicate = withoutSource.find(candidate => candidate.externalId === item.externalId);
           if (duplicate) {
             duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), id])];
@@ -8569,6 +8631,7 @@ ${photos}
         });
         objects = withoutSource;
         originalObjects = structuredClone(objects);
+        if (brandBadgeDataUrl && objects.some(item => sourceLayoutPhoto(item))) brandLayoutsDirty = true;
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
@@ -8965,7 +9028,14 @@ ${photos}
     function repairStoredLayoutPhotos() {
       let repaired = false;
       const repair = item => {
-        const next = repairLegacyLayoutPhoto(item);
+        const cleanedOverrides = cleanImageOverrides(item._overrides);
+        const hasOverrides = Object.keys(cleanedOverrides).length > 0;
+        const currentOverrides = item._overrides || {};
+        const overridesChanged = JSON.stringify(cleanedOverrides) !== JSON.stringify(currentOverrides);
+        const normalized = overridesChanged
+          ? { ...item, ...(hasOverrides ? { _overrides: cleanedOverrides } : { _overrides: undefined }) }
+          : item;
+        const next = repairLegacyLayoutPhoto(normalized);
         if (next !== item) repaired = true;
         return next;
       };
