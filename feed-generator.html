@@ -8793,7 +8793,9 @@ ${photos}
       button.textContent = "Публикую...";
 
       try {
-        if (brandLayoutsDirty && brandBadgeDataUrl) {
+        if (brandLayoutsDirty) {
+          if (!brandBadgeDataUrl) await restoreBrandProfile(currentFeedProjectKey());
+          if (!brandBadgeDataUrl) throw new Error("Подложка для брендирования не загружена. Откройте раздел брендирования и выберите файл подложки.");
           button.textContent = "Обновляю планировки...";
           const regenerated = await insertBrandedLayoutsAsFirstPhotos();
           if (!regenerated) throw new Error("Не удалось пересобрать брендированные планировки в безопасной зоне");
@@ -9196,6 +9198,8 @@ ${photos}
       brandBadgeDataUrl = await fileToDataUrl(file);
       brandBadgeFileName = file.name;
       activeBrandProjectKey = currentFeedProjectKey();
+      brandLayoutsDirty = true;
+      invalidateGeneratedLink();
       document.querySelector("#brandBadgePickedFile").textContent = `${file.name} · текущий фид`;
       try {
         await persistActiveBrandProfile({ includeAsset: true });
