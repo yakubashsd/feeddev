@@ -8554,8 +8554,6 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || url;
         appState.feedName = currentProject?.name || defaultFeedName(url);
-        appState.generatedLink = "";
-        appState.generatedFeedId = "";
         const sourceRecord = {
           id,
           name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
@@ -9300,8 +9298,6 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || file.name;
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
-        appState.generatedLink = "";
-        appState.generatedFeedId = "";
         projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
