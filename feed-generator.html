@@ -5308,6 +5308,7 @@
     let brandDialogDragState = null;
     let activeBrandProjectKey = "all";
     let brandProfileHydrating = false;
+    let brandLayoutsDirty = false;
     let brandProfiles = loadBrandProfiles();
     let changeLog = loadChangeLog();
     let pendingSingleEdit = null;
@@ -6611,12 +6612,14 @@
         if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
         if (target === "checked") {
           objects = objects.map(item => checkedIds.has(item.externalId) ? { ...item, layoutPhoto: result.url } : item);
+          brandLayoutsDirty = true;
           invalidateGeneratedLink();
           save();
         }
         if (target === "open") {
           const item = selectedItem();
           objects = objects.map(object => object.externalId === item.externalId ? { ...object, layoutPhoto: result.url } : object);
+          brandLayoutsDirty = true;
           invalidateGeneratedLink();
           save();
         }
@@ -6904,6 +6907,7 @@
       } finally {
         brandProfileHydrating = false;
       }
+      if (objects.some(item => photoList(item).some(isBrandedLayoutUrl))) brandLayoutsDirty = true;
       if (isLegacyCenterPlacement) await persistActiveBrandProfile();
       renderBrandPreview();
     }
@@ -7136,6 +7140,8 @@
       const shouldOpenPreview = event.type === "pointerup" && !brandDragState.moved;
       document.querySelector("#brandPreviewCanvas")?.classList.remove("dragging");
       brandDragState = null;
+      brandLayoutsDirty = true;
+      invalidateGeneratedLink();
       await persistActiveBrandProfile();
       brandStatus(`Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам текущего фида.`);
       if (shouldOpenPreview) openBrandPreviewDialog();
@@ -7183,6 +7189,8 @@
       if (!brandDialogDragState || brandDialogDragState.pointerId !== event.pointerId) return;
       brandDialogDragState = null;
       document.querySelector("#brandPreviewDialogStage")?.classList.remove("dragging");
+      brandLayoutsDirty = true;
+      invalidateGeneratedLink();
       await persistActiveBrandProfile();
       brandStatus(`Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%.`);
     }
@@ -7198,6 +7206,8 @@
       const position = document.querySelector("#brandPosition");
       if (position) position.value = "center-right";
       setBrandOffsets(0, 0);
+      brandLayoutsDirty = true;
+      invalidateGeneratedLink();
       drawBrandPreviewFrame() || renderBrandPreview();
       await persistActiveBrandProfile();
     }
@@ -7316,7 +7326,7 @@
 
     async function insertBrandedLayoutsAsFirstPhotos() {
       const ready = assertBrandTargetsReady();
-      if (!ready) return;
+      if (!ready) return false;
       const { targets } = ready;
 
       const button = document.querySelector("#insertBrandPhotoBtn");
@@ -7330,7 +7340,7 @@
           const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
           brandStatus(`Не удалось добавить первое фото: все ссылки недоступны или не ведут на изображение.${details}`);
           showToast("Первое фото не добавлено");
-          return;
+          return false;
         }
 
         const targetIds = new Set(targets.map(item => item.externalId));
@@ -7347,6 +7357,8 @@
         renderAll();
         showToast(`Первое фото добавлено к ${updatedCount} объектам`);
         brandStatus(`Готово: JPG-планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
+        brandLayoutsDirty = false;
+        return true;
       } catch (error) {
         const message = error.message || "Не удалось добавить первое фото.";
         const hint = /too large|слишком больш|413|body/i.test(message)
@@ -7354,6 +7366,7 @@
           : " Проверьте, что планировка открывается по ссылке, а подложка загружена в PNG, JPG, WebP или SVG.";
         brandStatus(`Не удалось добавить первое фото: ${message}.${hint}`);
         showToast("Не удалось добавить первое фото");
+        return false;
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
@@ -7377,6 +7390,7 @@
         return;
       }
       objects = objects.map(item => checkedIds.has(item.externalId) ? { ...item, layoutPhoto: layout.url } : item);
+      brandLayoutsDirty = true;
       invalidateGeneratedLink();
       save();
       renderAll();
@@ -7393,6 +7407,7 @@
       const index = objects.findIndex(object => object.externalId === item.externalId);
       if (index < 0) return;
       objects[index] = { ...objects[index], layoutPhoto: layout.url };
+      brandLayoutsDirty = true;
       invalidateGeneratedLink();
       save();
       renderAll();
@@ -7737,6 +7752,7 @@
       if (changedFields.length) {
         if (!pendingSingleEdit || pendingSingleEdit.id !== previousId) pendingSingleEdit = { id: previousId, fields: new Set() };
         changedFields.forEach(field => pendingSingleEdit.fields.add(field));
+        if (changedFields.includes("layoutPhoto")) brandLayoutsDirty = true;
       }
       objects[existingIndex] = { ...objects[existingIndex], ...draft };
       selectedId = draft.externalId;
@@ -7762,6 +7778,7 @@
         return { __groupEdit: true, message: "Нет изменений для выбранных объектов" };
       }
       const changedFields = entries.map(([field]) => field);
+      if (changedFields.includes("layoutPhoto")) brandLayoutsDirty = true;
       objects = objects.map(item => {
         if (!checkedIds.has(item.externalId)) return item;
         return entries.reduce((next, [field, value]) => ({ ...next, [field]: value }), { ...item });
@@ -8768,7 +8785,6 @@ ${photos}
         showToast("Проверьте название фида перед генерацией ссылки");
         return;
       }
-      const xml = buildXml(objects, activePlatform);
       const button = document.querySelector("#generateLinkBtn");
       await restorePublishedFeedIdentity(appState.feedUrl || document.querySelector("#feedUrl")?.value || "");
       const hadPublishedId = Boolean(appState.generatedFeedId);
@@ -8777,6 +8793,12 @@ ${photos}
       button.textContent = "Публикую...";
 
       try {
+        if (brandLayoutsDirty && brandBadgeDataUrl) {
+          button.textContent = "Обновляю планировки...";
+          const regenerated = await insertBrandedLayoutsAsFirstPhotos();
+          if (!regenerated) throw new Error("Не удалось пересобрать брендированные планировки в безопасной зоне");
+        }
+        const xml = buildXml(objects, activePlatform);
         const publishedFeed = await publishFeedToServer({
           id: appState.generatedFeedId,
           platform: activePlatform,
@@ -9185,9 +9207,13 @@ ${photos}
     });
     ["#brandPosition", "#brandSize", "#brandMargin", "#brandOffsetX", "#brandOffsetY", "#brandSafeX", "#brandSafeY", "#brandSafeWidth", "#brandSafeHeight", "#templateHeadline", "#templateSubline", "#templateTextColor", "#templateTextSize", "#templateTextX", "#templateTextY"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", () => {
+        brandLayoutsDirty = true;
+        invalidateGeneratedLink();
         drawBrandPreviewFrame() || renderBrandPreview();
       });
       document.querySelector(selector).addEventListener("change", () => {
+        brandLayoutsDirty = true;
+        invalidateGeneratedLink();
         drawBrandPreviewFrame() || renderBrandPreview();
         persistActiveBrandProfile();
       });
