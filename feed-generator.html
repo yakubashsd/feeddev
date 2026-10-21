@@ -9002,6 +9002,9 @@
     async function persistActiveBrandProfile({ includeAsset = false } = {}) {
       if (brandProfileHydrating || !activeBrandProjectKey) return;
       const config = brandConfig();
+      const previousProfile = activeBrandProfile();
+      const nextSignature = brandGenerationSignature(config);
+      const sameGeneration = previousProfile.generatedLayoutSignature === nextSignature;
       brandProfiles[activeBrandProjectKey] = {
         fileName: brandBadgeFileName,
         position: config.position,
@@ -9024,9 +9027,10 @@
         canvasLayers: config.canvasLayers,
         canvasColor: config.canvasColor,
         canvasOpacity: config.canvasOpacity,
-        autoApplyBranding: brandProfiles[activeBrandProjectKey]?.autoApplyBranding !== false,
-        generatedLayouts: brandProfiles[activeBrandProjectKey]?.generatedLayouts || {},
-        fonts: Array.isArray(window.listingFlowGetProjectFonts?.()) ? window.listingFlowGetProjectFonts().slice(0, 10) : (brandProfiles[activeBrandProjectKey]?.fonts || []),
+        autoApplyBranding: previousProfile.autoApplyBranding !== false,
+        generatedLayouts: sameGeneration ? (previousProfile.generatedLayouts || {}) : {},
+        generatedLayoutSignature: sameGeneration ? previousProfile.generatedLayoutSignature : "",
+        fonts: Array.isArray(window.listingFlowGetProjectFonts?.()) ? window.listingFlowGetProjectFonts().slice(0, 10) : (previousProfile.fonts || []),
         // Keep the source asset in the encrypted project snapshot as well as
         // the legacy IndexedDB cache. A second browser must be able to render
         // the same branding without relying on this device's storage.
@@ -9626,6 +9630,45 @@
       return brandProfiles[activeBrandProjectKey] || {};
     }
 
+    // Generated covers are tied to the exact template and safe-zone settings
+    // that produced them. If a user changes the backdrop, placement, text or
+    // canvas layers, the old URLs must not be silently reused for new objects.
+    // Keep a compact asset fingerprint instead of storing the whole data URL in
+    // the signature so profile checks remain cheap even for large PNG files.
+    function brandGenerationSignature(config = brandConfig()) {
+      const asset = brandBadgeDataUrl
+        ? `${brandBadgeDataUrl.slice(0, 96)}:${brandBadgeDataUrl.length}:${brandBadgeDataUrl.slice(-96)}`
+        : "";
+      return JSON.stringify({
+        asset,
+        position: config.position,
+        widthPercent: config.widthPercent,
+        marginPercent: config.marginPercent,
+        offsetXPercent: config.offsetXPercent,
+        offsetYPercent: config.offsetYPercent,
+        safeZoneWidthPercent: config.safeZoneWidthPercent,
+        safeZoneHeightPercent: config.safeZoneHeightPercent,
+        safeZoneOffsetXPercent: config.safeZoneOffsetXPercent,
+        safeZoneOffsetYPercent: config.safeZoneOffsetYPercent,
+        headline: config.headline,
+        subline: config.subline,
+        textColor: config.textColor,
+        textSize: config.textSize,
+        textXPercent: config.textXPercent,
+        textYPercent: config.textYPercent,
+        fontFamily: config.fontFamily,
+        canvasColor: config.canvasColor,
+        canvasOpacity: config.canvasOpacity,
+        canvasLayers: config.canvasLayers
+      });
+    }
+
+    function hasCurrentBranding(item, profile = activeBrandProfile()) {
+      return Boolean(profile.generatedLayoutSignature)
+        && profile.generatedLayoutSignature === brandGenerationSignature()
+        && hasBrandedLayout(item);
+    }
+
     function brandingTemplateEnabled(profile = activeBrandProfile()) {
       return Boolean(profile.fileName || profile.headline || profile.subline || profile.canvasLayers?.length);
     }
@@ -9634,13 +9677,16 @@
       if (!urlMap?.size || !activeBrandProjectKey) return;
       const profile = activeBrandProfile();
       profile.generatedLayouts = { ...(profile.generatedLayouts || {}), ...Object.fromEntries(urlMap) };
+      profile.generatedLayoutSignature = brandGenerationSignature();
       profile.autoApplyBranding = profile.autoApplyBranding !== false;
       brandProfiles[activeBrandProjectKey] = profile;
       saveBrandProfiles();
     }
 
     function applyKnownBranding(items = objects) {
-      const mapping = activeBrandProfile().generatedLayouts || {};
+      const profile = activeBrandProfile();
+      if (profile.generatedLayoutSignature !== brandGenerationSignature()) return items;
+      const mapping = profile.generatedLayouts || {};
       return items.map(item => item.layoutPhoto && mapping[item.layoutPhoto]
         ? { ...item, photos: prependPhotoUrl(item, mapping[item.layoutPhoto]) }
         : item);
@@ -9650,10 +9696,10 @@
       const profile = activeBrandProfile();
       if (profile.autoApplyBranding === false || !brandingTemplateEnabled(profile)) return { applied: 0, skipped: [] };
       const ids = new Set(newObjectIds || []);
-      const beforeKnown = objects.filter(item => ids.has(item.externalId) && hasBrandedLayout(item)).length;
+      const beforeKnown = objects.filter(item => ids.has(item.externalId) && hasCurrentBranding(item, profile)).length;
       objects = applyKnownBranding(objects);
-      const afterKnown = objects.filter(item => ids.has(item.externalId) && hasBrandedLayout(item)).length;
-      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasBrandedLayout(item));
+      const afterKnown = objects.filter(item => ids.has(item.externalId) && hasCurrentBranding(item, profile)).length;
+      const targets = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasCurrentBranding(item, profile));
       const reused = Math.max(0, afterKnown - beforeKnown);
       if (!targets.length) { save(); return { applied: reused, skipped: [] }; }
       if (!brandBadgeDataUrl) return { applied: reused, skipped: [{ message: "Подложка недоступна в этом браузере", ids: targets.map(item => item.externalId).slice(0, 6) }] };
@@ -9673,7 +9719,7 @@
 
     function requestNewObjectBranding(newObjectIds) {
       const ids = new Set(newObjectIds || []);
-      const candidates = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasBrandedLayout(item));
+      const candidates = objects.filter(item => ids.has(item.externalId) && item.layoutPhoto && !hasCurrentBranding(item));
       if (!candidates.length || !brandingTemplateEnabled() || activeBrandProfile().autoApplyBranding === false) return Promise.resolve("skip");
       let dialog = document.querySelector("#newObjectBrandingDialog");
       if (!dialog) {
@@ -11580,18 +11626,32 @@ ${photos}
       return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "";
     }
 
+    function layoutPhotoKind(url = "") {
+      const value = String(url || "").trim();
+      if (!value) return "unknown";
+      if (isBrandedLayoutUrl(value)) return "branded";
+      const pathname = (() => {
+        try {
+          return new URL(value).pathname.toLowerCase();
+        } catch {
+          return value.split(/[?#]/, 1)[0].toLowerCase();
+        }
+      })();
+      const hasToken = pattern => new RegExp(`(?:^|[\\/_-])(?:${pattern})(?=$|[\\/_-]|\\.)`, "i").test(pathname);
+      if (hasToken("floor(?:[\\s_-]?plan)?|section|entrance|podjezd|podezd")) return "floor";
+      if (hasToken("preset|apartment|apartments|flat|flats|unit")) return "apartment";
+      if (hasToken("layout|layouts|plan|plans")) return "generic";
+      return "unknown";
+    }
+
     function preferredLayoutPhoto(explicit = "", images = []) {
-      const isFloorPlan = url => /(?:\/|[_-])(?:floor(?:[\s_-]?plan)?|section|entrance|podjezd|podjezd)(?:\/|[_-])/i.test(url);
-      const isApartmentLayout = url => /\/(?:preset|apartment|apartments|flat|flats|unit)\//i.test(url);
-      const candidates = [explicit, ...images].filter(url => url && !isFloorPlan(url));
-      // A previously generated ListingFlow cover is the user's intended
-      // layout when a published feed is imported again. Preserve it instead
-      // of replacing it with the original aggregator image.
-      const branded = candidates.find(isBrandedLayoutUrl);
+      const candidates = [explicit, ...images].map(url => String(url || "").trim()).filter(Boolean);
+      const usable = candidates.filter(url => layoutPhotoKind(url) !== "floor");
+      const branded = usable.find(url => layoutPhotoKind(url) === "branded");
       if (branded) return branded;
-      return candidates.find(isApartmentLayout)
-        || candidates.find(url => /\/(?:layout|layouts|plan|plans)\//i.test(url))
-        || explicit
+      return usable.find(url => layoutPhotoKind(url) === "apartment")
+        || usable.find(url => layoutPhotoKind(url) === "generic")
+        || usable[0]
         || "";
     }
 
@@ -11609,11 +11669,12 @@ ${photos}
       let repaired = 0;
       const repair = (item, countRepair = false) => {
         const current = String(item.layoutPhoto || "");
-        if (!/\/uploads\/layout\//i.test(current)) return item;
-        const preset = preferredLayoutPhoto("", String(item.photos || "").split(/\r?\n/));
-        if (!/\/uploads\/preset\//i.test(preset) || preset === current) return item;
+        if (layoutPhotoKind(current) === "branded") return item;
+        const preferred = preferredLayoutPhoto("", String(item.photos || "").split(/\r?\n/));
+        if (layoutPhotoKind(preferred) !== "apartment" || preferred === current) return item;
+        if (layoutPhotoKind(current) === "apartment") return item;
         if (countRepair) repaired += 1;
-        return { ...item, layoutPhoto: preset };
+        return { ...item, layoutPhoto: preferred };
       };
       objects = objects.map(item => repair(item, true));
       originalObjects = originalObjects.map(item => repair(item));

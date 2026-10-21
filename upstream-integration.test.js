@@ -286,8 +286,59 @@ test("imported branded layouts are not regenerated or reported as missing", () =
   assert.equal(context.hasBrandedLayout({ layoutPhoto: "https://feeds.test/layouts/branded-42.jpg", photos: "" }), true);
   assert.equal(context.hasBrandedLayout({ layoutPhoto: "https://img.test/original.jpg", photos: "https://feeds.test/layouts/branded-42.jpg" }), true);
   assert.equal(context.hasBrandedLayout({ layoutPhoto: "https://img.test/original.jpg", photos: "https://img.test/flat.jpg" }), false);
-  assert.match(html, /item\.layoutPhoto && !hasBrandedLayout\(item\)/);
+  assert.match(html, /item\.layoutPhoto && !hasCurrentBranding\(item\)/);
   assert.doesNotMatch(html, /item\.layoutPhoto && !photoList\(item\)\.some\(isBrandedLayoutUrl\)/);
+});
+
+test("branding generation invalidates cached covers when the template or asset changes", () => {
+  const context = vm.createContext({
+    brandBadgeDataUrl: "data:image/png;base64,asset-a",
+    brandConfig: () => ({})
+  });
+  vm.runInContext(clientFunction("brandGenerationSignature"), context);
+  const base = {
+    position: "top-center",
+    widthPercent: 78,
+    marginPercent: 0,
+    offsetXPercent: 0,
+    offsetYPercent: 0,
+    safeZoneWidthPercent: 88,
+    safeZoneHeightPercent: 88,
+    safeZoneOffsetXPercent: 0,
+    safeZoneOffsetYPercent: 0,
+    headline: "{{rooms}}-комн.",
+    subline: "{{area}} м²",
+    textColor: "#111111",
+    textSize: 42,
+    textXPercent: 7,
+    textYPercent: 10,
+    fontFamily: "Circe",
+    canvasColor: "#ffffff",
+    canvasOpacity: 100,
+    canvasLayers: []
+  };
+  const initial = context.brandGenerationSignature(base);
+  assert.equal(context.brandGenerationSignature({ ...base, safeZoneWidthPercent: 72 }) === initial, false);
+  assert.equal(context.brandGenerationSignature({ ...base, canvasLayers: [{ type: "text", text: "Новый слой" }] }) === initial, false);
+  context.brandBadgeDataUrl = "data:image/png;base64,asset-b";
+  assert.equal(context.brandGenerationSignature(base) === initial, false);
+});
+
+test("layout import prefers an apartment plan over floor plans and keeps branded covers", () => {
+  const context = vm.createContext({
+    isBrandedLayoutUrl: url => /branded-|planirovka-na-podlozhke-/i.test(String(url))
+  });
+  vm.runInContext([clientFunction("layoutPhotoKind"), clientFunction("preferredLayoutPhoto")].join("\n"), context);
+  assert.equal(context.layoutPhotoKind("https://cdn.test/uploads/floor-plan-4.jpg"), "floor");
+  assert.equal(context.layoutPhotoKind("https://cdn.test/uploads/preset/flat-4.jpg"), "apartment");
+  assert.equal(context.preferredLayoutPhoto("https://cdn.test/uploads/floor-plan-4.jpg", [
+    "https://cdn.test/uploads/layout/building-4.jpg",
+    "https://cdn.test/uploads/preset/flat-4.jpg"
+  ]), "https://cdn.test/uploads/preset/flat-4.jpg");
+  assert.equal(context.preferredLayoutPhoto("https://cdn.test/uploads/floor-plan-4.jpg", [
+    "https://cdn.test/layouts/branded-4.jpg",
+    "https://cdn.test/uploads/preset/flat-4.jpg"
+  ]), "https://cdn.test/layouts/branded-4.jpg");
 });
 
 test("publication records URL sources, manual objects and explicit exclusions separately", () => {
