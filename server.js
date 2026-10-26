@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const sharp = require("sharp");
 const { del, list, put } = require("@vercel/blob");
 const { PLAN, createSaasStore, isSubscriptionActive, normalizeEmail } = require("./saas-store");
 const { createFreeKassa } = require("./freekassa");
@@ -15,6 +16,7 @@ const FEEDS_DIR = path.join(DATA_DIR, "feeds");
 const LAYOUTS_DIR = path.join(DATA_DIR, "layouts");
 const INDEX_FILE = path.join(DATA_DIR, "feeds-index.json");
 const LAYOUTS_INDEX_FILE = path.join(DATA_DIR, "layouts-index.json");
+const BRAND_PROFILES_FILE = path.join(DATA_DIR, "brand-profiles.json");
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
 const MAX_LAYOUT_BYTES = 12 * 1024 * 1024;
 const AUTH_USERNAME = String(process.env.AUTH_USERNAME || "sozdateli");
@@ -138,6 +140,22 @@ function writeLocalLayoutsIndex(layouts) {
   fs.writeFileSync(LAYOUTS_INDEX_FILE, `${JSON.stringify(layouts, null, 2)}\n`);
 }
 
+function readBrandProfiles() {
+  ensureStorage();
+  if (!fs.existsSync(BRAND_PROFILES_FILE)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(BRAND_PROFILES_FILE, "utf8"));
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeBrandProfiles(profiles) {
+  ensureStorage();
+  fs.writeFileSync(BRAND_PROFILES_FILE, `${JSON.stringify(profiles, null, 2)}\n`);
+}
+
 async function readFeeds() {
   if (!usesBlobStorage() && !canUseLocalStorage()) return [];
   if (!usesBlobStorage()) return readLocalIndex();
@@ -223,6 +241,132 @@ async function readPublishedFeedXml(record) {
   return response.text();
 }
 
+function decodeXmlEntities(value = "") {
+  return String(value)
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function imageUrlsFromAd(ad) {
+  const images = ad.match(/<Images\b[^>]*>[\s\S]*?<\/Images>/i)?.[0] || "";
+  return [...images.matchAll(/\burl\s*=\s*(["'])(.*?)\1/gi)].map(match => decodeXmlEntities(match[2]));
+}
+
+function sourcePlanUrl(ad) {
+  const urls = imageUrlsFromAd(ad);
+  return urls.find(url => /\/uploads\/preset\//i.test(url)) || "";
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+}
+
+function brandProfileAssetBuffer(profile) {
+  const match = String(profile?.assetDataUrl || "").match(/^data:image\/(?:png|jpe?g|webp|svg\+xml);base64,([A-Za-z0-9+/=]+)$/i);
+  return match ? Buffer.from(match[1], "base64") : null;
+}
+
+async function downloadBrandImage(imageUrl, sourceUrl) {
+  const image = new URL(imageUrl);
+  const source = new URL(sourceUrl);
+  if (!['http:', 'https:'].includes(image.protocol) || image.origin !== source.origin) {
+    throw new Error("Планировка находится на другом домене источника.");
+  }
+  const response = await fetch(image.href, { cache: "no-store", signal: AbortSignal.timeout(20000), headers: { "User-Agent": "FeedDev/0.1" } });
+  if (!response.ok) throw new Error(`Планировка вернула HTTP ${response.status}`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length > MAX_LAYOUT_BYTES) throw new Error("Планировка слишком большая.");
+  return bytes;
+}
+
+async function createServerBrandedLayout({ sourceUrl, profile, record, externalId }) {
+  const badgeBuffer = brandProfileAssetBuffer(profile);
+  if (!badgeBuffer) throw new Error("На сервере не сохранена подложка брендинга.");
+  const sourceBuffer = await downloadBrandImage(sourceUrl, record.sourceUrl);
+  const badge = sharp(badgeBuffer);
+  const badgeMetadata = await badge.metadata();
+  const width = Number(badgeMetadata.width || 0);
+  const height = Number(badgeMetadata.height || 0);
+  if (!width || !height) throw new Error("Не удалось определить размер подложки.");
+
+  const safeXPercent = clampNumber(profile.safeXPercent, 0, 95, 56);
+  const safeYPercent = clampNumber(profile.safeYPercent, 0, 95, 10);
+  const safeWidthPercent = clampNumber(profile.safeWidthPercent, 5, 100 - safeXPercent, 40);
+  const safeHeightPercent = clampNumber(profile.safeHeightPercent, 5, 100 - safeYPercent, 80);
+  const widthPercent = clampNumber(profile.widthPercent, 20, 95, 40);
+  const safe = {
+    x: Math.round(width * safeXPercent / 100),
+    y: Math.round(height * safeYPercent / 100),
+    width: Math.round(width * safeWidthPercent / 100),
+    height: Math.round(height * safeHeightPercent / 100)
+  };
+  const scale = Math.min(1, widthPercent / Math.max(1, safeWidthPercent));
+  const frameWidth = Math.max(1, Math.round(safe.width * scale));
+  const frameHeight = Math.max(1, Math.round(safe.height * scale));
+  const resized = await sharp(sourceBuffer)
+    .resize({ width: frameWidth, height: frameHeight, fit: "inside", withoutEnlargement: true })
+    .toBuffer({ resolveWithObject: true });
+  const horizontalOffset = clampNumber(profile.offsetXPercent, -60, 60, 0) * width / 100;
+  const verticalOffset = clampNumber(profile.offsetYPercent, -60, 60, 0) * height / 100;
+  const left = Math.max(safe.x, Math.min(safe.x + safe.width - resized.info.width, Math.round(safe.x + (safe.width - resized.info.width) / 2 + horizontalOffset)));
+  const top = Math.max(safe.y, Math.min(safe.y + safe.height - resized.info.height, Math.round(safe.y + (safe.height - resized.info.height) / 2 + verticalOffset)));
+  const output = await badge
+    .flatten({ background: "#ffffff" })
+    .composite([{ input: resized.data, left, top }])
+    .jpeg({ quality: 90, mozjpeg: true })
+    .toBuffer();
+
+  const safeSlug = `${makeSlug(record.slug).slice(0, 35)}-${makeSlug(externalId).slice(0, 30)}`;
+  const fileName = `auto-${safeSlug}.jpg`;
+  const blob = await persistLayoutFile(fileName, output, "image/jpeg");
+  const base = PUBLIC_BASE_URL || new URL(record.url).origin;
+  const url = blob?.url || `${base}/layouts/${encodeURIComponent(fileName)}`;
+  await persistLayoutRecord({
+    id: `auto-${safeSlug}`,
+    name: `Автопланировка ${externalId}`,
+    fileName,
+    contentType: "image/jpeg",
+    size: output.length,
+    project: record.slug,
+    sourceUrl,
+    blobUrl: blob?.url || "",
+    url,
+    updatedAt: new Date().toISOString()
+  });
+  return url;
+}
+
+async function brandNewSourceAds(sourceXml, currentXml, record, profile) {
+  if (!profile || !brandProfileAssetBuffer(profile)) return { xml: sourceXml, branded: 0 };
+  const existingIds = new Set();
+  for (const ad of String(currentXml || "").match(/<Ad\b[^>]*>[\s\S]*?<\/Ad>/gi) || []) {
+    const id = ad.match(/<Id\b[^>]*>([^<]+)<\/Id>/i)?.[1]?.trim();
+    if (id) existingIds.add(id);
+  }
+  let branded = 0;
+  let xml = String(sourceXml || "");
+  for (const ad of xml.match(/<Ad\b[^>]*>[\s\S]*?<\/Ad>/gi) || []) {
+    const externalId = ad.match(/<Id\b[^>]*>([^<]+)<\/Id>/i)?.[1]?.trim();
+    if (!externalId || existingIds.has(externalId)) continue;
+    const layoutUrl = sourcePlanUrl(ad);
+    const images = ad.match(/<Images\b[^>]*>[\s\S]*?<\/Images>/i)?.[0] || "";
+    if (!layoutUrl || !images) continue;
+    try {
+      const brandedUrl = await createServerBrandedLayout({ sourceUrl: layoutUrl, profile, record, externalId });
+      const brandedImages = images.replace(/<Images\b[^>]*>/i, match => `${match}\n      <Image url="${brandedUrl}"/>`);
+      xml = xml.replace(ad, ad.replace(images, brandedImages));
+      branded += 1;
+    } catch (error) {
+      console.error(`Branding failed: ${record.slug}/${externalId}: ${error.message}`);
+    }
+  }
+  return { xml, branded };
+}
+
 async function syncPublishedFeeds() {
   if (syncingPublishedFeeds) return;
   syncingPublishedFeeds = true;
@@ -238,9 +382,15 @@ async function syncPublishedFeeds() {
       try {
         const sourceXml = await feedMonitor.download(sourceUrl);
         const currentXml = await readPublishedFeedXml(record);
+        const brandProfiles = readBrandProfiles();
+        const storedBrandProfile = brandProfiles[record.slug];
+        const brandingProfile = storedBrandProfile?.profile
+          ? { ...storedBrandProfile.profile, assetDataUrl: storedBrandProfile.assetDataUrl }
+          : null;
+        const branding = await brandNewSourceAds(sourceXml, currentXml, record, brandingProfile);
         const merged = currentXml
-          ? feedMonitor.mergeFeedXml(sourceXml, currentXml)
-          : { xml: sourceXml, matched: 0, sourceObjects: 0 };
+          ? feedMonitor.mergeFeedXml(branding.xml, currentXml)
+          : { xml: branding.xml, matched: 0, sourceObjects: feedMonitor.mergeFeedXml(branding.xml, "").sourceObjects };
         await persistFeedXml(record.slug, merged.xml);
         const latest = (await readFeeds()).find(item => item.slug === record.slug) || record;
         await persistFeedRecord({
@@ -250,7 +400,7 @@ async function syncPublishedFeeds() {
           sourceSyncAt: attemptedAt,
           sourceSyncError: ""
         });
-        console.log(`Source sync: ${record.slug}, objects=${merged.sourceObjects}, imagesPreserved=${merged.matched}`);
+        console.log(`Source sync: ${record.slug}, objects=${merged.sourceObjects}, imagesPreserved=${merged.matched}, brandedNew=${branding.branded}`);
       } catch (error) {
         const latest = (await readFeeds()).find(item => item.slug === record.slug) || record;
         await persistFeedRecord({ ...latest, sourceSyncAt: attemptedAt, sourceSyncError: error.message });
@@ -819,6 +969,34 @@ async function handleApi(req, res, url) {
   const actor = await currentActor(req);
   if (!actor) {
     return sendError(res, 401, "Требуется вход в сервис.");
+  }
+
+  if (url.pathname === "/api/brand-profile") {
+    const requestedSlug = String(url.searchParams.get("slug") || "").trim();
+    if (req.method === "GET") {
+      if (!requestedSlug) return sendError(res, 400, "Не указан фид для профиля брендинга.");
+      const profile = readBrandProfiles()[makeSlug(requestedSlug)] || null;
+      return send(res, 200, profile || {});
+    }
+    if (req.method === "PUT") {
+      const payload = await parseBody(req);
+      const slug = makeSlug(payload.slug || requestedSlug);
+      const profiles = readBrandProfiles();
+      const previous = profiles[slug] || {};
+      const assetDataUrl = payload.assetDataUrl === undefined ? previous.assetDataUrl || "" : String(payload.assetDataUrl || "");
+      if (assetDataUrl.length > 16 * 1024 * 1024) return sendError(res, 413, "Файл подложки слишком большой.");
+      if (assetDataUrl && !/^data:image\/(?:png|jpe?g|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/i.test(assetDataUrl)) {
+        return sendError(res, 400, "Подложка должна быть PNG, JPG, WebP или SVG.");
+      }
+      profiles[slug] = {
+        profile: payload.profile && typeof payload.profile === "object" ? payload.profile : previous.profile || {},
+        assetDataUrl,
+        updatedAt: new Date().toISOString()
+      };
+      writeBrandProfiles(profiles);
+      return send(res, 200, profiles[slug]);
+    }
+    return sendError(res, 405, "Метод не поддерживается");
   }
 
   if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/projects") {

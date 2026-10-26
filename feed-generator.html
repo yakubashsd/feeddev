@@ -6837,6 +6837,36 @@
       return currentFeedProjectLabel();
     }
 
+    function activeBrandProfileSlug() {
+      return appState.generatedFeedId || feedSlugFromUrl(appState.generatedLink) || generatedFeedId(currentFeedName());
+    }
+
+    async function loadRemoteBrandProfile() {
+      const slug = activeBrandProfileSlug();
+      if (!slug) return null;
+      try {
+        const response = await fetch(`/api/brand-profile?slug=${encodeURIComponent(slug)}`, { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return null;
+        const result = await response.json();
+        return result?.profile ? result : null;
+      } catch {
+        return null;
+      }
+    }
+
+    async function saveRemoteBrandProfile(includeAsset = false) {
+      const slug = activeBrandProfileSlug();
+      if (!slug) return;
+      const profile = brandProfiles[activeBrandProjectKey] || {};
+      const response = await fetch("/api/brand-profile", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, profile, ...(includeAsset ? { assetDataUrl: brandBadgeDataUrl } : {}) })
+      });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || `Сервер вернул HTTP ${response.status}`);
+    }
+
     async function persistActiveBrandProfile({ includeAsset = false } = {}) {
       if (brandProfileHydrating || !activeBrandProjectKey) return;
       const config = brandConfig();
@@ -6860,6 +6890,11 @@
       };
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
+      try {
+        await saveRemoteBrandProfile(includeAsset);
+      } catch (error) {
+        console.warn("Remote brand profile sync failed:", error);
+      }
     }
 
     async function restoreBrandProfile(projectKey) {
@@ -6868,6 +6903,8 @@
       brandPreviewImages = null;
       brandBadgeDataUrl = "";
       brandBadgeFileName = "";
+      const remoteProfile = await loadRemoteBrandProfile();
+      if (remoteProfile?.profile) brandProfiles[activeBrandProjectKey] = remoteProfile.profile;
       const savedProfile = brandProfiles[activeBrandProjectKey] || {};
       const isLegacyCenterPlacement = savedProfile.position === "top-center"
         && Number(savedProfile.widthPercent || 78) >= 70
@@ -6907,7 +6944,7 @@
       document.querySelector("#brandBadgeFileInput").value = "";
 
       try {
-        brandBadgeDataUrl = await readBrandAsset(activeBrandProjectKey);
+        brandBadgeDataUrl = remoteProfile?.assetDataUrl || await readBrandAsset(activeBrandProjectKey);
         brandBadgeFileName = profile.fileName || "";
         document.querySelector("#brandBadgePickedFile").textContent = brandBadgeDataUrl
           ? `${brandBadgeFileName || "Подложка фида"} · сохранено для текущего фида`
@@ -6918,6 +6955,7 @@
       } finally {
         brandProfileHydrating = false;
       }
+      if (brandBadgeDataUrl) await persistActiveBrandProfile({ includeAsset: true });
       if (objects.some(item => photoList(item).some(isBrandedLayoutUrl))) brandLayoutsDirty = true;
       if (isLegacyCenterPlacement) await persistActiveBrandProfile();
       renderBrandPreview();
@@ -7153,7 +7191,7 @@
       brandDragState = null;
       brandLayoutsDirty = true;
       invalidateGeneratedLink();
-      await persistActiveBrandProfile();
+      await persistActiveBrandProfile({ includeAsset: true });
       brandStatus(`Позиция планировки сохранена: X ${document.querySelector("#brandOffsetX")?.value || 0}%, Y ${document.querySelector("#brandOffsetY")?.value || 0}%. Она будет применена ко всем макетам текущего фида.`);
       if (shouldOpenPreview) openBrandPreviewDialog();
     }
@@ -7280,7 +7318,7 @@
       const canvas = document.createElement("canvas");
       const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
       const projectConfig = { ...brandConfig() };
-      await persistActiveBrandProfile();
+      await persistActiveBrandProfile({ includeAsset: true });
       const sourceUrlForItem = item => sourceLayoutPhoto(item);
       const uniqueUrls = [...new Set(targets.map(sourceUrlForItem).filter(Boolean))];
       for (let index = 0; index < uniqueUrls.length; index += 1) {
