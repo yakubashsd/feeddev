@@ -46,6 +46,37 @@ async function download(url, redirects=0) {
     request.on('close',()=>clearTimeout(deadline));request.on('error',reject);
   });
 }
+
+function adBlocks(xml) {
+  return String(xml || "").match(/<Ad\b[^>]*>[\s\S]*?<\/Ad>/gi) || [];
+}
+
+function adId(ad) {
+  return ad.match(/<Id\b[^>]*>([^<]+)<\/Id>/i)?.[1]?.trim() || "";
+}
+
+function imagesBlock(ad) {
+  return ad.match(/<Images\b[^>]*>[\s\S]*?<\/Images>/i)?.[0] || "";
+}
+
+function mergeFeedXml(sourceXml, currentXml) {
+  const currentImages = new Map();
+  for (const ad of adBlocks(currentXml)) {
+    const id = adId(ad);
+    const images = imagesBlock(ad);
+    if (id && images) currentImages.set(id, images);
+  }
+
+  let matched = 0;
+  const xml = String(sourceXml || "").replace(/<Ad\b[^>]*>[\s\S]*?<\/Ad>/gi, ad => {
+    const id = adId(ad);
+    const images = currentImages.get(id);
+    if (!images || !imagesBlock(ad)) return ad;
+    matched += 1;
+    return ad.replace(/<Images\b[^>]*>[\s\S]*?<\/Images>/i, images);
+  });
+  return { xml, matched, sourceObjects: adBlocks(sourceXml).length };
+}
 function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000}) {
   let busy=false;
   const read=()=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{};
@@ -87,4 +118,4 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
   }
   return {read,replace,run};
 }
-module.exports={createMonitor,publicAddress,validateContent};
+module.exports={createMonitor,publicAddress,validateContent,download,mergeFeedXml};

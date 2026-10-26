@@ -61,7 +61,10 @@ async function pollTelegram(){
   catch { console.error('Telegram: не удалось получить сообщения бота'); }
   finally {pollingTelegram=false;}
 }
-const monitor = require('./feed-monitor').createMonitor({file:path.join(DATA_DIR,'monitor.json'),notify:sendMonitorAlerts,intervalMs:MONITOR_INTERVAL_MINUTES*60*1000});
+const feedMonitor = require('./feed-monitor');
+const monitor = feedMonitor.createMonitor({file:path.join(DATA_DIR,'monitor.json'),notify:sendMonitorAlerts,intervalMs:MONITOR_INTERVAL_MINUTES*60*1000});
+const SOURCE_SYNC_INTERVAL_MS = MONITOR_INTERVAL_MINUTES * 60 * 1000;
+let syncingPublishedFeeds = false;
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -198,6 +201,65 @@ async function persistFeedRecord(record) {
     contentType: "application/json; charset=utf-8",
     cacheControlMaxAge: 60
   });
+}
+
+function normalizedUrl(value = "") {
+  try {
+    const url = new URL(String(value).trim());
+    url.hash = "";
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return String(value || "").trim().replace(/\/$/, "");
+  }
+}
+
+async function readPublishedFeedXml(record) {
+  if (!usesBlobStorage()) {
+    const file = path.join(FEEDS_DIR, `${record.slug}.xml`);
+    return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+  }
+  const response = await fetch(record.blobUrl || record.url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Текущий XML фида недоступен: HTTP ${response.status}`);
+  return response.text();
+}
+
+async function syncPublishedFeeds() {
+  if (syncingPublishedFeeds) return;
+  syncingPublishedFeeds = true;
+  try {
+    const records = await readFeeds();
+    for (const record of records) {
+      const sourceUrl = String(record.sourceUrl || "").trim();
+      if (!sourceUrl || normalizedUrl(sourceUrl) === normalizedUrl(record.url)) continue;
+      const lastAttempt = Date.parse(record.sourceSyncAt || 0);
+      if (lastAttempt && Date.now() - lastAttempt < SOURCE_SYNC_INTERVAL_MS) continue;
+
+      const attemptedAt = new Date().toISOString();
+      try {
+        const sourceXml = await feedMonitor.download(sourceUrl);
+        const currentXml = await readPublishedFeedXml(record);
+        const merged = currentXml
+          ? feedMonitor.mergeFeedXml(sourceXml, currentXml)
+          : { xml: sourceXml, matched: 0, sourceObjects: 0 };
+        await persistFeedXml(record.slug, merged.xml);
+        const latest = (await readFeeds()).find(item => item.slug === record.slug) || record;
+        await persistFeedRecord({
+          ...latest,
+          objectCount: merged.sourceObjects || latest.objectCount,
+          updatedAt: attemptedAt,
+          sourceSyncAt: attemptedAt,
+          sourceSyncError: ""
+        });
+        console.log(`Source sync: ${record.slug}, objects=${merged.sourceObjects}, imagesPreserved=${merged.matched}`);
+      } catch (error) {
+        const latest = (await readFeeds()).find(item => item.slug === record.slug) || record;
+        await persistFeedRecord({ ...latest, sourceSyncAt: attemptedAt, sourceSyncError: error.message });
+        console.error(`Source sync failed: ${record.slug}: ${error.message}`);
+      }
+    }
+  } finally {
+    syncingPublishedFeeds = false;
+  }
 }
 
 async function persistLayoutFile(fileName, bytes, contentType) {
@@ -1010,7 +1072,10 @@ if (require.main === module) {
   http.createServer(handleRequest).listen(PORT, () => {
     ensureStorage();
     console.log(`FeedDev server is running on http://localhost:${PORT}`);
-    const tick=()=>monitor.run().catch(error=>console.error('Monitor:',error.message));
+    const tick=()=>Promise.all([
+      monitor.run().catch(error=>console.error('Monitor:',error.message)),
+      syncPublishedFeeds().catch(error=>console.error('Source sync:',error.message))
+    ]);
     tick();setInterval(tick,60000).unref();
     pollTelegram();setInterval(pollTelegram,25000).unref();
   });

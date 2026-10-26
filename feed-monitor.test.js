@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {createMonitor,publicAddress}=require('./feed-monitor');
+const {createMonitor,publicAddress,mergeFeedXml}=require('./feed-monitor');
 test('persistent schedule, XML errors, recovery and one alert per failure',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'feed-monitor-test-'));
   try{
@@ -33,4 +33,15 @@ test('Avito content errors are detected',async()=>{
     assert.equal(monitor.read().test[0].status,'bad');
     assert.match(monitor.read().test[0].error,/Description у 1 объектов/);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('source refresh keeps current branded images by object id',()=>{
+  const source='<Ads><Ad><Id>1</Id><Price>200</Price><Images><Image url="source-plan.png"/></Images></Ad></Ads>';
+  const current='<Ads><Ad><Id>1</Id><Price>100</Price><Images><Image url="safe-branded-plan.jpg"/><Image url="house.jpg"/></Images></Ad></Ads>';
+  const result=mergeFeedXml(source,current);
+  assert.equal(result.sourceObjects,1);
+  assert.equal(result.matched,1);
+  assert.match(result.xml,/200/);
+  assert.match(result.xml,/safe-branded-plan\.jpg/);
+  assert.match(result.xml,/house\.jpg/);
+  assert.doesNotMatch(result.xml,/source-plan\.png/);
 });
