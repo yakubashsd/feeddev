@@ -1598,6 +1598,102 @@
       align-items: end;
     }
 
+    .source-workspace {
+      margin: 0 0 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f7f7f7;
+    }
+
+    .source-workspace-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .source-workspace-label,
+    .source-links span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .source-workspace strong {
+      display: block;
+      margin-top: 4px;
+      color: #171717;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .source-picker {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 7px 8px;
+      min-width: min(100%, 400px);
+    }
+
+    .source-picker label { grid-column: 1 / -1; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .source-picker select, .source-picker button { min-height: 40px; }
+    .source-picker button { white-space: nowrap; }
+
+    .source-workspace-hint {
+      margin: 11px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .source-links {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .source-links > div { min-width: 0; }
+    .source-links a, .source-links #activePublishedEmpty {
+      display: inline-block;
+      max-width: 100%;
+      margin-top: 5px;
+      overflow: hidden;
+      color: #171717;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .source-links #activePublishedEmpty { color: var(--muted); font-weight: 500; text-decoration: none; }
+
+    .source-editor-fields {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .source-editor-fields:disabled { opacity: .48; }
+    .source-editor-fields:disabled :is(input, select, button) { cursor: not-allowed; }
+
+    .source-editor-note {
+      margin: 0 0 10px;
+      padding: 9px 11px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .source-editor-note.is-ready { display: none; }
+
     .source-status {
       margin-top: 10px;
       padding: 10px 12px;
@@ -4241,6 +4337,12 @@
     button { box-shadow: none; font-size: 12px; }
     button.primary, #loadUrlBtn, #generateLinkBtn, #applyBulkBtn { background: #171717; border-color: #171717; color: #fff; box-shadow: none; }
     button.primary:hover { background: #333; }
+    .nav-item:disabled,
+    .workflow-nav button:disabled {
+      cursor: not-allowed;
+      opacity: .42;
+      pointer-events: none;
+    }
     input, textarea, select { background: #fff; color: #171717; border-color: #d4d4d4; box-shadow: none; accent-color: #171717; }
     :is(button,input,select,textarea,a):focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
     .detected-card, .detected-card.primary, .platform-guidance, .source-status,
@@ -4314,11 +4416,14 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) 110px 120px auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+    .source-record { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) 110px 120px auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; transition:border-color .18s ease, background .18s ease; }
+    .source-record.is-selected { border-color:#171717; background:#f4f4f4; }
     .source-record strong, .source-record small { display:block; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .source-record .source-health { font-size:11px; color:#444; }
     .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
+    .source-record .source-actions button:first-child { background:#171717; border-color:#171717; color:#fff; }
+    .source-record .source-actions button:first-child[aria-pressed="true"] { background:#fff; color:#171717; }
     .source-empty { padding:24px; border:1px dashed var(--line-strong); border-radius:9px; color:var(--muted); text-align:center; }
     .source-schedule-note { margin-top:10px; color:var(--muted); font-size:10px; line-height:1.5; }
     .template-layer-editor { display:grid; gap:18px; padding:20px; border:1px solid var(--line); border-radius:10px; background:#fafafa; }
@@ -4338,6 +4443,7 @@
     .template-text-controls input[type="color"] { min-height:42px; padding:5px; }
     @media(max-width:780px) { .layer-list, .template-text-controls { grid-template-columns:1fr; } .layer-list>div { border-right:0; border-bottom:1px solid var(--line); } .template-text-controls .span-2 { grid-column:auto; } }
     @media(max-width:1050px) { .source-record { grid-template-columns:1fr 1fr; } .source-record .source-actions { justify-content:flex-start; } }
+    @media(max-width:720px) { .source-workspace-head { align-items:stretch; flex-direction:column; } .source-picker, .source-links { grid-template-columns:1fr; } .source-picker button { justify-self:start; } }
     @media(max-width:900px) { .catalog-head { flex-direction:column; } .catalog-summary { grid-template-columns:1fr; } .catalog-summary div { border-right:0; border-bottom:1px solid var(--line); } .complex-row { grid-template-columns:1fr 1fr; } .complex-row>div:first-child { grid-column:1/-1; } }
     /* One page title and one navigation; technical guidance stays contextual. */
     .main > section > .panel-title,
@@ -4492,7 +4598,29 @@
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>Объедините источник, настройки и результат в одном пространстве.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, ЖК Речной"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
       <section class="source-panel" data-page="source">
         <h2 class="panel-title">Подключённые источники</h2>
-        <div class="panel-caption">Добавляйте XML разных площадок. Каждый источник обновляется независимо, а квартиры собираются в общий каталог проекта.</div>
+        <div class="panel-caption">Выберите рабочий фид — после этого откроются квартиры, планировки, проверка и публикация именно этого фида.</div>
+        <section class="source-workspace" aria-labelledby="activeSourceHeading">
+          <div class="source-workspace-head">
+            <div>
+              <span class="source-workspace-label">Рабочий фид</span>
+              <strong id="activeSourceHeading">Фид не выбран</strong>
+            </div>
+            <div class="source-picker">
+              <label for="activeSourceSelect">Выбрать фид</label>
+              <select id="activeSourceSelect" aria-describedby="activeSourceHint">
+                <option value="">Выберите фид для работы</option>
+              </select>
+              <button id="newSourceBtn" type="button">Добавить фид</button>
+            </div>
+          </div>
+          <p id="activeSourceHint" class="source-workspace-hint">Сначала выберите фид из списка или добавьте новый.</p>
+          <div class="source-links" id="activeSourceLinks" hidden>
+            <div><span>Исходный XML</span><a id="activeSourceUrl" href="#" target="_blank" rel="noreferrer">Открыть источник</a></div>
+            <div><span>Постоянная ссылка</span><a id="activePublishedUrl" href="#" target="_blank" rel="noreferrer">Открыть фид</a><span id="activePublishedEmpty">Ещё не опубликована</span></div>
+          </div>
+        </section>
+        <div class="source-editor-note" id="sourceEditorNote" role="status">Не включено: сначала выберите рабочий фид выше.</div>
+        <fieldset class="source-editor-fields" id="sourceEditorFields" disabled>
         <div class="source-grid">
           <div class="field">
             <label for="sourceName">Название</label>
@@ -4514,7 +4642,8 @@
           <button id="importBtn">Загрузить XML</button>
           <input id="fileInput" class="file-input" type="file" accept=".json,.xml,.csv,text/xml,application/xml,application/json,text/csv">
         </div>
-        <div id="loadStatus" class="source-status">Начните с постоянной ссылки или XML-файла. Сервис определит формат фида и подсветит его ниже.</div>
+        </fieldset>
+        <div id="loadStatus" class="source-status">Выберите рабочий фид — поля источника включатся для его редактирования.</div>
         <div class="detected-source" id="detectedSource">
           <div class="detected-card primary"><span>Формат</span><strong id="detectedPlatform">Не загружен</strong></div>
           <div class="detected-card"><span>Источник</span><strong id="detectedProvider">-</strong></div>
@@ -5105,6 +5234,8 @@
     const changeLogStorageKey = "feed-generator-change-log-v1" + projectSuffix;
     const complexStatusStorageKey = "feed-generator-complex-status-v1" + projectSuffix;
     const projectSourcesStorageKey = "feed-generator-sources-v1" + projectSuffix;
+    const activeSourceStorageKey = "feed-generator-active-source-v1" + projectSuffix;
+    const sourceWorkspacesStorageKey = "feed-generator-source-workspaces-v1" + projectSuffix;
     const bulkSections = {
       main: {
         label: "Основное",
@@ -5314,6 +5445,9 @@
     let pendingSingleEdit = null;
     let publishedComplexes = new Set(JSON.parse(localStorage.getItem(complexStatusStorageKey) || "[]"));
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
+    let sourceWorkspaces = readSourceWorkspaces();
+    let activeSourceId = localStorage.getItem(activeSourceStorageKey) || "";
+    let sourceEditorMode = activeSourceId ? "edit" : "";
     const legacyPublishedSourceUrl = "https://feeds.sozdateli.ru/f/https-pb19924-profitbase-ru-export-avito-02e9e7c3e7cf0a68cbcfefdb04a6fa26-scheme.php";
     const canonicalProfitbaseSourceUrl = "https://pb19924.profitbase.ru/export/avito/02e9e7c3e7cf0a68cbcfefdb04a6fa26?scheme=https";
     let migratedLegacySourceId = "";
@@ -5331,6 +5465,12 @@
       objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
       originalObjects = structuredClone(objects);
     }
+    if (!projectSources.some(source => source.id === activeSourceId)) {
+      activeSourceId = "";
+      sourceEditorMode = "";
+      localStorage.removeItem(activeSourceStorageKey);
+    }
+    migrateSourceWorkspaces();
 
     const form = document.querySelector("#editorForm");
     const rows = document.querySelector("#rows");
@@ -5353,6 +5493,7 @@
     function showWorkspace() {
       authScreen.hidden = true;
       appShell.hidden = false;
+      if (hasActiveSource()) hydrateSourceWorkspace(activeSourceId);
       renderAll();
       appInitialized = true;
     }
@@ -5512,11 +5653,159 @@
     }
 
     function save() {
-      appState.feedUrl = document.querySelector("#feedUrl")?.value || appState.feedUrl || "";
+      const activeSource = getActiveSource();
+      if (activeSource) {
+        appState.feedUrl = document.querySelector("#feedUrl")?.value || activeSource.url || appState.feedUrl || "";
+      }
       appState.feedName = document.querySelector("#feedName") ? document.querySelector("#feedName").value : appState.feedName || "";
       appState.serverBaseUrl = document.querySelector("#serverBaseUrl")?.value || appState.serverBaseUrl || "";
       appState.generatedLink = document.querySelector("#generatedLink")?.dataset.url || appState.generatedLink || "";
+      if (activeSource) {
+        activeSource.url = appState.feedUrl;
+        activeSource.platform = activePlatform;
+        activeSource.objectCount = objects.length;
+        activeSource.feedName = appState.feedName;
+        activeSource.serverBaseUrl = appState.serverBaseUrl;
+        activeSource.publishedUrl = appState.generatedLink;
+        activeSource.publishedFeedId = appState.generatedFeedId || "";
+        persistActiveSourceWorkspace();
+        saveProjectSources();
+      }
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+    }
+
+    function readSourceWorkspaces() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(sourceWorkspacesStorageKey) || "{}");
+        return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function sourceItemBelongsTo(item, sourceId) {
+      const sourceIds = Array.isArray(item?._sourceIds)
+        ? item._sourceIds
+        : item?._sourceId ? [item._sourceId] : [];
+      return sourceIds.includes(sourceId);
+    }
+
+    function workspaceFromCurrentState(source) {
+      return {
+        objects: structuredClone(objects),
+        originalObjects: structuredClone(originalObjects),
+        activePlatform,
+        feedUrl: source?.url || appState.feedUrl || "",
+        feedName: appState.feedName || source?.feedName || "",
+        serverBaseUrl: appState.serverBaseUrl || source?.serverBaseUrl || "",
+        generatedLink: appState.generatedLink || source?.publishedUrl || "",
+        generatedFeedId: appState.generatedFeedId || source?.publishedFeedId || ""
+      };
+    }
+
+    function migrateSourceWorkspaces() {
+      let changed = false;
+      projectSources.forEach(source => {
+        if (sourceWorkspaces[source.id]) return;
+        const sourceObjects = objects.filter(item => sourceItemBelongsTo(item, source.id));
+        const sourceOriginalObjects = originalObjects.filter(item => sourceItemBelongsTo(item, source.id));
+        const hasOnlySource = projectSources.length === 1;
+        const scopedObjects = sourceObjects.length ? sourceObjects : hasOnlySource ? objects : [];
+        const scopedOriginalObjects = sourceOriginalObjects.length ? sourceOriginalObjects : hasOnlySource ? originalObjects : [];
+        sourceWorkspaces[source.id] = {
+          objects: structuredClone(scopedObjects),
+          originalObjects: structuredClone(scopedOriginalObjects),
+          activePlatform: source.platform || activePlatform,
+          feedUrl: source.url || appState.feedUrl || "",
+          feedName: source.feedName || appState.feedName || "",
+          serverBaseUrl: source.serverBaseUrl || appState.serverBaseUrl || "",
+          generatedLink: source.publishedUrl || (hasOnlySource ? appState.generatedLink || "" : ""),
+          generatedFeedId: source.publishedFeedId || (hasOnlySource ? appState.generatedFeedId || "" : "")
+        };
+        if (!source.publishedUrl && hasOnlySource && appState.generatedLink) {
+          source.publishedUrl = appState.generatedLink;
+          source.publishedFeedId = appState.generatedFeedId || feedSlugFromUrl(appState.generatedLink);
+        }
+        changed = true;
+      });
+      if (changed) {
+        localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
+        localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
+      }
+    }
+
+    function getActiveSource() {
+      return projectSources.find(source => source.id === activeSourceId) || null;
+    }
+
+    function hasActiveSource() {
+      return Boolean(getActiveSource());
+    }
+
+    function persistActiveSourceWorkspace() {
+      const source = getActiveSource();
+      if (!source) return;
+      sourceWorkspaces[source.id] = workspaceFromCurrentState(source);
+      localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
+    }
+
+    function hydrateSourceWorkspace(sourceId) {
+      const source = projectSources.find(item => item.id === sourceId);
+      if (!source) return false;
+      const workspace = sourceWorkspaces[source.id] || {
+        objects: [], originalObjects: [], activePlatform: source.platform || "cian",
+        feedUrl: source.url || "", feedName: source.feedName || "", serverBaseUrl: source.serverBaseUrl || "",
+        generatedLink: source.publishedUrl || "", generatedFeedId: source.publishedFeedId || ""
+      };
+      objects = structuredClone(workspace.objects || []);
+      originalObjects = structuredClone(workspace.originalObjects?.length ? workspace.originalObjects : workspace.objects || []);
+      activePlatform = workspace.activePlatform || source.platform || "cian";
+      activeMonitorPlatform = activePlatform;
+      appState.feedUrl = source.url || workspace.feedUrl || "";
+      appState.feedName = workspace.feedName || source.feedName || currentProject?.name || defaultFeedName(appState.feedUrl);
+      appState.serverBaseUrl = workspace.serverBaseUrl || source.serverBaseUrl || "";
+      appState.generatedLink = source.publishedUrl || workspace.generatedLink || "";
+      appState.generatedFeedId = source.publishedFeedId || workspace.generatedFeedId || feedSlugFromUrl(appState.generatedLink);
+      selectedId = "";
+      checkedIds = new Set();
+      selectedBrandLayoutUrls = new Set();
+      brandSelectionTouched = false;
+      validated = false;
+      return true;
+    }
+
+    function activateSource(sourceId) {
+      if (!projectSources.some(source => source.id === sourceId)) return;
+      if (hasActiveSource()) persistActiveSourceWorkspace();
+      activeSourceId = sourceId;
+      sourceEditorMode = "edit";
+      localStorage.setItem(activeSourceStorageKey, sourceId);
+      hydrateSourceWorkspace(sourceId);
+      renderAll();
+      save();
+      setLoadStatus("Рабочий фид выбран. Теперь можно редактировать его квартиры и настройки.", "ok");
+      showToast("Рабочий фид выбран");
+    }
+
+    function clearActiveSourceSelection() {
+      if (hasActiveSource()) persistActiveSourceWorkspace();
+      activeSourceId = "";
+      sourceEditorMode = "";
+      localStorage.removeItem(activeSourceStorageKey);
+      activePage = "source";
+      renderAll();
+    }
+
+    function startNewSourceDraft() {
+      if (hasActiveSource()) persistActiveSourceWorkspace();
+      activeSourceId = "";
+      sourceEditorMode = "create";
+      localStorage.removeItem(activeSourceStorageKey);
+      selectedId = "";
+      checkedIds = new Set();
+      renderAll();
+      document.querySelector("#sourceName")?.focus();
+      setLoadStatus("Новый фид: заполните поля и нажмите «Добавить источник».");
     }
 
     function loadChangeLog() {
@@ -6060,18 +6349,86 @@
       return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
     }
 
+    function renderSourceWorkspace() {
+      const source = getActiveSource();
+      const isDraft = sourceEditorMode === "create";
+      const isReady = Boolean(source || isDraft);
+      const select = document.querySelector("#activeSourceSelect");
+      const heading = document.querySelector("#activeSourceHeading");
+      const hint = document.querySelector("#activeSourceHint");
+      const links = document.querySelector("#activeSourceLinks");
+      const editor = document.querySelector("#sourceEditorFields");
+      const note = document.querySelector("#sourceEditorNote");
+      const sourceUrl = document.querySelector("#activeSourceUrl");
+      const publishedUrl = document.querySelector("#activePublishedUrl");
+      const publishedEmpty = document.querySelector("#activePublishedEmpty");
+      const loadButton = document.querySelector("#loadUrlBtn");
+      const importButton = document.querySelector("#importBtn");
+
+      if (select) {
+        select.innerHTML = `<option value="">Выберите фид для работы</option>${projectSources.map(item => {
+          const platform = platformProfiles[item.platform]?.name || "Фид";
+          return `<option value="${escapeXml(item.id)}">${escapeXml(item.name || platform)} · ${item.objectCount || 0} квартир</option>`;
+        }).join("")}`;
+        select.value = source?.id || "";
+      }
+      if (heading) heading.textContent = source?.name || (isDraft ? "Новый фид" : "Фид не выбран");
+      if (hint) hint.textContent = source
+        ? "Работаете с этим фидом: изменения, планировки и итоговая ссылка относятся только к нему."
+        : isDraft ? "Заполните источник и добавьте фид — после загрузки он станет рабочим."
+          : "Сначала выберите фид из списка или добавьте новый.";
+      if (editor) editor.disabled = !isReady;
+      if (note) {
+        note.classList.toggle("is-ready", isReady);
+        note.textContent = "Не включено: сначала выберите рабочий фид выше.";
+      }
+      if (loadButton) loadButton.textContent = source ? "Сохранить и обновить" : "Добавить источник";
+      if (importButton) importButton.textContent = source ? "Загрузить XML заново" : "Загрузить XML";
+
+      const values = source || (isDraft ? { name: "", url: "", requestedPlatform: "auto", interval: "manual" } : null);
+      if (values) {
+        document.querySelector("#sourceName").value = values.name || "";
+        document.querySelector("#feedUrl").value = values.url || "";
+        document.querySelector("#sourcePlatform").value = values.requestedPlatform || values.platform || "auto";
+        document.querySelector("#sourceInterval").value = values.interval || "manual";
+      } else {
+        document.querySelector("#sourceName").value = "";
+        document.querySelector("#feedUrl").value = "";
+        document.querySelector("#sourcePlatform").value = "auto";
+        document.querySelector("#sourceInterval").value = "manual";
+      }
+
+      if (links) links.hidden = !source;
+      if (sourceUrl && source) {
+        sourceUrl.href = source.url;
+        sourceUrl.textContent = source.url;
+        sourceUrl.title = source.url;
+      }
+      const publicUrl = source?.publishedUrl || "";
+      if (publishedUrl && publishedEmpty) {
+        publishedUrl.hidden = !publicUrl;
+        publishedEmpty.hidden = Boolean(publicUrl);
+        if (publicUrl) {
+          publishedUrl.href = publicUrl;
+          publishedUrl.textContent = publicUrl;
+          publishedUrl.title = publicUrl;
+        }
+      }
+    }
+
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
       node.innerHTML = projectSources.map(source => {
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
-        return `<article class="source-record">
+        const selected = source.id === activeSourceId;
+        return `<article class="source-record ${selected ? "is-selected" : ""}">
           <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
           <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span><small>${escapeXml(source.error || updated)}</small></span>
-          <div class="source-actions"><button type="button" data-source-sync="${source.id}">Обновить</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+          <div class="source-actions"><button type="button" data-source-select="${source.id}" aria-pressed="${selected}">${selected ? "Выбран" : "Выбрать"}</button><button type="button" data-source-sync="${source.id}">Обновить</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("") || `<div class="source-empty">Источников пока нет. Добавьте первую ссылку или загрузите XML-файл.</div>`;
     }
@@ -6111,7 +6468,8 @@
       [
         "feed-generator-cian-v2", "feed-generator-published-v1", "feed-generator-brand-profiles-v1",
         "feed-generator-monitor-v1", "feed-generator-change-log-v1", "feed-generator-complex-status-v1",
-        "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1"
+        "feed-generator-sources-v1", "feed-generator-monitor-notifications-v1",
+        "feed-generator-active-source-v1", "feed-generator-source-workspaces-v1"
       ].forEach(prefix => localStorage.removeItem(prefix + suffix));
       projects = projects.filter(item => item.id !== projectId);
       localStorage.setItem(projectIndexKey, JSON.stringify(projects));
@@ -6128,6 +6486,7 @@
 
     function renderPage() {
       const titles = { projects: "Проекты фидов", source: "Источники", complexes: "ЖК и дома", apartments: "Квартиры", branding: "Шаблон планировок", validator: "Проверка фида", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
+      if (pageRequiresActiveSource(activePage) && !hasActiveSource()) activePage = "source";
       const shell = document.querySelector("#appShell");
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", activePage === "validator");
@@ -6141,7 +6500,11 @@
       document.querySelectorAll("[data-nav]").forEach(item => {
         const stepIndex = stepOrder.indexOf(item.dataset.nav);
         const state = stepIndex < 0 ? "" : stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
+        const unavailable = pageRequiresActiveSource(item.dataset.nav) && !hasActiveSource();
         item.classList.toggle("active", item.dataset.nav === activePage);
+        item.disabled = unavailable;
+        item.setAttribute("aria-disabled", String(unavailable));
+        item.title = unavailable ? "Сначала выберите рабочий фид в разделе «Источники»" : "";
         if (state) item.dataset.state = state;
         else delete item.dataset.state;
         item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : !currentProject;
@@ -6152,7 +6515,11 @@
         const page = stepPages[button.dataset.step];
         const stepIndex = stepOrder.indexOf(page);
         const state = stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
+        const unavailable = pageRequiresActiveSource(page) && !hasActiveSource();
         button.dataset.state = state;
+        button.disabled = unavailable;
+        button.setAttribute("aria-disabled", String(unavailable));
+        button.title = unavailable ? "Сначала выберите рабочий фид" : "";
         if (page === activePage) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
       });
@@ -6164,6 +6531,12 @@
     }
 
     function switchPage(page) {
+      if (pageRequiresActiveSource(page) && !hasActiveSource()) {
+        activePage = "source";
+        renderPage();
+        showToast("Сначала выберите рабочий фид в разделе «Источники»");
+        return;
+      }
       if (page === activePage) return;
       activePage = page;
       if (document.startViewTransition) document.startViewTransition(() => renderPage());
@@ -6173,6 +6546,9 @@
     }
 
     const stepPages = { ".source-panel": "source", ".complexes-panel": "complexes", ".table-wrap": "apartments", ".brand-workflow-panel": "branding", ".quality-panel": "validator", ".publish-panel": "results", ".feeds-panel": "feeds" };
+    function pageRequiresActiveSource(page) {
+      return ["complexes", "apartments", "branding", "validator", "results", "feeds"].includes(page);
+    }
     document.querySelectorAll("[data-step]").forEach(button => {
       button.addEventListener("click", () => switchPage(stepPages[button.dataset.step]));
     });
@@ -6235,6 +6611,12 @@
     }
 
     function renderDetectedSource() {
+      if (!hasActiveSource()) {
+        document.querySelector("#detectedPlatform").textContent = "Не выбран";
+        document.querySelector("#detectedProvider").textContent = "—";
+        document.querySelector("#detectedCount").textContent = "—";
+        return;
+      }
       const profile = platformProfiles[activePlatform] || platformProfiles.cian;
       document.querySelector("#detectedPlatform").textContent = (appState.feedUrl || objects.length) ? profile.name : "Не загружен";
       document.querySelector("#detectedProvider").textContent = providerFromUrl(appState.feedUrl);
@@ -6419,7 +6801,7 @@
     }
 
     function currentFeedProjectKey() {
-      return normalizeProjectName(currentProject?.id || appState.feedName || appState.feedUrl || "current-feed");
+      return normalizeProjectName(activeSourceId || currentProject?.id || appState.feedName || appState.feedUrl || "current-feed");
     }
 
     function currentFeedProjectLabel() {
@@ -8422,6 +8804,7 @@ ${photos}
       renderResetControl();
       renderLayoutsList();
       syncBrandProfileWithCurrentFeed();
+      renderSourceWorkspace();
       renderBrandLayoutPicker();
       renderBrandPreview();
       renderBeforeAfterPreview();
@@ -8490,7 +8873,7 @@ ${photos}
     function renderFeedErrorPopover() {
       const panel = document.querySelector("#feedErrorPopover");
       if (!panel) return;
-      const shouldShow = Boolean(currentProject && feedErrorPanelActivated && activePage !== "projects");
+      const shouldShow = Boolean(currentProject && hasActiveSource() && feedErrorPanelActivated && activePage !== "projects");
       panel.hidden = !shouldShow;
       if (!shouldShow) return;
 
@@ -8614,6 +8997,17 @@ ${photos}
       if (loadFeedFromUrl.running) return;
       const input = document.querySelector("#feedUrl");
       const existingSource = projectSources.find(source => source.id === sourceId);
+      if (!existingSource && sourceEditorMode !== "create") {
+        setLoadStatus("Сначала выберите рабочий фид или нажмите «Добавить фид».", "bad");
+        return;
+      }
+      if (existingSource && existingSource.id !== activeSourceId) {
+        if (hasActiveSource()) persistActiveSourceWorkspace();
+        activeSourceId = existingSource.id;
+        sourceEditorMode = "edit";
+        localStorage.setItem(activeSourceStorageKey, existingSource.id);
+        hydrateSourceWorkspace(existingSource.id);
+      }
       const url = (existingSource?.url || input.value).trim();
       if (!url) {
         setLoadStatus("Вставьте ссылку на XML-фид.", "bad");
@@ -8661,34 +9055,23 @@ ${photos}
             if (Object.keys(changed).length) sourceOverrides.set(item.externalId, changed);
           });
         }
-        const withoutSource = objects.reduce((result, item) => {
-          const sourceIds = Array.isArray(item._sourceIds) ? item._sourceIds.filter(value => value !== id) : item._sourceId === id ? [] : item._sourceId ? [item._sourceId] : [];
-          if (item._sourceId !== id && !Array.isArray(item._sourceIds)) result.push(item);
-          else if (sourceIds.length) result.push({ ...item, _sourceId: sourceIds[0], _sourceIds: sourceIds });
-          return result;
-        }, []);
-        parsed.objects.forEach(rawSourceItem => {
+        const nextObjects = parsed.objects.map(rawSourceItem => {
           const sourceItem = sanitizeSourceImages(rawSourceItem);
           const overrides = sourceOverrides.get(sourceItem.externalId) || {};
-          const item = applySourceOverrides(sourceItem, overrides);
-          const duplicate = withoutSource.find(candidate => candidate.externalId === item.externalId);
-          if (duplicate) {
-            duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), id])];
-          } else {
-            withoutSource.push({ ...item, _sourceId: id, _sourceIds: [id] });
-          }
+          return { ...applySourceOverrides(sourceItem, overrides), _sourceId: id, _sourceIds: [id] };
         });
-        objects = withoutSource;
+        objects = nextObjects;
         originalObjects = structuredClone(objects);
         if (brandBadgeDataUrl && objects.some(item => sourceLayoutPhoto(item))) brandLayoutsDirty = true;
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
         brandSelectionTouched = false;
-        appState.feedUrl = projectSources[0]?.url || url;
-        appState.feedName = currentProject?.name || defaultFeedName(url);
+        appState.feedUrl = url;
+        appState.feedName = existingSource?.feedName || currentProject?.name || defaultFeedName(url);
         await restorePublishedFeedIdentity(url);
         const sourceRecord = {
+          ...existingSource,
           id,
           name: existingSource?.name || document.querySelector("#sourceName").value.trim() || platformProfiles[parsed.platform].name,
           url,
@@ -8702,14 +9085,17 @@ ${photos}
         const sourceIndex = projectSources.findIndex(source => source.id === id);
         if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
         else projectSources.push(sourceRecord);
+        activeSourceId = id;
+        sourceEditorMode = "edit";
+        localStorage.setItem(activeSourceStorageKey, id);
+        sourceWorkspaces[id] = workspaceFromCurrentState(sourceRecord);
+        localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
         feedErrorPanelActivated = true;
         feedErrorPanelMinimized = false;
         renderAll();
-        document.querySelector("#sourceName").value = "";
-        if (!existingSource) input.value = "";
         const correction = requestedPlatform !== "auto" && requestedPlatform !== parsed.platform ? ` Выбранный тип скорректирован на ${platformProfiles[parsed.platform].name}.` : "";
         setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}`, "ok");
         showToast(`Источник обновлён: ${parsed.objects.length} квартир`);
@@ -8725,14 +9111,15 @@ ${photos}
         loadFeedFromUrl.running = false;
         document.querySelector("#loadUrlBtn").disabled = false;
         document.querySelector("#loadUrlBtn").classList.remove("loading");
-        document.querySelector("#loadUrlBtn").textContent = "Добавить источник";
+        document.querySelector("#loadUrlBtn").textContent = getActiveSource() ? "Сохранить и обновить" : "Добавить источник";
       }
     }
 
     async function syncDueProjectSource() {
-      if (!currentProject || document.hidden || loadFeedFromUrl.running) return;
+      if (!currentProject || !hasActiveSource() || document.hidden || loadFeedFromUrl.running) return;
       const now = Date.now();
-      const due = projectSources.find(source => source.interval !== "manual" && now - new Date(source.updatedAt || 0).getTime() >= Number(source.interval) * 60 * 1000);
+      const due = getActiveSource();
+      if (due?.interval === "manual" || now - new Date(due?.updatedAt || 0).getTime() < Number(due?.interval || 0) * 60 * 1000) return;
       if (due) await loadFeedFromUrl(due.id);
     }
 
@@ -9443,21 +9830,25 @@ ${photos}
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
     document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
     document.querySelector("#projectSourceList").addEventListener("click", event => {
+      const selectButton = event.target.closest("[data-source-select]");
       const syncButton = event.target.closest("[data-source-sync]");
       const removeButton = event.target.closest("[data-source-remove]");
+      if (selectButton) activateSource(selectButton.dataset.sourceSelect);
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
       if (removeButton) {
         const id = removeButton.dataset.sourceRemove;
         const source = projectSources.find(item => item.id === id);
         if (!source || !confirm(`Удалить источник «${source.name}» и полученные только из него квартиры?`)) return;
         projectSources = projectSources.filter(item => item.id !== id);
-        objects = objects.reduce((result, item) => {
-          const remaining = (item._sourceIds || [item._sourceId]).filter(Boolean).filter(value => value !== id);
-          if (!item._sourceId && !item._sourceIds) result.push(item);
-          else if (remaining.length) result.push({ ...item, _sourceId: remaining[0], _sourceIds: remaining });
-          return result;
-        }, []);
-        originalObjects = structuredClone(objects);
+        delete sourceWorkspaces[id];
+        localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
+        if (activeSourceId === id) {
+          activeSourceId = "";
+          sourceEditorMode = "";
+          localStorage.removeItem(activeSourceStorageKey);
+          objects = [];
+          originalObjects = [];
+        }
         saveProjectSources();
         save();
         if (!objects.length) feedErrorPanelActivated = false;
@@ -9489,6 +9880,11 @@ ${photos}
         loadFeedFromUrl();
       }
     });
+    document.querySelector("#activeSourceSelect").addEventListener("change", event => {
+      if (event.target.value) activateSource(event.target.value);
+      else clearActiveSourceSelection();
+    });
+    document.querySelector("#newSourceBtn").addEventListener("click", startNewSourceDraft);
     document.querySelector("#fileInput").addEventListener("change", async event => {
       const file = event.target.files[0];
       if (!file) return;
@@ -9497,22 +9893,39 @@ ${photos}
         const parsed = file.name.endsWith(".xml") ? parseXmlFile(text, file.name) : { platform: "cian", objects: file.name.endsWith(".json") ? JSON.parse(text) : parseCsvFile(text) };
         const next = parsed.objects;
         if (!Array.isArray(next) || !next.length) throw new Error("Файл пустой");
-        const sourceId = crypto.randomUUID();
+        const existingSource = getActiveSource();
+        if (!existingSource && sourceEditorMode !== "create") throw new Error("Сначала выберите рабочий фид или нажмите «Добавить фид».");
+        const sourceId = existingSource?.id || crypto.randomUUID();
         activePlatform = parsed.platform || "cian";
         activeMonitorPlatform = activePlatform;
-        next.forEach(item => {
-          const duplicate = objects.find(candidate => candidate.externalId === item.externalId);
-          if (duplicate) duplicate._sourceIds = [...new Set([...(duplicate._sourceIds || [duplicate._sourceId]).filter(Boolean), sourceId])];
-          else objects.push({ ...item, _sourceId: sourceId, _sourceIds: [sourceId] });
-        });
+        objects = next.map(item => ({ ...sanitizeSourceImages(item), _sourceId: sourceId, _sourceIds: [sourceId] }));
         originalObjects = structuredClone(objects);
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
         brandSelectionTouched = false;
-        appState.feedUrl = projectSources[0]?.url || file.name;
-        appState.feedName = currentProject?.name || defaultFeedName(file.name);
-        projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "" });
+        appState.feedUrl = existingSource?.url || file.name;
+        appState.feedName = existingSource?.feedName || currentProject?.name || defaultFeedName(file.name);
+        const sourceRecord = {
+          ...existingSource,
+          id: sourceId,
+          name: existingSource?.name || document.querySelector("#sourceName").value.trim() || file.name,
+          url: existingSource?.url || file.name,
+          platform: activePlatform,
+          requestedPlatform: existingSource?.requestedPlatform || "auto",
+          interval: existingSource?.interval || "manual",
+          objectCount: next.length,
+          updatedAt: new Date().toISOString(),
+          error: ""
+        };
+        const sourceIndex = projectSources.findIndex(source => source.id === sourceId);
+        if (sourceIndex >= 0) projectSources[sourceIndex] = sourceRecord;
+        else projectSources.push(sourceRecord);
+        activeSourceId = sourceId;
+        sourceEditorMode = "edit";
+        localStorage.setItem(activeSourceStorageKey, sourceId);
+        sourceWorkspaces[sourceId] = workspaceFromCurrentState(sourceRecord);
+        localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
         saveProjectSources();
         document.querySelector("#feedName").value = appState.feedName;
         save();
