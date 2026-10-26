@@ -5974,7 +5974,7 @@
         showToast("Сначала добавьте или выберите фид");
         return false;
       }
-      source.objectCount = sourceObjects(source.id).length;
+      source.objectCount = sourceObjectCount(source);
       source.updatedAt = new Date().toISOString();
       source.error = "";
       const persistence = await persistProjectStateNow();
@@ -6047,6 +6047,41 @@
     function sourceObjects(sourceId) {
       if (sourceId === "all") return objects;
       return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(sourceId));
+    }
+
+    // Older project snapshots may contain the imported objects and source
+    // metadata without `_sourceId`/`_sourceIds` on every object. Keep the
+    // feed list accurate across browsers by falling back to the persisted
+    // source count and then to the server summary.
+    function sourceSummaryRecord(source) {
+      if (!source) return null;
+      const summaries = [
+        ...(Array.isArray(currentProject?.summary?.sources) ? currentProject.summary.sources : []),
+        ...(Array.isArray(currentProject?.summary?.feeds) ? currentProject.summary.feeds : [])
+      ];
+      return summaries.find(item => (
+        String(item.sourceId || item.id || "") === String(source.id || "")
+        || (item.sourceUrl && source.url && item.sourceUrl === source.url)
+        || (item.url && source.url && item.url === source.url)
+        || (item.name && source.name && item.name === source.name)
+      )) || null;
+    }
+
+    function sourceObjectCount(source) {
+      if (!source) return 0;
+      const scopedCount = sourceObjects(source.id).length;
+      if (scopedCount > 0) return scopedCount;
+      const persistedCount = Number(source.objectCount);
+      if (Number.isFinite(persistedCount) && persistedCount > 0) return persistedCount;
+      const summaryCount = Number(sourceSummaryRecord(source)?.objectCount);
+      if (Number.isFinite(summaryCount) && summaryCount > 0) return summaryCount;
+
+      // A legacy single-feed snapshot can have objects but no source metadata.
+      // Attribute them only when the source is unambiguous; for multiple
+      // sources we avoid inventing a split.
+      const hasSourceMetadata = objects.some(item => item?._sourceId || (Array.isArray(item?._sourceIds) && item._sourceIds.length));
+      if (!hasSourceMetadata && objects.length && (projectSources.length === 1 || activeSourceId === source.id)) return objects.length;
+      return 0;
     }
 
     // A publication can be stored under the legacy `all` key (older projects)
@@ -7534,7 +7569,7 @@
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
           <div class="source-identity"><span class="source-label">Название фида</span><strong>${escapeXml(source.name || platform)}</strong></div>
           <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
-          <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
+          <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${sourceObjectCount(source).toLocaleString("ru-RU")} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : issueCount ? `${issueCount} ошибок` : "Работает"}</span>
           <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>Следующее: ${escapeXml(nextSync.label)}${source.error ? `<br>${escapeXml(source.error)}` : issueCount ? `<br>Ошибки в объявлениях: ${issueCount}` : ""}</small></span>
           <div class="source-actions"><button type="button" class="primary" data-source-edit="${source.id}">Редактировать фид</button><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
@@ -7589,7 +7624,8 @@
         const platformValues = [...new Set(sourceRecords.map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
         const platformKey = platformValues[0] || state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
         const platform = platformValues.length ? platformValues.map(value => platformNames[value] || value).join(" · ") : (platformNames[platformKey] || platformKey);
-        const objectCount = state.objects?.length || project.summary?.objectCount || 0;
+        const sourceObjectTotal = sourceRecords.reduce((total, source) => total + (Number(source.objectCount) > 0 ? Number(source.objectCount) : 0), 0);
+        const objectCount = state.objects?.length || project.summary?.objectCount || sourceObjectTotal || 0;
         const archived = project.status === "archived";
         const hasOutput = Boolean(state.generatedLink || project.summary?.feeds?.length);
         const health = project.summary?.feedHealth || "";
@@ -7882,7 +7918,7 @@
           const isPublished = Boolean(publication.id || publication.url);
           const updatedAt = publication.updatedAt || source.updatedAt;
           const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
-          const objectCount = sourceObjects(source.id).length;
+          const objectCount = sourceObjectCount(source);
           const issueCount = sourceIssueCount(source.id);
           const nextSync = sourceNextSync(source);
           const healthLabel = source.error ? `Ошибка синхронизации: ${source.error}` : issueCount ? `Ошибки в объявлениях: ${issueCount}` : "Ошибок не найдено";

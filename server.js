@@ -1342,8 +1342,25 @@ async function handleApi(req, res, url) {
       const projectFeeds = feeds.filter(feed => feed.ownerId === actor.userId && feed.projectId === project.id);
       const saved = await projectStateStore.get(actor.userId, project.id);
       const editor = saved.state?.["feed-generator-cian-v2-" + project.id];
+      const savedSources = saved.state?.["feed-generator-sources-v1-" + project.id];
+      const sourceRecords = Array.isArray(savedSources) ? savedSources : [];
+      const editorObjects = Array.isArray(editor?.objects) ? editor.objects : [];
+      const sourceSummaries = sourceRecords.map(source => ({
+        id: source.id || "",
+        sourceId: source.id || "",
+        sourceUrl: source.url || "",
+        name: source.name || "",
+        platform: source.platform || "",
+        objectCount: Number(source.objectCount || 0),
+        updatedAt: source.updatedAt || null,
+        lastSuccessAt: null,
+        nextRunAt: null,
+        stale: false,
+        autoSyncError: source.error || ""
+      }));
       const stale = projectFeeds.some(feed => feed.feedStale || (feed.nextAutoSyncAt && new Date(feed.nextAutoSyncAt).getTime() < Date.now() && feed.autoSyncError));
-      return { ...project, summary: { sourceCount: Array.isArray(saved.state?.["feed-generator-sources-v1-" + project.id]) ? saved.state["feed-generator-sources-v1-" + project.id].length : 0, objectCount: Number(editor?.objects?.length || projectFeeds.at(0)?.objectCount || 0), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", feeds: projectFeeds.map(feed => ({ id: feed.id, name: feed.name, url: feed.url, platform: feed.platform, contextKey: feed.contextKey || "", complexName: feed.complexName || "", objectCount: feed.objectCount, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
+      const sourceObjectTotal = sourceSummaries.reduce((total, source) => total + (Number(source.objectCount) > 0 ? Number(source.objectCount) : 0), 0);
+      return { ...project, summary: { sourceCount: sourceRecords.length, objectCount: Number(editorObjects.length || sourceObjectTotal || projectFeeds.reduce((total, feed) => total + (Number(feed.objectCount) || 0), 0)), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", sources: sourceSummaries, feeds: projectFeeds.map(feed => ({ id: feed.id, sourceId: feed.sourceId || "", sourceUrl: feed.sourceUrl || "", name: feed.name, url: feed.url, platform: feed.platform, contextKey: feed.contextKey || "", complexName: feed.complexName || "", objectCount: feed.objectCount, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
     }));
     return send(res, 200, { projects: summaries, limit: actor.user.projectLimit || PLAN.minProjects });
   }
