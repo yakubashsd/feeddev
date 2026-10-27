@@ -19,6 +19,11 @@ const { createSupportTicketStore } = require("./support-tickets");
 const { createPlatega } = require("./platega");
 const { inspectLaunchReadiness } = require("./launch-readiness");
 const { records: feedRecords, synchronizeFeed, trafficPolicyExcludedIds } = require("./feed-sync");
+const { feedTransition, healthSnapshot } = require("./feed-health");
+const { createFeedImportJobs } = require("./feed-import-jobs");
+const { diffFeeds } = require("./feed-diff");
+const { summarizeDiagnostics } = require("./feed-diagnostics");
+const { platformHealthMatrix } = require("./feed-platform-health");
 const { download: safeDownload, downloadBuffer: safeDownloadBuffer } = require("./feed-monitor");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -79,6 +84,7 @@ const LEGAL_PROFILE_READY = Boolean(
 const rateBuckets = new Map();
 const MONITOR_INTERVAL_MINUTES = 12 * 60;
 const telegramLinks = require('./telegram-link').createTelegramLinks({file:path.join(DATA_DIR,'telegram-links.json')});
+const feedImportJobs = createFeedImportJobs({ download: safeDownload, concurrency: 2 });
 const saasStore = APP_MODE === "external" && process.env.SAAS_DATA_SECRET
   ? createSaasStore({ dataDir: DATA_DIR, secret: process.env.SAAS_DATA_SECRET })
   : null;
@@ -432,6 +438,19 @@ async function readReleaseXml(feed, release) {
   }
   const target = path.join(FEEDS_DIR, "releases", feed.slug, `${release.id}.xml`);
   if (!target.startsWith(path.join(FEEDS_DIR, "releases") + path.sep) || !fs.existsSync(target)) throw new Error("Архив выпуска не найден.");
+  return fs.readFileSync(target, "utf8");
+}
+
+async function readPublishedFeedXml(feed) {
+  if (!feed) throw new Error("Фид не найден.");
+  if (usesBlobStorage()) {
+    if (!feed.blobUrl) throw new Error("Опубликованный XML недоступен.");
+    const response = await fetch(feed.blobUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error("Опубликованный XML недоступен.");
+    return response.text();
+  }
+  const target = path.join(FEEDS_DIR, `${feed.slug}.xml`);
+  if (!target.startsWith(FEEDS_DIR + path.sep) || !fs.existsSync(target)) throw new Error("Опубликованный XML не найден.");
   return fs.readFileSync(target, "utf8");
 }
 
@@ -831,6 +850,20 @@ async function saveFeed(req, payload, existingSlug = "", actor = null, historyAc
     autoSyncError: "",
     feedStale: false,
     syncFailureCount: 0,
+    lastImportStatus: "success",
+    lastImportAttemptAt: now,
+    lastImportSuccessAt: now,
+    lastImportError: "",
+    lastImportWarning: "",
+    lastSourceObjectCount: Number(payload.objectCount || 0),
+    lastGoodObjectCount: Number(payload.objectCount || 0),
+    lastSyncSummary: healthSnapshot({
+      status: "healthy",
+      previousCount: Number(existing?.objectCount || 0),
+      currentCount: Number(payload.objectCount || 0),
+      attemptedAt: now,
+      summary: { sourceCount: Number(payload.objectCount || 0), outputCount: Number(payload.objectCount || 0) }
+    }),
     name: data.name || `${data.platform} feed`,
     objectCount: Number(payload.objectCount || 0),
     file: `feeds/${slug}.xml`,
@@ -876,6 +909,20 @@ async function syncPublishedFeed(record) {
   if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
   if (result.invalidSourceRecords) throw new Error(`В источнике есть объявления без ID или цены: ${result.invalidSourceRecords}`);
   if (result.publishedDuplicateIds.length) throw new Error(`В опубликованном фиде повторяются ID: ${result.publishedDuplicateIds.slice(0, 5).join(", ")}`);
+  const transition = feedTransition(record.objectCount, result.outputCount);
+  if (transition.blocked) {
+    const error = new Error(transition.warning);
+    error.code = "FEED_COUNT_DROP_BLOCKED";
+    error.status = 409;
+    error.health = healthSnapshot({
+      status: "blocked",
+      previousCount: record.objectCount,
+      currentCount: result.outputCount,
+      error: transition.warning,
+      summary: result
+    });
+    throw error;
+  }
   validateFeedPayload({ xml: result.xml, platform: record.platform, objectCount: result.outputCount });
   if (result.updated || result.added || result.removed) {
     const checksum = crypto.createHash("sha256").update(publishedXml).digest("hex");
@@ -922,6 +969,20 @@ async function syncPublishedFeed(record) {
   record.lastSuccessAt = now.toISOString();
   record.feedStale = false;
   record.syncFailureCount = 0;
+  record.lastImportStatus = "success";
+  record.lastImportAttemptAt = now.toISOString();
+  record.lastImportSuccessAt = now.toISOString();
+  record.lastImportError = "";
+  record.lastImportWarning = transition.warning;
+  record.lastSourceObjectCount = result.sourceCount;
+  record.lastGoodObjectCount = result.outputCount;
+  record.lastSyncSummary = healthSnapshot({
+    status: "healthy",
+    previousCount: transition.previousCount,
+    currentCount: transition.currentCount,
+    attemptedAt: now.toISOString(),
+    summary: result
+  });
   record.lastSyncErrorNotification = "";
   record.telegramSyncNotificationError = "";
   record.updatedAt = now.toISOString();
@@ -967,6 +1028,17 @@ async function runScheduledFeedSync() {
           record.autoSyncError = error.message || "Не удалось обновить источник";
           record.lastSyncErrorAt = attemptedAt.toISOString();
           record.syncFailureCount = Number(record.syncFailureCount || 0) + 1;
+          record.lastImportStatus = error.code === "FEED_COUNT_DROP_BLOCKED" ? "blocked" : "failed";
+          record.lastImportAttemptAt = attemptedAt.toISOString();
+          record.lastImportError = record.autoSyncError;
+          record.lastImportWarning = error.code === "FEED_COUNT_DROP_BLOCKED" ? record.autoSyncError : "";
+          record.lastSyncSummary = error.health || healthSnapshot({
+            status: "failed",
+            previousCount: record.objectCount,
+            currentCount: record.objectCount,
+            attemptedAt: attemptedAt.toISOString(),
+            error: record.autoSyncError
+          });
           const retryMinutes = Math.min(60, 2 ** Math.min(5, record.syncFailureCount - 1));
           record.nextRunAt = new Date(attemptedAt.getTime() + retryMinutes * 60 * 1000).toISOString();
           record.feedStale = !record.lastSuccessAt || attemptedAt.getTime() - new Date(record.lastSuccessAt).getTime() > interval * 2 * 60 * 1000;
@@ -1380,7 +1452,30 @@ async function handleApi(req, res, url) {
       }));
       const stale = projectFeeds.some(feed => feed.feedStale || (feed.nextAutoSyncAt && new Date(feed.nextAutoSyncAt).getTime() < Date.now() && feed.autoSyncError));
       const sourceObjectTotal = sourceSummaries.reduce((total, source) => total + (Number(source.objectCount) > 0 ? Number(source.objectCount) : 0), 0);
-      return { ...project, summary: { sourceCount: sourceRecords.length, objectCount: Number(editorObjects.length || sourceObjectTotal || projectFeeds.reduce((total, feed) => total + (Number(feed.objectCount) || 0), 0)), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", sources: sourceSummaries, feeds: projectFeeds.map(feed => ({ id: feed.id, sourceId: feed.sourceId || "", sourceUrl: feed.sourceUrl || "", name: feed.name, url: feed.url, platform: feed.platform, contextKey: feed.contextKey || "", complexName: feed.complexName || "", objectCount: feed.objectCount, createdAt: feed.createdAt || null, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
+      const publishedSourceIds = new Set(projectFeeds.map(feed => String(feed.sourceId || "")).filter(Boolean));
+      const matrixRecords = [
+        ...projectFeeds,
+        ...sourceRecords
+          .filter(source => !publishedSourceIds.has(String(source.id || "")))
+          .map(source => {
+            const summary = sourceSummaries.find(item => String(item.sourceId || item.id || "") === String(source.id || ""));
+            return {
+              ...source,
+              id: `source:${source.id || source.url || source.name || "unknown"}`,
+              projectId: project.id,
+              sourceId: source.id || "",
+              objectCount: source.objectCount || summary?.objectCount || 0,
+              lastImportStatus: source.lastImportStatus || summary?.lastImportStatus || "pending",
+              lastImportAttemptAt: source.lastImportAttemptAt || summary?.lastImportAttemptAt || null,
+              lastImportSuccessAt: source.lastImportSuccessAt || summary?.lastImportSuccessAt || null,
+              lastImportError: source.error || source.lastImportError || summary?.lastImportError || "",
+              lastImportWarning: source.lastImportWarning || summary?.lastImportWarning || "",
+              feedStale: Boolean(source.feedStale || summary?.stale)
+            };
+          })
+      ];
+      const platformHealth = platformHealthMatrix(matrixRecords, { projectId: project.id });
+      return { ...project, summary: { sourceCount: sourceRecords.length, objectCount: Number(editorObjects.length || sourceObjectTotal || projectFeeds.reduce((total, feed) => total + (Number(feed.objectCount) || 0), 0)), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", platformHealth, sources: sourceSummaries, feeds: projectFeeds.map(feed => ({ id: feed.id, sourceId: feed.sourceId || "", sourceUrl: feed.sourceUrl || "", name: feed.name, url: feed.url, platform: feed.platform, contextKey: feed.contextKey || "", complexName: feed.complexName || "", objectCount: feed.objectCount, lastGoodObjectCount: Number(feed.lastGoodObjectCount ?? feed.objectCount ?? 0), lastSourceObjectCount: Number(feed.lastSourceObjectCount ?? feed.objectCount ?? 0), lastImportStatus: feed.lastImportStatus || "unknown", lastImportAttemptAt: feed.lastImportAttemptAt || null, lastImportSuccessAt: feed.lastImportSuccessAt || feed.lastSuccessAt || feed.lastAutoSyncAt || null, lastImportError: feed.lastImportError || feed.autoSyncError || "", lastImportWarning: feed.lastImportWarning || "", createdAt: feed.createdAt || null, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
     }));
     return send(res, 200, { projects: summaries, limit: actor.user.projectLimit || PLAN.minProjects });
   }
@@ -1658,6 +1753,60 @@ async function handleApi(req, res, url) {
     return send(res, 200, { feeds: projectId ? ownedFeeds.filter(feed => feed.projectId === projectId) : ownedFeeds });
   }
 
+  const feedHealthMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/health$/i);
+  if (req.method === "GET" && feedHealthMatch) {
+    const feeds = await readFeeds();
+    const feed = feeds.find(item => item.slug === feedHealthMatch[1]);
+    if (!feed || (APP_MODE === "external" && feed.ownerId !== actor?.userId)) return sendError(res, 404, "Фид не найден.");
+    return send(res, 200, {
+      feedId: feed.id,
+      name: feed.name,
+      platform: feed.platform,
+      objectCount: Number(feed.objectCount || 0),
+      lastGoodObjectCount: Number(feed.lastGoodObjectCount ?? feed.objectCount ?? 0),
+      lastSourceObjectCount: Number(feed.lastSourceObjectCount ?? feed.objectCount ?? 0),
+      lastImportStatus: feed.lastImportStatus || "unknown",
+      lastImportAttemptAt: feed.lastImportAttemptAt || null,
+      lastImportSuccessAt: feed.lastImportSuccessAt || feed.lastSuccessAt || null,
+      lastImportError: feed.lastImportError || feed.autoSyncError || "",
+      lastImportWarning: feed.lastImportWarning || "",
+      lastSyncSummary: feed.lastSyncSummary || null,
+      nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null,
+      stale: Boolean(feed.feedStale)
+    });
+  }
+
+  const feedPreviewMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/preview$/i);
+  if (req.method === "POST" && feedPreviewMatch) {
+    const feeds = await readFeeds();
+    const feed = feeds.find(item => item.slug === feedPreviewMatch[1]);
+    if (!feed || (APP_MODE === "external" && feed.ownerId !== actor?.userId)) return sendError(res, 404, "Фид не найден.");
+    const payload = await parseBody(req);
+    const data = validateFeedPayload({
+      xml: payload.xml,
+      platform: payload.platform || feed.platform,
+      objectCount: payload.objectCount,
+      sourceUrl: payload.sourceUrl || feed.sourceUrl,
+      name: payload.name || feed.name
+    });
+    const previousXml = await readPublishedFeedXml(feed);
+    const diff = diffFeeds(previousXml, data.xml);
+    return send(res, 200, {
+      feedId: feed.id,
+      ...diff,
+      requiresConfirmation: diff.hasChanges
+    });
+  }
+
+  const feedDiagnosticsMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/diagnostics$/i);
+  if (req.method === "GET" && feedDiagnosticsMatch) {
+    const feeds = await readFeeds();
+    const feed = feeds.find(item => item.slug === feedDiagnosticsMatch[1]);
+    if (!feed || (APP_MODE === "external" && feed.ownerId !== actor?.userId)) return sendError(res, 404, "Фид не найден.");
+    const xml = await readPublishedFeedXml(feed);
+    return send(res, 200, { feedId: feed.id, name: feed.name, ...summarizeDiagnostics(xml, feed.platform) });
+  }
+
   if (url.pathname === '/api/monitor') {
     if(process.env.VERCEL)return sendError(res,503,'Серверное расписание требует постоянно работающего Node-процесса. Проверьте конфигурацию сервиса.');
     const project=String(url.searchParams.get('project')||'default');
@@ -1716,10 +1865,29 @@ async function handleApi(req, res, url) {
     return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Планировка не найдена." });
   }
 
+  const feedImportJobMatch = url.pathname.match(/^\/api\/(?:feeds\/import|feeds-import)\/([a-f0-9-]+)$/i);
+  if (feedImportJobMatch && ["GET", "DELETE"].includes(req.method)) {
+    const ownerId = APP_MODE === "external" ? actor?.userId : AUTH_USERNAME;
+    const job = req.method === "DELETE"
+      ? feedImportJobs.cancel(feedImportJobMatch[1], ownerId)
+      : feedImportJobs.get(feedImportJobMatch[1], ownerId);
+    if (!job) return sendError(res, 404, "Задача импорта не найдена.");
+    return send(res, 200, job);
+  }
+
   if (req.method === "POST" && ["/api/feeds/import", "/api/feeds-import"].includes(url.pathname)) {
     const payload = await parseBody(req);
     const sourceUrl = String(payload.url || "").trim();
     if (!sourceUrl) return sendError(res, 400, "Передайте ссылку на фид.");
+    if (payload.async === true) {
+      try {
+        const ownerId = APP_MODE === "external" ? actor?.userId : AUTH_USERNAME;
+        const job = feedImportJobs.create(sourceUrl, ownerId);
+        return send(res, 202, job);
+      } catch (error) {
+        return sendError(res, 422, error.message || "Ссылка на фид некорректна.");
+      }
+    }
     let xml;
     try {
       xml = await safeDownload(sourceUrl);

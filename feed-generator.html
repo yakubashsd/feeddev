@@ -4709,6 +4709,21 @@
     body.client-ui .overview-alert:first-child { border-top:0; }
     body.client-ui .overview-alert strong { font-weight:700; }
     body.client-ui .overview-alert span { color:var(--lf-muted); font-size:12px; }
+    body.client-ui .platform-health-card { margin-top:14px; }
+    body.client-ui .platform-health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:16px; }
+    body.client-ui .platform-health-row { display:grid; gap:9px; min-width:0; padding:14px; border:1px solid var(--lf-line); border-radius:10px; background:var(--lf-surface-2); }
+    body.client-ui .platform-health-head { display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; }
+    body.client-ui .platform-health-name { display:flex; align-items:center; gap:8px; min-width:0; font-size:13px; font-weight:800; }
+    body.client-ui .platform-health-name span:last-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    body.client-ui .platform-health-status { display:inline-flex; align-items:center; min-height:24px; padding:3px 8px; border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; }
+    body.client-ui .platform-health-status.is-healthy { color:var(--lf-green); background:var(--lf-green-bg); }
+    body.client-ui .platform-health-status.is-error, body.client-ui .platform-health-status.is-blocked { color:var(--lf-red); background:var(--lf-red-bg); }
+    body.client-ui .platform-health-status.is-stale { color:#9a6500; background:#fff4d6; }
+    body.client-ui .platform-health-status.is-pending { color:var(--lf-muted); background:var(--lf-surface); }
+    body.client-ui .platform-health-meta { display:grid; gap:4px; color:var(--lf-muted); font-size:11px; line-height:1.4; }
+    body.client-ui .platform-health-meta strong { color:var(--lf-text); font-variant-numeric:tabular-nums; }
+    body.client-ui .platform-health-open { justify-self:start; padding:0; border:0; background:transparent; color:var(--lf-blue); font-size:11px; font-weight:800; }
+    body.client-ui .platform-health-empty { margin-top:16px; padding:14px; border:1px dashed var(--lf-line); border-radius:10px; color:var(--lf-muted); font-size:12px; }
     body.client-ui .text-button { padding:4px 0; border:0; background:transparent; color:var(--lf-blue); font-size:12px; font-weight:700; }
     body.client-ui .projects-heading h1 { font-size:clamp(28px,3vw,40px); line-height:1.05; letter-spacing:-1.2px; }
     body.client-ui .projects-heading p { max-width:680px; font-size:14px; color:var(--lf-muted); }
@@ -5024,6 +5039,7 @@
       <section class="project-overview page-hidden" data-page="overview">
         <div class="overview-heading"><div><h1 id="overviewTitle">Список фидов</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
         <section class="overview-card overview-published"><div class="overview-card-head"><div><h2>Фиды</h2><p class="panel-caption">Выберите фид для редактирования или добавьте новый.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
+        <section class="overview-card platform-health-card"><div class="overview-card-head"><div><h2>Состояние по площадкам</h2><p class="panel-caption">Сводка последней серверной синхронизации по каждому фиду.</p></div></div><div id="overviewPlatformHealth" class="platform-health-grid"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
         <div class="projects-heading"><div><h1>Проекты</h1><p>В одном проекте можно работать с несколькими фидами и публиковать каждый по отдельной ссылке.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
@@ -8071,9 +8087,69 @@
       return states;
     }
 
+    async function openFeedDiagnostics(sourceId) {
+      const source = projectSources.find(item => item.id === sourceId);
+      const publication = publicationForSource(sourceId);
+      setSourceContext(sourceId);
+      save();
+      switchPage("apartments");
+      if (!publication?.id) {
+        showToast("Фид ещё не опубликован. Открыта проверка объектов в редакторе.");
+        return;
+      }
+      try {
+        const response = await fetchWithTimeout(`/api/feeds/${encodeURIComponent(publication.id)}/diagnostics`, { credentials: "same-origin", cache: "no-store" }, 20000);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.error || "Не удалось получить диагностику фида.");
+        const summary = [
+          `ошибок: ${Number(data.errorCount || 0)}`,
+          `предупреждений: ${Number(data.warningCount || 0)}`,
+          `объектов: ${Number(data.objectCount || 0)}`
+        ].join(", ");
+        showToast(`${source?.name || "Фид"}: ${summary}`);
+      } catch (error) {
+        showToast(error.message || "Диагностика временно недоступна.");
+      }
+    }
+
     function renderProjectOverview() {
       if (!currentProject) return;
       document.querySelector("#overviewTitle").textContent = "Список фидов";
+      const platformHealthTarget = document.querySelector("#overviewPlatformHealth");
+      if (platformHealthTarget) {
+        const statusLabels = { healthy: "Работает", error: "Ошибка", blocked: "Остановлено", stale: "Устарел", pending: "Ожидает проверки" };
+        const serverPlatformRows = Array.isArray(currentProject.summary?.platformHealth) ? currentProject.summary.platformHealth : [];
+        const platformRows = serverPlatformRows.length ? serverPlatformRows : projectSources.map(source => {
+          const sourceHealth = sourceSummaryRecord(source) || {};
+          const importStatus = String(source.lastImportStatus || sourceHealth.lastImportStatus || "").toLowerCase();
+          const error = source.error || sourceHealth.lastImportError || "";
+          const status = importStatus === "blocked" ? "blocked" : error || importStatus === "failed" || importStatus === "error" ? "error" : source.feedStale || sourceHealth.stale ? "stale" : importStatus === "success" ? "healthy" : "pending";
+          return {
+            feedId: source.id,
+            sourceId: source.id,
+            name: source.name,
+            platform: source.platform,
+            platformLabel: platformProfiles[source.platform]?.name || source.platform || "Площадка",
+            status,
+            objectCount: sourceObjectCount(source),
+            lastImportSuccessAt: source.lastImportSuccessAt || sourceHealth.lastImportSuccessAt || null,
+            lastImportAttemptAt: source.lastImportAttemptAt || sourceHealth.lastImportAttemptAt || null,
+            error,
+            warning: source.lastImportWarning || sourceHealth.lastImportWarning || ""
+          };
+        });
+        platformHealthTarget.innerHTML = platformRows.length
+          ? platformRows.map(row => {
+            const status = statusLabels[row.status] || "Ожидает проверки";
+            const statusClass = `is-${escapeXml(row.status || "pending")}`;
+            const count = Number(row.objectCount || 0).toLocaleString("ru-RU");
+            const checkedAt = row.lastImportSuccessAt || row.lastImportAttemptAt;
+            const checked = checkedAt ? new Date(checkedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "ещё не запускалась";
+            const message = row.error || row.warning || `Последняя проверка: ${checked}`;
+            return `<article class="platform-health-row"><div class="platform-health-head"><div class="platform-health-name">${platformMark(row.platform)}<span>${escapeXml(row.platformLabel || row.platform || "Площадка")}</span></div><span class="platform-health-status ${statusClass}">${escapeXml(status)}</span></div><div class="platform-health-meta"><span>Фид: <strong>${escapeXml(row.name || "Без названия")}</strong></span><span>Объектов: <strong>${count}</strong> · ${escapeXml(message)}</span></div>${row.sourceId ? `<button type="button" class="platform-health-open" data-platform-health-source="${escapeXml(row.sourceId)}">Открыть диагностику →</button>` : ""}</article>`;
+          }).join("")
+          : `<div class="platform-health-empty">Добавьте фид, чтобы увидеть состояние синхронизации по площадкам.</div>`;
+      }
       const publishedList = document.querySelector("#overviewPublishedFeeds");
       if (publishedList) {
         // The overview is the project-level feed switcher. Show every feed,
@@ -8089,8 +8165,14 @@
           const objectCount = sourceObjectCount(source);
           const issueCount = sourceIssueCount(source.id);
           const nextSync = sourceNextSync(source);
-          const healthLabel = source.error ? `Ошибка синхронизации: ${source.error}` : issueCount ? `Ошибки в объявлениях: ${issueCount}` : "Ошибок не найдено";
-          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
+          const serverHealth = sourceSummaryRecord(source);
+          const healthIssue = source.error || serverHealth?.lastImportError || serverHealth?.lastImportWarning || "";
+          const healthLabel = healthIssue
+            ? `Требует внимания: ${healthIssue}`
+            : issueCount
+              ? `Ошибки в объявлениях: ${issueCount}`
+              : serverHealth?.lastImportStatus === "success" ? "Синхронизация успешна" : "Ошибок не найдено";
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${healthIssue || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-diagnostics="${escapeXml(source.id)}">Диагностика</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
         }).join("");
         const complexRows = Object.entries(appState.publishedFeeds || {}).filter(([key, publication]) => publication?.complexName && publication?.id && key.includes("::complex::")).map(([key, publication]) => {
           const source = projectSources.find(item => item.id === publication.sourceId) || projectSources.find(item => item.url === publication.sourceUrl);
@@ -8132,6 +8214,18 @@
         button.onclick = event => {
           event.stopPropagation();
           loadFeedFromUrl(button.dataset.sourceSync);
+        };
+      });
+      document.querySelectorAll(".project-overview [data-source-diagnostics]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          openFeedDiagnostics(button.dataset.sourceDiagnostics);
+        };
+      });
+      document.querySelectorAll(".project-overview [data-platform-health-source]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          openFeedDiagnostics(button.dataset.platformHealthSource);
         };
       });
       document.querySelectorAll(".project-overview [data-source-rename]").forEach(button => {
@@ -11424,7 +11518,7 @@ ${photos}
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ url, async: true })
         });
       } catch {
         throw new Error("Не удалось связаться с сервером. Проверьте соединение и повторите попытку.");
@@ -11434,8 +11528,26 @@ ${photos}
       if (!response.ok) {
         throw new Error(data?.error || `Сервер вернул ошибку ${response.status}`);
       }
-      if (!data?.xml) throw new Error("Сервер не вернул XML источника.");
-      return data.xml;
+      if (response.status === 200 && data?.xml) return data.xml;
+      if (response.status !== 202 || !data?.id) throw new Error("Сервер не создал задачу импорта.");
+      fetchFeedXmlByUrl.jobId = data.id;
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        const statusResponse = await fetchWithTimeout(`/api/feeds-import/${encodeURIComponent(data.id)}`, { credentials: "same-origin", cache: "no-store" }, 10000);
+        const status = await statusResponse.json().catch(() => ({}));
+        if (!statusResponse.ok) throw new Error(status?.error || `Сервер вернул ошибку ${statusResponse.status}`);
+        if (status.status === "completed" && status.xml) return status.xml;
+        if (status.status === "failed") throw new Error(status.error || "Не удалось загрузить XML-фид.");
+        if (status.status === "canceled") throw new Error("Загрузка отменена.");
+        setLoadStatus(`Загружаю фид на сервере… ${Number(status.progress || 0)}%`);
+      }
+    }
+
+    async function cancelFeedImport() {
+      const jobId = fetchFeedXmlByUrl.jobId;
+      if (!jobId) return;
+      await fetch(`/api/feeds-import/${encodeURIComponent(jobId)}`, { method: "DELETE", credentials: "same-origin" }).catch(() => {});
+      fetchFeedXmlByUrl.jobId = "";
     }
 
     async function loadFeedFromUrl(sourceId = "") {
@@ -11462,7 +11574,9 @@ ${photos}
       const loadButton = document.querySelector("#loadUrlBtn");
       const importButton = document.querySelector("#importBtn");
       const sourcePanel = document.querySelector('.source-panel[data-page="source"]');
-      loadButton.disabled = true;
+      loadButton.disabled = false;
+      loadButton.textContent = "Остановить";
+      loadButton.dataset.importRunning = "true";
       loadButton.setAttribute("aria-busy", "true");
       loadButton.classList.add("loading");
       importButton.disabled = true;
@@ -11572,8 +11686,11 @@ ${photos}
         setLoadStatus(`Не удалось загрузить фид: ${error.message}. Проверьте ссылку, доступность XML и права доступа к источнику.`, "bad");
         showToast(`Не удалось обновить фид: ${error.message}`);
       } finally {
+        fetchFeedXmlByUrl.jobId = "";
         loadFeedFromUrl.running = false;
         loadButton.disabled = false;
+        loadButton.textContent = "Добавить фид";
+        delete loadButton.dataset.importRunning;
         loadButton.removeAttribute("aria-busy");
         loadButton.classList.remove("loading");
         importButton.disabled = false;
@@ -11692,6 +11809,19 @@ ${photos}
       });
     }
 
+    async function previewFeedPublication({ id, platform, xml, objectCount, sourceUrl, name }) {
+      if (!id) return null;
+      const response = await fetch(`/api/feeds/${encodeURIComponent(id)}/preview`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ platform, xml, objectCount, sourceUrl, name })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || `Сервер вернул HTTP ${response.status}`);
+      return data;
+    }
+
     async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug, contextKey, complexName }) {
       const sourceFeeds = publicationSourceFeeds(workingObjects());
       const syncIntervals = sourceFeeds
@@ -11766,6 +11896,20 @@ ${photos}
       button.textContent = "Публикую...";
 
       try {
+        const preview = await previewFeedPublication({ id: publicationId, platform: activePlatform, xml, objectCount: currentObjects.length, sourceUrl: appState.feedUrl || "", name: feedName });
+        if (preview?.requiresConfirmation) {
+          const parts = [
+            `Было объектов: ${Number(preview.previousCount || 0).toLocaleString("ru-RU")}`,
+            `станет: ${Number(preview.nextCount || 0).toLocaleString("ru-RU")}`,
+            preview.addedCount ? `добавится: ${preview.addedCount}` : "",
+            preview.removedCount ? `удалится: ${preview.removedCount}` : "",
+            preview.changedPriceCount ? `изменится цена: ${preview.changedPriceCount}` : ""
+          ].filter(Boolean).join("\n");
+          if (!window.confirm(`Проверьте изменения перед публикацией:\n\n${parts}\n\nОпубликовать новую версию?`)) {
+            showToast("Публикация отменена — текущая версия сохранена");
+            return false;
+          }
+        }
         const publishedFeed = await publishFeedToServer({
           id: publicationId,
           platform: activePlatform,
@@ -12486,7 +12630,10 @@ ${photos}
     document.querySelector("#resetChangesBtn").addEventListener("click", resetChanges);
     document.querySelector("#clearChangeLogBtn").addEventListener("click", clearChangeLog);
     document.querySelector("#importBtn").addEventListener("click", () => document.querySelector("#fileInput").click());
-    document.querySelector("#loadUrlBtn").addEventListener("click", () => loadFeedFromUrl());
+    document.querySelector("#loadUrlBtn").addEventListener("click", () => {
+      if (loadFeedFromUrl.running) return cancelFeedImport();
+      return loadFeedFromUrl();
+    });
     document.querySelector("#projectSourceList").addEventListener("click", event => {
       const overviewButton = event.target.closest("[data-source-overview]");
       const editButton = event.target.closest("[data-source-edit]");

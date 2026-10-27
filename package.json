@@ -8,7 +8,7 @@
     "start:local": "node --env-file=.env.local-login server.js",
     "backup": "node backup.js",
     "check:launch": "node launch-check.js",
-    "check": "node --check server.js && node --check saas-store.js && node --check platega.js && node --check backup.js && node --check launch-readiness.js && node --check launch-check.js && node --check support-tickets.js",
+    "check": "node --check server.js && node --check feed-monitor.js && node --check feed-health.js && node --check feed-import-jobs.js && node --check feed-diff.js && node --check feed-diagnostics.js && node --check feed-platform-health.js && node --check saas-store.js && node --check platega.js && node --check backup.js && node --check launch-readiness.js && node --check launch-check.js && node --check support-tickets.js",
     "test": "node --test *.test.js"
   },
   "engines": {

@@ -50,7 +50,7 @@ function publicAddress(address) {
   const [a,b]=address.split('.').map(Number);
   return !(a===0 || a===10 || a===127 || a>=224 || (a===169&&b===254) || (a===172&&b>=16&&b<=31) || (a===192&&b===168) || (a===100&&b>=64&&b<=127) || (a===198&&(b===18||b===19)));
 }
-async function downloadResource(url, { redirects=0, maxBytes=20*1024*1024, binary=false, timeoutMs=20000 }={}) {
+async function downloadResource(url, { redirects=0, maxBytes=20*1024*1024, binary=false, timeoutMs=20000, signal }={}) {
   const target=new URL(url);
   if(!['http:','https:'].includes(target.protocol)||target.username||target.password)throw Error('Нужна HTTP(S)-ссылка без логина и пароля');
   const addresses=await dns.lookup(target.hostname,{all:true,family:4});
@@ -58,20 +58,23 @@ async function downloadResource(url, { redirects=0, maxBytes=20*1024*1024, binar
   const ownLocal=localOrigin && target.origin===new URL(localOrigin).origin && ['localhost','127.0.0.1'].includes(target.hostname);
   if(!addresses.length||(!ownLocal&&addresses.some(a=>!publicAddress(a.address))))throw Error('Адрес внутренней сети недоступен для мониторинга');
   return new Promise((resolve,reject)=>{
+    if(signal?.aborted){const error=Error('Импорт отменён');error.name='AbortError';return reject(error);}
     const request=(target.protocol==='https:'?https:http).get(target, {agent: target.protocol === 'https:' ? httpsAgent : httpAgent, lookup:(_host,options,callback)=>options.all?callback(null,[addresses[0]]):callback(null,addresses[0].address,4)}, response=>{
-      if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){response.resume();if(redirects>=3)return reject(Error('Слишком много перенаправлений'));resolve(downloadResource(new URL(response.headers.location,target).href,{redirects:redirects+1,maxBytes,binary,timeoutMs}));return;}
+      if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){response.resume();if(redirects>=3)return reject(Error('Слишком много перенаправлений'));resolve(downloadResource(new URL(response.headers.location,target).href,{redirects:redirects+1,maxBytes,binary,timeoutMs,signal}));return;}
       if(response.statusCode!==200){response.resume();reject(Error(`HTTP ${response.statusCode}`));return;}
       let size=0;const chunks=[];
       response.on('data',chunk=>{size+=chunk.length;if(size>maxBytes)request.destroy(Error('Удалённый файл превышает допустимый размер'));else chunks.push(chunk);});
       response.on('end',()=>{const body=Buffer.concat(chunks);resolve(binary?{body,contentType:String(response.headers['content-type']||'')}:body.toString('utf8'));});response.on('error',reject);
     });
     const deadline=setTimeout(()=>request.destroy(Error(`Источник не ответил за ${Math.round(timeoutMs/1000)} секунд`)),timeoutMs);
-    request.on('close',()=>clearTimeout(deadline));request.on('error',reject);
+    const abort=()=>{const error=Error('Импорт отменён');error.name='AbortError';request.destroy(error);};
+    signal?.addEventListener('abort', abort, { once: true });
+    request.on('close',()=>{clearTimeout(deadline);signal?.removeEventListener('abort',abort);});request.on('error',reject);
   });
 }
 // XML-фиды застройщиков могут быть десятки мегабайт. Держим лимит выше,
 // но оставляем отдельный небольшой лимит для изображений через downloadBuffer.
-const download=url=>downloadResource(url,{maxBytes:100*1024*1024,timeoutMs:120000});
+const download=(url, options={})=>downloadResource(url,{maxBytes:100*1024*1024,timeoutMs:120000,...options});
 const downloadBuffer=(url,maxBytes)=>downloadResource(url,{maxBytes,binary:true});
 function createMonitor({file,notify=async()=>{},load=download,loadImage=downloadBuffer,intervalMs=3600000}) {
   let busy=false;

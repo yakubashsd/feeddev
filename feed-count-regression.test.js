@@ -65,3 +65,9 @@ test("cloud saves include the source registry when browser storage is unavailabl
   assert.match(html, /\[projectSourcesStorageKey\]: serializedSources/);
   assert.match(html, /let pendingProjectStateOverrides = \{\}/);
 });
+
+test("URL imports run through the server job queue and can be canceled", () => {
+  assert.match(html, /body: JSON\.stringify\(\{ url, async: true \}\)/);
+  assert.match(html, /\/api\/feeds-import\/\$\{encodeURIComponent\(data\.id\)\}/);
+  assert.match(html, /method: "DELETE", credentials: "same-origin"/);
+});
