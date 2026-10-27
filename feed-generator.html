@@ -152,7 +152,7 @@
     .release-history:empty { display:none; }
     .release-history h3 { font-size:15px; margin:0 0 8px; }
     .release-row { grid-template-columns:minmax(0,1fr) auto; }
-    .release-preflight{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:13px;line-height:1.5}.release-preflight strong{display:block}.release-preflight.has-errors{border-color:#d92d38;background:#ffebed;color:#92232c}
+    .release-preflight{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:13px;line-height:1.5}.release-preflight strong{display:block}.release-preflight.has-errors{border-color:#d92d38;background:#ffebed;color:#92232c}.release-preflight.has-warnings{border-color:#e4bd6c;background:#fff8e8;color:#684b13}.release-preflight button{margin-top:10px}
 
     button, input, textarea, select {
       font: inherit;
@@ -4818,7 +4818,7 @@
     body.client-ui .source-status.success, body.client-ui .validation.ok, body.client-ui .validator-result.ok { border-left:3px solid var(--lf-green)!important; }
     @keyframes lfSpin { to { transform:rotate(360deg); } }
   </style>
-  <link rel="stylesheet" href="calendly-theme.css">
+  <link rel="stylesheet" href="calendly-theme.css?v=20261027-ui-workspace">
   <link rel="stylesheet" href="landing.css">
   <style id="listingflow-ui-final">
     /* Final client UI contract: this layer intentionally comes after the
@@ -4929,6 +4929,29 @@
       max-width:100%!important;
       margin-left:0!important;
       justify-content:flex-start!important;
+      gap:12px!important;
+    }
+    body.client-ui #layoutsPanel .le-toolbar-control-group {
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:6px;
+      min-width:0;
+      padding:0 12px 0 0;
+      border-right:1px solid var(--lf-line);
+    }
+    body.client-ui #layoutsPanel .le-toolbar-control-group:last-child { border-right:0; }
+    body.client-ui #layoutsPanel .le-toolbar-group-label {
+      display:inline-block!important;
+      font-size:12px!important;
+      line-height:1.3!important;
+      white-space:nowrap!important;
+    }
+    body.client-ui #layoutsPanel .le-toolbar :is(button,.le-zoom-value) { font-size:13px!important; }
+    body.client-ui #layoutsPanel .le-toolbar-secondary-actions {
+      justify-content:flex-start!important;
+      padding-top:8px;
+      border-top:1px solid var(--lf-line);
     }
     body.client-ui #layoutsPanel .le-layer-actions { gap:6px!important; }
     body.client-ui #layoutsPanel .le-layer-actions button {
@@ -4966,26 +4989,68 @@
       padding:0 10px!important;
     }
 
-    /* Keep the persistent save action and the error summary from covering
-       one another while editing a feed. */
-    body.client-ui .feed-error-popover {
-      bottom:112px!important;
-      z-index:50!important;
-    }
-
-    /* Feed editing has a persistent inspector in column three.  Declare that
-       track explicitly instead of letting grid create an implicit column from
-       `.editor`, which was the source of the clipped main workspace. */
-    @media (min-width:1101px) {
-      body.client-ui .app.feeds-mode,
-      body.client-ui .app.validator-mode {
-        grid-template-columns:278px minmax(0,1fr) clamp(300px,29vw,390px)!important;
+    /* Only apartment editing has a third column. Other pages use all of the
+       space to the right of navigation. */
+    @media (min-width:1281px) {
+      body.client-ui .app:not(.feeds-mode):not(.project-list-mode):not(.layouts-mode):not(.validator-mode) {
+        grid-template-columns:278px minmax(0,1fr) clamp(300px,25vw,390px)!important;
       }
-      body.client-ui .app.feeds-mode .editor,
-      body.client-ui .app.validator-mode .editor {
-        grid-column:3!important;
+      body.client-ui .app.feeds-mode,
+      body.client-ui .app.validator-mode,
+      body.client-ui .app.project-list-mode,
+      body.client-ui .app.layouts-mode {
+        grid-template-columns:278px minmax(0,1fr)!important;
+      }
+    }
+    @media (min-width:761px) and (max-width:1280px) {
+      body.client-ui { min-width:0!important; overflow-x:hidden!important; }
+      body.client-ui .app,
+      body.client-ui .app.feeds-mode,
+      body.client-ui .app.project-list-mode,
+      body.client-ui .app.layouts-mode,
+      body.client-ui .app.validator-mode {
         min-width:0!important;
-        width:100%!important;
+        grid-template-columns:minmax(0,1fr) minmax(300px,32vw)!important;
+      }
+      body.client-ui .app.feeds-mode,
+      body.client-ui .app.project-list-mode,
+      body.client-ui .app.layouts-mode,
+      body.client-ui .app.validator-mode { grid-template-columns:minmax(0,1fr)!important; }
+      body.client-ui .sidebar {
+        position:fixed!important;
+        z-index:100!important;
+        top:0!important;
+        left:0!important;
+        width:278px!important;
+        transform:translateX(-102%)!important;
+        box-shadow:20px 0 50px rgba(17,56,94,.2)!important;
+      }
+      body.client-ui .app.nav-open .sidebar,
+      body.client-ui .sidebar.open { transform:none!important; }
+      body.client-ui .mobile-menu-toggle { display:grid!important; place-items:center!important; }
+      body.client-ui .topbar { left:0!important; min-width:0!important; width:100%!important; }
+      body.client-ui .main { grid-column:1!important; }
+      body.client-ui .app.feeds-mode .main,
+      body.client-ui .app.project-list-mode .main { grid-column:1 / -1!important; }
+      body.client-ui .editor { grid-column:2!important; min-width:0!important; }
+    }
+    @media (min-width:761px) and (max-width:980px) {
+      body.client-ui .app:not(.feeds-mode):not(.project-list-mode):not(.layouts-mode):not(.validator-mode) {
+        grid-template-columns:minmax(0,1fr)!important;
+        height:auto!important;
+        min-height:100dvh!important;
+        overflow:visible!important;
+      }
+      body.client-ui .app:not(.feeds-mode):not(.project-list-mode):not(.layouts-mode):not(.validator-mode) .main {
+        grid-column:1!important;
+        height:auto!important;
+        min-height:100dvh!important;
+        overflow:visible!important;
+      }
+      body.client-ui .app:not(.feeds-mode):not(.project-list-mode):not(.layouts-mode):not(.validator-mode) .editor {
+        grid-column:1!important;
+        grid-row:2!important;
+        height:auto!important;
       }
     }
 
@@ -5388,6 +5453,171 @@
       body.client-ui .complex-row > button:nth-of-type(1) { grid-area:apartments!important; }
       body.client-ui .complex-row > button:nth-of-type(2) { grid-area:select!important; }
     }
+    /* Operational pages share a centered content measure. Tables keep every
+       column available; on phones each row becomes a labeled card. */
+    body.client-ui :is(.projects-page,.project-overview,.complexes-panel) {
+      max-width:1600px!important;
+      margin-inline:auto!important;
+    }
+    body.client-ui .project-list-mode .project-table-wrap {
+      max-width:100%!important;
+      overflow-x:auto!important;
+      overflow-y:auto!important;
+    }
+    body.client-ui .project-list-mode .project-table {
+      min-width:960px!important;
+      table-layout:auto!important;
+    }
+    body.client-ui .project-list-mode .project-table :is(th,td) {
+      overflow:visible!important;
+      overflow-wrap:normal!important;
+    }
+    body.client-ui .project-list-mode .project-table :is(th,td):nth-child(n+2):nth-child(-n+6) {
+      display:table-cell!important;
+      width:auto!important;
+    }
+    body.client-ui .project-list-mode .project-table :is(.project-name-link strong,.project-platform strong) {
+      overflow:visible!important;
+      white-space:normal!important;
+      overflow-wrap:anywhere!important;
+    }
+    body.client-ui .project-list-mode .project-table .project-status {
+      overflow:visible!important;
+    }
+    body.client-ui .complex-list,
+    body.client-ui .complex-row { overflow:visible!important; }
+    body.client-ui .complex-row > button {
+      justify-self:stretch!important;
+      align-self:center!important;
+      white-space:normal!important;
+    }
+    body.client-ui .feed-error-popover {
+      bottom:16px!important;
+      z-index:50!important;
+      border-color:var(--lf-line)!important;
+      color:var(--lf-text)!important;
+    }
+    body.client-ui .feed-error-head {
+      background:var(--lf-surface)!important;
+      color:var(--lf-text)!important;
+      border-color:var(--lf-line)!important;
+    }
+    body.client-ui .feed-error-icon {
+      background:var(--lf-amber-bg)!important;
+      color:var(--lf-amber)!important;
+    }
+    body.client-ui .feed-error-toggle {
+      background:var(--lf-surface-2)!important;
+      color:var(--lf-text)!important;
+    }
+    body.client-ui .feed-error-title :is(strong,span) { font-size:12px!important; }
+    body.client-ui .feed-error-summary span,
+    body.client-ui .feed-error-hint,
+    body.client-ui .feed-error-item button { font-size:12px!important; }
+    body.client-ui .feed-error-line b { background:var(--lf-amber-bg)!important; color:var(--lf-amber)!important; }
+    body.client-ui .feed-error-actions .primary { background:var(--lf-accent)!important; border-color:var(--lf-accent)!important; color:#fff!important; }
+    body.client-ui .release-preflight.has-warnings {
+      border-color:#e4bd6c!important;
+      background:var(--lf-amber-bg)!important;
+      color:#684b13!important;
+    }
+    body.client-ui .release-preflight p { margin:8px 0 0!important; line-height:1.5!important; }
+    body.client-ui .release-preflight .preflight-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    body.client-ui .release-preflight .preflight-actions button { margin:0!important; }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized {
+      position:relative!important;
+      inset:auto!important;
+      flex:0 0 auto!important;
+      width:auto!important;
+      min-width:48px!important;
+      height:40px!important;
+      border-radius:8px!important;
+      box-shadow:none!important;
+      overflow:visible!important;
+    }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-head {
+      display:block!important;
+      width:100%!important;
+      height:100%!important;
+      padding:0!important;
+    }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized :is(.feed-error-icon,.feed-error-title) { display:none!important; }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-toggle {
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      gap:4px!important;
+      width:100%!important;
+      height:100%!important;
+      border:0!important;
+      border-radius:8px!important;
+      color:var(--lf-amber)!important;
+    }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-toggle svg { width:17px!important; height:17px!important; }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-count { font-size:12px; font-weight:800; }
+    body.client-ui .topbar-actions > .feed-error-popover:not(.minimized) {
+      position:fixed!important;
+      top:72px!important;
+      right:16px!important;
+      bottom:auto!important;
+      width:min(360px,calc(100vw - 32px))!important;
+      max-height:calc(100dvh - 88px)!important;
+      overflow:auto!important;
+      border-radius:10px!important;
+      box-shadow:0 12px 30px rgba(17,56,94,.18)!important;
+    }
+    @media (max-width:980px) {
+      body.client-ui .project-list-mode .project-table-wrap { overflow:visible!important; }
+      body.client-ui .project-list-mode .project-table,
+      body.client-ui .project-list-mode .project-table tbody {
+        display:block!important;
+        width:100%!important;
+        min-width:0!important;
+      }
+      body.client-ui .project-list-mode .project-table thead { display:none!important; }
+      body.client-ui .project-list-mode .project-row {
+        display:grid!important;
+        gap:10px!important;
+        margin:0 0 12px!important;
+        padding:16px!important;
+        border:1px solid var(--lf-line)!important;
+        border-radius:10px!important;
+        background:var(--lf-surface)!important;
+      }
+      body.client-ui .project-list-mode .project-row td,
+      body.client-ui .project-list-mode .project-row td:nth-child(n+2):nth-child(-n+6) {
+        display:flex!important;
+        align-items:flex-start!important;
+        justify-content:space-between!important;
+        gap:12px!important;
+        width:100%!important;
+        height:auto!important;
+        min-height:26px!important;
+        padding:0!important;
+        text-align:right!important;
+      }
+      body.client-ui .project-list-mode .project-row td:not(.project-select-cell)::before {
+        content:attr(data-label);
+        flex:0 0 88px;
+        color:var(--lf-muted);
+        font-size:12px;
+        text-align:left;
+      }
+      body.client-ui .project-list-mode .project-row .project-select-cell {
+        width:auto!important;
+        justify-content:flex-start!important;
+      }
+      body.client-ui .project-list-mode .project-row .project-actions-cell {
+        width:100%!important;
+        max-width:none!important;
+        justify-content:flex-end!important;
+      }
+      body.client-ui .project-list-mode .project-row .project-status { text-align:left!important; }
+      body.client-ui .project-list-mode .project-table-empty,
+      body.client-ui .project-list-mode .project-table-empty td { display:block!important; width:100%!important; }
+      body.client-ui .project-table-footer { display:flex!important; flex-wrap:wrap!important; gap:12px!important; }
+      body.client-ui .project-table-footer > * { max-width:100%!important; }
+    }
   </style>
 </head>
 <body class="client-ui">
@@ -5605,11 +5835,6 @@
         <button type="button" data-step=".publish-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg></span><span class="step-copy"><span class="step-number">05</span><span class="step-title">Проверка и публикация</span></span></button>
         <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
-      <div class="workflow-save-bar" id="workflowSaveBar" hidden>
-        <div class="workflow-save-copy"><strong id="workflowSaveTitle">Текущий фид</strong><span id="workflowSaveMeta">Изменения сохраняются в рабочем состоянии фида.</span></div>
-        <button type="button" class="primary" id="workflowSaveBtn">Сохранить изменения</button>
-      </div>
-
       <section class="project-overview page-hidden" data-page="overview">
         <div class="overview-heading"><div><h1 id="overviewTitle">Список фидов</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
         <section class="overview-card overview-published"><div class="overview-card-head"><div><h2>Фиды</h2><p class="panel-caption">Выберите фид для редактирования или добавьте новый.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
@@ -5618,8 +5843,8 @@
       <section class="projects-page" data-page="projects">
         <div class="projects-heading"><div><h1>Проекты</h1><p>В одном проекте можно работать с несколькими фидами и публиковать каждый по отдельной ссылке.</p></div><button class="primary" id="newProjectBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Создать проект</button></div>
         <div class="project-toolbar" role="search">
-          <label class="project-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="projectSearch" type="search" placeholder="Поиск по названию проекта, источнику или ID…" aria-label="Поиск по проектам"></label>
-            <select id="projectStatusFilter" aria-label="Фильтр по статусу"><option value="all">Все статусы</option><option value="published">Опубликовано</option><option value="processing">Есть черновики</option><option value="warning">Нужна проверка</option><option value="error">Ошибка публикации</option><option value="new">Не настроено</option><option value="archived">В архиве</option></select>
+          <label class="project-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg><input id="projectSearch" type="search" placeholder="Проект, источник или ID" aria-label="Поиск по проектам"></label>
+            <select id="projectStatusFilter" aria-label="Фильтр по статусу"><option value="all">Все статусы</option><option value="published">Опубликовано</option><option value="processing">Есть черновики</option><option value="warning">Нужна проверка</option><option value="error">Сбой синхронизации</option><option value="new">Не настроено</option><option value="archived">В архиве</option></select>
           <select id="projectSort" aria-label="Сортировка проектов"><option value="newest">Сначала новые</option><option value="oldest">Сначала старые</option><option value="name">По названию</option><option value="objects">По числу объектов</option></select>
         </div>
         <div class="project-table-wrap">
@@ -6054,7 +6279,7 @@
             <input id="serverBaseUrl" type="url" value="https://feeds.sozdateli.ru" readonly aria-describedby="serverBaseUrlHint">
             <small id="serverBaseUrlHint">Закреплённый домен публикации</small>
           </div>
-          <button id="generateLinkBtn" type="button" class="primary">Сохранить фид</button>
+          <button id="generateLinkBtn" type="button" class="primary">Получить ссылку на фид</button>
           <button id="downloadBtn">Скачать XML</button>
           <button id="copyGeneratedLinkBtn" type="button">Копировать</button>
         </div>
@@ -6066,6 +6291,10 @@
         <div class="published-history" id="publishedHistory" aria-live="polite"></div>
         <div class="release-history" id="releaseHistory" aria-live="polite"></div>
       </section>
+      <div class="workflow-save-bar" id="workflowSaveBar" hidden>
+        <div class="workflow-save-copy"><strong id="workflowSaveTitle">Текущий фид</strong><span id="workflowSaveMeta">Изменения сохраняются в рабочем состоянии фида.</span></div>
+        <button type="button" class="primary" id="workflowSaveBtn">Сохранить изменения</button>
+      </div>
     </main>
 
     <dialog class="usage-guide-dialog" id="usageGuideDialog" aria-labelledby="usageGuideTitle">
@@ -8217,7 +8446,7 @@
       const groups = complexGroups();
       const visible = groups.filter(group => [group.name, ...group.houses].join(" ").toLowerCase().includes(query));
       const ready = groups.filter(group => !group.items.some(item => requiredIssues(item).length)).length;
-      document.querySelector("#complexSummary").innerHTML = `<div><strong>${groups.length}</strong><span>жилых комплексов</span></div><div><strong>${sourceWorkingObjects().length}</strong><span>квартир</span></div><div><strong>${ready}</strong><span>готовы к выгрузке</span></div>`;
+      document.querySelector("#complexSummary").innerHTML = `<div><strong>${groups.length}</strong><span>${pluralRu(groups.length, "жилой комплекс", "жилых комплекса", "жилых комплексов")}</span></div><div><strong>${sourceWorkingObjects().length}</strong><span>${pluralRu(sourceWorkingObjects().length, "квартира", "квартиры", "квартир")}</span></div><div><strong>${ready}</strong><span>${pluralRu(ready, "готов", "готовы", "готовы")} к выгрузке</span></div>`;
       const selectionSummary = document.querySelector("#complexSelectionSummary");
       if (selectionSummary) {
         const selected = groups.find(group => group.key === activeComplexKey);
@@ -8228,9 +8457,9 @@
         const issues = group.items.reduce((sum, item) => sum + requiredIssues(item).length, 0);
         const isSelected = activeComplexKey === group.key;
         return `<article class="complex-row ${isSelected ? "is-selected" : ""}">
-          <div><strong>${escapeXml(group.name)}</strong><small>${group.houses.size} ${group.houses.size === 1 ? "дом" : "дома"} · ${group.items.length} квартир</small></div>
+          <div><strong>${escapeXml(group.name)}</strong><small>${group.houses.size} ${pluralRu(group.houses.size, "дом", "дома", "домов")} · ${group.items.length} ${pluralRu(group.items.length, "квартира", "квартиры", "квартир")}</small></div>
           <div class="complex-houses">${[...group.houses].slice(0, 3).map(house => `<span>${escapeXml(house)}</span>`).join("")}</div>
-          <span class="catalog-state">${issues ? `${issues} замечаний` : "Данные заполнены"}</span>
+          <span class="catalog-state">${issues ? `${issues} ${pluralRu(issues, "замечание", "замечания", "замечаний")}` : "Данные заполнены"}</span>
           <button type="button" data-complex-apartments="${escapeXml(group.key)}">Квартиры</button>
           <button type="button" class="${isSelected ? "" : "primary"}" data-complex-select="${escapeXml(group.key)}">${isSelected ? "Выбран" : "Выбрать ЖК"}</button>
         </article>`;
@@ -8348,9 +8577,9 @@
           <label class="source-select-control"><input type="checkbox" data-source-check="${escapeXml(source.id)}" ${activeSourceId === source.id ? "checked" : ""} aria-label="Выбрать фид: ${escapeXml(source.name || platform)}" title="Выбрать фид для работы"></label>
           <div class="source-identity"><span class="source-label">Название фида</span><strong>${escapeXml(source.name || platform)}</strong></div>
           <div><span class="source-label">Ссылка на фид</span>${publishedUrl ? `<a href="${escapeXml(publishedUrl)}" target="_blank" rel="noopener noreferrer">${escapeXml(publishedUrl)}</a>` : "<small>Ещё не опубликован</small>"}<small>Источник: ${escapeXml(source.url)}</small></div>
-          <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${sourceObjectCount(source).toLocaleString("ru-RU")} квартир · ${sourceIntervalLabel(source.interval)}</small></span></div>
-          <span class="source-health">${source.error ? "Ошибка" : issueCount ? `${issueCount} ошибок` : "Работает"}</span>
-          <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>Следующее: ${escapeXml(nextSync.label)}${source.error ? `<br>${escapeXml(source.error)}` : issueCount ? `<br>Ошибки в объявлениях: ${issueCount}` : ""}</small></span>
+          <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${sourceObjectCount(source).toLocaleString("ru-RU")} ${pluralRu(sourceObjectCount(source), "квартира", "квартиры", "квартир")} · ${sourceIntervalLabel(source.interval)}</small></span></div>
+          <span class="source-health">${source.error ? "Ошибка" : issueCount ? `${issueCount} ${pluralRu(issueCount, "замечание", "замечания", "замечаний")}` : "Работает"}</span>
+          <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>Следующее: ${escapeXml(nextSync.label)}${source.error ? `<br>${escapeXml(source.error)}` : issueCount ? `<br>Замечания в объявлениях: ${issueCount}` : ""}</small></span>
           <div class="source-actions"><button type="button" class="primary" data-source-edit="${source.id}">Редактировать фид</button><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
         </article>`;
       }).join("");
@@ -8394,12 +8623,16 @@
           return {
             name: source.name || platformNames[platformKey] || "Фид проекта",
             count,
-            message: syncError
+            message: syncError,
+            isSyncError: Boolean(syncError)
           };
         }).filter(Boolean);
         const errorFeedCount = errorFeeds.length;
         const errorTotal = errorFeeds.reduce((total, feed) => total + feed.count, 0);
         const errorFeedNames = errorFeeds.map(feed => feed.name);
+        const syncErrorFeeds = errorFeeds.filter(feed => feed.isSyncError);
+        const syncErrorTotal = syncErrorFeeds.length;
+        const syncErrorFeedNames = syncErrorFeeds.map(feed => feed.name);
         const platformValues = [...new Set(sourceRecords.map(source => source.platform || (source.url ? detectPlatformFromUrl(source.url) : "auto")))];
         const platformKey = platformValues[0] || state.activePlatform || (state.feedUrl ? detectPlatformFromUrl(state.feedUrl) : "auto");
         const platform = platformValues.length ? platformValues.map(value => platformNames[value] || value).join(" · ") : (platformNames[platformKey] || platformKey);
@@ -8408,13 +8641,13 @@
         const archived = project.status === "archived";
         const hasOutput = Boolean(state.generatedLink || project.summary?.feeds?.length);
         const health = project.summary?.feedHealth || "";
-        const hasError = !archived && (health === "error" || errorFeedCount > 0);
-        const hasWarning = !archived && health === "stale";
+        const hasError = !archived && (health === "error" || syncErrorTotal > 0);
+        const hasWarning = !archived && (health === "stale" || errorFeedCount > 0);
         const status = archived ? "archived" : hasError ? "error" : hasWarning ? "warning" : hasOutput ? "published" : objectCount || state.feedUrl ? "processing" : "new";
         const updatedAt = state.updatedAt || state.lastUpdatedAt || project.updatedAt || project.createdAt;
         const updated = updatedAt ? new Date(updatedAt) : null;
         const searchText = [project.name, project.id, state.feedUrl, sourceRecords.map(feed => feed.url).join(" "), platform].filter(Boolean).join(" ").toLowerCase();
-        return { project, state, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, errorTotal, errorFeedNames, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
+        return { project, state, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, errorTotal, errorFeedNames, syncErrorTotal, syncErrorFeedNames, objectCount, archived, status, hasOutput, hasError, hasWarning, updated, searchText };
       });
       // Keep the billing guard independent from the visual project summary.
       // The metrics were removed from the UI, but the limit still relies on
@@ -8436,15 +8669,15 @@
       projectPage = Math.min(projectPage, pages);
       const pageEntries = filtered.slice((projectPage - 1) * pageSize, projectPage * pageSize);
       const statusMeta = {
-        published: ["Опубликовано", "success"], processing: ["Есть черновики", "info"], warning: ["Нужна проверка", "warning"], error: ["Ошибка публикации", "error"], new: ["Не настроено", "neutral"], archived: ["В архиве", "neutral"]
+        published: ["Опубликовано", "success"], processing: ["Есть черновики", "info"], warning: ["Нужна проверка", "warning"], error: ["Сбой синхронизации", "error"], new: ["Не настроено", "neutral"], archived: ["В архиве", "neutral"]
       };
-      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorFeedCount, errorTotal, errorFeedNames, objectCount, status, updated }) => {
+      document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorTotal, errorFeedNames, syncErrorTotal, syncErrorFeedNames, objectCount, status, updated }) => {
         const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
         const monitorUrl = `${projectUrl}&page=feeds`;
         const [statusLabel, statusTone] = statusMeta[status];
         const errorNamesLabel = errorFeedNames?.length ? errorFeedNames.join(", ") : "Фид проекта";
-        const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Ошибки: ${errorTotal || 1} · ${errorNamesLabel}` : statusLabel;
-        const publicationStatusTitle = status === "error" ? `Ошибки: ${errorTotal || 1}. Фид${errorFeedCount === 1 ? "" : "ы"}: ${errorNamesLabel}` : publicationStatus;
+        const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Сбой синхронизации${syncErrorTotal ? `: ${syncErrorTotal} ${pluralRu(syncErrorTotal, "фид", "фида", "фидов")}` : ""}` : status === "warning" && errorTotal ? `${errorTotal} ${pluralRu(errorTotal, "замечание", "замечания", "замечаний")}` : statusLabel;
+        const publicationStatusTitle = status === "error" ? `${publicationStatus}${syncErrorFeedNames.length ? ` · ${syncErrorFeedNames.join(", ")}` : ""}` : status === "warning" && errorTotal ? `${publicationStatus} · ${errorNamesLabel}` : publicationStatus;
         const updatedLabel = updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
         const projectIdShort = project.id === "legacy" ? "legacy" : project.id.slice(0, 8).toUpperCase();
         const actionMenu = status === "archived"
@@ -8452,12 +8685,12 @@
           : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><a href="${projectUrl}">Открыть проект</a><a href="${monitorUrl}">Открыть мониторинг</a><button type="button" data-rename-project="${escapeXml(project.id)}">Переименовать</button><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
-          <td><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
-          <td><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
-          <td class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
-          <td><span class="project-status ${statusTone}" title="${escapeXml(publicationStatusTitle)}"><i aria-hidden="true"></i>${escapeXml(publicationStatus)}</span></td>
-          <td class="project-updated">${updatedLabel}</td>
-          <td class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
+          <td data-label="Проект"><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
+          <td data-label="Фиды"><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
+          <td data-label="Объекты" class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
+          <td data-label="Публикация"><span class="project-status ${statusTone}" title="${escapeXml(publicationStatusTitle)}"><i aria-hidden="true"></i>${escapeXml(publicationStatus)}</span></td>
+          <td data-label="Обновление" class="project-updated">${updatedLabel}</td>
+          <td data-label="Действия" class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
         </tr>`;
       }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || statusFilter !== "all" ? "Ничего не найдено" : "Проектов пока нет"}</strong><span>${query || statusFilter !== "all" ? "Измените запрос или сбросьте фильтр." : "Создайте проект, чтобы добавить первый фид и начать работу."}</span></td></tr>`;
       const firstItem = filtered.length ? (projectPage - 1) * pageSize + 1 : 0;
@@ -8537,6 +8770,10 @@
 
     function renderPage() {
       if (activePage === "validator") activePage = "feeds";
+      if (activePage === "history" && runtimeMode !== "external") {
+        activePage = currentProject ? "overview" : "projects";
+        syncPageUrl(activePage);
+      }
       const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", history: "История изменений", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!(sessionState?.subscriptionActive || sessionState?.trialActive) || currentProject.status === "archived");
@@ -8586,7 +8823,7 @@
         if (itemLabel && stateText) item.setAttribute("aria-label", `${itemLabel} — ${stateText}`);
         if (item.dataset.nav === activePage) item.setAttribute("aria-current", "page");
         else item.removeAttribute("aria-current");
-        item.hidden = item.dataset.nav === "source" ? true : item.dataset.nav === "complexes" ? !currentProject || !showComplexesStep : item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : item.dataset.nav === "history" ? !currentProject : !currentProject;
+        item.hidden = item.dataset.nav === "source" ? true : item.dataset.nav === "complexes" ? !currentProject || !showComplexesStep : item.dataset.nav === "billing" ? runtimeMode !== "external" : item.dataset.nav === "support" ? false : item.dataset.nav === "history" ? !currentProject || runtimeMode !== "external" : !currentProject;
       });
       const visibleWorkflowNavItems = [...document.querySelectorAll(".nav-workflow-items [data-nav]")].filter(item => !item.hidden);
       visibleWorkflowNavItems.forEach((item, index) => {
@@ -8766,7 +9003,7 @@
           const healthLabel = healthIssue
             ? `Требует внимания: ${healthIssue}`
             : issueCount
-              ? `Ошибки в объявлениях: ${issueCount}`
+              ? `Замечания в объявлениях: ${issueCount}`
               : serverHealth?.lastImportStatus === "success" ? "Синхронизация успешна" : "Ошибок не найдено";
           return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${healthIssue || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-diagnostics="${escapeXml(source.id)}">Диагностика</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
         }).join("");
@@ -8953,6 +9190,7 @@
     }
 
     function switchPage(page) {
+      if (page === "history" && runtimeMode !== "external") return;
       if (page === activePage) return;
       // The source step is the entry point for a new feed only when there is
       // no selected feed. When a draft or published feed is already selected,
@@ -12003,6 +12241,8 @@ ${photos}
     function renderFeedErrorPopover() {
       const panel = document.querySelector("#feedErrorPopover");
       if (!panel) return;
+      const topbarActions = document.querySelector(".topbar-actions");
+      if (topbarActions && panel.parentElement !== topbarActions) topbarActions.prepend(panel);
       const groups = issueGroups();
       const platformErrors = platformErrorFindings();
       const issueTotal = groups.reduce((sum, group) => sum + group.count, 0);
@@ -12015,12 +12255,16 @@ ${photos}
       panel.classList.toggle("minimized", feedErrorPanelMinimized);
 
       document.querySelector("#feedErrorIcon").innerHTML = feedErrorIcon(hasErrors ? "alert" : "ok");
-      document.querySelector("#feedErrorToggle").innerHTML = feedErrorIcon(feedErrorPanelMinimized ? "open" : "close");
-      document.querySelector("#feedErrorToggle").setAttribute("aria-label", feedErrorPanelMinimized ? "Развернуть панель ошибок" : "Свернуть панель ошибок");
+      document.querySelector("#feedErrorToggle").innerHTML = feedErrorPanelMinimized
+        ? `${feedErrorIcon("alert")}<span class="feed-error-count">${issueTotal + platformErrors.length}</span>`
+        : feedErrorIcon("close");
+      document.querySelector("#feedErrorToggle").setAttribute("aria-label", feedErrorPanelMinimized ? `Показать проверку фида: ${issueTotal} замечаний, ${platformErrors.length} ошибок схемы` : "Свернуть проверку фида");
       document.querySelector("#feedErrorToggle").setAttribute("aria-expanded", feedErrorPanelMinimized ? "false" : "true");
-      document.querySelector("#feedErrorTitle").textContent = hasErrors ? `Ошибки фида: ${issueTotal + platformErrors.length}` : "Фид без ошибок";
+      document.querySelector("#feedErrorTitle").textContent = platformErrors.length
+        ? `Проверка: ${issueTotal} ${pluralRu(issueTotal, "замечание", "замечания", "замечаний")}, ${platformErrors.length} ${pluralRu(platformErrors.length, "ошибка схемы", "ошибки схемы", "ошибок схемы")}`
+        : `Проверка: ${issueTotal} ${pluralRu(issueTotal, "замечание", "замечания", "замечаний")}`;
       document.querySelector("#feedErrorMeta").textContent = hasErrors
-        ? `${objectsWithIssues} ${pluralRu(objectsWithIssues, "объект требует", "объекта требуют", "объектов требуют")} внимания`
+        ? objectsWithIssues ? `${objectsWithIssues} ${pluralRu(objectsWithIssues, "объект", "объекта", "объектов")} с замечаниями` : "Проверьте требования площадки"
         : `${workingObjects().length} ${pluralRu(workingObjects().length, "объект готов", "объекта готовы", "объектов готовы")} к работе`;
 
       const body = document.querySelector("#feedErrorBody");
@@ -12029,8 +12273,8 @@ ${photos}
       } else {
         body.innerHTML = `
           <div class="feed-error-summary">
-            <div><strong>${objects.length}</strong><span>объектов</span></div>
-            <div><strong>${objectsWithIssues}</strong><span>с ошибками</span></div>
+            <div><strong>${workingObjects().length}</strong><span>объектов</span></div>
+            <div><strong>${objectsWithIssues}</strong><span>с замечаниями</span></div>
             <div><strong>${platformErrors.length}</strong><span>по схеме</span></div>
           </div>
           <div class="feed-error-list">
@@ -12555,7 +12799,7 @@ ${photos}
       } finally {
         button.disabled = false;
         button.classList.remove("loading");
-        button.textContent = "Сохранить фид";
+        button.textContent = publicationForContext().url ? "Обновить публикацию" : "Получить ссылку на фид";
       }
     }
 
@@ -12586,10 +12830,12 @@ ${photos}
       const linkButton = document.querySelector("#generateLinkBtn");
       const downloadButton = document.querySelector("#downloadBtn");
       if (linkButton) linkButton.disabled = blocked;
+      if (linkButton && !linkButton.classList.contains("loading")) linkButton.textContent = publicationForContext().url ? "Обновить публикацию" : "Получить ссылку на фид";
       if (downloadButton) downloadButton.disabled = empty;
-      target.classList.toggle("has-errors", errors > 0 || activePlatform === "domclick");
+      target.classList.toggle("has-errors", blocked && !empty);
+      target.classList.toggle("has-warnings", errors > 0 && !blocked);
       target.classList.toggle("is-empty", empty);
-      target.classList.toggle("is-ready", !blocked);
+      target.classList.toggle("is-ready", !blocked && errors === 0);
       if (empty) {
         target.innerHTML = "<strong>Нет объектов для публикации</strong>Добавьте фид в разделе «Фиды проекта», чтобы загрузить объекты и проверить публикацию.";
         return;
@@ -12598,7 +12844,14 @@ ${photos}
         target.innerHTML = `<strong>Тестовый XML · ${currentObjects.length.toLocaleString("ru-RU")} объектов</strong>Домклик закрыт для постоянной публикации до подтверждения схемы.`;
         return;
       }
-      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} объектов · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong>${complexes.length ? `Проекты: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `Рекомендации: ${errors} ${pluralRu(errors, "замечание", "замечания", "замечаний")} — они не блокируют публикацию.` : "Ошибок не найдено. Фид готов к публикации."}`;
+      const objectsWithIssues = currentObjects.filter(item => requiredIssues(item).length).length;
+      const findings = [
+        missingFields.length ? `${missingFields.length} ${pluralRu(missingFields.length, "замечание", "замечания", "замечаний")} в ${objectsWithIssues} ${pluralRu(objectsWithIssues, "объекте", "объектах", "объектах")}` : "",
+        platformErrors.length ? `${platformErrors.length} ${pluralRu(platformErrors.length, "ошибка схемы", "ошибки схемы", "ошибок схемы")}` : ""
+      ].filter(Boolean).join(" · ");
+      const detail = `${complexes.length ? `Проекты: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `${findings}. Публикация доступна; проверьте данные перед отправкой на площадку.` : "Замечаний не найдено. Фид готов к публикации."}`;
+      const actions = errors ? `<div class="preflight-actions">${missingFields.length ? '<button type="button" data-preflight-go="apartments">Проверить объявления</button>' : ''}${platformErrors.length ? '<button type="button" data-preflight-go="feeds">Проверить схему</button>' : ''}</div>` : "";
+      target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} ${pluralRu(currentObjects.length, "объект", "объекта", "объектов")} · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong><p>${detail}</p>${actions}`;
     }
 
     async function renderReleaseHistory() {
@@ -12909,6 +13162,19 @@ ${photos}
       if (firstGroup) document.querySelector("#issueFilter").value = firstGroup.key;
       switchPage("apartments");
       renderRows();
+    });
+    document.querySelector("#releasePreflight").addEventListener("click", event => {
+      const button = event.target.closest("[data-preflight-go]");
+      if (!button) return;
+      if (button.dataset.preflightGo === "apartments") {
+        const firstGroup = issueGroups()[0];
+        if (firstGroup) document.querySelector("#issueFilter").value = firstGroup.key;
+        switchPage("apartments");
+        renderRows();
+      } else if (button.dataset.preflightGo === "feeds") {
+        switchPage("feeds");
+        document.querySelector("#validatorPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
     document.querySelector("#feedErrorBody").addEventListener("click", event => {
       const button = event.target.closest("[data-popover-filter]");
@@ -13406,7 +13672,7 @@ ${photos}
     }, 30000);
     initializeAuth();
   </script>
-  <script src="layout-editor.js?v=20261020-safe-zone-editor"></script>
+  <script src="layout-editor.js?v=20261027-ui-workspace"></script>
   <script src="monitor-client.js"></script>
   <script src="usage-guide.js"></script>
   <div id="cookieNotice" hidden>

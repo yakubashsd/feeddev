@@ -9,7 +9,29 @@
   const textControls = panel.querySelector('.template-layer-editor');
   const toolbar = document.createElement('div');
   toolbar.className = 'le-toolbar';
-  toolbar.innerHTML = `<div class="le-toolbar-title"><strong>Макет</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div><div class="le-toolbar-layer-actions"><button type="button" data-add-layer="text">＋ Текст</button><button type="button" data-add-layer="rect">▰ Фигура</button><button type="button" data-add-layer="image">＋ Изображения</button></div><div class="le-toolbar-view-actions"><span class="le-toolbar-group-label">Вид</span><button type="button" id="le-zoom-out" aria-label="Уменьшить масштаб">−</button><span class="le-zoom-value">100%</span><button type="button" id="le-zoom-in" aria-label="Увеличить масштаб">＋</button><button type="button" id="le-fit">По размеру</button><button type="button" id="le-grid" aria-pressed="false">Сетка</button><button type="button" id="le-undo" disabled aria-label="Отменить изменение">↶</button><button type="button" id="le-redo" disabled aria-label="Повторить изменение">↷</button><button type="button" id="le-preview">Предпросмотр</button></div><div class="le-toolbar-secondary-actions"></div>`;
+  toolbar.innerHTML = `
+    <div class="le-toolbar-title"><strong>Макет</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div>
+    <div class="le-toolbar-layer-actions" role="group" aria-label="Добавить слой">
+      <span class="le-toolbar-group-label">Добавить</span>
+      <button type="button" data-add-layer="text">＋ Текст</button>
+      <button type="button" data-add-layer="rect">▰ Фигура</button>
+      <button type="button" data-add-layer="image">＋ Изображения</button>
+    </div>
+    <div class="le-toolbar-view-actions">
+      <div class="le-toolbar-control-group" role="group" aria-label="Масштаб">
+        <span class="le-toolbar-group-label">Масштаб</span>
+        <button type="button" id="le-zoom-out" aria-label="Уменьшить масштаб">−</button><span class="le-zoom-value">100%</span><button type="button" id="le-zoom-in" aria-label="Увеличить масштаб">＋</button><button type="button" id="le-fit">По размеру</button>
+      </div>
+      <div class="le-toolbar-control-group" role="group" aria-label="Просмотр">
+        <span class="le-toolbar-group-label">Просмотр</span>
+        <button type="button" id="le-grid" aria-pressed="false">Сетка</button><button type="button" id="le-preview">Предпросмотр</button>
+      </div>
+      <div class="le-toolbar-control-group" role="group" aria-label="История действий">
+        <span class="le-toolbar-group-label">Действия</span>
+        <button type="button" id="le-undo" disabled aria-label="Отменить изменение" title="Отменить изменение">↶</button><button type="button" id="le-redo" disabled aria-label="Повторить изменение" title="Повторить изменение">↷</button>
+      </div>
+    </div>
+    <div class="le-toolbar-secondary-actions" role="group" aria-label="Проверка и экспорт"><span class="le-toolbar-group-label">Проверка и экспорт</span></div>`;
   root.prepend(toolbar);
   const imageInput = document.createElement('input');
   imageInput.type = 'file';

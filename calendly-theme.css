@@ -229,11 +229,11 @@ body.client-ui .sidebar-help {
 }
 
 body.client-ui .topbar {
-  background:rgba(255,255,255,.96)!important;
+  background:var(--lf-surface)!important;
   border-bottom:1px solid var(--lf-line)!important;
   color:var(--lf-text)!important;
   box-shadow:0 2px 12px rgba(17,56,94,.04)!important;
-  backdrop-filter:blur(10px);
+  backdrop-filter:none;
 }
 body.client-ui .topbar h1 {
   color:var(--lf-text)!important;
@@ -718,29 +718,25 @@ body.client-ui #layoutsPanel .le-properties {
   min-width:0!important;
 }
 
-/* Save actions belong to the work area footer, not its header. Keep the
-   action visible while editing without covering the right-hand inspector. */
+/* The save action follows the active page in normal document flow, so it
+   cannot cover form controls or the plan canvas at shorter screen heights. */
 body.client-ui .main:has(#workflowSaveBar:not([hidden])) {
-  padding-bottom:110px!important;
+  padding-bottom:24px!important;
 }
 body.client-ui .workflow-save-bar {
-  position:fixed!important;
-  z-index:25!important;
-  left:278px!important;
-  right:0!important;
-  bottom:16px!important;
-  width:auto!important;
-  max-width:none!important;
-  margin:0!important;
+  position:relative!important;
+  z-index:1!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:100%!important;
+  max-width:1240px!important;
+  margin:24px auto 0!important;
   padding:12px 24px!important;
   border:1px solid #cfe0f8!important;
   border-radius:10px!important;
-  background:rgba(237,244,255,.97)!important;
-  box-shadow:0 10px 28px rgba(17,56,94,.14)!important;
-  backdrop-filter:blur(10px)!important;
-}
-body.client-ui .app:not(.feeds-mode):not(.layouts-mode):not(.validator-mode):not(.project-list-mode) .workflow-save-bar {
-  right:390px!important;
+  background:var(--lf-blue-bg)!important;
+  box-shadow:none!important;
 }
 body.client-ui .workflow-save-bar .primary {
   min-height:42px!important;
@@ -805,7 +801,7 @@ body.client-ui #themeToggle { display:none!important; }
   body.client-ui .topbar { position:sticky!important; z-index:30!important; top:0!important; left:0!important; right:0!important; width:100%!important; min-width:0!important; height:60px!important; min-height:60px!important; padding:0 14px!important; }
   body.client-ui .mobile-menu-toggle { display:grid!important; place-items:center!important; }
   body.client-ui .main { display:block!important; width:100%!important; min-width:0!important; min-height:calc(100dvh - 60px)!important; height:auto!important; padding:76px 14px 28px!important; overflow:visible!important; }
-  body.client-ui .workflow-save-bar { left:14px!important; right:14px!important; bottom:14px!important; width:auto!important; padding:10px!important; }
+  body.client-ui .workflow-save-bar { left:auto!important; right:auto!important; bottom:auto!important; width:100%!important; padding:10px!important; }
   body.client-ui .workflow-save-bar .primary { width:100%!important; }
   body.client-ui #layoutsPanel .layout-branding { display:block!important; }
   body.client-ui #layoutsPanel .brand-preview,
@@ -957,18 +953,17 @@ body.client-ui .main {
   body.client-ui .publish-row > button { grid-column:auto!important; }
 }
 
-/* Mobile uses the stacked shell. Override the desktop editor offset with the
-   same selector specificity so the save bar keeps a usable width instead of
-   collapsing to a narrow strip. Keep the error summary above it. */
+/* Mobile keeps the save action in the document flow and bounds the compact
+   error summary to the viewport. */
 @media (max-width:760px) {
   body.client-ui .app:not(.feeds-mode):not(.layouts-mode):not(.validator-mode):not(.project-list-mode) .workflow-save-bar {
-    left:14px!important;
-    right:14px!important;
-    width:auto!important;
+    left:auto!important;
+    right:auto!important;
+    width:100%!important;
   }
   body.client-ui .feed-error-popover {
     right:14px!important;
-    bottom:154px!important;
+    bottom:14px!important;
     width:min(360px,calc(100vw - 28px))!important;
   }
 }
