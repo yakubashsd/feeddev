@@ -66,3 +66,44 @@ body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice>div{margin-top:1
   .landing-motion-enabled .landing-channel-chart .landing-chart-row b i{transform:none;transition:none}
   .landing-feed-row,.landing-channel-logos span{transition:none!important}
 }
+
+/* Landing polish from the design system: flat surfaces, one clear reading path,
+   and balanced blocks that stay calm on small screens. */
+.landing-screen{background:var(--landing-bg);text-wrap:pretty}
+.landing-screen p{text-wrap:pretty}
+.landing-nav{top:16px;margin-top:16px;padding:12px 16px;border:1px solid var(--landing-line);border-radius:12px;box-shadow:0 12px 32px rgba(17,56,94,.08)}
+.landing-nav nav a{padding:8px 4px;border-radius:6px;transition:color 220ms cubic-bezier(.22,1,.36,1),background-color 220ms cubic-bezier(.22,1,.36,1)}
+.landing-nav nav a:hover{background:var(--landing-soft)}
+.landing-nav-cta,.landing-button{font-size:16px;transition:transform 220ms cubic-bezier(.22,1,.36,1),box-shadow 220ms cubic-bezier(.22,1,.36,1),background-color 220ms cubic-bezier(.22,1,.36,1),border-color 220ms cubic-bezier(.22,1,.36,1)}
+.landing-button:active,.landing-nav-cta:active{transform:translateY(1px) scale(.985)}
+.landing-hero h1,.landing-section-heading h2,.landing-bento h2,.landing-difference h2,.landing-price h2,.landing-faq h2,.landing-final h2,.landing-branding-copy h2,.landing-channels h2{text-wrap:balance}
+.landing-hero{padding-top:clamp(72px,8vw,112px)}
+.landing-proof{background:rgba(255,255,255,.46)}
+.landing-proof div{padding-block:28px}
+.landing-tagline{max-width:1280px;margin:0 auto;padding:104px 0 92px;border-bottom:1px solid var(--landing-line)}
+.landing-tagline h2{max-width:760px;margin:0;color:var(--landing-ink);font-size:clamp(36px,5vw,64px);line-height:1.03;letter-spacing:-.045em;text-wrap:balance}
+.landing-tagline-word{color:rgba(17,56,94,.28);transition:color 720ms cubic-bezier(.22,1,.36,1)}
+.landing-tagline-word.is-visible{color:var(--landing-ink)}
+.landing-final{background:#eaf3ff}
+.landing-motion-enabled .landing-tagline{opacity:1;transform:none}
+.landing-motion-enabled .landing-tagline-word{will-change:color}
+.landing-screen :is(.landing-benefits article,.landing-bento-main,.landing-bento-side,.landing-channel-chart,.landing-branding-visual,.landing-product-shot,.landing-final,.landing-price){transition:transform 260ms cubic-bezier(.22,1,.36,1),box-shadow 260ms cubic-bezier(.22,1,.36,1),border-color 260ms cubic-bezier(.22,1,.36,1)}
+.landing-skip-link{transition:transform 220ms cubic-bezier(.22,1,.36,1)}
+.landing-feed-row{transition:transform 220ms cubic-bezier(.22,1,.36,1),background-color 220ms cubic-bezier(.22,1,.36,1)}
+.landing-channel-logos span{transition:transform 220ms cubic-bezier(.22,1,.36,1),border-color 220ms cubic-bezier(.22,1,.36,1),box-shadow 220ms cubic-bezier(.22,1,.36,1)}
+@media (hover:hover) and (pointer:fine){
+  .landing-screen :is(.landing-benefits article,.landing-bento-main,.landing-bento-side,.landing-channel-chart,.landing-branding-visual,.landing-product-shot):hover{transform:translateY(-3px);border-color:#b8cfee;box-shadow:0 18px 40px rgba(17,56,94,.1)}
+}
+@media(max-width:720px){
+  .landing-nav{top:10px;margin-top:10px;padding:10px 12px;grid-template-columns:minmax(0,1fr) auto}
+  .landing-brand{min-width:0}
+  .landing-brand>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .landing-nav-actions{min-width:0}
+  .landing-nav-cta{max-width:142px;overflow:hidden;text-overflow:ellipsis}
+  .landing-tagline{padding:72px 0 64px}
+  .landing-tagline h2{font-size:clamp(36px,10vw,48px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .landing-tagline-word{transition:none!important}
+  .landing-screen :is(.landing-benefits article,.landing-bento-main,.landing-bento-side,.landing-channel-chart,.landing-branding-visual,.landing-product-shot,.landing-final,.landing-price){transition:none!important}
+}

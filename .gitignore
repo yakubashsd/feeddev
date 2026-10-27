@@ -2,5 +2,7 @@ data/
 .env
 .env.local-login
 .DS_Store
+.agents/
+.codex-serve-spans.js
 node_modules/
 __pycache__/
