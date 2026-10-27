@@ -7338,7 +7338,6 @@
         brandProfileHydrating = false;
       }
       if (brandBadgeDataUrl) await persistActiveBrandProfile({ includeAsset: true });
-      if (objects.some(item => photoList(item).some(isBrandedLayoutUrl))) brandLayoutsDirty = true;
       if (isLegacyCenterPlacement) await persistActiveBrandProfile();
       renderBrandPreview();
     }
@@ -9062,7 +9061,8 @@ ${photos}
         });
         objects = nextObjects;
         originalObjects = structuredClone(objects);
-        if (brandBadgeDataUrl && objects.some(item => sourceLayoutPhoto(item))) brandLayoutsDirty = true;
+        const hasUnbrandedLayout = objects.some(item => sourceLayoutPhoto(item) && !photoList(item).some(isBrandedLayoutUrl));
+        brandLayoutsDirty = brandLayoutsDirty || hasUnbrandedLayout;
         selectedId = "";
         checkedIds = new Set();
         selectedBrandLayoutUrls = new Set();
