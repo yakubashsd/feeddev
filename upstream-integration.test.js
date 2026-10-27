@@ -219,6 +219,53 @@ test("layout preview really scales a plan without a backdrop", () => {
   assert.equal(Math.round(canvas._brandLayoutPlacement.height), 137);
 });
 
+test("branding templates can pull the floor from each feed object", () => {
+  const context = vm.createContext({});
+  vm.runInContext(clientFunction("templateText"), context);
+  assert.equal(
+    context.templateText("Этаж {{floor}} · {{area}} м²", { floor: "7", totalArea: "52.4" }),
+    "Этаж 7 · 52.4 м²"
+  );
+  assert.equal(context.templateText("{{floor}}", {}), "—");
+  assert.match(layoutEditor, /data-token="floor">Этаж/);
+  assert.match(layoutEditor, /data-custom-token="floor"/);
+});
+
+test("feed image order can be configured per branding profile", () => {
+  const context = vm.createContext({
+    activeBrandProfile: () => ({ photoOrder: ["floor", "layout", "branded", "other"] }),
+    DEFAULT_PHOTO_ORDER: ["branded", "layout", "floor", "other"],
+    PHOTO_ORDER_LABELS: { branded: "", floor: "", layout: "", other: "" }
+  });
+  vm.runInContext([
+    clientFunction("photoList"),
+    clientFunction("isBrandedLayoutUrl"),
+    clientFunction("layoutPhotoKind"),
+    clientFunction("normalizePhotoOrder"),
+    clientFunction("configuredPhotoOrder"),
+    clientFunction("photoOrderType"),
+    clientFunction("feedImageEntries"),
+    clientFunction("feedImageList")
+  ].join("\n"), context);
+  const item = {
+    layoutPhoto: "https://cdn.test/uploads/preset/flat-4.jpg",
+    photos: [
+      "https://cdn.test/uploads/layouts/branded-4.jpg",
+      "https://cdn.test/uploads/floor-plan-4.jpg",
+      "https://cdn.test/uploads/preset/flat-4.jpg",
+      "https://cdn.test/uploads/house-4.jpg"
+    ]
+  };
+  assert.deepEqual(Array.from(context.feedImageList(item)), [
+    "https://cdn.test/uploads/floor-plan-4.jpg",
+    "https://cdn.test/uploads/preset/flat-4.jpg",
+    "https://cdn.test/uploads/layouts/branded-4.jpg",
+    "https://cdn.test/uploads/house-4.jpg"
+  ]);
+  assert.match(html, /id="photoOrderEditor"/);
+  assert.match(html, /data-photo-order-up/);
+});
+
 test("editor uses the rendered plan placement and does not add a second stale outline", () => {
   assert.match(layoutEditor, /if\(brandPreviewPlacement\)return \{\.\.\.brandPreviewPlacement\}/);
   assert.doesNotMatch(layoutEditor, /canvas\.width\*\.78\/source\.sw/);

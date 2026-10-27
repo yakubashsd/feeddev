@@ -31,6 +31,11 @@ const LAYOUTS_DIR = path.join(DATA_DIR, "layouts");
 const INDEX_FILE = path.join(DATA_DIR, "feeds-index.json");
 const LAYOUTS_INDEX_FILE = path.join(DATA_DIR, "layouts-index.json");
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
+// Project drafts may contain several per-feed branding assets encoded in the
+// encrypted snapshot. Keep the default API limit strict, but allow the
+// authenticated project-state endpoint enough room for three 8 MB assets and
+// the feed objects that accompany them.
+const MAX_PROJECT_STATE_BODY_BYTES = 50 * 1024 * 1024;
 const MAX_LAYOUT_BYTES = 12 * 1024 * 1024;
 const AUTH_USERNAME = String(process.env.AUTH_USERNAME || "sozdateli");
 const AUTH_PASSWORD = String(process.env.AUTH_PASSWORD || "");
@@ -583,7 +588,7 @@ function setSessionCookie(req, res, token, maxAge = SESSION_TTL_SECONDS) {
   ]);
 }
 
-function parseBody(req) {
+function parseBody(req, { maxBytes = MAX_BODY_BYTES, tooLargeMessage = "Фид слишком большой. Максимум 20 МБ для MVP." } = {}) {
   if (req.body !== undefined && req.body !== null) {
     if (typeof req.body === "object") return Promise.resolve(req.body);
     if (String(req.headers["content-type"] || "").toLowerCase().includes("application/x-www-form-urlencoded")) {
@@ -601,8 +606,8 @@ function parseBody(req) {
     const chunks = [];
     req.on("data", chunk => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        reject(new Error("Фид слишком большой. Максимум 20 МБ для MVP."));
+      if (size > maxBytes) {
+        reject(new Error(tooLargeMessage));
         req.destroy();
         return;
       }
@@ -1351,7 +1356,22 @@ async function handleApi(req, res, url) {
         sourceUrl: source.url || "",
         name: source.name || "",
         platform: source.platform || "",
-        objectCount: Number(source.objectCount || 0),
+        // Older clients could write a zero count after a browser-storage
+        // failure even though the editor snapshot still contained scoped
+        // objects. Recover that count from the server snapshot so the list
+        // never regresses to "0 объектов" on the next login.
+        objectCount: (() => {
+          const sourceId = String(source.id || "");
+          const scoped = editorObjects.filter(item => (
+            String(item?._sourceId || "") === sourceId
+            || (Array.isArray(item?._sourceIds) && item._sourceIds.map(String).includes(sourceId))
+          )).length;
+          if (scoped > 0) return scoped;
+          const persisted = Number(source.objectCount || 0);
+          if (persisted > 0) return persisted;
+          return sourceRecords.length === 1 && editorObjects.length ? editorObjects.length : 0;
+        })(),
+        createdAt: source.createdAt || null,
         updatedAt: source.updatedAt || null,
         lastSuccessAt: null,
         nextRunAt: null,
@@ -1360,7 +1380,7 @@ async function handleApi(req, res, url) {
       }));
       const stale = projectFeeds.some(feed => feed.feedStale || (feed.nextAutoSyncAt && new Date(feed.nextAutoSyncAt).getTime() < Date.now() && feed.autoSyncError));
       const sourceObjectTotal = sourceSummaries.reduce((total, source) => total + (Number(source.objectCount) > 0 ? Number(source.objectCount) : 0), 0);
-      return { ...project, summary: { sourceCount: sourceRecords.length, objectCount: Number(editorObjects.length || sourceObjectTotal || projectFeeds.reduce((total, feed) => total + (Number(feed.objectCount) || 0), 0)), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", sources: sourceSummaries, feeds: projectFeeds.map(feed => ({ id: feed.id, sourceId: feed.sourceId || "", sourceUrl: feed.sourceUrl || "", name: feed.name, url: feed.url, platform: feed.platform, contextKey: feed.contextKey || "", complexName: feed.complexName || "", objectCount: feed.objectCount, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
+      return { ...project, summary: { sourceCount: sourceRecords.length, objectCount: Number(editorObjects.length || sourceObjectTotal || projectFeeds.reduce((total, feed) => total + (Number(feed.objectCount) || 0), 0)), lastReleaseAt: projectFeeds.map(feed => feed.updatedAt).sort().at(-1) || null, feedHealth: projectFeeds.some(feed => feed.autoSyncError) ? "error" : stale ? "stale" : projectFeeds.length ? "healthy" : "not_published", sources: sourceSummaries, feeds: projectFeeds.map(feed => ({ id: feed.id, sourceId: feed.sourceId || "", sourceUrl: feed.sourceUrl || "", name: feed.name, url: feed.url, platform: feed.platform, contextKey: feed.contextKey || "", complexName: feed.complexName || "", objectCount: feed.objectCount, createdAt: feed.createdAt || null, updatedAt: feed.updatedAt, lastSuccessAt: feed.lastSuccessAt || feed.lastAutoSyncAt || null, nextRunAt: feed.nextRunAt || feed.nextAutoSyncAt || null, stale: Boolean(feed.feedStale), autoSyncError: feed.autoSyncError || "" })) } };
     }));
     return send(res, 200, { projects: summaries, limit: actor.user.projectLimit || PLAN.minProjects });
   }
@@ -1503,7 +1523,10 @@ async function handleApi(req, res, url) {
     }
     if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 409, "Архивный проект доступен только для просмотра.");
     if (!hasWorkspaceAccess(actor.user)) return sendError(res, 402, "Тестовый период закончился. Оплатите тариф, чтобы продолжить.");
-    const payload = await parseBody(req);
+    const payload = await parseBody(req, {
+      maxBytes: MAX_PROJECT_STATE_BODY_BYTES,
+      tooLargeMessage: "Состояние проекта слишком большое. Уменьшите размер изображений и повторите сохранение."
+    });
     const expected = req.headers["if-match"]?.replace(/^\"|\"$/g, "");
     try {
       const saved = await projectStateStore.put(actor.userId, projectStateMatch[1], payload.state, expected === undefined ? undefined : Number(expected));

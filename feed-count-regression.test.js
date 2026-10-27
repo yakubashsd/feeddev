@@ -59,3 +59,9 @@ test("legacy single-feed snapshots without source IDs still show their objects",
     objects: [{ externalId: "1" }, { externalId: "2" }, { externalId: "3" }]
   }), 3);
 });
+
+test("cloud saves include the source registry when browser storage is unavailable", () => {
+  assert.match(html, /const serializedSources = JSON\.stringify\(projectSources\)/);
+  assert.match(html, /\[projectSourcesStorageKey\]: serializedSources/);
+  assert.match(html, /let pendingProjectStateOverrides = \{\}/);
+});

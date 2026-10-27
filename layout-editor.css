@@ -113,6 +113,7 @@ body:has(#layoutsPanel:not(.page-hidden)) .workflow-nav { display:none!important
 .le-hint { color:var(--muted, #506e8a); }
 .le-properties .le-field { color:var(--text, #11385e); font-size:12px; font-weight:650; }
 .le-properties .le-field input, .le-properties .le-field select, .le-properties .le-field textarea { margin-top:6px; border-color:#bfd4ee; border-radius:7px; background:#fff; color:var(--text, #11385e); }
+.le-image-preview { display:block; width:100%; max-height:120px; object-fit:contain; margin:8px 0 12px; border:1px solid var(--line, #d9e6f5); border-radius:7px; background:#f7faff; }
 .le-properties .safe-zone-control { background:#eff5ff; border-color:#b9cff3; }
 .le-properties .safe-zone-control label { color:#2459a4; }
 .le-footer { border-color:var(--line, #d9e6f5); box-shadow:0 4px 16px rgba(17,56,94,.04); }

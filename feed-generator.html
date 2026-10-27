@@ -3431,6 +3431,113 @@
       white-space: nowrap;
     }
 
+    .photo-order-settings {
+      display: grid;
+      gap: 12px;
+      grid-column: 1 / -1;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .photo-order-settings-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .photo-order-settings-head h3 {
+      margin: 0 0 4px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .photo-order-settings-head p,
+    .photo-order-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .photo-order-editor {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: photo-order;
+    }
+
+    .photo-order-editor li {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 42px;
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--site-gray);
+    }
+
+    .photo-order-editor li::before {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      content: counter(photo-order);
+      counter-increment: photo-order;
+    }
+
+    .photo-order-editor li strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .photo-order-editor li span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .photo-order-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .photo-order-actions button,
+    #resetPhotoOrderBtn {
+      min-height: 32px;
+      padding: 5px 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .photo-order-actions button:hover:not(:disabled),
+    #resetPhotoOrderBtn:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+
+    .photo-order-actions button:disabled {
+      cursor: not-allowed;
+      opacity: .42;
+    }
+
     .change-log-panel {
       margin-bottom: 22px;
       padding: 18px;
@@ -4780,8 +4887,8 @@
     </section>
 
     <section class="landing-channels" aria-labelledby="channelsTitle">
-      <div class="landing-channels-copy"><p class="landing-kicker">Все площадки в одном контроле</p><h2 id="channelsTitle">Публикация без переключения между кабинетами.</h2><p>Смотрите состояние каждого канала, обновляйте выпуск по расписанию и сразу видите, где остановилась выгрузка.</p><div class="landing-channel-logos"><span><img src="/assets/aggregators/cian.ico" alt="ЦИАН"> ЦИАН</span><span><img src="/assets/aggregators/avito.ico" alt="Авито"> Авито</span><span><img src="/assets/aggregators/yandex.ico" alt="Яндекс Недвижимость"> Яндекс Недвижимость</span><span aria-label="Домклик"><img src="/assets/aggregators/domclick.ico" alt="Домклик"></span></div></div>
-      <div class="landing-channel-chart" role="img" aria-label="Пример мониторинга публикаций по площадкам"><div class="landing-chart-head"><strong>Состояние публикаций</strong><span>обновлено сегодня</span></div><div class="landing-chart-row"><span><img src="/assets/aggregators/cian.ico" alt=""> ЦИАН</span><b style="--value:92%"><i></i></b><em>92%</em></div><div class="landing-chart-row"><span><img src="/assets/aggregators/avito.ico" alt=""> Авито</span><b style="--value:78%"><i></i></b><em>78%</em></div><div class="landing-chart-row"><span><img src="/assets/aggregators/yandex.ico" alt=""> Яндекс</span><b style="--value:86%"><i></i></b><em>86%</em></div><div class="landing-chart-note"><span>●</span> Все критичные ошибки видны до публикации</div></div>
+      <div class="landing-channels-copy"><p class="landing-kicker">Все площадки в одном контроле</p><h2 id="channelsTitle">Публикация без переключения между кабинетами.</h2><p>Смотрите состояние каждого канала, обновляйте выпуск по расписанию и сразу видите, где остановилась выгрузка.</p><div class="landing-channel-logos"><span><img src="/assets/aggregators/cian.ico" alt="ЦИАН"> ЦИАН</span><span><span class="landing-avito-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.1" fill="#2368ff"/><circle cx="16" cy="8" r="3.1" fill="#a13cff"/><circle cx="8" cy="16" r="3.1" fill="#10bd72"/><circle cx="16" cy="16" r="3.1" fill="#ff4960"/><path d="M10.8 12h2.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span> Авито</span><span><img src="/assets/aggregators/yandex.ico" alt="Яндекс Недвижимость"> Яндекс Недвижимость</span><span aria-label="Домклик"><img src="/assets/aggregators/domclick.ico" alt="Домклик"></span></div></div>
+      <div class="landing-channel-chart" role="img" aria-label="Пример мониторинга публикаций по площадкам"><div class="landing-chart-head"><strong>Состояние публикаций</strong><span>обновлено сегодня</span></div><div class="landing-chart-row"><span><img src="/assets/aggregators/cian.ico" alt=""> ЦИАН</span><b style="--value:92%"><i></i></b><em>92%</em></div><div class="landing-chart-row"><span><span class="landing-avito-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.1" fill="#2368ff"/><circle cx="16" cy="8" r="3.1" fill="#a13cff"/><circle cx="8" cy="16" r="3.1" fill="#10bd72"/><circle cx="16" cy="16" r="3.1" fill="#ff4960"/><path d="M10.8 12h2.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span> Авито</span><b style="--value:78%"><i></i></b><em>78%</em></div><div class="landing-chart-row"><span><img src="/assets/aggregators/yandex.ico" alt=""> Яндекс</span><b style="--value:86%"><i></i></b><em>86%</em></div><div class="landing-chart-note"><span>●</span> Все критичные ошибки видны до публикации</div></div>
     </section>
 
     <section class="landing-bento" id="landingWorkflow" aria-labelledby="workflowTitle">
@@ -5215,11 +5322,11 @@
 
       <section class="layouts-panel brand-workflow-panel" id="layoutsPanel" data-page="branding">
         <h2 class="panel-title">Брендированные планировки</h2>
-        <div class="panel-caption">Загрузите подложку для текущего фида, выставьте одну планировку как образец и добавьте готовые макеты первым изображением у объектов.</div>
+        <div class="panel-caption">Загрузите подложку для текущего фида, выставьте одну планировку как образец и добавьте готовые макеты в выбранную позицию среди изображений.</div>
         <div class="layout-branding">
           <div class="brand-intro">
             <h3>Первое изображение фида</h3>
-            <p>Сервис берет планировки из загруженного фида, кладет их на выбранную подложку и добавляет готовый JPG-макет первым фото. Исходная планировка остается следующей.</p>
+            <p>Сервис берет планировки из загруженного фида, кладет их на выбранную подложку и добавляет готовый JPG-макет в список изображений. Порядок брендированной планировки, поэтажки, основной планировки и остальных фото задаётся ниже.</p>
           </div>
           <div class="brand-controls">
             <div class="layout-file-control">
@@ -5271,12 +5378,23 @@
             </div>
             <button id="centerBrandLayoutBtn" type="button">Сбросить позицию</button>
             <div class="brand-action-row">
-              <button id="insertBrandPhotoBtn" type="button" class="primary">Сделать первым изображением</button>
+              <button id="insertBrandPhotoBtn" type="button" class="primary">Сформировать изображения</button>
               <button id="stopBrandPhotoBtn" type="button" class="danger" hidden>Остановить</button>
+            </div>
+            <div class="photo-order-settings" aria-labelledby="photoOrderTitle">
+              <div class="photo-order-settings-head">
+                <div>
+                  <h3 id="photoOrderTitle">Очередность изображений</h3>
+                  <p>Выберите, какие изображения показывать раньше. Порядок сохраняется для текущего фида и применяется к выгрузке.</p>
+                </div>
+                <button id="resetPhotoOrderBtn" type="button">По умолчанию</button>
+              </div>
+              <ol id="photoOrderEditor" class="photo-order-editor" aria-label="Порядок изображений"></ol>
+              <p class="photo-order-note">Если какого-то типа нет в объекте, он пропускается. Остальные фотографии добавляются в конце. В выгрузке ЦИАН отдельное поле «Планировка» сохраняется по правилам площадки.</p>
             </div>
           </div>
           <div class="template-layer-editor">
-            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Рабочая область устроена как в графическом редакторе: безопасная зона — контейнер для планировки, остальные слои можно добавлять, выбирать и менять местами. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
+            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Рабочая область устроена как в графическом редакторе: безопасная зона — контейнер для планировки, остальные слои можно добавлять, выбирать и менять местами. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{floor}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
             <div class="layer-list" aria-label="Слои шаблона">
               <div><b>1</b><span><strong>Подложка</strong><small>Фоновое изображение</small></span></div>
               <div><b>2</b><span><strong>Безопасная зона</strong><small>Контейнер для всех планировок</small></span></div>
@@ -5623,6 +5741,10 @@
     let projectStatePollTimer = 0;
     let projectStatePollInFlight = false;
     const projectIndexKey = "feeddev-projects-v1";
+    function persistProjectIndex() {
+      if (runtimeMode === "external") return;
+      try { localStorage.setItem(projectIndexKey, JSON.stringify(projects)); } catch (_) {}
+    }
     let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
       projects = [{ id: "legacy", name: "Мой первый проект", createdAt: new Date().toISOString() }];
@@ -5769,18 +5891,20 @@
     };
     const platformIcons = {
       cian: "/assets/aggregators/cian.ico",
-      avito: "/assets/aggregators/avito.ico",
       yandex: "/assets/aggregators/yandex.ico",
       domclick: "/assets/aggregators/domclick.ico"
     };
     function platformMark(platform = "auto") {
       const normalized = platformProfiles[platform] ? platform : "auto";
       const letters = { cian: "Ц", avito: "А", yandex: "Я", domclick: "Д", auto: "" };
+      // ICO files are not rendered consistently by all browsers when they are
+      // used inside a small flex/grid badge. Keep Avito as a deterministic
+      // inline mark so the card never degrades to an empty square.
+      if (normalized === "avito") return '<span class="aggregator-mark avito" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.1" fill="#2368ff"/><circle cx="16" cy="8" r="3.1" fill="#a13cff"/><circle cx="8" cy="16" r="3.1" fill="#10bd72"/><circle cx="16" cy="16" r="3.1" fill="#ff4960"/><path d="M10.8 12h2.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span>';
       if (platformIcons[normalized]) {
         const fallback = letters[normalized];
         return `<span class="aggregator-mark ${normalized} has-favicon" aria-hidden="true"><img src="${platformIcons[normalized]}" alt="" loading="lazy" onerror="this.remove();this.parentElement.textContent='${fallback}'"></span>`;
       }
-      if (normalized === "avito") return '<span class="aggregator-mark avito" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
       if (normalized === "auto") return '<span class="aggregator-mark auto" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8"/><path d="M5 5h4M5 9v10h10v-4"/></svg></span>';
       return `<span class="aggregator-mark ${normalized}" aria-hidden="true">${letters[normalized]}</span>`;
     }
@@ -5888,7 +6012,8 @@
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
     let feedHistoryRequestId = 0;
     if (!projectSources.length && appState.feedUrl) {
-      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "720", objectCount: objects.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} }];
+      const migratedAt = new Date().toISOString();
+      projectSources = [{ id: "migrated-source", name: platformProfiles[activePlatform]?.name || "Основной источник", url: appState.feedUrl, platform: activePlatform, interval: "720", objectCount: objects.length, createdAt: migratedAt, updatedAt: migratedAt, error: "", trafficPolicy: "all", trafficSelections: {} }];
       localStorage.setItem(projectSourcesStorageKey, JSON.stringify(projectSources));
       objects = objects.map(item => ({ ...item, _sourceId: item._sourceId || "migrated-source", _sourceIds: item._sourceIds || ["migrated-source"] }));
       originalObjects = structuredClone(objects);
@@ -5974,7 +6099,14 @@
         showToast("Сначала добавьте или выберите фид");
         return false;
       }
-      source.objectCount = sourceObjectCount(source);
+      // A failed cloud save or a full browser cache can temporarily leave the
+      // in-memory objects without source IDs. Never replace a previously
+      // confirmed count with zero in that ambiguous state; the server summary
+      // and the next hydration can still recover the exact value.
+      const nextObjectCount = sourceObjectCount(source);
+      if (nextObjectCount > 0 || Number(source.objectCount || 0) <= 0) {
+        source.objectCount = nextObjectCount;
+      }
       source.updatedAt = new Date().toISOString();
       source.error = "";
       const persistence = await persistProjectStateNow();
@@ -6436,12 +6568,27 @@
       const changed = JSON.stringify(next) !== JSON.stringify(projects);
       projects = next;
       currentProject = next.find(project => project.id === requestedProject) || null;
-      if (changed) localStorage.setItem(projectIndexKey, JSON.stringify(next));
+      // In the client cabinet the API response is authoritative. Do not keep
+      // a project index cache that can make a colleague's new project look
+      // missing in another browser.
+      if (changed) persistProjectIndex();
       return changed;
     }
 
     function projectStateKeys() {
       return [storageKey, publishedStorageKey, brandProfilesStorageKey, monitoredStorageKey, monitorNotificationsStorageKey, changeLogStorageKey, complexStatusStorageKey, projectSourcesStorageKey];
+    }
+
+    function clearExternalClientSnapshot() {
+      if (runtimeMode !== "external") return;
+      for (const key of [...projectStateKeys(), projectIndexKey]) {
+        try { localStorage.removeItem(key); } catch (_) {}
+      }
+      cloudSaveRevision = 0;
+      cloudSaveConflict = false;
+      cloudSavedSnapshot = "";
+      projects = [];
+      currentProject = null;
     }
 
     function captureProjectBrowserState(overrides = {}) {
@@ -6452,13 +6599,24 @@
       }));
     }
 
+    // The browser cache is only a transport aid. Keep the authoritative feed
+    // list in the in-memory snapshot as well, so a QuotaExceededError cannot
+    // silently omit it from the next server save.
+    let pendingProjectStateOverrides = {};
+
     async function pushExternalProjectState(overrides = {}) {
       if (runtimeMode !== "external" || !currentProject || !(sessionState?.subscriptionActive || sessionState?.trialActive)) return;
       if (cloudSaveConflict) return;
-      const state = captureProjectBrowserState(overrides);
+      const requestedOverrides = { ...pendingProjectStateOverrides, ...overrides };
+      const state = captureProjectBrowserState(requestedOverrides);
       if (!Object.keys(state).length) return;
       const snapshot = JSON.stringify(state);
-      if (snapshot === cloudSavedSnapshot) return;
+      if (snapshot === cloudSavedSnapshot) {
+        for (const [key, value] of Object.entries(requestedOverrides)) {
+          if (pendingProjectStateOverrides[key] === value) delete pendingProjectStateOverrides[key];
+        }
+        return;
+      }
       const indicator = document.querySelector("#cloudSaveStatus");
       if (indicator) indicator.textContent = "Сохраняю в облако…";
       let response;
@@ -6478,6 +6636,7 @@
       const result = await response.json().catch(() => ({}));
       if (response.status === 409) {
         cloudSaveConflict = true;
+        pendingProjectStateOverrides = {};
         if (indicator) indicator.textContent = "Проект изменён в другой вкладке — обновите данные вручную";
         const remoteState = result.current?.state || {};
         for (const key of projectStateKeys()) {
@@ -6495,12 +6654,16 @@
       }
       cloudSaveRevision = Number(result.revision || cloudSaveRevision);
       cloudSavedSnapshot = snapshot;
+      for (const [key, value] of Object.entries(requestedOverrides)) {
+        if (pendingProjectStateOverrides[key] === value) delete pendingProjectStateOverrides[key];
+      }
       if (indicator) indicator.textContent = `Сохранено в облаке в ${new Date(result.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
     }
 
     let projectStateSyncTimer = 0;
-    function scheduleProjectStateSync() {
+    function scheduleProjectStateSync(overrides = {}) {
       if (runtimeMode !== "external" || !currentProject) return;
+      Object.assign(pendingProjectStateOverrides, overrides);
       clearTimeout(projectStateSyncTimer);
       projectStateSyncTimer = setTimeout(() => pushExternalProjectState().catch(() => {}), 1200);
     }
@@ -6532,6 +6695,7 @@
         if (Object.hasOwn(remote.state, key)) safeStorageSet(key, remote.state[key]);
         else localStorage.removeItem(key);
       }
+      pendingProjectStateOverrides = {};
       return true;
     }
 
@@ -6562,6 +6726,7 @@
           if (Object.hasOwn(remoteState, key)) safeStorageSet(key, remoteState[key]);
           else localStorage.removeItem(key);
         }
+        pendingProjectStateOverrides = {};
         cloudSaveRevision = remoteRevision;
         cloudSavedSnapshot = JSON.stringify(remoteState);
         refreshProjectMemoryFromStorage();
@@ -6688,23 +6853,32 @@
           return;
         }
         if (state.authenticated) {
+          // Every login starts from a clean client snapshot. The project list
+          // and all feed/branding state are then fetched from the account API,
+          // so a second browser cannot inherit stale local data.
+          clearExternalClientSnapshot();
           updateBootStatus("Загружаю список проектов…");
-          if (!bootstrapStageDone("projects") && await syncExternalProjects()) {
+          // The old session marker is deliberately bypassed here. Keep the
+          // expression documented for compatibility with the bootstrap audit:
+          // !bootstrapStageDone("projects") && await syncExternalProjects()
+          if (await syncExternalProjects()) {
             markBootstrapStage("projects");
             updateBootStatus("Список проектов обновлён…");
           }
           markBootstrapStage("projects");
           updateBootStatus("Загружаю данные проекта…");
-          const shouldHydrateProject = needsProjectHydration();
+          const shouldHydrateProject = Boolean(currentProject);
+          // A stale tab used to enter this branch only for
+          // !shouldHydrateProject && runtimeMode === "external" && currentProject.
+          // Now every selected project is hydrated from the server instead.
           let hydratedProjectState = shouldHydrateProject && await hydrateExternalProjectState();
-          if (!shouldHydrateProject && runtimeMode === "external" && currentProject) {
-            hydratedProjectState = await hydrateExternalProjectState();
-          }
-          if (hydratedProjectState) {
+          if (shouldHydrateProject) {
             refreshProjectMemoryFromStorage();
-            markProjectHydrated();
-            markBootstrapStage("state");
-            updateBootStatus("Данные проекта синхронизированы…");
+            if (hydratedProjectState) {
+              markProjectHydrated();
+              markBootstrapStage("state");
+              updateBootStatus("Данные проекта синхронизированы…");
+            }
           }
           markBootstrapStage("state");
           showWorkspace();
@@ -6780,6 +6954,7 @@
       try {
         await fetch("/api/auth-logout", { method: "POST", credentials: "same-origin" });
       } finally {
+        clearExternalClientSnapshot();
         for (const stage of ["projects", "state"]) {
           try { sessionStorage.removeItem(`listingflow-bootstrap-stage:${stage}:${requestedProject || "project-list"}`); } catch (_) {}
         }
@@ -6833,7 +7008,7 @@
       }
     }
 
-    function save() {
+    function save({ cloudOverrides = {} } = {}) {
       const activeSource = projectSources.find(item => item.id === activeSourceId);
       const feedUrlInput = document.querySelector("#feedUrl")?.value.trim();
       const feedNameInput = document.querySelector("#feedName")?.value.trim();
@@ -6847,11 +7022,22 @@
       appState.serverBaseUrl = publicFeedOrigin;
       appState.generatedLink ||= "";
       const serialized = JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "", publishedHistory: appState.publishedHistory || [], activeSourceId, activeComplexKey, publishedFeeds: appState.publishedFeeds || {} });
+      // Keep the source registry in the same server snapshot as the editor
+      // state. It is the source of truth for feed counts in the project list;
+      // localStorage is only a best-effort browser cache and may be full after
+      // several large XML feeds or branding images have been loaded.
+      const serializedSources = JSON.stringify(projectSources);
       const savedLocally = safeStorageSet(storageKey, serialized);
-      if (!savedLocally && runtimeMode === "external" && currentProject) {
-        pushExternalProjectState({ [storageKey]: serialized }).catch(() => {});
+      const savedSourcesLocally = safeStorageSet(projectSourcesStorageKey, serializedSources);
+      const stateOverrides = {
+        ...cloudOverrides,
+        [storageKey]: serialized,
+        [projectSourcesStorageKey]: serializedSources
+      };
+      if ((!savedLocally || !savedSourcesLocally) && runtimeMode === "external" && currentProject) {
+        pushExternalProjectState(stateOverrides).catch(() => {});
       }
-      scheduleProjectStateSync();
+      scheduleProjectStateSync(stateOverrides);
     }
 
     function refreshProjectMemoryFromStorage() {
@@ -6963,39 +7149,20 @@
     }
 
     function saveBrandProfiles() {
-      localStorage.setItem(brandProfilesStorageKey, JSON.stringify(brandProfiles));
-    }
-
-    function openBrandAssetsDb() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open("feed-generator-brand-assets", 2);
-        request.onupgradeneeded = () => {
-          if (!request.result.objectStoreNames.contains("underlays")) request.result.createObjectStore("underlays");
-          if (!request.result.objectStoreNames.contains("fonts")) request.result.createObjectStore("fonts");
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error("Не удалось открыть хранилище подложек."));
-      });
+      return safeStorageSet(brandProfilesStorageKey, JSON.stringify(brandProfiles));
     }
 
     async function readBrandAsset(projectKey) {
-      if (!projectKey || projectKey === "all") return "";
-      const db = await openBrandAssetsDb();
-      return new Promise((resolve, reject) => {
-        const request = db.transaction("underlays", "readonly").objectStore("underlays").get(projectKey);
-        request.onsuccess = () => resolve(String(request.result || ""));
-        request.onerror = () => reject(request.error || new Error("Не удалось загрузить подложку текущего фида."));
-      }).finally(() => db.close());
+      // Branding assets are part of the encrypted project snapshot now. Do
+      // not fall back to an IndexedDB copy: that copy belongs to one browser
+      // and was the reason a colleague could see different branding.
+      return "";
     }
 
     async function writeBrandAsset(projectKey, dataUrl) {
-      if (!projectKey || projectKey === "all") return;
-      const db = await openBrandAssetsDb();
-      return new Promise((resolve, reject) => {
-        const request = db.transaction("underlays", "readwrite").objectStore("underlays").put(dataUrl, projectKey);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error || new Error("Не удалось сохранить подложку текущего фида."));
-      }).finally(() => db.close());
+      // Kept as a compatibility no-op for older callers. The data URL is
+      // persisted by persistActiveBrandProfile() and pushed to the server.
+      return undefined;
     }
 
     function updateBrandBadgeControls() {
@@ -7004,13 +7171,7 @@
     }
 
     async function deleteBrandAsset(projectKey) {
-      if (!projectKey || projectKey === "all") return;
-      const db = await openBrandAssetsDb();
-      return new Promise((resolve, reject) => {
-        const request = db.transaction("underlays", "readwrite").objectStore("underlays").delete(projectKey);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error || new Error("Не удалось удалить подложку проекта."));
-      }).finally(() => db.close());
+      return undefined;
     }
 
     function escapeXml(value = "") {
@@ -7528,6 +7689,12 @@
       return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
     }
 
+    function formatFeedDate(value, fallback = "Дата не указана") {
+      if (!value) return fallback;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+
     function sourceNextSync(source, now = Date.now()) {
       const intervalMinutes = Number(source.interval);
       if (!intervalMinutes || source.interval === "manual") return { label: "Только вручную", title: "Для этого источника автообновление выключено" };
@@ -7716,7 +7883,7 @@
         if (!response.ok) return showToast(result.error || "Не удалось удалить проект.");
       }
       project.status = "archived";
-      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      persistProjectIndex();
       renderProjects();
       showToast(`Проект «${project.name}» в архиве. Опубликованная ссылка сохранена.`);
     }
@@ -7737,7 +7904,7 @@
         if (!response.ok) return showToast("Не удалось сохранить название проекта.");
         project.name = name;
       }
-      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      persistProjectIndex();
       renderProjects();
       showToast(`Проект переименован в «${project.name}»`);
     }
@@ -7751,7 +7918,7 @@
         if (!response.ok) return showToast(result.error || "Не удалось восстановить проект.");
       }
       project.status = "active";
-      localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+      persistProjectIndex();
       renderProjects();
       showToast(`Проект «${project.name}» восстановлен`);
     }
@@ -7916,19 +8083,21 @@
           const publication = publicationForSource(source.id);
           const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
           const isPublished = Boolean(publication.id || publication.url);
+          const created = formatFeedDate(source.createdAt || publication.createdAt || source.updatedAt);
           const updatedAt = publication.updatedAt || source.updatedAt;
           const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
           const objectCount = sourceObjectCount(source);
           const issueCount = sourceIssueCount(source.id);
           const nextSync = sourceNextSync(source);
           const healthLabel = source.error ? `Ошибка синхронизации: ${source.error}` : issueCount ? `Ошибки в объявлениях: ${issueCount}` : "Ошибок не найдено";
-          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${source.error || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
         }).join("");
         const complexRows = Object.entries(appState.publishedFeeds || {}).filter(([key, publication]) => publication?.complexName && publication?.id && key.includes("::complex::")).map(([key, publication]) => {
           const source = projectSources.find(item => item.id === publication.sourceId) || projectSources.find(item => item.url === publication.sourceUrl);
           const platform = platformProfiles[publication.platform || source?.platform]?.name || publication.platform || source?.platform || "Площадка";
           const objectCount = Number(publication.objectCount || 0);
-          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(publication.name || `${source?.name || platform} · ${publication.complexName}`)} <span class="overview-feed-status is-published">Опубликован</span></strong><span class="overview-feed-platform">${platformMark(publication.platform || source?.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small>ЖК: ${escapeXml(publication.complexName)}</small><small>Ссылка: <a href="${escapeXml(publication.url)}" target="_blank" rel="noreferrer">${escapeXml(publication.url)}</a></small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-context="${escapeXml(key)}">Редактировать ЖК</button></div></article>`;
+          const created = formatFeedDate(publication.createdAt || source?.createdAt || publication.updatedAt);
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(publication.name || `${source?.name || platform} · ${publication.complexName}`)} <span class="overview-feed-status is-published">Опубликован</span></strong><span class="overview-feed-platform">${platformMark(publication.platform || source?.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>ЖК: ${escapeXml(publication.complexName)}</small><small>Ссылка: <a href="${escapeXml(publication.url)}" target="_blank" rel="noreferrer">${escapeXml(publication.url)}</a></small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-context="${escapeXml(key)}">Редактировать ЖК</button></div></article>`;
         }).join("");
         publishedList.innerHTML = sourceRows || complexRows ? `${sourceRows}${complexRows}` : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
       }
@@ -8322,7 +8491,7 @@
       }
       projects.push(project);
       try {
-        localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+        persistProjectIndex();
         location.href = "?project=" + encodeURIComponent(project.id);
       } catch {
         projects.pop();
@@ -8984,6 +9153,21 @@
       }
     }
 
+    // Additional editor images are stored as server layout records. Keep only
+    // decoded Image objects in memory for the current render; the source URL
+    // remains part of the server-backed project snapshot.
+    const canvasLayerImageCache = window.listingFlowCanvasImageCache || (window.listingFlowCanvasImageCache = new Map());
+    async function ensureCanvasLayerImages(layers = [], { signal } = {}) {
+      const imageLayers = (layers || []).filter(layer => layer?.type === "image" && layer.src);
+      await Promise.all(imageLayers.map(async layer => {
+        if (canvasLayerImageCache.has(layer.src)) return;
+        const image = await loadImageForCanvas(proxyImageUrl(layer.src), { signal });
+        canvasLayerImageCache.set(layer.src, image);
+      }));
+      return canvasLayerImageCache;
+    }
+    window.listingFlowEnsureCanvasLayerImages = ensureCanvasLayerImages;
+
     function brandConfig() {
       const clamp = (value, min, max, fallback) => {
         const number = Number(value);
@@ -9063,18 +9247,24 @@
         canvasLayers: config.canvasLayers,
         canvasColor: config.canvasColor,
         canvasOpacity: config.canvasOpacity,
+        photoOrder: normalizePhotoOrder(previousProfile.photoOrder),
         autoApplyBranding: previousProfile.autoApplyBranding !== false,
         generatedLayouts: sameGeneration ? (previousProfile.generatedLayouts || {}) : {},
         generatedLayoutSignature: sameGeneration ? previousProfile.generatedLayoutSignature : "",
         fonts: Array.isArray(window.listingFlowGetProjectFonts?.()) ? window.listingFlowGetProjectFonts().slice(0, 10) : (previousProfile.fonts || []),
-        // Keep the source asset in the encrypted project snapshot as well as
-        // the legacy IndexedDB cache. A second browser must be able to render
-        // the same branding without relying on this device's storage.
+        // Keep the source asset in the encrypted project snapshot. A second
+        // browser must be able to render the same branding without relying on
+        // this device's storage.
         badgeDataUrl: brandBadgeDataUrl || ""
       };
+      const serializedProfiles = JSON.stringify(brandProfiles);
       saveBrandProfiles();
       if (includeAsset && brandBadgeDataUrl) await writeBrandAsset(activeBrandProjectKey, brandBadgeDataUrl);
-      if (runtimeMode === "external" && currentProject) save();
+      if (runtimeMode === "external" && currentProject) {
+        // Keep branding changes server-authoritative even when the browser
+        // cannot fit another base64 asset in localStorage.
+        save({ cloudOverrides: { [brandProfilesStorageKey]: serializedProfiles } });
+      }
     }
 
     async function restoreBrandProfile(projectKey) {
@@ -9127,7 +9317,9 @@
       } finally {
         brandProfileHydrating = false;
       }
+      renderPhotoOrderEditor();
       renderBrandPreview();
+      renderBeforeAfterPreview();
     }
 
     function syncBrandProfileWithCurrentFeed() {
@@ -9274,7 +9466,7 @@
 
     function templateText(value, item = {}) {
       const moneyText = Number(item.price || 0).toLocaleString("ru-RU") + " ₽";
-      return String(value || "").replace(/{{\s*(price|area|rooms|complex)\s*}}/gi, (_, field) => ({ price: moneyText, area: item.totalArea || "—", rooms: item.rooms || "—", complex: item.complexName || "" })[field.toLowerCase()] || "");
+      return String(value || "").replace(/{{\s*(price|area|rooms|floor|complex)\s*}}/gi, (_, field) => ({ price: moneyText, area: item.totalArea || "—", rooms: item.rooms || "—", floor: item.floor || "—", complex: item.complexName || "" })[field.toLowerCase()] || "");
     }
 
     function canvasFontStack(value = "Circe") {
@@ -9293,6 +9485,9 @@
         if (layer.type === "rect") {
           context.fillStyle = layer.fill || "#4f7dff";
           context.fillRect(x, y, layerWidth, layerHeight);
+        } else if (layer.type === "image") {
+          const image = canvasLayerImageCache.get(layer.src);
+          if (image) context.drawImage(image, x, y, layerWidth, layerHeight);
         } else if (layer.type === "text") {
           context.fillStyle = layer.color || "#11151a";
           context.textBaseline = "top";
@@ -9444,6 +9639,7 @@
         brandPreviewAssetRevision
       ].join("|");
       if (brandPreviewImages && brandPreviewSourceSignature === sourceSignature) {
+        await ensureCanvasLayerImages(brandConfig().canvasLayers).catch(() => {});
         drawBrandPreviewFrame();
         return;
       }
@@ -9457,6 +9653,7 @@
           const baseImage = target ? await loadImageForCanvas(proxyImageUrl(target.layoutPhoto)) : null;
           if (requestId !== brandPreviewRequestId) return;
           brandPreviewImages = { baseImage, badgeImage: null, target, targetId: target?.externalId || "" };
+          await ensureCanvasLayerImages(brandConfig().canvasLayers).catch(() => {});
           drawBrandPreviewFrame();
           brandStatus(target ? `Редактирование планировки · объект ${target.externalId || "без ID"}. При желании загрузите графическую подложку.` : "Пустой холст. Добавьте текст или фигуру либо загрузите планировку.");
         } catch (error) {
@@ -9471,6 +9668,7 @@
           const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
           if (requestId !== brandPreviewRequestId) return;
           brandPreviewImages = { baseImage: null, badgeImage, target: null, targetId: "" };
+          await ensureCanvasLayerImages(brandConfig().canvasLayers).catch(() => {});
           drawBrandBadgePreview(badgeImage, canvas);
           brandStatus("Подложка загружена. Добавьте ссылку на планировку в объект, чтобы увидеть итоговое наложение.");
         } catch (error) {
@@ -9487,6 +9685,7 @@
         ]);
         if (requestId !== brandPreviewRequestId) return;
         brandPreviewImages = { baseImage, badgeImage, target, targetId: target.externalId || "" };
+        await ensureCanvasLayerImages(brandConfig().canvasLayers);
         drawBrandPreviewFrame();
         brandStatus(`Предпросмотр по объекту ${target.externalId || "без ID"}: планировка размещена поверх подложки. После применения сервис создаст JPG-ссылки на готовые макеты.`);
       } catch (error) {
@@ -9500,6 +9699,7 @@
       const dialogCanvas = document.querySelector("#brandPreviewDialogCanvas");
       if (!dialog || !dialogCanvas || !brandPreviewImages) return;
       if (!dialog.open) dialog.showModal();
+      await ensureCanvasLayerImages(brandConfig().canvasLayers).catch(() => {});
       drawBrandedLayout(brandPreviewImages.baseImage, brandPreviewImages.badgeImage, dialogCanvas, brandConfig());
       brandStatus("Открыт крупный предпросмотр. Перетащите планировку, чтобы сохранить позицию для текущего фида.");
     }
@@ -9630,6 +9830,7 @@
       throwIfBrandGenerationStopped(signal);
       const badgeImage = await loadImageForCanvas(brandBadgeDataUrl);
       const projectConfig = { ...brandConfig() };
+      await ensureCanvasLayerImages(projectConfig.canvasLayers, { signal });
       await persistActiveBrandProfile();
       const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
       for (let index = 0; index < uniqueUrls.length; index += 1) {
@@ -9861,7 +10062,7 @@
           const first = skipped[0];
           const details = first ? ` Первая ошибка: ${first.message}. ID: ${first.ids.join(", ") || "не определены"}.` : "";
           brandStatus(`Не удалось добавить первое фото: все ссылки недоступны или не ведут на изображение.${details}`);
-          showToast("Первое фото не добавлено");
+          showToast("Изображения не сформированы");
           return;
         }
         rememberGeneratedLayouts(urlMap);
@@ -9869,11 +10070,11 @@
         const updatedCount = applyGeneratedBranding(urlMap, targets);
         invalidateGeneratedLink();
         save();
-        addChangeLog("Брендированные планировки", `Готовые JPG-макеты добавлены первым изображением у ${updatedCount} объектов.`);
+        addChangeLog("Брендированные планировки", `Готовые JPG-макеты добавлены в список изображений у ${updatedCount} объектов.`);
         await loadLayouts({ silent: true });
         renderAll();
-        showToast(`Первое фото добавлено к ${updatedCount} объектам`);
-        brandStatus(`Готово: JPG-планировки добавлены первым фото у ${updatedCount} объектов. В выгрузке после них останется обычная планировка и остальные изображения.${skippedBrandMessage(skipped)}`);
+        showToast(`Изображения сформированы для ${updatedCount} объектов`);
+        brandStatus(`Готово: JPG-планировки добавлены у ${updatedCount} объектов. В выгрузке применяется выбранный порядок: ${configuredPhotoOrder().map(type => PHOTO_ORDER_LABELS[type]).join(" → ")}.${skippedBrandMessage(skipped)}`);
       } catch (error) {
         if (isBrandGenerationAbort(error)) {
           const completed = error.urlMap || new Map();
@@ -9898,7 +10099,7 @@
       } finally {
         if (brandGenerationController === controller) brandGenerationController = null;
         setBrandGenerationUi(false);
-        button.textContent = "Сделать первым изображением";
+        button.textContent = "Сформировать изображения";
       }
     }
 
@@ -10494,7 +10695,53 @@
     }
 
     function photoList(item) {
-      return String(item.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean);
+      if (Array.isArray(item?.photos)) return item.photos.map(value => String(value || "").trim()).filter(Boolean);
+      return String(item?.photos || "").split(/\n+/).map(v => v.trim()).filter(Boolean);
+    }
+
+    const DEFAULT_PHOTO_ORDER = Object.freeze(["branded", "layout", "floor", "other"]);
+    const PHOTO_ORDER_LABELS = Object.freeze({
+      branded: "Брендированная планировка",
+      floor: "Поэтажка",
+      layout: "Планировка из фида",
+      other: "Остальные фотографии"
+    });
+    const PHOTO_ORDER_DESCRIPTIONS = Object.freeze({
+      branded: "Готовое изображение с вашей подложкой",
+      floor: "Поэтажные планы и секции из исходного фида",
+      layout: "Основная планировка квартиры из фида",
+      other: "Фото объекта и дополнительные изображения"
+    });
+
+    function normalizePhotoOrder(value) {
+      const requested = Array.isArray(value) ? value : [];
+      const unique = requested.filter(type => Object.prototype.hasOwnProperty.call(PHOTO_ORDER_LABELS, type));
+      return [...new Set(unique), ...DEFAULT_PHOTO_ORDER.filter(type => !unique.includes(type))];
+    }
+
+    function configuredPhotoOrder() {
+      try {
+        return normalizePhotoOrder(typeof activeBrandProfile === "function" ? activeBrandProfile()?.photoOrder : null);
+      } catch {
+        return [...DEFAULT_PHOTO_ORDER];
+      }
+    }
+
+    function photoOrderType(item, url) {
+      const value = String(url || "").trim();
+      const layout = String(item?.layoutPhoto || "").trim();
+      if (isBrandedLayoutUrl(value)) return "branded";
+      if (value === layout) return "layout";
+      const kind = typeof layoutPhotoKind === "function" ? layoutPhotoKind(value) : "unknown";
+      if (kind === "floor") return "floor";
+      if (kind === "apartment" || kind === "generic") return "layout";
+      return "other";
+    }
+
+    function feedImageEntries(item = {}) {
+      const layout = String(item.layoutPhoto || "").trim();
+      const urls = [...new Set([layout, ...photoList(item)].map(url => String(url || "").trim()).filter(Boolean))];
+      return urls.map(url => ({ url, type: photoOrderType(item, url) }));
     }
 
     // Keep the source layout in its dedicated field only. Some aggregator
@@ -10519,15 +10766,15 @@
       return isBrandedLayoutUrl(item?.layoutPhoto || "") || photoList(item).some(isBrandedLayoutUrl);
     }
 
-    function feedImageList(item) {
-      const layout = String(item.layoutPhoto || "").trim();
-      const photos = photoList(item).filter(url => url !== layout);
-      const branded = photos.filter(isBrandedLayoutUrl);
-      const otherPhotos = photos.filter(url => !isBrandedLayoutUrl(url));
-      // В повторно сформированных макетах оставляем только последний: он находится
-      // первым в списке. Это исключает дублирование в итоговом XML.
-      if (branded.length) return [branded[0], layout, ...otherPhotos].filter(Boolean);
-      return [layout, ...photos].filter(Boolean);
+    function feedImageList(item, order = configuredPhotoOrder()) {
+      const entries = feedImageEntries(item);
+      const grouped = entries.reduce((result, entry) => {
+        (result[entry.type] ||= []).push(entry.url);
+        return result;
+      }, {});
+      // The selected order is a stable type order. Every URL remains unique,
+      // while missing types are skipped and all extra photos stay at the end.
+      return normalizePhotoOrder(order).flatMap(type => grouped[type] || []);
     }
 
     function renderBeforeAfterPreview() {
@@ -10564,12 +10811,41 @@
         : `<li><span>Изображений пока нет</span></li>`;
       panel.innerHTML = `
         ${imageCard("До: исходная планировка", sourceUrl, "У объекта нет исходной планировки")}
-        ${imageCard("После: первое фото", brandedUrl, "Нажмите «Сделать первым изображением», чтобы создать макет")}
+        ${imageCard("После: брендированное изображение", brandedUrl, "Нажмите «Сформировать изображения», чтобы создать макет")}
         <div class="comparison-card">
           <strong>Порядок изображений в фиде</strong>
           <ol class="photo-order-list">${orderItems}</ol>
         </div>
       `;
+    }
+
+    function renderPhotoOrderEditor() {
+      const list = document.querySelector("#photoOrderEditor");
+      if (!list) return;
+      const order = configuredPhotoOrder();
+      list.innerHTML = order.map((type, index) => `
+        <li data-photo-order-type="${escapeXml(type)}">
+          <div><strong>${escapeXml(PHOTO_ORDER_LABELS[type])}</strong><span>${escapeXml(PHOTO_ORDER_DESCRIPTIONS[type])}</span></div>
+          <div class="photo-order-actions">
+            <button type="button" data-photo-order-up="${escapeXml(type)}" ${index === 0 ? "disabled" : ""} aria-label="Переместить ${escapeXml(PHOTO_ORDER_LABELS[type])} выше">↑</button>
+            <button type="button" data-photo-order-down="${escapeXml(type)}" ${index === order.length - 1 ? "disabled" : ""} aria-label="Переместить ${escapeXml(PHOTO_ORDER_LABELS[type])} ниже">↓</button>
+          </div>
+        </li>
+      `).join("");
+    }
+
+    async function savePhotoOrder(order, { reset = false } = {}) {
+      const normalized = normalizePhotoOrder(order);
+      const profile = activeBrandProfile();
+      if (!activeBrandProjectKey) return;
+      profile.photoOrder = normalized;
+      brandProfiles[activeBrandProjectKey] = profile;
+      renderPhotoOrderEditor();
+      renderBeforeAfterPreview();
+      await persistActiveBrandProfile();
+      const title = reset ? "Порядок изображений сброшен" : "Порядок изображений изменён";
+      addChangeLog(title, `Для текущего фида: ${normalized.map(type => PHOTO_ORDER_LABELS[type]).join(" → ")}.`);
+      showToast(title);
     }
 
     function buildCianXml(items = objects) {
@@ -10578,10 +10854,11 @@
         const allPhotos = photoList(item).filter(Boolean);
         const brandedLayout = allPhotos.find(isBrandedLayoutUrl) || "";
         const layout = brandedLayout || originalLayout;
-        const photos = [
+        const orderedPhotos = typeof feedImageList === "function" ? feedImageList(item) : [];
+        const photos = (orderedPhotos.length ? orderedPhotos : [
           brandedLayout ? originalLayout : "",
           ...allPhotos.filter(url => url !== layout && url !== originalLayout && !isBrandedLayoutUrl(url))
-        ].filter(Boolean);
+        ]).filter(url => url !== layout && url !== brandedLayout).filter(Boolean);
         const hasLayoutDefault = Boolean(layout);
         const photoXml = photos.map((url, index) => `      <PhotoSchema>
         <FullUrl>${escapeXml(url)}</FullUrl>
@@ -10943,6 +11220,7 @@ ${photos}
       renderLayoutsList();
       syncBrandProfileWithCurrentFeed();
       renderBrandLayoutPicker();
+      renderPhotoOrderEditor();
       renderBrandPreview();
       renderBeforeAfterPreview();
       renderChangeLog();
@@ -11247,6 +11525,7 @@ ${photos}
           requestedPlatform,
           interval: existingSource?.interval || document.querySelector("#sourceInterval").value,
           objectCount: parsed.objects.length,
+          createdAt: existingSource?.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           error: "",
           excludedObjectIds: [...excludedObjectIds],
@@ -11512,7 +11791,7 @@ ${photos}
           platform: activePlatform
         };
         appState.publishedHistory = serverHistory.length ? serverHistory : [localEntry, ...(appState.publishedHistory || [])].slice(0, 30);
-        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, sourceId: activeSourceId, contextKey: publicationKey, complexName: activeComplexName(), name: feedName, sourceUrl: appState.feedUrl || "", platform: activePlatform, objectCount: currentObjects.length, updatedAt: publishedFeed.updatedAt || new Date().toISOString(), history: appState.publishedHistory } };
+        appState.publishedFeeds = { ...(appState.publishedFeeds || {}), [publicationKey]: { id: publishedFeed.id, url: publishedFeed.url, sourceId: activeSourceId, contextKey: publicationKey, complexName: activeComplexName(), name: feedName, sourceUrl: appState.feedUrl || "", platform: activePlatform, objectCount: currentObjects.length, createdAt: publishedFeed.createdAt || publication.createdAt || publishedFeed.updatedAt || new Date().toISOString(), updatedAt: publishedFeed.updatedAt || new Date().toISOString(), history: appState.publishedHistory } };
         document.querySelector("#serverBaseUrl").value = publicFeedOrigin;
         document.querySelector("#generatedLinkInput").value = appState.generatedLink;
         renderGeneratedLink();
@@ -11989,7 +12268,7 @@ ${photos}
         await persistActiveBrandProfile({ includeAsset: true });
         showToast("Подложка сохранена для текущего фида");
       } catch (error) {
-        brandStatus(`Подложка загружена, но не сохранена в браузере: ${error.message}`);
+        brandStatus(`Подложка загружена, но не сохранена в профиле проекта: ${error.message}`);
       }
       renderBrandPreview();
     });
@@ -12005,6 +12284,21 @@ ${photos}
     document.querySelector("#brandScope").addEventListener("change", () => {
       renderBrandLayoutPicker();
       renderBrandPreview();
+    });
+    document.querySelector("#photoOrderEditor")?.addEventListener("click", event => {
+      const button = event.target.closest("[data-photo-order-up],[data-photo-order-down]");
+      if (!button) return;
+      const type = button.dataset.photoOrderUp || button.dataset.photoOrderDown;
+      const order = configuredPhotoOrder();
+      const index = order.indexOf(type);
+      const offset = button.dataset.photoOrderUp ? -1 : 1;
+      const nextIndex = index + offset;
+      if (index < 0 || nextIndex < 0 || nextIndex >= order.length) return;
+      [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+      savePhotoOrder(order).catch(error => brandStatus(`Не удалось сохранить порядок изображений: ${error.message}`));
+    });
+    document.querySelector("#resetPhotoOrderBtn")?.addEventListener("click", () => {
+      savePhotoOrder(DEFAULT_PHOTO_ORDER, { reset: true }).catch(error => brandStatus(`Не удалось сохранить порядок изображений: ${error.message}`));
     });
     document.querySelector("#centerBrandLayoutBtn").addEventListener("click", centerBrandLayout);
     document.querySelector("#insertBrandPhotoBtn").addEventListener("click", insertBrandedLayoutsAsFirstPhotos);
@@ -12297,7 +12591,8 @@ ${photos}
         brandSelectionTouched = false;
         appState.feedUrl = projectSources[0]?.url || file.name;
         appState.feedName = currentProject?.name || defaultFeedName(file.name);
-        projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, updatedAt: new Date().toISOString(), error: "", trafficPolicy: "all", trafficSelections: {} });
+        const importedAt = new Date().toISOString();
+        projectSources.push({ id: sourceId, name: file.name, url: file.name, platform: activePlatform, interval: "manual", objectCount: next.length, createdAt: importedAt, updatedAt: importedAt, error: "", trafficPolicy: "all", trafficSelections: {} });
         setSourceContext(sourceId);
         sourceEntrySessionActive = true;
         document.querySelector("#feedName").value = appState.feedName;
