@@ -79,6 +79,23 @@ test("project state polling uses conditional requests instead of downloading unc
   assert.match(server, /req\.headers\["if-none-match"\] === etag/);
 });
 
+test("feed refresh scheduling is server-side and opening a client tab never downloads XML", () => {
+  assert.doesNotMatch(html, /syncDueProjectSource\(/);
+  assert.match(html, /function refreshScheduledFeedLabels\(\)[\s\S]*never downloads or mutates a feed/);
+  assert.match(html, /serverSummary\?\.nextRunAt/);
+  assert.match(html, /serverSummary\?\.lastImportSuccessAt/);
+  assert.match(server, /const syncTick=\(\)=>runScheduledFeedSync\(\)/);
+  assert.match(server, /setInterval\(syncTick,60000\)/);
+});
+
+test("dense feed controls use position selects and an actions menu instead of arrow-button clusters", () => {
+  const photoOrder = html.match(/    function renderPhotoOrderEditor\([\s\S]*?\n    }\n\n    async function savePhotoOrder/)[0];
+  assert.match(photoOrder, /data-photo-order-position/);
+  assert.doesNotMatch(photoOrder, /data-photo-order-up|data-photo-order-down/);
+  assert.match(html, /function sourceActionsMarkup\(sourceId/);
+  assert.match(html, /<details class="feed-actions-menu">/);
+});
+
 test("project bootstrap has a visible fallback and cannot reload forever", () => {
   const init = html.match(/    async function initializeAuth\([\s\S]*?\n    }\n\n    async function submitLogin/)[0];
   assert.match(html, /const bootWatchdog = window\.setTimeout/);
@@ -263,7 +280,8 @@ test("feed image order can be configured per branding profile", () => {
     "https://cdn.test/uploads/house-4.jpg"
   ]);
   assert.match(html, /id="photoOrderEditor"/);
-  assert.match(html, /data-photo-order-up/);
+  assert.match(html, /data-photo-order-position/);
+  assert.doesNotMatch(html, /data-photo-order-up|data-photo-order-down/);
   assert.match(layoutEditor, /root\.append\(photoOrder\)/);
 });
 

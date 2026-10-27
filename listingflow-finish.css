@@ -89,6 +89,85 @@ body.admin-ui :is(button,a,input,select,textarea,summary):focus-visible {
   outline-offset:2px!important;
 }
 
+/* Compact feed actions: keep the main job visible and move destructive or
+   infrequent controls into a native, keyboard-accessible menu. */
+body.client-ui .feed-actions-menu { position:relative; }
+body.client-ui .feed-actions-menu > summary {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:38px;
+  padding:0 13px;
+  border:1px solid var(--lf-line);
+  border-radius:8px;
+  background:var(--lf-surface);
+  color:var(--lf-text);
+  cursor:pointer;
+  font-size:13px;
+  font-weight:650;
+  list-style:none;
+}
+body.client-ui .feed-actions-menu > summary::-webkit-details-marker { display:none; }
+body.client-ui .feed-actions-menu[open] > summary { border-color:var(--lf-blue); color:var(--lf-blue); }
+body.client-ui .feed-actions-menu-panel {
+  position:absolute;
+  z-index:25;
+  top:calc(100% + 6px);
+  right:0;
+  display:grid;
+  min-width:184px;
+  padding:6px;
+  border:1px solid var(--lf-line);
+  border-radius:10px;
+  background:var(--lf-surface);
+  box-shadow:0 10px 24px rgba(17,56,94,.14);
+}
+body.client-ui .feed-actions-menu-panel button {
+  width:100%;
+  min-height:36px;
+  padding:0 10px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:var(--lf-text);
+  font-size:13px;
+  font-weight:600;
+  text-align:left;
+}
+body.client-ui .feed-actions-menu-panel button:hover { background:var(--lf-surface-2); }
+body.client-ui .feed-actions-menu-panel button.danger { color:var(--lf-red); }
+
+/* Photo order is a configuration, not an eight-button mini editor. The
+   dropdown swaps positions atomically and always keeps a unique order. */
+body.client-ui #layoutsPanel .photo-order-editor { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+body.client-ui #layoutsPanel .photo-order-editor li {
+  grid-template-columns:28px minmax(0,1fr) auto!important;
+  min-height:70px!important;
+}
+body.client-ui #layoutsPanel .photo-order-position {
+  display:grid;
+  grid-template-columns:auto 64px;
+  align-items:center;
+  gap:8px;
+  color:var(--lf-muted);
+  font-size:12px;
+  font-weight:650;
+}
+body.client-ui #layoutsPanel .photo-order-position select {
+  width:64px;
+  min-height:36px;
+  padding:0 8px;
+  border:1px solid var(--lf-line);
+  border-radius:8px;
+  background:var(--lf-surface);
+  color:var(--lf-text);
+  font:inherit;
+}
+@media(max-width:760px) {
+  body.client-ui .feed-actions-menu-panel { position:fixed; right:12px; left:12px; top:auto; bottom:12px; min-width:0; }
+  body.client-ui #layoutsPanel .photo-order-editor { grid-template-columns:1fr!important; }
+}
+
 @media(prefers-reduced-motion:reduce) {
   body.client-ui :is(button,.button,a[role="button"]):active:not(:disabled),
   body.admin-ui :is(button,.button,a[role="button"]):active:not(:disabled) { transform:none!important; }

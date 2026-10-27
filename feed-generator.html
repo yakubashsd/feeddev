@@ -7139,11 +7139,19 @@
 
     function sourceObjectCount(source) {
       if (!source) return 0;
+      const serverSummary = sourceSummaryRecord(source);
+      const serverCount = Number(serverSummary?.objectCount);
+      // Published feeds are refreshed by the server scheduler. In the client
+      // cabinet that server result is authoritative: the browser may still
+      // contain an older editor snapshot until the user explicitly opens and
+      // updates it, but the feed list must always report the last successful
+      // server-side synchronization.
+      if (typeof runtimeMode !== "undefined" && runtimeMode === "external" && Number.isFinite(serverCount) && serverCount >= 0) return serverCount;
       const scopedCount = sourceObjects(source.id).length;
       if (scopedCount > 0) return scopedCount;
       const persistedCount = Number(source.objectCount);
       if (Number.isFinite(persistedCount) && persistedCount > 0) return persistedCount;
-      const summaryCount = Number(sourceSummaryRecord(source)?.objectCount);
+      const summaryCount = serverCount;
       if (Number.isFinite(summaryCount) && summaryCount > 0) return summaryCount;
 
       // A legacy single-feed snapshot can have objects but no source metadata.
@@ -8658,16 +8666,36 @@
     function sourceNextSync(source, now = Date.now()) {
       const intervalMinutes = Number(source.interval);
       if (!intervalMinutes || source.interval === "manual") return { label: "Только вручную", title: "Для этого источника автообновление выключено" };
-      const updatedAt = new Date(source.updatedAt || 0).getTime();
-      const dueAt = updatedAt + intervalMinutes * 60 * 1000;
+      const serverSummary = sourceSummaryRecord(source);
+      const scheduledAt = new Date(serverSummary?.nextRunAt || 0).getTime();
+      const updatedAt = new Date(serverSummary?.lastImportSuccessAt || source.updatedAt || 0).getTime();
+      const dueAt = Number.isFinite(scheduledAt) && scheduledAt > 0
+        ? scheduledAt
+        : updatedAt + intervalMinutes * 60 * 1000;
       const remaining = dueAt - now;
       if (!Number.isFinite(dueAt) || updatedAt <= 0) return { label: "ожидает синхронизации", title: "Время следующего обновления будет рассчитано после первой загрузки" };
-      if (remaining <= 0) return { label: "запускается…", title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
+      if (remaining <= 0) return { label: "ожидает серверного обновления", title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
       const totalMinutes = Math.ceil(remaining / 60000);
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
       const duration = hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
       return { label: `через ${duration}`, title: `Плановое обновление: ${new Date(dueAt).toLocaleString("ru-RU")}` };
+    }
+
+    function sourceActionsMarkup(sourceId, { overview = false } = {}) {
+      const id = escapeXml(sourceId);
+      const editAttribute = overview ? "data-overview-edit-source" : "data-source-edit";
+      const diagnostics = overview ? `<button type="button" data-source-diagnostics="${id}">Диагностика</button>` : "";
+      return `<button type="button" class="primary" ${editAttribute}="${id}">Редактировать фид</button>
+        <details class="feed-actions-menu">
+          <summary>Действия</summary>
+          <div class="feed-actions-menu-panel" role="group" aria-label="Действия с фидом">
+            ${diagnostics}
+            <button type="button" data-source-sync="${id}">Обновить сейчас</button>
+            <button type="button" data-source-rename="${id}">Переименовать</button>
+            <button type="button" class="danger" data-source-remove="${id}">Удалить</button>
+          </div>
+        </details>`;
     }
 
     function renderProjectSources() {
@@ -8688,7 +8716,8 @@
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const publication = publicationForSource(source.id);
         const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
-        const updatedAt = publication.updatedAt || source.updatedAt;
+        const serverSummary = sourceSummaryRecord(source);
+        const updatedAt = serverSummary?.lastImportSuccessAt || publication.updatedAt || source.updatedAt;
         const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         const issueCount = sourceIssueCount(source.id);
@@ -8699,7 +8728,7 @@
           <div class="source-platform">${platformMark(source.platform)}<span><strong>${platform}</strong><small>${sourceObjectCount(source).toLocaleString("ru-RU")} ${pluralRu(sourceObjectCount(source), "квартира", "квартиры", "квартир")} · ${sourceIntervalLabel(source.interval)}</small></span></div>
           <span class="source-health">${source.error ? "Ошибка" : issueCount ? `${issueCount} ${pluralRu(issueCount, "замечание", "замечания", "замечаний")}` : "Работает"}</span>
           <span class="source-next"><small title="${escapeXml(nextSync.title)}"><strong>Последнее обновление: ${escapeXml(updated)}</strong><br>Следующее: ${escapeXml(nextSync.label)}${source.error ? `<br>${escapeXml(source.error)}` : issueCount ? `<br>Замечания в объявлениях: ${issueCount}` : ""}</small></span>
-          <div class="source-actions"><button type="button" class="primary" data-source-edit="${source.id}">Редактировать фид</button><button type="button" data-source-sync="${source.id}">Обновить сейчас</button><button type="button" data-source-rename="${source.id}">Переименовать</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
+          <div class="source-actions">${sourceActionsMarkup(source.id)}</div>
         </article>`;
       }).join("");
     }
@@ -9124,7 +9153,7 @@
             : issueCount
               ? `Замечания в объявлениях: ${issueCount}`
               : serverHealth?.lastImportStatus === "success" ? "Синхронизация успешна" : "Ошибок не найдено";
-          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${healthIssue || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-source="${escapeXml(source.id)}">Редактировать фид</button><button type="button" class="text-button" data-source-diagnostics="${escapeXml(source.id)}">Диагностика</button><button type="button" class="text-button" data-source-sync="${escapeXml(source.id)}">Обновить сейчас</button><button type="button" class="text-button" data-source-rename="${escapeXml(source.id)}">Переименовать</button><button type="button" class="text-button danger" data-source-remove="${escapeXml(source.id)}">Удалить</button></div></article>`;
+          return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(source.name || platform)} <span class="overview-feed-status ${isPublished ? "is-published" : "is-draft"}" aria-label="Статус: ${isPublished ? "опубликован" : "черновик"}">${isPublished ? "Опубликован" : "Черновик"}</span></strong><span class="overview-feed-platform">${platformMark(source.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>Последнее обновление: ${escapeXml(updated)}</small><small>Следующее обновление: ${escapeXml(nextSync.label)}</small><small class="overview-feed-health ${healthIssue || issueCount ? "has-error" : "is-ok"}">${escapeXml(healthLabel)}</small></div><div class="overview-feed-actions">${sourceActionsMarkup(source.id, { overview: true })}</div></article>`;
         }).join("");
         const complexRows = Object.entries(appState.publishedFeeds || {}).filter(([key, publication]) => publication?.complexName && publication?.id && key.includes("::complex::")).map(([key, publication]) => {
           const source = projectSources.find(item => item.id === publication.sourceId) || projectSources.find(item => item.url === publication.sourceUrl);
@@ -11874,10 +11903,7 @@
       list.innerHTML = order.map((type, index) => `
         <li data-photo-order-type="${escapeXml(type)}">
           <div><strong>${escapeXml(PHOTO_ORDER_LABELS[type])}</strong><span>${escapeXml(PHOTO_ORDER_DESCRIPTIONS[type])}</span></div>
-          <div class="photo-order-actions">
-            <button type="button" data-photo-order-up="${escapeXml(type)}" ${index === 0 ? "disabled" : ""} aria-label="Переместить ${escapeXml(PHOTO_ORDER_LABELS[type])} выше">↑</button>
-            <button type="button" data-photo-order-down="${escapeXml(type)}" ${index === order.length - 1 ? "disabled" : ""} aria-label="Переместить ${escapeXml(PHOTO_ORDER_LABELS[type])} ниже">↓</button>
-          </div>
+          <label class="photo-order-position"><span>Позиция</span><select data-photo-order-position data-photo-order-type="${escapeXml(type)}" aria-label="Позиция: ${escapeXml(PHOTO_ORDER_LABELS[type])}">${order.map((_, position) => `<option value="${position}" ${position === index ? "selected" : ""}>${position + 1}</option>`).join("")}</select></label>
         </li>
       `).join("");
     }
@@ -12658,11 +12684,12 @@ ${photos}
       }
     }
 
-    async function syncDueProjectSource() {
-      if (!currentProject || document.hidden || loadFeedFromUrl.running) return;
-      const now = Date.now();
-      const due = projectSources.find(source => source.interval !== "manual" && now - new Date(source.updatedAt || 0).getTime() >= Number(source.interval) * 60 * 1000);
-      if (due) await loadFeedFromUrl(due.id);
+    function refreshScheduledFeedLabels() {
+      // Scheduling belongs exclusively to the server. This small UI refresh
+      // only updates countdown labels; it never downloads or mutates a feed.
+      if (!currentProject || document.hidden) return;
+      if (sourceEntrySessionActive) renderProjectSources();
+      if (activePage === "overview") renderProjectOverview();
     }
 
     function downloadXml() {
@@ -13411,14 +13438,13 @@ ${photos}
       renderBrandLayoutPicker();
       renderBrandPreview();
     });
-    document.querySelector("#photoOrderEditor")?.addEventListener("click", event => {
-      const button = event.target.closest("[data-photo-order-up],[data-photo-order-down]");
-      if (!button) return;
-      const type = button.dataset.photoOrderUp || button.dataset.photoOrderDown;
+    document.querySelector("#photoOrderEditor")?.addEventListener("change", event => {
+      const control = event.target.closest("[data-photo-order-position]");
+      if (!control) return;
+      const type = control.dataset.photoOrderType;
       const order = configuredPhotoOrder();
       const index = order.indexOf(type);
-      const offset = button.dataset.photoOrderUp ? -1 : 1;
-      const nextIndex = index + offset;
+      const nextIndex = Number(control.value);
       if (index < 0 || nextIndex < 0 || nextIndex >= order.length) return;
       [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
       savePhotoOrder(order).catch(error => brandStatus(`Не удалось сохранить порядок изображений: ${error.message}`));
@@ -13635,7 +13661,7 @@ ${photos}
         switchPage("apartments");
         return;
       }
-      if (sourceCard && !editButton && !syncButton && !renameButton && !removeButton && !event.target.closest("a")) {
+      if (sourceCard && !editButton && !syncButton && !renameButton && !removeButton && !event.target.closest("a,.feed-actions-menu")) {
         selectSource(sourceCard.dataset.sourceSelect);
         return;
       }
@@ -13787,8 +13813,7 @@ ${photos}
     loginForm.addEventListener("submit", submitLogin);
     document.querySelector("#logoutButton").addEventListener("click", logout);
     window.setInterval(() => {
-      syncDueProjectSource();
-      renderProjectSources();
+      refreshScheduledFeedLabels();
     }, 30000);
     initializeAuth();
   </script>
