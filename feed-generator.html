@@ -4630,8 +4630,8 @@
 
   </style>
   <link rel="stylesheet" href="cookie-consent.css">
-  <link rel="stylesheet" href="layout-editor.css">
-  <link rel="stylesheet" href="listingflow-ui.css">
+  <link rel="stylesheet" href="layout-editor.css?v=20261027-coherent">
+  <link rel="stylesheet" href="listingflow-ui.css?v=20261027-coherent">
   <link rel="stylesheet" href="usage-guide.css">
   <style id="listingflow-product-redesign">
     /* Hallmark · pre-emit critique: P4 H5 E4 S4 R4 V4 */
@@ -5566,6 +5566,124 @@
       border-radius:10px!important;
       box-shadow:0 12px 30px rgba(17,56,94,.18)!important;
     }
+
+    /* Feed output settings belong to the whole feed, not to one canvas
+       layer. Keep them full-width below the editor instead of squeezing
+       them into the properties inspector. */
+    body.client-ui #layoutsPanel .photo-order-settings {
+      grid-column:1 / -1!important;
+      width:100%!important;
+      min-width:0!important;
+      padding:16px!important;
+      border-radius:10px!important;
+      background:var(--lf-surface)!important;
+      box-sizing:border-box!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-settings-head {
+      align-items:center!important;
+      flex-wrap:wrap!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-settings-head > div {
+      flex:1 1 420px!important;
+      min-width:0!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-settings-head h3 {
+      font-size:16px!important;
+      line-height:1.35!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-settings-head p,
+    body.client-ui #layoutsPanel .photo-order-note {
+      max-width:76ch!important;
+      font-size:13px!important;
+      line-height:1.5!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-editor {
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:10px!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-editor li {
+      min-height:64px!important;
+      padding:10px!important;
+      border-radius:8px!important;
+      background:var(--lf-surface-2)!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-editor li strong {
+      font-size:14px!important;
+      line-height:1.35!important;
+    }
+    body.client-ui #layoutsPanel .photo-order-editor li span {
+      font-size:12px!important;
+      line-height:1.4!important;
+    }
+
+    /* Compact two-row filters. Number fields are the single visible input;
+       the redundant range sliders remain hidden. */
+    @container (min-width:680px) {
+      body.client-ui .object-filter-panel {
+        grid-template-columns:repeat(12,minmax(0,1fr))!important;
+        grid-template-areas:
+          "search search search search status status rooms rooms issue issue issue issue"
+          "price price price price price price area area area area area area"!important;
+        gap:12px!important;
+      }
+      body.client-ui .object-filter-panel .range-filter-controls {
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:10px!important;
+      }
+    }
+
+    /* Notifications inform without covering the current task. */
+    body.client-ui .toast {
+      left:auto!important;
+      right:20px!important;
+      bottom:20px!important;
+      width:min(420px,calc(100vw - 40px))!important;
+      max-width:420px!important;
+      transform:translateY(16px)!important;
+      padding:11px 14px!important;
+      border:0!important;
+      border-radius:9px!important;
+      background:#17324d!important;
+      font-size:14px!important;
+      line-height:1.4!important;
+      box-shadow:0 12px 28px rgba(17,56,94,.2)!important;
+    }
+    body.client-ui .toast.show { transform:none!important; }
+
+    @media (max-width:760px) {
+      body.client-ui #layoutsPanel .photo-order-editor { grid-template-columns:1fr!important; }
+      body.client-ui #layoutsPanel .photo-order-settings { padding:14px!important; }
+      body.client-ui .validator-panel {
+        grid-template-columns:minmax(0,1fr)!important;
+      }
+      body.client-ui .validator-panel > * {
+        min-width:0!important;
+        max-width:100%!important;
+      }
+      body.client-ui .validator-toolbar {
+        grid-template-columns:minmax(0,1fr)!important;
+      }
+      body.client-ui .validator-summary {
+        grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      }
+      body.client-ui .validator-result {
+        grid-template-columns:minmax(0,1fr)!important;
+      }
+      body.client-ui .topbar-actions > .feed-error-popover:not(.minimized) {
+        top:68px!important;
+        right:12px!important;
+        left:12px!important;
+        width:auto!important;
+        max-height:calc(100dvh - 84px)!important;
+      }
+      body.client-ui .toast {
+        right:12px!important;
+        left:12px!important;
+        bottom:12px!important;
+        width:auto!important;
+        max-width:none!important;
+      }
+    }
     @media (max-width:980px) {
       body.client-ui .project-list-mode .project-table-wrap { overflow:visible!important; }
       body.client-ui .project-list-mode .project-table,
@@ -5619,6 +5737,7 @@
       body.client-ui .project-table-footer > * { max-width:100%!important; }
     }
   </style>
+  <link rel="stylesheet" href="listingflow-finish.css?v=20261027-design-skills">
 </head>
 <body class="client-ui">
   <div id="bootScreen" role="status" aria-live="polite"><span class="boot-status">Проверяю доступ…</span></div>
@@ -5890,8 +6009,8 @@
         </div>
       </section>
       <section class="history-page page-hidden" data-page="history" aria-labelledby="historyPageTitle">
-        <header class="history-page-heading"><div><span class="eyebrow">Контроль проекта</span><h2 class="panel-title" id="historyPageTitle">История изменений</h2><p class="panel-caption">Все изменения фидов сохраняются на сервере аккаунта и доступны после входа с любого браузера.</p></div><button type="button" id="feedHistoryRefresh">Обновить</button></header>
-        <div class="history-toolbar"><label class="field compact" for="feedHistoryFilter"><span>Фид</span><select id="feedHistoryFilter"><option value="">Все фиды</option></select></label><span class="history-server-note">События не зависят от локального кэша.</span></div>
+        <header class="history-page-heading"><div><span class="eyebrow">Контроль проекта</span><h2 class="panel-title" id="historyPageTitle">История изменений</h2><p class="panel-caption">Все изменения фидов сохраняются на сервере аккаунта. Здесь видно, когда менялись настройки и опубликованные версии.</p></div><button type="button" id="feedHistoryRefresh">Обновить</button></header>
+        <div class="history-toolbar"><label class="field compact" for="feedHistoryFilter"><span>Фид</span><select id="feedHistoryFilter"><option value="">Все фиды</option></select></label><span class="history-server-note">Выберите фид, чтобы увидеть только его события.</span></div>
         <div id="feedHistoryList" class="feed-history-list" aria-live="polite"><p class="feed-history-loading">Загружаем историю…</p></div>
       </section>
       <dialog id="projectDialog"><form id="projectForm"><h2>Новый проект</h2><p>В проекте хранятся фиды, объекты, настройки публикации и постоянные ссылки.</p><label for="projectName">Название проекта</label><input id="projectName" required maxlength="100" placeholder="Например, Речной парк"><div class="actions"><button type="button" id="cancelProject">Отмена</button><button class="primary">Создать проект</button></div></form></dialog>
@@ -6200,12 +6319,12 @@
               <div class="photo-order-settings-head">
                 <div>
                   <h3 id="photoOrderTitle">Очередность изображений</h3>
-                  <p>Выберите, какие изображения показывать раньше. Порядок сохраняется для текущего фида и применяется к выгрузке.</p>
+                  <p>Расставьте типы изображений стрелками. Этот порядок применяется ко всем объектам текущего фида.</p>
                 </div>
                 <button id="resetPhotoOrderBtn" type="button">По умолчанию</button>
               </div>
               <ol id="photoOrderEditor" class="photo-order-editor" aria-label="Порядок изображений"></ol>
-              <p class="photo-order-note">Если какого-то типа нет в объекте, он пропускается. Остальные фотографии добавляются в конце. В выгрузке ЦИАН отдельное поле «Планировка» сохраняется по правилам площадки.</p>
+              <p class="photo-order-note">Если изображения такого типа нет, оно пропускается. Отдельное поле «Планировка» в ЦИАН заполняется по правилам площадки.</p>
             </div>
           </div>
           <div class="template-layer-editor">
@@ -6930,7 +7049,7 @@
       source.error = "";
       const persistence = await persistProjectStateNow();
       if (!persistence.saved) {
-        showToast("Изменения не подтверждены в облаке. Проверьте соединение и повторите сохранение.");
+        showToast("Не удалось сохранить изменения на сервере. Проверьте соединение и повторите сохранение.");
         return false;
       }
       switchPage("overview");
@@ -7393,7 +7512,7 @@
       document.querySelector("#offerAcceptance").required = register;
       document.querySelector("#personalDataConsent").required = register;
       document.querySelector("#loginForm h1").textContent = reset ? "Новый пароль" : forgot ? "Восстановление" : register ? "Создать аккаунт" : "Вход в сервис";
-      document.querySelector(".auth-description").textContent = reset ? "Придумайте новый пароль длиной не менее 8 символов." : forgot ? "Укажите email — отправим одноразовую ссылку для смены пароля." : register ? "Зарегистрируйтесь и оплатите доступ к одному проекту." : "Введите данные доступа к рабочей области фидов.";
+      document.querySelector(".auth-description").textContent = reset ? "Придумайте новый пароль длиной не менее 8 символов." : forgot ? "Укажите email — отправим одноразовую ссылку для смены пароля." : register ? "Попробуйте бесплатно: один проект и один фид на 14 дней. После пробного периода потребуется подписка." : "Введите данные доступа к рабочей области фидов.";
       loginButton.textContent = reset ? "Сохранить пароль" : forgot ? "Отправить ссылку" : register ? "Создать аккаунт" : "Войти";
       document.querySelectorAll("[data-auth-mode]").forEach(button => button.classList.toggle("active", button.dataset.authMode === mode));
       loginError.textContent = "";
@@ -9199,6 +9318,7 @@
         if (projectSources.some(source => source.id === activeSourceId)) sourceEntrySessionActive = true;
         else prepareNewFeedFlow();
       }
+      feedErrorPanelMinimized = true;
       activePage = page;
       syncPageUrl(page);
       renderPage();
@@ -12497,7 +12617,7 @@ ${photos}
         document.querySelector("#feedName").value = appState.feedName;
         const persistence = await persistProjectStateNow();
         feedErrorPanelActivated = true;
-        feedErrorPanelMinimized = false;
+        feedErrorPanelMinimized = true;
         renderAll();
         const newObjectIds = objects.filter(item => item.externalId && !objectIdsBeforeSync.has(item.externalId)).map(item => item.externalId);
         const brandingResult = await handleNewObjectBranding(newObjectIds);
@@ -13607,7 +13727,7 @@ ${photos}
         document.querySelector("#feedName").value = appState.feedName;
         const persistence = await persistProjectStateNow();
         feedErrorPanelActivated = true;
-        feedErrorPanelMinimized = false;
+        feedErrorPanelMinimized = true;
         renderAll();
         const newObjectIds = objects.filter(item => item.externalId && !objectIdsBeforeImport.has(item.externalId)).map(item => item.externalId);
         const brandingResult = await handleNewObjectBranding(newObjectIds);
@@ -13672,7 +13792,7 @@ ${photos}
     }, 30000);
     initializeAuth();
   </script>
-  <script src="layout-editor.js?v=20261027-ui-workspace"></script>
+  <script src="layout-editor.js?v=20261027-coherent"></script>
   <script src="monitor-client.js"></script>
   <script src="usage-guide.js"></script>
   <div id="cookieNotice" hidden>

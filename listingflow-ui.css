@@ -653,7 +653,7 @@ body.admin-ui .top h1{max-width:min(40vw,360px)!important;overflow:hidden!import
 /* Workspace hierarchy, typography rhythm, and stable field alignment */
 body.client-ui{--lf-type-xs:11px;--lf-type-sm:12px;--lf-type-md:14px;--lf-type-lg:16px;--lf-type-xl:22px;--lf-type-display:28px}
 body.client-ui .workspace-switcher{display:block!important;text-decoration:none!important;line-height:1.3!important;transition:border-color .15s ease,background-color .15s ease!important}
-body.client-ui .workspace-switcher:hover{border-color:#414752!important;background:#242831!important}
+body.client-ui .workspace-switcher:hover{border-color:var(--lf-line-strong)!important;background:var(--lf-surface-2)!important}
 body.client-ui .workspace-switcher:focus-visible{outline:2px solid var(--lf-accent)!important;outline-offset:2px!important}
 body.client-ui .workspace-switcher span{display:block!important;min-height:14px!important;font-size:10px!important;line-height:14px!important;letter-spacing:.045em!important}
 body.client-ui .workspace-switcher strong{display:block!important;min-width:0!important;margin-top:5px!important;font-size:14px!important;line-height:20px!important;font-weight:700!important}

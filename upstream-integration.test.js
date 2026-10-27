@@ -264,6 +264,7 @@ test("feed image order can be configured per branding profile", () => {
   ]);
   assert.match(html, /id="photoOrderEditor"/);
   assert.match(html, /data-photo-order-up/);
+  assert.match(layoutEditor, /root\.append\(photoOrder\)/);
 });
 
 test("editor uses the rendered plan placement and does not add a second stale outline", () => {

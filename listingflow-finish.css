@@ -1,0 +1,98 @@
+/* ListingFlow product finish — Impeccable + Taste + Emil Kowalski.
+   This file is intentionally loaded after the legacy inline styles. */
+body.client-ui,
+body.admin-ui {
+  --lf-motion-out:cubic-bezier(.22,1,.36,1);
+  --lf-motion-travel:cubic-bezier(.76,0,.24,1);
+  --lf-motion-press:140ms;
+  --lf-motion-hover:180ms;
+  --lf-motion-ui:240ms;
+}
+
+body.client-ui {
+  --lf-bg:#f4f8fc;
+  --lf-surface-2:#f7faff;
+  --lf-accent:#0444fc;
+  --lf-accent-hover:#0038d2;
+  --lf-shadow:none;
+}
+
+body.client-ui .auth-screen { background:var(--lf-bg)!important; }
+body.client-ui .auth-card {
+  border:1px solid var(--lf-line)!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+body.client-ui .auth-submit { box-shadow:none!important; }
+
+@media(min-width:1101px) {
+  body.client-ui .sidebar {
+    border-right:0!important;
+    box-shadow:none!important;
+    background:var(--lf-bg)!important;
+  }
+  body.client-ui .topbar {
+    border-bottom:0!important;
+    background:var(--lf-bg)!important;
+  }
+}
+
+body.client-ui :is(.projects-page,.source-panel,.feeds-panel,.validator-panel,.complexes-panel,.table-wrap,.bulk-panel,.layouts-panel,.change-log-panel,.quality-panel,.publish-panel,.billing-page,.monitor-card,.monitor-feed),
+body.client-ui .project-metric {
+  border-color:var(--lf-line)!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+
+body.client-ui :is(button.primary,.primary,#newProjectBtn),
+body.admin-ui .button.primary { box-shadow:none!important; }
+
+body.client-ui .sidebar .nav-item.active {
+  border-color:transparent!important;
+  background:#eaf0f7!important;
+  color:var(--lf-text)!important;
+}
+body.client-ui .sidebar .nav-item.active .nav-icon { color:var(--lf-blue)!important; }
+
+body.client-ui :is(button,.button,a[role="button"]),
+body.admin-ui :is(button,.button,a[role="button"]) {
+  transition-property:background-color,border-color,color,opacity,transform!important;
+  transition-duration:var(--lf-motion-hover)!important;
+  transition-timing-function:var(--lf-motion-out)!important;
+}
+body.client-ui :is(button,.button,a[role="button"]):active:not(:disabled),
+body.admin-ui :is(button,.button,a[role="button"]):active:not(:disabled) {
+  transform:scale(.97)!important;
+}
+
+body.client-ui :is(dialog,.usage-guide-dialog,.brand-preview-dialog),
+body.admin-ui dialog.dialog {
+  transition:opacity var(--lf-motion-ui) var(--lf-motion-out),transform var(--lf-motion-ui) var(--lf-motion-out),display var(--lf-motion-ui) allow-discrete,overlay var(--lf-motion-ui) allow-discrete!important;
+  transform-origin:center!important;
+}
+body.client-ui :is(dialog,.usage-guide-dialog,.brand-preview-dialog):not([open]),
+body.admin-ui dialog.dialog:not([open]) { opacity:0; transform:scale(.97); }
+@starting-style {
+  body.client-ui :is(dialog,.usage-guide-dialog,.brand-preview-dialog)[open],
+  body.admin-ui dialog.dialog[open] { opacity:0; transform:scale(.97); }
+}
+body.admin-ui .drawer {
+  transition:transform 320ms var(--lf-motion-travel),opacity 220ms var(--lf-motion-out)!important;
+}
+body.client-ui .toast {
+  transition:opacity 260ms ease,transform 260ms var(--lf-motion-out)!important;
+}
+
+body.client-ui :is(button,a,input,select,textarea,summary):focus-visible,
+body.admin-ui :is(button,a,input,select,textarea,summary):focus-visible {
+  outline:2px solid var(--lf-blue)!important;
+  outline-offset:2px!important;
+}
+
+@media(prefers-reduced-motion:reduce) {
+  body.client-ui :is(button,.button,a[role="button"]):active:not(:disabled),
+  body.admin-ui :is(button,.button,a[role="button"]):active:not(:disabled) { transform:none!important; }
+  body.client-ui :is(dialog,.usage-guide-dialog,.brand-preview-dialog),
+  body.admin-ui :is(dialog.dialog,.drawer),
+  body.client-ui .toast { transition-duration:.01ms!important; transform:none!important; }
+}
