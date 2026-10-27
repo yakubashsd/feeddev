@@ -5126,6 +5126,268 @@
         grid-template-columns:34px minmax(0,1fr)!important;
       }
     }
+
+    /* Regression guard for the fixed desktop workspace.  The legacy theme
+       let intrinsic button labels determine grid tracks; on wide screens
+       that made card actions push the content column out of its panel.
+       Every operational card now owns its width and its children are allowed
+       to shrink/wrap inside that width. */
+    body.client-ui :is(.project-overview,.projects-page,.complexes-panel,.overview-card,.project-table-wrap,.complex-list) {
+      width:100%!important;
+      max-width:1240px!important;
+      min-width:0!important;
+      box-sizing:border-box!important;
+    }
+    body.client-ui .project-overview,
+    body.client-ui .projects-page {
+      overflow:visible!important;
+    }
+    body.client-ui .project-list-mode .project-table-wrap {
+      overflow-x:auto!important;
+      overflow-y:visible!important;
+    }
+    body.client-ui .project-list-mode .project-table {
+      width:100%!important;
+      min-width:0!important;
+      table-layout:fixed!important;
+    }
+    body.client-ui .project-list-mode .project-table :is(th,td) {
+      min-width:0!important;
+      overflow:hidden!important;
+      overflow-wrap:anywhere!important;
+    }
+    body.client-ui .project-list-mode .project-table th:nth-child(1),
+    body.client-ui .project-list-mode .project-table td:nth-child(1) { width:46px!important; }
+    body.client-ui .project-list-mode .project-table th:nth-child(2),
+    body.client-ui .project-list-mode .project-table td:nth-child(2) { width:20%!important; }
+    body.client-ui .project-list-mode .project-table th:nth-child(3),
+    body.client-ui .project-list-mode .project-table td:nth-child(3) { width:17%!important; }
+    body.client-ui .project-list-mode .project-table th:nth-child(4),
+    body.client-ui .project-list-mode .project-table td:nth-child(4) { width:13%!important; }
+    body.client-ui .project-list-mode .project-table th:nth-child(5),
+    body.client-ui .project-list-mode .project-table td:nth-child(5) { width:20%!important; }
+    body.client-ui .project-list-mode .project-table th:nth-child(6),
+    body.client-ui .project-list-mode .project-table td:nth-child(6) { width:15%!important; }
+    body.client-ui .project-list-mode .project-table th:nth-child(7),
+    body.client-ui .project-list-mode .project-table td:nth-child(7) { width:142px!important; }
+    body.client-ui .project-list-mode .project-table :is(.project-name-link,.project-platform) {
+      display:block!important;
+      min-width:0!important;
+      max-width:100%!important;
+      overflow:hidden!important;
+    }
+    body.client-ui .project-list-mode .project-table :is(.project-name-link strong,.project-name-link small,.project-platform strong,.project-platform small) {
+      display:block!important;
+      min-width:0!important;
+      max-width:100%!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+      white-space:nowrap!important;
+    }
+    body.client-ui .project-list-mode .project-status {
+      display:flex!important;
+      align-items:flex-start!important;
+      max-width:100%!important;
+      min-width:0!important;
+      white-space:normal!important;
+      overflow:hidden!important;
+      overflow-wrap:anywhere!important;
+      line-height:16px!important;
+    }
+    body.client-ui .project-list-mode .project-actions-cell {
+      width:142px!important;
+      min-width:142px!important;
+      max-width:142px!important;
+      white-space:nowrap!important;
+      overflow:visible!important;
+    }
+
+    /* Feed overview rows use a bounded action column.  `auto` as the second
+       grid track used to reserve the full max-content width of five buttons,
+       collapsing the feed details to a narrow strip. */
+    body.client-ui .overview-published-row {
+      display:grid!important;
+      grid-template-columns:minmax(320px,1fr) minmax(0,1.65fr)!important;
+      align-items:start!important;
+      min-width:0!important;
+      max-width:100%!important;
+      overflow:hidden!important;
+    }
+    body.client-ui .overview-feed-main,
+    body.client-ui .overview-feed-actions {
+      min-width:0!important;
+      max-width:100%!important;
+    }
+    body.client-ui .overview-feed-main > * {
+      min-width:0!important;
+      max-width:100%!important;
+    }
+    body.client-ui .overview-feed-actions {
+      width:100%!important;
+      display:flex!important;
+      flex-wrap:wrap!important;
+      justify-content:flex-end!important;
+      align-content:center!important;
+      gap:8px!important;
+    }
+    body.client-ui .overview-feed-actions > * {
+      flex:0 1 auto!important;
+      min-width:0!important;
+      max-width:100%!important;
+      white-space:normal!important;
+    }
+
+    /* Complex rows keep the two action buttons inside the row even when a
+       house name or a long issue label is present. */
+    body.client-ui .complex-list {
+      overflow:hidden!important;
+    }
+    body.client-ui .complex-row {
+      display:grid!important;
+      grid-template-columns:minmax(220px,1.45fr) minmax(120px,1fr) minmax(110px,.8fr) minmax(110px,.8fr) minmax(150px,1fr)!important;
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      box-sizing:border-box!important;
+      gap:12px!important;
+      overflow:hidden!important;
+    }
+    body.client-ui .complex-row > * {
+      min-width:0!important;
+      max-width:100%!important;
+    }
+    body.client-ui .complex-row strong,
+    body.client-ui .complex-row small,
+    body.client-ui .complex-row .catalog-state {
+      min-width:0!important;
+      max-width:100%!important;
+      overflow-wrap:anywhere!important;
+    }
+    body.client-ui .complex-row .complex-houses {
+      display:flex!important;
+      min-width:0!important;
+      max-width:100%!important;
+      overflow:hidden!important;
+      flex-wrap:wrap!important;
+    }
+    body.client-ui .complex-row .complex-houses span {
+      min-width:0!important;
+      max-width:100%!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+      white-space:nowrap!important;
+    }
+    body.client-ui .complex-row > button {
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      white-space:normal!important;
+      overflow-wrap:anywhere!important;
+    }
+
+    @media (max-width:1120px) and (min-width:761px) {
+      body.client-ui .overview-published-row {
+        grid-template-columns:minmax(260px,1fr) minmax(0,1.25fr)!important;
+      }
+      body.client-ui .complex-row {
+        grid-template-columns:minmax(180px,1.35fr) minmax(100px,.8fr) minmax(96px,.7fr) minmax(104px,.75fr) minmax(132px,.9fr)!important;
+      }
+    }
+    @media (max-width:980px) and (min-width:761px) {
+      body.client-ui .overview-published-row {
+        grid-template-columns:1fr!important;
+        gap:12px!important;
+      }
+      body.client-ui .overview-feed-actions {
+        justify-content:flex-start!important;
+      }
+      body.client-ui .complex-row {
+        grid-template-columns:minmax(0,1fr) minmax(120px,auto)!important;
+        grid-template-areas:"main main" "houses state" "apartments select"!important;
+      }
+      body.client-ui .complex-row > div:first-child { grid-area:main!important; }
+      body.client-ui .complex-row > .complex-houses { grid-area:houses!important; }
+      body.client-ui .complex-row > .catalog-state { grid-area:state!important; }
+      body.client-ui .complex-row > button:nth-of-type(1) { grid-area:apartments!important; }
+      body.client-ui .complex-row > button:nth-of-type(2) { grid-area:select!important; }
+    }
+    @media (max-width:1280px) and (min-width:761px) {
+      /* Re-assert the compact desktop table after the wide-screen column
+         contract above. */
+      body.client-ui .project-list-mode .project-table th:nth-child(1),
+      body.client-ui .project-list-mode .project-table td:nth-child(1) { width:42px!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(2),
+      body.client-ui .project-list-mode .project-table td:nth-child(2) { width:25%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(3),
+      body.client-ui .project-list-mode .project-table td:nth-child(3) { width:14%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(4),
+      body.client-ui .project-list-mode .project-table td:nth-child(4) { width:13%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(5),
+      body.client-ui .project-list-mode .project-table td:nth-child(5) { width:22%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(6),
+      body.client-ui .project-list-mode .project-table td:nth-child(6) { display:none!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(7),
+      body.client-ui .project-list-mode .project-table td:nth-child(7) { width:142px!important; }
+    }
+    @media (max-width:1080px) and (min-width:761px) {
+      body.client-ui .project-list-mode .project-table th:nth-child(4),
+      body.client-ui .project-list-mode .project-table td:nth-child(4) { display:none!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(2),
+      body.client-ui .project-list-mode .project-table td:nth-child(2) { width:31%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(3),
+      body.client-ui .project-list-mode .project-table td:nth-child(3) { width:16%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(5),
+      body.client-ui .project-list-mode .project-table td:nth-child(5) { width:25%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(7),
+      body.client-ui .project-list-mode .project-table td:nth-child(7) { width:142px!important; }
+    }
+    @media (max-width:760px) {
+      body.client-ui .project-list-mode .project-table-wrap { overflow:visible!important; }
+      body.client-ui .project-list-mode .project-table {
+        width:100%!important;
+        min-width:0!important;
+        table-layout:fixed!important;
+      }
+      body.client-ui .project-list-mode .project-table th:nth-child(1),
+      body.client-ui .project-list-mode .project-table td:nth-child(1) { width:38px!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(2),
+      body.client-ui .project-list-mode .project-table td:nth-child(2) { width:52%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(3),
+      body.client-ui .project-list-mode .project-table td:nth-child(3),
+      body.client-ui .project-list-mode .project-table th:nth-child(4),
+      body.client-ui .project-list-mode .project-table td:nth-child(4),
+      body.client-ui .project-list-mode .project-table th:nth-child(6),
+      body.client-ui .project-list-mode .project-table td:nth-child(6) { display:none!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(5),
+      body.client-ui .project-list-mode .project-table td:nth-child(5) { width:40%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(7),
+      body.client-ui .project-list-mode .project-table td:nth-child(7) { width:27%!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(1),
+      body.client-ui .project-list-mode .project-table td:nth-child(1) { width:30px!important; }
+      body.client-ui .project-list-mode .project-table th:nth-child(2),
+      body.client-ui .project-list-mode .project-table td:nth-child(2) { width:33%!important; }
+      body.client-ui .project-list-mode .project-actions-cell {
+        width:27%!important;
+        min-width:0!important;
+        max-width:none!important;
+        white-space:normal!important;
+      }
+      body.client-ui .overview-published-row {
+        grid-template-columns:1fr!important;
+      }
+      body.client-ui .overview-feed-actions {
+        justify-content:flex-start!important;
+      }
+      body.client-ui .complex-row {
+        grid-template-columns:1fr!important;
+        grid-template-areas:"main" "houses" "state" "apartments" "select"!important;
+      }
+      body.client-ui .complex-row > div:first-child { grid-area:main!important; }
+      body.client-ui .complex-row > .complex-houses { grid-area:houses!important; }
+      body.client-ui .complex-row > .catalog-state { grid-area:state!important; }
+      body.client-ui .complex-row > button:nth-of-type(1) { grid-area:apartments!important; }
+      body.client-ui .complex-row > button:nth-of-type(2) { grid-area:select!important; }
+    }
   </style>
 </head>
 <body class="client-ui">
