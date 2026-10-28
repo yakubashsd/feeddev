@@ -5212,6 +5212,10 @@
   </dialog>
 
   <script>
+    // Keep the login shell functional on browsers that do not yet expose structuredClone.
+    if (typeof window.structuredClone !== "function") {
+      window.structuredClone = value => JSON.parse(JSON.stringify(value));
+    }
     let runtimeMode = "internal";
     let authFormMode = "login";
     let sessionState = null;
@@ -5618,7 +5622,20 @@
           location.href = "/admin.html";
           return;
         }
-        location.reload();
+        const sessionResponse = await fetch("/api/auth-session", { credentials: "same-origin", cache: "no-store" });
+        const session = await sessionResponse.json().catch(() => ({}));
+        if (!sessionResponse.ok || !session.authenticated) {
+          throw new Error("Пароль принят, но браузер не сохранил сессию. Разрешите cookies для feeds.sozdateli.ru и повторите вход.");
+        }
+        sessionState = session;
+        configureExternalMode(session);
+        if (await syncExternalProjects()) {
+          location.reload();
+          return;
+        }
+        showWorkspace();
+        if (runtimeMode === "external" && !session.subscriptionActive) switchPage("billing");
+        renderBilling();
       } catch (error) {
         showLogin(error.message || "Не удалось войти.");
         document.querySelector("#loginPassword").focus();
