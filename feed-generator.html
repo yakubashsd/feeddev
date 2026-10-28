@@ -5584,6 +5584,9 @@
       background:var(--lf-surface)!important;
       box-sizing:border-box!important;
     }
+    /* Порядок остаётся серверной настройкой фида, но не занимает место в
+       основном сценарии оформления планировок. */
+    body.client-ui #layoutsPanel .photo-order-settings[hidden] { display:none!important; }
     body.client-ui #layoutsPanel .photo-order-settings-head {
       align-items:center!important;
       flex-wrap:wrap!important;
@@ -6320,7 +6323,7 @@
               <button id="insertBrandPhotoBtn" type="button" class="primary">Сформировать изображения</button>
               <button id="stopBrandPhotoBtn" type="button" class="danger" hidden>Остановить</button>
             </div>
-            <div class="photo-order-settings" aria-labelledby="photoOrderTitle">
+            <div class="photo-order-settings" aria-labelledby="photoOrderTitle" hidden>
               <div class="photo-order-settings-head">
                 <div>
                   <h3 id="photoOrderTitle">Очередность изображений</h3>
@@ -6352,7 +6355,7 @@
           <div class="brand-source-panel">
             <div class="brand-source-head">
               <div>
-                <strong>Образец для настройки</strong>
+                <strong>Образец планировки</strong>
                 <span id="brandLayoutSummary">Загрузите фид, чтобы выбрать планировки.</span>
               </div>
             </div>
@@ -8692,15 +8695,10 @@
       const editAttribute = overview ? "data-overview-edit-source" : "data-source-edit";
       const diagnostics = overview ? `<button type="button" data-source-diagnostics="${id}">Диагностика</button>` : "";
       return `<button type="button" class="primary" ${editAttribute}="${id}">Редактировать фид</button>
-        <details class="feed-actions-menu">
-          <summary>Действия</summary>
-          <div class="feed-actions-menu-panel" role="group" aria-label="Действия с фидом">
-            ${diagnostics}
-            <button type="button" data-source-sync="${id}">Обновить сейчас</button>
-            <button type="button" data-source-rename="${id}">Переименовать</button>
-            <button type="button" class="danger" data-source-remove="${id}">Удалить</button>
-          </div>
-        </details>`;
+        ${diagnostics}
+        <button type="button" data-source-sync="${id}">Обновить сейчас</button>
+        <button type="button" data-source-rename="${id}">Переименовать</button>
+        <button type="button" class="danger" data-source-remove="${id}">Удалить</button>`;
     }
 
     function renderProjectSources() {
@@ -9534,14 +9532,14 @@
     // menu cannot remain over the table or trap the next action.
     document.addEventListener("click", event => {
       const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest(".project-row-menu, .feed-actions-menu")) return;
-      document.querySelectorAll("details.project-row-menu[open], details.feed-actions-menu[open]").forEach(details => {
+      if (target?.closest(".project-row-menu")) return;
+      document.querySelectorAll("details.project-row-menu[open]").forEach(details => {
         details.open = false;
       });
     });
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape") return;
-      const openMenus = [...document.querySelectorAll("details.project-row-menu[open], details.feed-actions-menu[open]")];
+      const openMenus = [...document.querySelectorAll("details.project-row-menu[open]")];
       if (!openMenus.length) return;
       openMenus.forEach(details => { details.open = false; });
       openMenus[0].querySelector("summary")?.focus();
@@ -13666,7 +13664,7 @@ ${photos}
         switchPage("apartments");
         return;
       }
-      if (sourceCard && !editButton && !syncButton && !renameButton && !removeButton && !event.target.closest("a,.feed-actions-menu")) {
+      if (sourceCard && !editButton && !syncButton && !renameButton && !removeButton && !event.target.closest("a")) {
         selectSource(sourceCard.dataset.sourceSelect);
         return;
       }

@@ -7,6 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const html = fs.readFileSync(path.join(__dirname, "feed-generator.html"), "utf8");
 const layoutEditor = fs.readFileSync(path.join(__dirname, "layout-editor.js"), "utf8");
+const layoutEditorCss = fs.readFileSync(path.join(__dirname, "layout-editor.css"), "utf8");
 const server = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
 
 function clientFunction(name) {
@@ -88,19 +89,20 @@ test("feed refresh scheduling is server-side and opening a client tab never down
   assert.match(server, /setInterval\(syncTick,60000\)/);
 });
 
-test("dense feed controls use position selects and an actions menu instead of arrow-button clusters", () => {
+test("dense feed controls use position selects and visible direct actions instead of arrow-button clusters", () => {
   const photoOrder = html.match(/    function renderPhotoOrderEditor\([\s\S]*?\n    }\n\n    async function savePhotoOrder/)[0];
   assert.match(photoOrder, /data-photo-order-position/);
   assert.doesNotMatch(photoOrder, /data-photo-order-up|data-photo-order-down/);
   assert.match(html, /function sourceActionsMarkup\(sourceId/);
-  assert.match(html, /<details class="feed-actions-menu">/);
+  assert.match(html, /data-source-sync=/);
+  assert.match(html, /data-source-rename=/);
+  assert.match(html, /data-source-remove=/);
+  assert.doesNotMatch(html, /<details class="feed-actions-menu">/);
   assert.match(html, /Выберите позицию для каждого типа изображений/);
   assert.match(html, /#loadUrlBtn\[data-import-running\]\[aria-busy="true"\][\s\S]*?pointer-events:auto/);
-  assert.match(html, /details\.feed-actions-menu\[open\]/);
   assert.match(html, /\.topbar-page-context/);
   assert.match(html, /<p class="topbar-page-context"/);
   assert.match(html, /\.topbar-page-context"\)\.textContent/);
-  assert.match(require("node:fs").readFileSync("listingflow-finish.css", "utf8"), /feed-actions-menu > summary::marker/);
 });
 
 test("project bootstrap has a visible fallback and cannot reload forever", () => {
@@ -142,6 +144,17 @@ test("layout editor applies the size value and exposes a working canvas resize h
   assert.match(layoutEditor, /set\('brandSize'/);
   assert.doesNotMatch(html, /brandDragState/);
   assert.match(html, /\["\[", "\]"\]/);
+});
+
+test("layout editor uses a familiar three-zone workspace without moving its server-backed controls", () => {
+  assert.match(layoutEditor, /workspace\.className = 'le-workspace'/);
+  assert.match(layoutEditor, /workspace\.append\(referencePanel, previewPanel, properties\)/);
+  assert.match(layoutEditor, /Редактор макета/);
+  assert.match(html, /Образец планировки/);
+  assert.match(layoutEditor, /le-properties-section/);
+  assert.match(layoutEditor, /data-add-token-layer="floor"/);
+  assert.match(layoutEditor, /function addDynamicTextLayer\(field\)/);
+  assert.match(layoutEditorCss, /#layoutsPanel\.requires-feed-selection > \.layout-branding/);
 });
 
 test("branding editor exposes an editable safe placement zone and keeps guide pixels out of exports", () => {
@@ -251,7 +264,8 @@ test("branding templates can pull the floor from each feed object", () => {
     "Этаж 7 · 52.4 м²"
   );
   assert.equal(context.templateText("{{floor}}", {}), "—");
-  assert.match(layoutEditor, /data-token="floor" title="Подставит этаж конкретной квартиры">Этаж квартиры/);
+  assert.match(layoutEditor, /data-add-token-layer="floor" title="Добавит номер этажа конкретной квартиры">Этаж квартиры/);
+  assert.match(layoutEditor, /dynamicField:field/);
   assert.match(layoutEditor, /data-custom-token="floor"/);
 });
 

@@ -10,12 +10,12 @@
   const toolbar = document.createElement('div');
   toolbar.className = 'le-toolbar';
   toolbar.innerHTML = `
-    <div class="le-toolbar-title"><strong>Макет</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div>
+    <div class="le-toolbar-title"><strong>Редактор макета</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div>
     <div class="le-toolbar-layer-actions" role="group" aria-label="Добавить слой">
       <span class="le-toolbar-group-label">Добавить</span>
-      <button type="button" data-add-layer="text">＋ Текст</button>
-      <button type="button" data-add-layer="rect">▰ Фигура</button>
-      <button type="button" data-add-layer="image">＋ Изображения</button>
+      <button type="button" data-add-layer="text">Текст</button>
+      <button type="button" data-add-layer="rect">Фигура</button>
+      <button type="button" data-add-layer="image">Изображение</button>
     </div>
     <div class="le-toolbar-view-actions">
       <div class="le-toolbar-control-group" role="group" aria-label="Масштаб">
@@ -60,9 +60,16 @@
   };
   const properties = document.createElement('aside');
   properties.className = 'le-properties';
-  properties.innerHTML = `<div class="le-section-title"><h3>Слои</h3><span class="le-layer-count">4 слоя</span></div><div class="le-layers"><button type="button" data-layer="background" aria-pressed="false"><span class="le-layer-icon">▧</span><span>Подложка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="safe-zone" aria-pressed="false"><span class="le-layer-icon">⌗</span><span>Безопасная зона</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="layout" aria-pressed="true"><span class="le-layer-icon">▣</span><span>Планировка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="text" aria-pressed="false"><span class="le-layer-icon">T</span><span>Текст объявления</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button></div><div class="le-user-layers"></div><h3 id="le-property-title">Планировка</h3><p class="le-hint">Выберите слой, двигайте мышью или задайте точную позицию и размер.</p><div class="le-inspector"></div>`;
+  properties.innerHTML = `<section class="le-layers-section" aria-labelledby="leLayersTitle"><div class="le-section-title"><h3 id="leLayersTitle">Слои</h3><span class="le-layer-count">4 слоя</span></div><p class="le-panel-hint">Нажмите на слой или объект на холсте, чтобы настроить его.</p><div class="le-layers"><button type="button" data-layer="background" aria-pressed="false"><span class="le-layer-icon" aria-hidden="true">▧</span><span>Подложка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="safe-zone" aria-pressed="false"><span class="le-layer-icon" aria-hidden="true">⌗</span><span>Безопасная зона</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="layout" aria-pressed="true"><span class="le-layer-icon" aria-hidden="true">▣</span><span>Планировка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="text" aria-pressed="false"><span class="le-layer-icon" aria-hidden="true">T</span><span>Текст объявления</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button></div><div class="le-user-layers"></div></section><section class="le-properties-section" aria-labelledby="le-property-title"><div class="le-inspector-head"><h3 id="le-property-title">Планировка</h3><span>Свойства</span></div><p class="le-hint">Перемещайте объект на холсте или задайте точные значения ниже.</p><div class="le-inspector"></div></section>`;
   root.append(properties);
   properties.append(controls, textControls);
+  const referencePanel = panel.querySelector('.brand-source-panel');
+  const previewPanel = panel.querySelector('.brand-preview');
+  const workspace = document.createElement('div');
+  workspace.className = 'le-workspace';
+  workspace.setAttribute('aria-label', 'Рабочая область редактора планировок');
+  toolbar.after(workspace);
+  workspace.append(referencePanel, previewPanel, properties);
   for(const pair of [['brandOffsetX','brandOffsetY'],['templateTextX','templateTextY']]){
     const detail=document.createElement('details'); detail.className='le-precise';
     detail.innerHTML='<summary>Точные настройки</summary><div></div>';
@@ -71,7 +78,7 @@
   }
   const fields = document.createElement('div');
   fields.className = 'le-fields';
-  fields.innerHTML = `<span class="le-hint">Вставить в выбранную строку:</span><button type="button" data-token="price">Цена</button><button type="button" data-token="area">Площадь</button><button type="button" data-token="rooms">Комнаты</button><button type="button" data-token="floor" title="Подставит этаж конкретной квартиры">Этаж квартиры</button><button type="button" data-token="complex">Проект</button>`;
+  fields.innerHTML = `<span class="le-hint">Добавить отдельным слоем:</span><button type="button" data-add-token-layer="price">Цена</button><button type="button" data-add-token-layer="area">Площадь</button><button type="button" data-add-token-layer="rooms">Комнаты</button><button type="button" data-add-token-layer="floor" title="Добавит номер этажа конкретной квартиры">Этаж квартиры</button><button type="button" data-add-token-layer="complex">Проект</button>`;
   textControls.prepend(fields);
   const footer = document.createElement('div');
   footer.className = 'le-footer';
@@ -132,6 +139,44 @@
   function travel(from,to) { if(!from.length)return; to.push(snapshot()); baseline=from.pop(); Object.entries(baseline).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v}); if(activeCustom())chooseCustom(selectedCustomId);else choose('layout');redraw();persistActiveBrandProfile();buttons();selectionBox(); }
   const escapeAttr=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const escapeText=value=>String(value??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const dynamicLayerFields = {
+    price: { name:'Цена', text:'{{price}}', width:34 },
+    area: { name:'Площадь', text:'{{area}} м²', width:30 },
+    rooms: { name:'Комнаты', text:'{{rooms}} комн.', width:33 },
+    floor: { name:'Этаж квартиры', text:'Этаж: {{floor}}', width:32 },
+    complex: { name:'Проект', text:'{{complex}}', width:44 }
+  };
+  function addDynamicTextLayer(field) {
+    const meta = dynamicLayerFields[field];
+    if (!meta) return;
+    if (readLayers().length >= 40) { showToast('Достигнут предел: 40 дополнительных слоёв'); return; }
+    baseline = snapshot();
+    const layers = readLayers();
+    const sameTypeCount = layers.filter(layer => layer.dynamicField === field).length;
+    const offset = layers.filter(layer => layer.type === 'text').length;
+    const id = `layer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const y = Math.min(88, 12 + (offset % 6) * 12);
+    layers.push({
+      id,
+      type:'text',
+      dynamicField:field,
+      name: sameTypeCount ? `${meta.name} ${sameTypeCount + 1}` : meta.name,
+      text:meta.text,
+      x:12,
+      y,
+      width:meta.width,
+      height:12,
+      fontSize:36,
+      color:'#11151a',
+      opacity:100,
+      weight:700
+    });
+    writeLayers(layers);
+    chooseCustom(id);
+    redraw();
+    commit();
+    showToast(`Слой «${meta.name}» добавлен. Перетащите его на нужное место.`);
+  }
   function readLayers(){try{const layers=JSON.parse(serializedLayers.value||'[]');return Array.isArray(layers)?layers.slice(0,40):[]}catch{return []}}
   function writeLayers(layers){serializedLayers.value=JSON.stringify(layers);}
   function activeCustom(){return readLayers().find(layer=>layer.id===selectedCustomId)}
@@ -146,7 +191,7 @@
   function redraw(){if(typeof brandPreviewImages==='undefined'||!brandPreviewImages){canvas.width=1200;canvas.height=800;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.globalAlpha=Number(opacityState.value||100)/100;ctx.fillStyle=layerState.value||'#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.restore();ctx.strokeStyle='#d8dde5';ctx.strokeRect(.5,.5,canvas.width-1,canvas.height-1);ctx.fillStyle='#8a919e';ctx.font='500 24px Circe, Arial, sans-serif';ctx.textAlign='center';ctx.fillText('Загрузите планировку или подложку',canvas.width/2,canvas.height/2);ctx.textAlign='start';drawCustom(ctx,canvas.width,canvas.height);}else drawBrandPreviewFrame();selectionBox();}
   function drawCustom(ctx,w,h){for(const layer of readLayers()){const x=w*Number(layer.x||0)/100,y=h*Number(layer.y||0)/100,lw=w*Number(layer.width||30)/100,lh=h*Number(layer.height||12)/100;ctx.save();ctx.globalAlpha=Number(layer.opacity??100)/100;if(layer.type==='rect'){ctx.fillStyle=layer.fill||'#4f7dff';ctx.fillRect(x,y,lw,lh)}else if(layer.type==='image'){const image=window.listingFlowCanvasImageCache?.get(layer.src);if(image)ctx.drawImage(image,x,y,lw,lh)}else{ctx.fillStyle=layer.color||'#11151a';ctx.textBaseline='top';ctx.font=`${layer.weight||700} ${Number(layer.fontSize)||36}px ${fontStack(layer.fontFamily)}`;String(layer.text||'Текст').split('\n').forEach((line,i)=>ctx.fillText(line,x,y+i*(Number(layer.fontSize)||36)*1.2,lw))}ctx.restore()}}
   function fontControls(current,custom=false){return `<div class="le-font-controls"><label class="le-field">Шрифт<select ${custom?'data-prop="fontFamily"':'id="le-base-font"'}>${fontOptions(current||'Circe')}</select></label><div class="le-font-upload"><input class="le-font-file" type="file" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" hidden><button type="button" data-upload-font>Загрузить шрифт</button><div class="le-font-requirements"><strong>Требования к файлу</strong><ul><li>Формат WOFF2 рекомендуется; также подходят WOFF, TTF и OTF.</li><li>Размер — не более 3 МБ. Один файл — одно начертание.</li><li>Шрифт должен содержать кириллицу и цифры.</li><li>Загружайте только шрифты, которые разрешено использовать в рекламе.</li></ul></div></div></div>`}
-  function renderInspector(){const box=properties.querySelector('.le-inspector'),layer=activeCustom();if(selected==='background'){box.innerHTML=`<label class="le-field">Цвет основы<input id="le-bg-color" type="color" value="${layerState.value}"></label><label class="le-field">Непрозрачность<input id="le-bg-opacity" type="range" min="0" max="100" value="${opacityState.value}"><span>${opacityState.value}%</span></label><p class="le-hint">Цвет основы виден через прозрачные участки загруженной подложки. 100% создаёт сплошной фон.</p>`}else if(layer){const imageInfo=layer.type==='image'?`<p class="le-hint">Изображение загружено на сервер и доступно во всех браузерах этого аккаунта.</p><img class="le-image-preview" src="${escapeAttr(layer.src)}" alt="" loading="lazy">`:'';box.innerHTML=`<label class="le-field">Имя слоя<input data-prop="name" value="${escapeAttr(layer.name)}"></label>${layer.type==='text'?`<label class="le-field">Текст<textarea data-prop="text" rows="3" maxlength="300">${escapeText(layer.text)}</textarea></label><div class="le-token-fields"><button type="button" data-custom-token="price">+ Цена</button><button type="button" data-custom-token="area">+ Площадь</button><button type="button" data-custom-token="rooms">+ Комнаты</button><button type="button" data-custom-token="complex">+ Проект</button></div>${fontControls(layer.fontFamily||'Circe',true)}<label class="le-field">Цвет текста<input data-prop="color" type="color" value="${layer.color||'#11151a'}"></label><label class="le-field">Кегль<input data-prop="fontSize" type="number" min="10" max="180" value="${layer.fontSize||36}"></label>`:layer.type==='image'?imageInfo:`<label class="le-field">Заливка<input data-prop="fill" type="color" value="${layer.fill||'#4f7dff'}"></label>`}<div class="le-property-grid"><label class="le-field">X, %<input data-prop="x" type="number" min="0" max="100" value="${layer.x}"></label><label class="le-field">Y, %<input data-prop="y" type="number" min="0" max="100" value="${layer.y}"></label><label class="le-field">Ширина, %<input data-prop="width" type="number" min="1" max="100" value="${layer.width}"></label><label class="le-field">Высота, %<input data-prop="height" type="number" min="1" max="100" value="${layer.height}"></label></div><label class="le-field">Непрозрачность<input data-prop="opacity" type="range" min="0" max="100" value="${layer.opacity}"><span>${layer.opacity}%</span></label>`}else if(selected==='safe-zone'){box.innerHTML=`<p class="le-hint">Пунктирная рамка — контейнер для планировки на всех площадках. Потяните маркер в правом нижнем углу, чтобы менять ширину и высоту, или задайте точные значения справа.</p>`}else if(selected==='text'){box.innerHTML=`${fontControls(fontState.value)}<p class="le-hint">Данные объявления подставляются автоматически. Добавьте отдельный текстовый слой кнопкой «＋ Текст», чтобы свободно оформлять макет.</p>`}else{box.innerHTML=`<p class="le-hint">Перемещайте планировку на холсте. Размер задаётся ниже; положение и границы — в слое «Безопасная зона».</p>`}}
+  function renderInspector(){const box=properties.querySelector('.le-inspector'),layer=activeCustom();if(selected==='background'){box.innerHTML=`<label class="le-field">Цвет основы<input id="le-bg-color" type="color" value="${layerState.value}"></label><label class="le-field">Непрозрачность<input id="le-bg-opacity" type="range" min="0" max="100" value="${opacityState.value}"><span>${opacityState.value}%</span></label><p class="le-hint">Цвет основы виден через прозрачные участки загруженной подложки. 100% создаёт сплошной фон.</p>`}else if(layer){const imageInfo=layer.type==='image'?`<p class="le-hint">Изображение загружено на сервер и доступно во всех браузерах этого аккаунта.</p><img class="le-image-preview" src="${escapeAttr(layer.src)}" alt="" loading="lazy">`:'';box.innerHTML=`<label class="le-field">Имя слоя<input data-prop="name" value="${escapeAttr(layer.name)}"></label>${layer.type==='text'?`<label class="le-field">Текст<textarea data-prop="text" rows="3" maxlength="300">${escapeText(layer.text)}</textarea></label><div class="le-token-fields"><button type="button" data-custom-token="price">+ Цена</button><button type="button" data-custom-token="area">+ Площадь</button><button type="button" data-custom-token="rooms">+ Комнаты</button><button type="button" data-custom-token="complex">+ Проект</button></div>${fontControls(layer.fontFamily||'Circe',true)}<label class="le-field">Цвет текста<input data-prop="color" type="color" value="${layer.color||'#11151a'}"></label><label class="le-field">Кегль<input data-prop="fontSize" type="number" min="10" max="180" value="${layer.fontSize||36}"></label>`:layer.type==='image'?imageInfo:`<label class="le-field">Заливка<input data-prop="fill" type="color" value="${layer.fill||'#4f7dff'}"></label>`}<div class="le-property-grid"><label class="le-field">X, %<input data-prop="x" type="number" min="0" max="100" value="${layer.x}"></label><label class="le-field">Y, %<input data-prop="y" type="number" min="0" max="100" value="${layer.y}"></label><label class="le-field">Ширина, %<input data-prop="width" type="number" min="1" max="100" value="${layer.width}"></label><label class="le-field">Высота, %<input data-prop="height" type="number" min="1" max="100" value="${layer.height}"></label></div><label class="le-field">Непрозрачность<input data-prop="opacity" type="range" min="0" max="100" value="${layer.opacity}"><span>${layer.opacity}%</span></label>`}else if(selected==='safe-zone'){box.innerHTML=`<p class="le-hint">Пунктирная рамка — контейнер для планировки на всех площадках. Потяните маркер в правом нижнем углу, чтобы менять ширину и высоту, или задайте точные значения справа.</p>`}else if(selected==='text'){box.innerHTML=`${fontControls(fontState.value)}<p class="le-hint">Динамические поля добавляются отдельными слоями в блоке «Добавить отдельным слоем». Их можно свободно перемещать и настраивать.</p>`}else{box.innerHTML=`<p class="le-hint">Перемещайте планировку на холсте. Размер задаётся ниже; положение и границы — в слое «Безопасная зона».</p>`}}
   function ensureFloorTokenButton(){
     const target=properties.querySelector('.le-token-fields');
     if(!target||target.querySelector('[data-custom-token="floor"]'))return;
@@ -238,7 +283,10 @@
   });
   ids.forEach(id=>{const el=document.getElementById(id); el.addEventListener('focus',()=>{if(!drag)baseline=snapshot();});el.addEventListener('input',()=>{selectionBox();if(id==='templateCanvasColor'||id==='templateCanvasOpacity'||id.startsWith('brandSafe'))redraw();});el.addEventListener('change',commit);});
   ['templateHeadline','templateSubline'].forEach(id=>document.getElementById(id).addEventListener('focus',e=>textTarget=e.target));
-  fields.addEventListener('click',e=>{ const b=e.target.closest('[data-token]'); if(!b)return; baseline=snapshot(); const token='{{'+b.dataset.token+'}}'+(b.dataset.token==='area'?' м²':''); const start=textTarget.selectionStart??textTarget.value.length, end=textTarget.selectionEnd??start; textTarget.setRangeText(token,start,end,'end'); textTarget.dispatchEvent(new Event('input')); commit(); textTarget.focus(); });
+  fields.addEventListener('click', e => {
+    const button = e.target.closest('[data-add-token-layer]');
+    if (button) addDynamicTextLayer(button.dataset.addTokenLayer);
+  });
   document.querySelector('#le-undo').onclick=()=>travel(history,future);
   document.querySelector('#le-redo').onclick=()=>travel(future,history);
   document.querySelector('#le-preview').onclick=()=>brandPreviewImages?openBrandPreviewDialog():showToast('Добавьте планировку или графическую подложку для предпросмотра');
