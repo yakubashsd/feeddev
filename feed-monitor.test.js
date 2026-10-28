@@ -45,3 +45,18 @@ test('source refresh keeps current branded images by object id',()=>{
   assert.match(result.xml,/house\.jpg/);
   assert.doesNotMatch(result.xml,/source-plan\.png/);
 });
+test('source refresh keeps manual HouseType overrides by object id',()=>{
+  const source='<Ads><Ad><Id>1</Id><HouseType>монолитно-каркасный</HouseType><Images><Image url="source-plan.png"/></Images></Ad></Ads>';
+  const current='<Ads><Ad><Id>1</Id><HouseType>монолитно-кирпичный</HouseType><Images><Image url="safe-branded-plan.jpg"/></Images></Ad></Ads>';
+  const result=mergeFeedXml(source,current,{1:{HouseType:'монолитно-кирпичный'}});
+  assert.match(result.xml,/<HouseType>монолитно-кирпичный<\/HouseType>/);
+  assert.match(result.xml,/safe-branded-plan\.jpg/);
+  assert.doesNotMatch(result.xml,/монолитно-каркасный/);
+});
+test('source refresh infers an existing HouseType override from the current feed',()=>{
+  const source='<Ads><Ad><Id>1</Id><HouseType>монолитно-каркасный</HouseType></Ad></Ads>';
+  const current='<Ads><Ad><Id>1</Id><HouseType>монолитно-кирпичный</HouseType></Ad></Ads>';
+  const result=mergeFeedXml(source,current);
+  assert.match(result.xml,/<HouseType>монолитно-кирпичный<\/HouseType>/);
+  assert.doesNotMatch(result.xml,/монолитно-каркасный/);
+});

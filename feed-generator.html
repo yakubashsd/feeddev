@@ -9251,7 +9251,24 @@ ${photos}
       }
     }
 
-    async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug }) {
+    function publishedManualOverrides() {
+      const originalById = new Map(originalObjects.map(item => [item.externalId, item]));
+      const overrides = {};
+      objects.forEach(item => {
+        const id = String(item.externalId || "").trim();
+        if (!id) return;
+        const original = originalById.get(item.externalId);
+        const explicit = String(item?._overrides?.houseType || "").trim();
+        const changed = original && String(item.houseType ?? "") !== String(original.houseType ?? "")
+          ? String(item.houseType || "").trim()
+          : "";
+        const value = explicit || changed;
+        if (value) overrides[id] = { HouseType: value.toLowerCase() };
+      });
+      return overrides;
+    }
+
+    async function publishFeedToServer({ id, platform, sourceUrl, sourceType, xml, objectCount, name, slug, manualOverrides }) {
       const payload = {
         platform,
         projectId: currentProject?.id || "",
@@ -9260,7 +9277,8 @@ ${photos}
         xml,
         objectCount,
         name: name || `${platformProfiles[platform]?.name || platform} • ${objectCount} объектов`,
-        slug
+        slug,
+        manualOverrides
       };
       const endpoint = id ? `/api/feeds?slug=${encodeURIComponent(id)}` : "/api/feeds";
       const response = await fetch(endpoint, {
@@ -9312,7 +9330,8 @@ ${photos}
           xml,
           objectCount: objects.length,
           name: feedName,
-          slug: generatedFeedId(feedName)
+          slug: generatedFeedId(feedName),
+          manualOverrides: publishedManualOverrides()
         });
         appState.serverBaseUrl = new URL(publishedFeed.url).origin;
         appState.generatedFeedId = publishedFeed.id;

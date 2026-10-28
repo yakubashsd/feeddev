@@ -55,15 +55,52 @@ function adId(ad) {
   return ad.match(/<Id\b[^>]*>([^<]+)<\/Id>/i)?.[1]?.trim() || "";
 }
 
+function xmlTagValue(ad, tag) {
+  const value = ad.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, "i"))?.[1]?.trim() || "";
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 function imagesBlock(ad) {
   return ad.match(/<Images\b[^>]*>[\s\S]*?<\/Images>/i)?.[0] || "";
 }
 
-function mergeFeedXml(sourceXml, currentXml) {
+function escapeXmlText(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+function applyManualOverrides(ad, overrides = {}) {
+  const allowedTags = new Set(["HouseType"]);
+  let result = ad;
+  for (const [tag, value] of Object.entries(overrides || {})) {
+    if (!allowedTags.has(tag) || value === null || value === undefined) continue;
+    const escaped = escapeXmlText(value);
+    const pattern = new RegExp(`(<${tag}\\b[^>]*>)[\\s\\S]*?(</${tag}>)`, "i");
+    if (pattern.test(result)) {
+      result = result.replace(pattern, `$1${escaped}$2`);
+    } else {
+      result = result.replace(/<\/Ad>\s*$/i, `\n    <${tag}>${escaped}</${tag}>\n  </Ad>`);
+    }
+  }
+  return result;
+}
+
+function mergeFeedXml(sourceXml, currentXml, manualOverrides = {}) {
+  const currentAds = new Map();
   const currentImages = new Map();
   for (const ad of adBlocks(currentXml)) {
     const id = adId(ad);
     const images = imagesBlock(ad);
+    if (id) currentAds.set(id, ad);
     if (id && images) currentImages.set(id, images);
   }
 
@@ -71,9 +108,19 @@ function mergeFeedXml(sourceXml, currentXml) {
   const xml = String(sourceXml || "").replace(/<Ad\b[^>]*>[\s\S]*?<\/Ad>/gi, ad => {
     const id = adId(ad);
     const images = currentImages.get(id);
-    if (!images || !imagesBlock(ad)) return ad;
-    matched += 1;
-    return ad.replace(/<Images\b[^>]*>[\s\S]*?<\/Images>/i, images);
+    let result = ad;
+    if (images && imagesBlock(ad)) {
+      matched += 1;
+      result = result.replace(/<Images\b[^>]*>[\s\S]*?<\/Images>/i, images);
+    }
+    const explicitOverride = manualOverrides?.[id];
+    const currentAd = currentAds.get(id);
+    const currentHouseType = currentAd ? xmlTagValue(currentAd, "HouseType") : "";
+    const sourceHouseType = xmlTagValue(ad, "HouseType");
+    const inferredOverride = !explicitOverride && currentHouseType && currentHouseType !== sourceHouseType
+      ? { HouseType: currentHouseType }
+      : explicitOverride;
+    return applyManualOverrides(result, inferredOverride);
   });
   return { xml, matched, sourceObjects: adBlocks(sourceXml).length };
 }

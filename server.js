@@ -389,7 +389,7 @@ async function syncPublishedFeeds() {
           : null;
         const branding = await brandNewSourceAds(sourceXml, currentXml, record, brandingProfile);
         const merged = currentXml
-          ? feedMonitor.mergeFeedXml(branding.xml, currentXml)
+          ? feedMonitor.mergeFeedXml(branding.xml, currentXml, record.manualOverrides)
           : { xml: branding.xml, matched: 0, sourceObjects: feedMonitor.mergeFeedXml(branding.xml, "").sourceObjects };
         await persistFeedXml(record.slug, merged.xml);
         const latest = (await readFeeds()).find(item => item.slug === record.slug) || record;
@@ -684,6 +684,19 @@ function validateFeedPayload(payload) {
   };
 }
 
+function sanitizeManualOverrides(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const result = {};
+  for (const [externalId, fields] of Object.entries(value)) {
+    const id = String(externalId || "").trim().slice(0, 150);
+    if (!id || !fields || typeof fields !== "object" || Array.isArray(fields)) continue;
+    const houseType = String(fields.HouseType ?? "").trim().toLowerCase();
+    if (!houseType) continue;
+    result[id] = { HouseType: houseType.slice(0, 80) };
+  }
+  return result;
+}
+
 async function saveFeed(req, payload, existingSlug = "", actor = null) {
   const data = validateFeedPayload(payload);
   const feeds = await readFeeds();
@@ -700,6 +713,10 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
   }
 
   const blob = await persistFeedXml(slug, data.xml);
+  const hasManualOverrides = Object.prototype.hasOwnProperty.call(payload, "manualOverrides");
+  const manualOverrides = hasManualOverrides
+    ? sanitizeManualOverrides(payload.manualOverrides)
+    : existing?.manualOverrides || {};
 
   const record = {
     id: slug,
@@ -714,6 +731,7 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     file: `feeds/${slug}.xml`,
     blobUrl: blob?.url || "",
     url: feedUrl(req, slug),
+    manualOverrides,
     updatedAt: now,
     createdAt: existing?.createdAt || now
   };
