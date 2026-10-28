@@ -4415,10 +4415,13 @@
     .editor-section-nav button:hover { background:#eee; }
     .form-grid .section-title { scroll-margin-top:70px; }
     .project-source-list { display:grid; gap:8px; margin-top:18px; }
-    .source-record { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) 110px 120px auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; transition:border-color .18s ease, background .18s ease; }
+    .source-record { display:grid; grid-template-columns:minmax(220px,1.25fr) minmax(170px,1fr) minmax(260px,1.6fr) 90px 110px auto; gap:14px; align-items:center; padding:15px; border:1px solid var(--line); border-radius:9px; background:#fff; transition:border-color .18s ease, background .18s ease; }
     .source-record.is-selected { border-color:#171717; background:#f4f4f4; }
     .source-record strong, .source-record small { display:block; }
     .source-record small { margin-top:4px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .source-record .source-field-label { display:block; margin-bottom:5px; color:#737373; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+    .source-record a { display:block; max-width:100%; margin-top:4px; color:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .source-record a:hover { color:#000; }
     .source-record .source-health { font-size:11px; color:#444; }
     .source-record .source-actions { display:flex; gap:6px; justify-content:flex-end; }
     .source-record .source-actions button:first-child { background:#171717; border-color:#171717; color:#fff; }
@@ -6600,9 +6603,15 @@
         const platform = platformProfiles[source.platform]?.name || "Определяется";
         const updated = source.updatedAt ? new Date(source.updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const selected = source.id === activeSourceId;
+        const sourceUrl = String(source.url || "").trim();
+        const publishedUrl = String(source.publishedUrl || "").trim();
+        const linkMarkup = (url, emptyLabel) => /^https?:\/\//i.test(url)
+          ? `<a href="${escapeXml(url)}" target="_blank" rel="noreferrer" title="${escapeXml(url)}">${escapeXml(url)}</a>`
+          : `<small>${escapeXml(emptyLabel)}</small>`;
         return `<article class="source-record ${selected ? "is-selected" : ""}">
-          <div><strong>${escapeXml(source.name || platform)}</strong><small>${escapeXml(source.url)}</small></div>
-          <div><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
+          <div><span class="source-field-label">Исходная ссылка</span><strong>${escapeXml(source.name || platform)}</strong>${linkMarkup(sourceUrl, "Источник не указан")}</div>
+          <div><span class="source-field-label">Формат</span><strong>${platform}</strong><small>${source.objectCount || 0} квартир · ${sourceIntervalLabel(source.interval)}</small></div>
+          <div><span class="source-field-label">Постоянная ссылка</span>${linkMarkup(publishedUrl, "Ещё не опубликована")}</div>
           <span class="source-health">${source.error ? "Ошибка" : "Работает"}</span>
           <span><small>${escapeXml(source.error || updated)}</small></span>
           <div class="source-actions"><button type="button" data-source-select="${source.id}" aria-pressed="${selected}">${selected ? "Выбран" : "Выбрать"}</button><button type="button" data-source-sync="${source.id}">Обновить</button><button type="button" data-source-remove="${source.id}" aria-label="Удалить источник">Удалить</button></div>
