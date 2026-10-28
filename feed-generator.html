@@ -5567,6 +5567,12 @@
       return Boolean(state && state.values && typeof state.values === "object" && Object.keys(state.values).length);
     }
 
+    function projectListSignature(list = []) {
+      return JSON.stringify(list
+        .map(project => ({ id: project.id, name: project.name, createdAt: project.createdAt }))
+        .sort((left, right) => String(left.id).localeCompare(String(right.id))));
+    }
+
     async function syncInternalProjects() {
       if (runtimeMode !== "internal" || sessionState?.role !== "internal") return false;
       try {
@@ -5627,7 +5633,7 @@
         }
 
         const nextProjects = [...merged.values()].sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")));
-        if (JSON.stringify(nextProjects) !== JSON.stringify(projects)) {
+        if (projectListSignature(nextProjects) !== projectListSignature(projects)) {
           projects = nextProjects;
           localStorage.setItem(projectIndexKey, JSON.stringify(projects));
           changed = true;
@@ -5713,7 +5719,7 @@
           const projectsSynced = runtimeMode === "external"
             ? await syncExternalProjects()
             : await syncInternalProjects();
-          if (projectsSynced) {
+          if (projectsSynced && requestedProject) {
             location.reload();
             return;
           }
