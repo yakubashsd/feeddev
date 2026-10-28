@@ -6507,7 +6507,9 @@
         item.title = unavailable ? "Сначала выберите рабочий фид в разделе «Источники»" : "";
         if (state) item.dataset.state = state;
         else delete item.dataset.state;
-        item.hidden = item.dataset.nav === "billing" ? runtimeMode !== "external" : !currentProject;
+        item.hidden = item.dataset.nav === "billing"
+          ? runtimeMode !== "external"
+          : !currentProject || unavailable;
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
       document.querySelector(".subtitle").textContent = currentProject?.name || "Управляйте источниками и выгрузками";
