@@ -78,18 +78,76 @@ function escapeXmlText(value = "") {
     .replaceAll("'", "&apos;");
 }
 
+const manualFieldTags = {
+  description: "Description",
+  address: "Address",
+  phone: "ContactPhone",
+  price: "Price",
+  latitude: "Latitude",
+  longitude: "Longitude",
+  balconyOrLoggia: "BalconyOrLoggiaMulti",
+  houseType: "HouseType",
+  floor: "Floor",
+  floorsCount: "Floors",
+  rooms: "Rooms",
+  totalArea: "Square",
+  livingArea: "LivingSpace",
+  kitchenArea: "KitchenSpace",
+  flatNumber: "ApartmentNumber",
+  isApartments: "Status",
+  bathroomType: "BathroomMulti",
+  ceilingHeight: "CeilingHeight",
+  avitoNewDevelopmentId: "NewDevelopmentId",
+  avitoBuildingName: "DevelopmentsBuildingName",
+  decoration: "Decoration"
+};
+
+function normalizeManualValue(field, value) {
+  const text = String(value ?? "").trim();
+  if (field === "phone") {
+    const digits = text.replace(/\D/g, "").replace(/^8(?=\d{10}$)/, "7");
+    return digits ? `+${digits.length === 10 ? `7${digits}` : digits}` : "";
+  }
+  if (field === "isApartments") return text.toLowerCase() === "true" ? "Апартаменты" : "Квартира";
+  if (field === "decoration") {
+    return ({
+      rough: "Черновая", preFine: "Предчистовая", fine: "Чистовая", without: "Без отделки",
+      repair: "Ремонт", repairBeige: "Ремонт бежевый", repairGray: "Ремонт серый"
+    })[text] || text;
+  }
+  return text;
+}
+
+function multiValueXml(tag, value) {
+  const options = String(value || "").split(",").map(item => item.trim()).filter(Boolean);
+  if (!options.length) return "";
+  return `<${tag}>\n${options.map(option => `      <Option>${escapeXmlText(option)}</Option>`).join("\n")}\n    </${tag}>`;
+}
+
+function replaceXmlElement(xml, tag, value) {
+  const pattern = new RegExp(`(<${tag}\\b[^>]*>)[\\s\\S]*?(</${tag}>)`, "i");
+  const escaped = escapeXmlText(value);
+  if (pattern.test(xml)) {
+    return value === "" ? xml.replace(pattern, "") : xml.replace(pattern, `$1${escaped}$2`);
+  }
+  if (value === "") return xml;
+  return xml.replace(/<\/Ad>\s*$/i, `\n    <${tag}>${escaped}</${tag}>\n  </Ad>`);
+}
+
 function applyManualOverrides(ad, overrides = {}) {
-  const allowedTags = new Set(["HouseType"]);
   let result = ad;
-  for (const [tag, value] of Object.entries(overrides || {})) {
-    if (!allowedTags.has(tag) || value === null || value === undefined) continue;
-    const escaped = escapeXmlText(value);
-    const pattern = new RegExp(`(<${tag}\\b[^>]*>)[\\s\\S]*?(</${tag}>)`, "i");
-    if (pattern.test(result)) {
-      result = result.replace(pattern, `$1${escaped}$2`);
-    } else {
-      result = result.replace(/<\/Ad>\s*$/i, `\n    <${tag}>${escaped}</${tag}>\n  </Ad>`);
+  for (const [field, rawValue] of Object.entries(overrides || {})) {
+    const normalizedField = field === "HouseType" ? "houseType" : field;
+    const tag = manualFieldTags[normalizedField];
+    if (!tag || rawValue === null || rawValue === undefined) continue;
+    const value = normalizeManualValue(normalizedField, rawValue);
+    if (["balconyOrLoggia", "bathroomType"].includes(normalizedField)) {
+      const block = multiValueXml(tag, value);
+      const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?</${tag}>`, "i");
+      result = block ? (pattern.test(result) ? result.replace(pattern, block) : result.replace(/<\/Ad>\s*$/i, `\n    ${block}\n  </Ad>`)) : result.replace(pattern, "");
+      continue;
     }
+    result = replaceXmlElement(result, tag, value);
   }
   return result;
 }

@@ -686,13 +686,23 @@ function validateFeedPayload(payload) {
 
 function sanitizeManualOverrides(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const allowedFields = new Set([
+    "description", "address", "phone", "price", "latitude", "longitude", "balconyOrLoggia",
+    "houseType", "floor", "floorsCount", "rooms", "totalArea", "livingArea", "kitchenArea",
+    "flatNumber", "isApartments", "bathroomType", "ceilingHeight", "avitoNewDevelopmentId",
+    "avitoBuildingName", "decoration"
+  ]);
   const result = {};
   for (const [externalId, fields] of Object.entries(value)) {
     const id = String(externalId || "").trim().slice(0, 150);
     if (!id || !fields || typeof fields !== "object" || Array.isArray(fields)) continue;
-    const houseType = String(fields.HouseType ?? "").trim().toLowerCase();
-    if (!houseType) continue;
-    result[id] = { HouseType: houseType.slice(0, 80) };
+    const cleanFields = {};
+    for (const [field, rawValue] of Object.entries(fields)) {
+      const normalizedField = field === "HouseType" ? "houseType" : field;
+      if (!allowedFields.has(normalizedField) || rawValue === null || rawValue === undefined) continue;
+      cleanFields[normalizedField] = String(rawValue).slice(0, normalizedField === "description" ? 20000 : 500);
+    }
+    if (Object.keys(cleanFields).length) result[id] = cleanFields;
   }
   return result;
 }

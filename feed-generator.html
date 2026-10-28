@@ -9253,17 +9253,26 @@ ${photos}
 
     function publishedManualOverrides() {
       const originalById = new Map(originalObjects.map(item => [item.externalId, item]));
+      const editableFields = [
+        "description", "address", "phone", "price", "latitude", "longitude", "balconyOrLoggia",
+        "houseType", "floor", "floorsCount", "rooms", "totalArea", "livingArea", "kitchenArea",
+        "flatNumber", "isApartments", "bathroomType", "ceilingHeight", "avitoNewDevelopmentId",
+        "avitoBuildingName", "decoration"
+      ];
       const overrides = {};
       objects.forEach(item => {
         const id = String(item.externalId || "").trim();
         if (!id) return;
         const original = originalById.get(item.externalId);
-        const explicit = String(item?._overrides?.houseType || "").trim();
-        const changed = original && String(item.houseType ?? "") !== String(original.houseType ?? "")
-          ? String(item.houseType || "").trim()
-          : "";
-        const value = explicit || changed;
-        if (value) overrides[id] = { HouseType: value.toLowerCase() };
+        if (!original) return;
+        const fields = {};
+        editableFields.forEach(field => {
+          const hasExplicit = Object.prototype.hasOwnProperty.call(item?._overrides || {}, field);
+          const changed = String(item[field] ?? "") !== String(original[field] ?? "");
+          if (!hasExplicit && !changed) return;
+          fields[field] = String(item[field] ?? "");
+        });
+        if (Object.keys(fields).length) overrides[id] = fields;
       });
       return overrides;
     }

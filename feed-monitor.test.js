@@ -60,3 +60,12 @@ test('source refresh infers an existing HouseType override from the current feed
   assert.match(result.xml,/<HouseType>монолитно-кирпичный<\/HouseType>/);
   assert.doesNotMatch(result.xml,/монолитно-каркасный/);
 });
+test('source refresh keeps scalar and multi-value manual overrides',()=>{
+  const source='<Ads><Ad><Id>1</Id><Description>Источник</Description><Price>5000000</Price><BathroomMulti><Option>Совмещенный</Option></BathroomMulti></Ad></Ads>';
+  const current='<Ads><Ad><Id>1</Id><Description>Старая правка</Description><Price>5100000</Price></Ad></Ads>';
+  const result=mergeFeedXml(source,current,{1:{description:'Новая правка',price:'5200000',bathroomType:'Раздельный'}});
+  assert.match(result.xml,/<Description>Новая правка<\/Description>/);
+  assert.match(result.xml,/<Price>5200000<\/Price>/);
+  assert.match(result.xml,/<BathroomMulti>\s*<Option>Раздельный<\/Option>\s*<\/BathroomMulti>/);
+  assert.doesNotMatch(result.xml,/Источник/);
+});
