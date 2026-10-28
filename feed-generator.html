@@ -5307,6 +5307,36 @@
       white-space:normal!important;
     }
 
+    /* Keep the five feed actions on one desktop row.  The previous generous
+       button sizing made «Удалить» fall onto a second line even when there was
+       enough card width.  Compact controls preserve the same labels and hit
+       area while leaving wrapping available on smaller screens. */
+    @media (min-width:1181px) {
+      body.client-ui .overview-published-row {
+        grid-template-columns:minmax(290px,.85fr) minmax(0,2.15fr)!important;
+      }
+      body.client-ui .overview-feed-actions {
+        flex-wrap:nowrap!important;
+        gap:6px!important;
+        align-items:center!important;
+      }
+      body.client-ui .overview-feed-actions > button {
+        flex:0 1 auto!important;
+        min-width:0!important;
+        min-height:40px!important;
+        padding:0 12px!important;
+        font-size:14px!important;
+        line-height:1.15!important;
+        white-space:nowrap!important;
+      }
+    }
+    @media (min-width:1181px) and (max-width:1360px) {
+      body.client-ui .overview-feed-actions > button {
+        padding-inline:9px!important;
+        font-size:13px!important;
+      }
+    }
+
     /* Complex rows keep the two action buttons inside the row even when a
        house name or a long issue label is present. */
     body.client-ui .complex-list {
