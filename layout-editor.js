@@ -10,12 +10,12 @@
   const toolbar = document.createElement('div');
   toolbar.className = 'le-toolbar';
   toolbar.innerHTML = `
-    <div class="le-toolbar-title"><strong>Редактор макета</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div>
+    <div class="le-toolbar-title"><strong>Макет</strong><span class="le-save-state" aria-live="polite">Изменения сохраняются автоматически</span></div>
     <div class="le-toolbar-layer-actions" role="group" aria-label="Добавить слой">
       <span class="le-toolbar-group-label">Добавить</span>
-      <button type="button" data-add-layer="text">Текст</button>
-      <button type="button" data-add-layer="rect">Фигура</button>
-      <button type="button" data-add-layer="image">Изображение</button>
+      <button type="button" data-add-layer="text">＋ Текст</button>
+      <button type="button" data-add-layer="rect">▰ Фигура</button>
+      <button type="button" data-add-layer="image">＋ Изображения</button>
     </div>
     <div class="le-toolbar-view-actions">
       <div class="le-toolbar-control-group" role="group" aria-label="Масштаб">
@@ -60,16 +60,9 @@
   };
   const properties = document.createElement('aside');
   properties.className = 'le-properties';
-  properties.innerHTML = `<section class="le-layers-section" aria-labelledby="leLayersTitle"><div class="le-section-title"><h3 id="leLayersTitle">Слои</h3><span class="le-layer-count">4 слоя</span></div><p class="le-panel-hint">Нажмите на слой или объект на холсте, чтобы настроить его.</p><div class="le-layers"><button type="button" data-layer="background" aria-pressed="false"><span class="le-layer-icon" aria-hidden="true">▧</span><span>Подложка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="safe-zone" aria-pressed="false"><span class="le-layer-icon" aria-hidden="true">⌗</span><span>Безопасная зона</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="layout" aria-pressed="true"><span class="le-layer-icon" aria-hidden="true">▣</span><span>Планировка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="text" aria-pressed="false"><span class="le-layer-icon" aria-hidden="true">T</span><span>Текст объявления</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button></div><div class="le-user-layers"></div></section><section class="le-properties-section" aria-labelledby="le-property-title"><div class="le-inspector-head"><h3 id="le-property-title">Планировка</h3><span>Свойства</span></div><p class="le-hint">Перемещайте объект на холсте или задайте точные значения ниже.</p><div class="le-inspector"></div></section>`;
+  properties.innerHTML = `<div class="le-section-title"><h3>Слои</h3><span class="le-layer-count">4 слоя</span></div><div class="le-layers"><button type="button" data-layer="background" aria-pressed="false"><span class="le-layer-icon">▧</span><span>Подложка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="safe-zone" aria-pressed="false"><span class="le-layer-icon">⌗</span><span>Безопасная зона</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="layout" aria-pressed="true"><span class="le-layer-icon">▣</span><span>Планировка</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button><button type="button" data-layer="text" aria-pressed="false"><span class="le-layer-icon">T</span><span>Текст объявления</span><span class="le-layer-visibility" aria-hidden="true">◉</span></button></div><div class="le-user-layers"></div><h3 id="le-property-title">Планировка</h3><p class="le-hint">Выберите слой, двигайте мышью или задайте точную позицию и размер.</p><div class="le-inspector"></div>`;
   root.append(properties);
   properties.append(controls, textControls);
-  const referencePanel = panel.querySelector('.brand-source-panel');
-  const previewPanel = panel.querySelector('.brand-preview');
-  const workspace = document.createElement('div');
-  workspace.className = 'le-workspace';
-  workspace.setAttribute('aria-label', 'Рабочая область редактора планировок');
-  toolbar.after(workspace);
-  workspace.append(referencePanel, previewPanel, properties);
   for(const pair of [['brandOffsetX','brandOffsetY'],['templateTextX','templateTextY']]){
     const detail=document.createElement('details'); detail.className='le-precise';
     detail.innerHTML='<summary>Точные настройки</summary><div></div>';
@@ -139,47 +132,27 @@
   function travel(from,to) { if(!from.length)return; to.push(snapshot()); baseline=from.pop(); Object.entries(baseline).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v}); if(activeCustom())chooseCustom(selectedCustomId);else choose('layout');redraw();persistActiveBrandProfile();buttons();selectionBox(); }
   const escapeAttr=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const escapeText=value=>String(value??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-  const dynamicLayerFields = {
-    price: { name:'Цена', text:'{{price}}', width:34 },
-    area: { name:'Площадь', text:'{{area}} м²', width:30 },
-    rooms: { name:'Комнаты', text:'{{rooms}} комн.', width:33 },
-    floor: { name:'Этаж квартиры', text:'Этаж: {{floor}}', width:32 },
-    complex: { name:'Проект', text:'{{complex}}', width:44 }
-  };
-  function addDynamicTextLayer(field) {
-    const meta = dynamicLayerFields[field];
-    if (!meta) return;
-    if (readLayers().length >= 40) { showToast('Достигнут предел: 40 дополнительных слоёв'); return; }
-    baseline = snapshot();
-    const layers = readLayers();
-    const sameTypeCount = layers.filter(layer => layer.dynamicField === field).length;
-    const offset = layers.filter(layer => layer.type === 'text').length;
-    const id = `layer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const y = Math.min(88, 12 + (offset % 6) * 12);
-    layers.push({
-      id,
-      type:'text',
-      dynamicField:field,
-      name: sameTypeCount ? `${meta.name} ${sameTypeCount + 1}` : meta.name,
-      text:meta.text,
-      x:12,
-      y,
-      width:meta.width,
-      height:12,
-      fontSize:36,
-      color:'#11151a',
-      opacity:100,
-      weight:700
-    });
-    writeLayers(layers);
-    chooseCustom(id);
-    redraw();
-    commit();
-    showToast(`Слой «${meta.name}» добавлен. Перетащите его на нужное место.`);
-  }
   function readLayers(){try{const layers=JSON.parse(serializedLayers.value||'[]');return Array.isArray(layers)?layers.slice(0,40):[]}catch{return []}}
   function writeLayers(layers){serializedLayers.value=JSON.stringify(layers);}
   function activeCustom(){return readLayers().find(layer=>layer.id===selectedCustomId)}
+  const dynamicLayerFields={
+    price:{name:'Цена',text:'{{price}}',width:34},
+    area:{name:'Площадь',text:'{{area}} м²',width:30},
+    rooms:{name:'Комнаты',text:'{{rooms}} комн.',width:33},
+    floor:{name:'Этаж квартиры',text:'Этаж: {{floor}}',width:32},
+    complex:{name:'Проект',text:'{{complex}}',width:44}
+  };
+  function addDynamicTextLayer(field){
+    const meta=dynamicLayerFields[field];
+    if(!meta)return;
+    if(readLayers().length>=40){showToast('Достигнут предел: 40 дополнительных слоёв');return;}
+    baseline=snapshot();
+    const layers=readLayers(),sameTypeCount=layers.filter(layer=>layer.dynamicField===field).length,offset=layers.filter(layer=>layer.type==='text').length;
+    const id=`layer-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    layers.push({id,type:'text',dynamicField:field,name:sameTypeCount?`${meta.name} ${sameTypeCount+1}`:meta.name,text:meta.text,x:12,y:Math.min(88,12+(offset%6)*12),width:meta.width,height:12,fontSize:36,color:'#11151a',opacity:100,weight:700});
+    writeLayers(layers);chooseCustom(id);redraw();commit();
+    showToast(`Слой «${meta.name}» добавлен. Перетащите его на нужное место.`);
+  }
   const cleanFontName=value=>String(value||'').replace(/[^\p{L}\p{N} _.-]/gu,'').trim().slice(0,80);
   const fontStack=value=>`"${cleanFontName(value)||'Circe'}", Circe, Arial, sans-serif`;
   const fontOptions=current=>['Circe',...projectFonts.map(font=>font.name)].filter((name,index,all)=>all.indexOf(name)===index).map(name=>`<option value="${escapeAttr(name)}" ${name===current?'selected':''}>${escapeText(name)}</option>`).join('');
@@ -283,10 +256,7 @@
   });
   ids.forEach(id=>{const el=document.getElementById(id); el.addEventListener('focus',()=>{if(!drag)baseline=snapshot();});el.addEventListener('input',()=>{selectionBox();if(id==='templateCanvasColor'||id==='templateCanvasOpacity'||id.startsWith('brandSafe'))redraw();});el.addEventListener('change',commit);});
   ['templateHeadline','templateSubline'].forEach(id=>document.getElementById(id).addEventListener('focus',e=>textTarget=e.target));
-  fields.addEventListener('click', e => {
-    const button = e.target.closest('[data-add-token-layer]');
-    if (button) addDynamicTextLayer(button.dataset.addTokenLayer);
-  });
+  fields.addEventListener('click',e=>{const button=e.target.closest('[data-add-token-layer]');if(button)addDynamicTextLayer(button.dataset.addTokenLayer);});
   document.querySelector('#le-undo').onclick=()=>travel(history,future);
   document.querySelector('#le-redo').onclick=()=>travel(future,history);
   document.querySelector('#le-preview').onclick=()=>brandPreviewImages?openBrandPreviewDialog():showToast('Добавьте планировку или графическую подложку для предпросмотра');

@@ -7,7 +7,6 @@ const path = require("node:path");
 const vm = require("node:vm");
 const html = fs.readFileSync(path.join(__dirname, "feed-generator.html"), "utf8");
 const layoutEditor = fs.readFileSync(path.join(__dirname, "layout-editor.js"), "utf8");
-const layoutEditorCss = fs.readFileSync(path.join(__dirname, "layout-editor.css"), "utf8");
 const server = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
 
 function clientFunction(name) {
@@ -94,15 +93,17 @@ test("dense feed controls use position selects and visible direct actions instea
   assert.match(photoOrder, /data-photo-order-position/);
   assert.doesNotMatch(photoOrder, /data-photo-order-up|data-photo-order-down/);
   assert.match(html, /function sourceActionsMarkup\(sourceId/);
-  assert.match(html, /data-source-sync=/);
-  assert.match(html, /data-source-rename=/);
-  assert.match(html, /data-source-remove=/);
+  assert.match(html, /data-source-sync="\$\{id\}"/);
+  assert.match(html, /data-source-rename="\$\{id\}"/);
+  assert.match(html, /data-source-remove="\$\{id\}"/);
   assert.doesNotMatch(html, /<details class="feed-actions-menu">/);
   assert.match(html, /Выберите позицию для каждого типа изображений/);
   assert.match(html, /#loadUrlBtn\[data-import-running\]\[aria-busy="true"\][\s\S]*?pointer-events:auto/);
+  assert.doesNotMatch(html, /details\.feed-actions-menu\[open\]/);
   assert.match(html, /\.topbar-page-context/);
   assert.match(html, /<p class="topbar-page-context"/);
   assert.match(html, /\.topbar-page-context"\)\.textContent/);
+  assert.doesNotMatch(require("node:fs").readFileSync("listingflow-finish.css", "utf8"), /feed-actions-menu > summary::marker/);
 });
 
 test("project bootstrap has a visible fallback and cannot reload forever", () => {
@@ -144,17 +145,6 @@ test("layout editor applies the size value and exposes a working canvas resize h
   assert.match(layoutEditor, /set\('brandSize'/);
   assert.doesNotMatch(html, /brandDragState/);
   assert.match(html, /\["\[", "\]"\]/);
-});
-
-test("layout editor uses a familiar three-zone workspace without moving its server-backed controls", () => {
-  assert.match(layoutEditor, /workspace\.className = 'le-workspace'/);
-  assert.match(layoutEditor, /workspace\.append\(referencePanel, previewPanel, properties\)/);
-  assert.match(layoutEditor, /Редактор макета/);
-  assert.match(html, /Образец планировки/);
-  assert.match(layoutEditor, /le-properties-section/);
-  assert.match(layoutEditor, /data-add-token-layer="floor"/);
-  assert.match(layoutEditor, /function addDynamicTextLayer\(field\)/);
-  assert.match(layoutEditorCss, /#layoutsPanel\.requires-feed-selection > \.layout-branding/);
 });
 
 test("branding editor exposes an editable safe placement zone and keeps guide pixels out of exports", () => {
