@@ -57,12 +57,20 @@ function adId(ad) {
 
 function xmlTagValue(ad, tag) {
   const value = ad.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, "i"))?.[1]?.trim() || "";
-  return value
+  return value.replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/, "$1")
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
+}
+
+function xmlMultiValue(ad, tag) {
+  const block = ad.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, "i"))?.[1] || "";
+  return [...block.matchAll(/<Option\b[^>]*>([\s\S]*?)<\/Option>/gi)]
+    .map(match => match[1].trim())
+    .filter(Boolean)
+    .join(", ");
 }
 
 function imagesBlock(ad) {
@@ -175,12 +183,46 @@ function mergeFeedXml(sourceXml, currentXml, manualOverrides = {}) {
     const currentAd = currentAds.get(id);
     const currentHouseType = currentAd ? xmlTagValue(currentAd, "HouseType") : "";
     const sourceHouseType = xmlTagValue(ad, "HouseType");
-    const inferredOverride = !explicitOverride && currentHouseType && currentHouseType !== sourceHouseType
+    const inferredHouseType = currentHouseType && currentHouseType !== sourceHouseType
       ? { HouseType: currentHouseType }
-      : explicitOverride;
-    return applyManualOverrides(result, inferredOverride);
+      : {};
+    return applyManualOverrides(result, { ...inferredHouseType, ...(explicitOverride || {}) });
   });
   return { xml, matched, sourceObjects: adBlocks(sourceXml).length };
+}
+
+function comparableManualValue(field, value) {
+  const text = String(value || "").trim();
+  if (field === "phone") return text.replace(/\D/g, "").replace(/^8(?=\d{10}$)/, "7");
+  if (field === "isApartments") return text.toLowerCase() === "апартаменты" || text.toLowerCase() === "true" ? "true" : "false";
+  return text.replace(/\s+/g, " ");
+}
+
+function manualFieldValue(ad, field) {
+  const tag = manualFieldTags[field];
+  if (!tag) return "";
+  if (field === "balconyOrLoggia" || field === "bathroomType") return xmlMultiValue(ad, tag);
+  if (field === "isApartments") return comparableManualValue(field, xmlTagValue(ad, tag));
+  return xmlTagValue(ad, tag);
+}
+
+function inferManualOverrides(sourceXml, currentXml) {
+  const currentById = new Map(adBlocks(currentXml).map(ad => [adId(ad), ad]).filter(([id]) => id));
+  const overrides = {};
+  for (const sourceAd of adBlocks(sourceXml)) {
+    const id = adId(sourceAd);
+    const currentAd = currentById.get(id);
+    if (!id || !currentAd) continue;
+    const fields = {};
+    for (const field of Object.keys(manualFieldTags)) {
+      const sourceValue = manualFieldValue(sourceAd, field);
+      const currentValue = manualFieldValue(currentAd, field);
+      if (!currentValue || comparableManualValue(field, currentValue) === comparableManualValue(field, sourceValue)) continue;
+      fields[field] = currentValue;
+    }
+    if (Object.keys(fields).length) overrides[id] = fields;
+  }
+  return overrides;
 }
 function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000}) {
   let busy=false;
@@ -223,4 +265,4 @@ function createMonitor({file,notify=async()=>{},load=download,intervalMs=3600000
   }
   return {read,replace,run};
 }
-module.exports={createMonitor,publicAddress,validateContent,download,mergeFeedXml};
+module.exports={createMonitor,publicAddress,validateContent,download,mergeFeedXml,inferManualOverrides};

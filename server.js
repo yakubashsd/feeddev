@@ -388,8 +388,16 @@ async function syncPublishedFeeds() {
           ? { ...storedBrandProfile.profile, assetDataUrl: storedBrandProfile.assetDataUrl }
           : null;
         const branding = await brandNewSourceAds(sourceXml, currentXml, record, brandingProfile);
+        let manualOverrides = record.manualOverrides || {};
+        const shouldMigrateManualOverrides = !record.manualOverridesMigrated;
+        if (shouldMigrateManualOverrides && currentXml) {
+          manualOverrides = {
+            ...feedMonitor.inferManualOverrides(branding.xml, currentXml),
+            ...manualOverrides
+          };
+        }
         const merged = currentXml
-          ? feedMonitor.mergeFeedXml(branding.xml, currentXml, record.manualOverrides)
+          ? feedMonitor.mergeFeedXml(branding.xml, currentXml, manualOverrides)
           : { xml: branding.xml, matched: 0, sourceObjects: feedMonitor.mergeFeedXml(branding.xml, "").sourceObjects };
         await persistFeedXml(record.slug, merged.xml);
         const latest = (await readFeeds()).find(item => item.slug === record.slug) || record;
@@ -398,7 +406,9 @@ async function syncPublishedFeeds() {
           objectCount: merged.sourceObjects || latest.objectCount,
           updatedAt: attemptedAt,
           sourceSyncAt: attemptedAt,
-          sourceSyncError: ""
+          sourceSyncError: "",
+          manualOverrides,
+          manualOverridesMigrated: true
         });
         console.log(`Source sync: ${record.slug}, objects=${merged.sourceObjects}, imagesPreserved=${merged.matched}, brandedNew=${branding.branded}`);
       } catch (error) {
@@ -742,6 +752,7 @@ async function saveFeed(req, payload, existingSlug = "", actor = null) {
     blobUrl: blob?.url || "",
     url: feedUrl(req, slug),
     manualOverrides,
+    manualOverridesMigrated: hasManualOverrides || existing?.manualOverridesMigrated === true,
     updatedAt: now,
     createdAt: existing?.createdAt || now
   };
