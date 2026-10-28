@@ -4548,7 +4548,7 @@
       </div>
       <div class="workspace-switcher"><span>Рабочая область</span><strong>Создатели</strong></div>
       <div class="nav-label">Управление</div>
-      <a class="nav-item" href="/"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7.5h16M6 4h12a2 2 0 0 1 2 2v12.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5V6a2 2 0 0 1 2-2Z"/><path d="M8 11h8M8 15h5"/></svg><span class="nav-text">Все проекты</span></a>
+      <button type="button" class="nav-item" data-nav="projects"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7.5h16M6 4h12a2 2 0 0 1 2 2v12.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5V6a2 2 0 0 1 2-2Z"/><path d="M8 11h8M8 15h5"/></svg><span class="nav-text">Все проекты</span></button>
       <button type="button" class="nav-item" data-nav="source"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Источники</span></button>
       <button type="button" class="nav-item" data-nav="complexes"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V6a2 2 0 0 1 2-2h8v16"/><path d="M14 9h4a2 2 0 0 1 2 2v9"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1"/></svg><span class="nav-text">ЖК и дома</span></button>
       <button type="button" class="nav-item active" data-nav="apartments"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/><path d="M9 21v-6h6v6"/></svg><span class="nav-text">Квартиры</span></button>
@@ -5504,6 +5504,8 @@
     const loginError = document.querySelector("#loginError");
     const loginButton = document.querySelector("#loginButton");
     let appInitialized = false;
+    let authInitializationPromise = null;
+    const authBootstrapReloadKey = "feeddev-auth-bootstrap-reloaded-v1";
 
     function showLogin(message = "") {
       authScreen.hidden = false;
@@ -5704,10 +5706,37 @@
       }
     }
 
-    async function initializeAuth() {
-      loginButton.disabled = true;
-      loginButton.textContent = "Проверяю доступ...";
+    function authBootstrapWasReloadedFor(projectId) {
       try {
+        return sessionStorage.getItem(authBootstrapReloadKey) === String(projectId || "");
+      } catch {
+        return false;
+      }
+    }
+
+    function rememberAuthBootstrapReload(projectId) {
+      try {
+        sessionStorage.setItem(authBootstrapReloadKey, String(projectId || ""));
+      } catch {
+        // Session storage may be unavailable in strict privacy mode.
+      }
+    }
+
+    function clearAuthBootstrapReload() {
+      try {
+        sessionStorage.removeItem(authBootstrapReloadKey);
+      } catch {
+        // Session storage may be unavailable in strict privacy mode.
+      }
+    }
+
+    function initializeAuth() {
+      if (authInitializationPromise) return authInitializationPromise;
+      authInitializationPromise = (async () => {
+        loginButton.disabled = true;
+        loginButton.textContent = "Войти";
+        loginButton.setAttribute("aria-busy", "true");
+        try {
         const response = await fetch("/api/auth-session", { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) throw new Error(`Сервер вернул HTTP ${response.status}`);
         const state = await response.json();
@@ -5721,10 +5750,14 @@
           const projectsSynced = runtimeMode === "external"
             ? await syncExternalProjects()
             : await syncInternalProjects();
-          if (projectsSynced && requestedProject) {
-            location.reload();
+          // A fresh browser may need one bootstrap reload after restoring a project
+          // from the server. Never repeat that reload on every navigation/click.
+          if (projectsSynced && requestedProject && !currentProject && !authBootstrapWasReloadedFor(requestedProject)) {
+            rememberAuthBootstrapReload(requestedProject);
+            location.replace(location.href);
             return;
           }
+          clearAuthBootstrapReload();
           showWorkspace();
           if (runtimeMode === "external" && !state.subscriptionActive) switchPage("billing");
           renderBilling();
@@ -5735,7 +5768,10 @@
       } finally {
         loginButton.disabled = false;
         loginButton.textContent = "Войти";
+        loginButton.removeAttribute("aria-busy");
       }
+      })();
+      return authInitializationPromise;
     }
 
     async function submitLogin(event) {
@@ -6696,6 +6732,7 @@
       const stepOrder = Object.values(stepPages);
       const activeStepIndex = stepOrder.indexOf(activePage);
       document.querySelectorAll("[data-nav]").forEach(item => {
+        const isProjectsNav = item.dataset.nav === "projects";
         const stepIndex = stepOrder.indexOf(item.dataset.nav);
         const state = stepIndex < 0 ? "" : stepIndex < activeStepIndex ? "done" : stepIndex === activeStepIndex ? "active" : "todo";
         const unavailable = pageRequiresActiveSource(item.dataset.nav) && !hasActiveSource();
@@ -6705,7 +6742,9 @@
         item.title = unavailable ? "Сначала выберите рабочий фид в разделе «Источники»" : "";
         if (state) item.dataset.state = state;
         else delete item.dataset.state;
-        item.hidden = item.dataset.nav === "billing"
+        item.hidden = isProjectsNav
+          ? false
+          : item.dataset.nav === "billing"
           ? runtimeMode !== "external" || !workflowUnlocked
           : item.dataset.nav === "source"
             ? !currentProject
