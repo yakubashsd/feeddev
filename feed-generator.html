@@ -2429,10 +2429,6 @@
       box-shadow: inset 4px 0 0 #111116;
     }
 
-    tbody tr {
-      animation: row-in .18s ease both;
-    }
-
     tbody tr.checked td:first-child {
       box-shadow: inset 4px 0 0 #111116;
     }
@@ -2558,21 +2554,13 @@
       color: #fff;
       font-weight: 720;
       opacity: 0;
-      transition: transform .2s ease, opacity .2s ease;
+      transition: transform var(--motion-base) var(--ease-out), opacity var(--motion-base) var(--ease-out);
       box-shadow: 0 16px 34px rgba(17, 17, 22, .22);
     }
 
     .toast.show {
       opacity: 1;
       transform: translate(-50%, 0);
-    }
-
-    .source-panel,
-    .quality-panel,
-    .publish-panel,
-    .bulk-panel,
-    .table-wrap {
-      animation: rise-in .24s ease both;
     }
 
     @keyframes spin {
@@ -2613,6 +2601,13 @@
         animation-duration: .001ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: .001ms !important;
+      }
+      .main > section.page-entering {
+        animation: pageEnterReduced 160ms ease-out both !important;
+      }
+      @keyframes pageEnterReduced {
+        from { opacity: .78; }
+        to { opacity: 1; }
       }
     }
 
@@ -4277,6 +4272,10 @@
       --site-gray: #eee; --green: #171717; --green-2: #eee;
       --amber: #444; --amber-2: #eee; --red: #171717; --red-2: #eee;
       --shadow: 0 4px 20px rgba(0,0,0,.04);
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+      --motion-fast: 140ms;
+      --motion-base: 220ms;
     }
     body { background: var(--bg); }
     .main { background: var(--bg); }
@@ -4286,8 +4285,8 @@
     .workspace-switcher span { display: block; font-size: 11px; color: #737373; margin-bottom: 5px; }
     .workspace-switcher strong { font-size: 14px; font-weight: 600; }
     .nav-label { padding: 0 14px; margin: 0 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: #737373; }
-    .nav-item { position:relative; display:grid; grid-template-columns:18px minmax(0,1fr); align-items:center; gap:10px; border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; transition:background .22s ease, color .22s ease, transform .22s ease; }
-    .nav-item[data-nav]::before { content:""; position:absolute; left:22px; top:-8px; width:2px; height:16px; border-radius:999px; background:#e2e2e2; transform:scaleY(.75); transform-origin:center; transition:background .22s ease, transform .22s ease; }
+    .nav-item { position:relative; display:grid; grid-template-columns:18px minmax(0,1fr); align-items:center; gap:10px; border: 0; border-radius: 8px; font-size: 13px; padding: 12px 14px; color: #666; background: transparent; text-align: left; box-shadow: none; transition:background var(--motion-base) var(--ease-out), color var(--motion-base) var(--ease-out); }
+    .nav-item[data-nav]::before { content:""; position:absolute; left:22px; top:-8px; width:2px; height:16px; border-radius:999px; background:#e2e2e2; transform:scaleY(.75); transform-origin:center; transition:background var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out); }
     .nav-item[data-nav="source"]::before { display:none; }
     .nav-item[data-nav][data-state="done"]::before { background:#22c55e; transform:scaleY(1); }
     .nav-item[data-nav][data-state="active"]::before { background:#38bdf8; transform:scaleY(1); }
@@ -4295,7 +4294,7 @@
     .nav-text { min-width:0; }
     .nav-item.active { background: #171717; color: #fff; transform:translateX(3px); }
     .nav-item.active .nav-icon { opacity:1; transform:scale(1.04); }
-    .nav-item:hover:not(.active) { background: #f1f1f1; color: #171717; transform:translateX(2px); }
+    .nav-item:hover:not(.active) { background: #f1f1f1; color: #171717; }
     .workspace-note { padding: 20px 14px; font-size: 11px; line-height: 1.7; color: #737373; border-top: 1px solid var(--line); }
     .topbar { background: #fff; min-height: 92px; box-shadow: none; }
     .topbar h1 { font-size: 26px; font-weight: 650; letter-spacing: -.7px; }
@@ -4322,10 +4321,10 @@
       border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: none;
       scroll-margin-top: 20px;
     }
-    .main > section:not(.page-hidden) { animation: sectionEnter .26s ease both; }
-    @keyframes sectionEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    ::view-transition-old(root) { animation: fadeOut .16s ease both; }
-    ::view-transition-new(root) { animation: fadeIn .22s ease both; }
+    .main > section.page-entering { animation: pageEnter var(--motion-base) var(--ease-out) both; }
+    @keyframes pageEnter { from { opacity:.96; transform:translate3d(0, 6px, 0); } to { opacity:1; transform:translate3d(0, 0, 0); } }
+    ::view-transition-old(root) { animation: fadeOut var(--motion-fast) var(--ease-out) both; }
+    ::view-transition-new(root) { animation: fadeIn var(--motion-base) var(--ease-out) both; }
     @keyframes fadeOut { from { opacity:1; } to { opacity:.92; } }
     @keyframes fadeIn { from { opacity:.88; } to { opacity:1; } }
     @media (prefers-reduced-motion: reduce) {
@@ -5420,6 +5419,7 @@
     let activePlatform = appState.activePlatform;
     let activeMonitorPlatform = activePlatform;
     let activePage = currentProject ? "source" : "projects";
+    let pageTransitionFrame = 0;
     let sortState = { key: "", direction: "asc" };
     let selectedId = "";
     let checkedIds = new Set();
@@ -6488,13 +6488,22 @@
       const titles = { projects: "Проекты фидов", source: "Источники", complexes: "ЖК и дома", apartments: "Квартиры", branding: "Шаблон планировок", validator: "Проверка фида", results: "Результаты и ссылки", feeds: "Мониторинг", billing: "Тариф и оплата" };
       if (pageRequiresActiveSource(activePage) && !hasActiveSource()) activePage = "source";
       const shell = document.querySelector("#appShell");
+      const previousPage = shell.dataset.activePage || "";
+      const pageChanged = previousPage !== activePage;
+      shell.dataset.activePage = activePage;
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", activePage === "validator");
       shell.classList.toggle("project-list-mode", activePage === "projects");
       document.querySelectorAll("[data-page]").forEach(section => {
         const isWorkflow = section.classList.contains("workflow-nav");
         section.classList.toggle("page-hidden", isWorkflow ? !currentProject : section.dataset.page !== activePage);
+        if (pageChanged) section.classList.remove("page-entering");
       });
+      if (pageChanged) {
+        window.cancelAnimationFrame(pageTransitionFrame);
+        const activeSection = document.querySelector(`[data-page="${activePage}"]:not(.workflow-nav)`);
+        if (activeSection) pageTransitionFrame = window.requestAnimationFrame(() => activeSection.classList.add("page-entering"));
+      }
       const stepOrder = Object.values(stepPages);
       const activeStepIndex = stepOrder.indexOf(activePage);
       document.querySelectorAll("[data-nav]").forEach(item => {
