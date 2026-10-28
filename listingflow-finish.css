@@ -108,6 +108,7 @@ body.client-ui .feed-actions-menu > summary {
   list-style:none;
 }
 body.client-ui .feed-actions-menu > summary::-webkit-details-marker { display:none; }
+body.client-ui .feed-actions-menu > summary::marker { content:""; }
 body.client-ui .feed-actions-menu[open] > summary { border-color:var(--lf-blue); color:var(--lf-blue); }
 body.client-ui .feed-actions-menu-panel {
   position:absolute;
@@ -166,6 +167,13 @@ body.client-ui #layoutsPanel .photo-order-position select {
 @media(max-width:760px) {
   body.client-ui .feed-actions-menu-panel { position:fixed; right:12px; left:12px; top:auto; bottom:12px; min-width:0; }
   body.client-ui #layoutsPanel .photo-order-editor { grid-template-columns:1fr!important; }
+}
+
+/* Touch devices do not have a persistent hover state. Prevent a tapped
+   control from staying visually shifted after the interaction completes. */
+@media (hover:none), (pointer:coarse) {
+  body.client-ui :is(button,.button,a[role="button"]):hover,
+  body.admin-ui :is(button,.button,a[role="button"]):hover { transform:none!important; }
 }
 
 @media(prefers-reduced-motion:reduce) {

@@ -94,6 +94,13 @@ test("dense feed controls use position selects and an actions menu instead of ar
   assert.doesNotMatch(photoOrder, /data-photo-order-up|data-photo-order-down/);
   assert.match(html, /function sourceActionsMarkup\(sourceId/);
   assert.match(html, /<details class="feed-actions-menu">/);
+  assert.match(html, /Выберите позицию для каждого типа изображений/);
+  assert.match(html, /#loadUrlBtn\[data-import-running\]\[aria-busy="true"\][\s\S]*?pointer-events:auto/);
+  assert.match(html, /details\.feed-actions-menu\[open\]/);
+  assert.match(html, /\.topbar-page-context/);
+  assert.match(html, /<p class="topbar-page-context"/);
+  assert.match(html, /\.topbar-page-context"\)\.textContent/);
+  assert.match(require("node:fs").readFileSync("listingflow-finish.css", "utf8"), /feed-actions-menu > summary::marker/);
 });
 
 test("project bootstrap has a visible fallback and cannot reload forever", () => {
@@ -244,7 +251,7 @@ test("branding templates can pull the floor from each feed object", () => {
     "Этаж 7 · 52.4 м²"
   );
   assert.equal(context.templateText("{{floor}}", {}), "—");
-  assert.match(layoutEditor, /data-token="floor">Этаж/);
+  assert.match(layoutEditor, /data-token="floor" title="Подставит этаж конкретной квартиры">Этаж квартиры/);
   assert.match(layoutEditor, /data-custom-token="floor"/);
 });
 

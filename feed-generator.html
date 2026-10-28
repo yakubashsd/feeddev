@@ -2818,7 +2818,7 @@
       background: rgba(255, 255, 255, .94);
     }
 
-    .topbar h1 {
+    .topbar-page-context {
       margin: 0 0 3px;
       font-size: 28px;
       font-weight: 600;
@@ -4058,7 +4058,7 @@
       .logout-btn { flex: 1; text-align: center; }
       .main { padding: 18px 14px 30px; }
       .topbar { margin: -18px -14px 16px; padding: 16px 14px; }
-      .topbar h1 { font-size: 23px; }
+      .topbar-page-context { font-size: 23px; }
       .top-status { display: none; }
       .source-panel,
       .layouts-panel,
@@ -4374,7 +4374,7 @@
     .nav-item:hover:not(.active) { background: #f1f1f1; color: #171717; transform:translateX(2px); }
     .workspace-note { padding: 20px 14px; font-size: 11px; line-height: 1.7; color: #737373; border-top: 1px solid var(--line); }
     .topbar { background: #fff; min-height: 92px; box-shadow: none; }
-    .topbar h1 { font-size: 26px; font-weight: 650; letter-spacing: -.7px; }
+    .topbar-page-context { font-size: 26px; font-weight: 650; letter-spacing: -.7px; }
     .subtitle { line-height: 1.6; }
     .top-status::before { background: #171717; }
     .workflow-nav { display:none !important; }
@@ -4435,7 +4435,7 @@
     }
     @media (max-width:720px) {
       .topbar { min-height: 100px; }
-      .topbar h1 { font-size: 23px; }
+      .topbar-page-context { font-size: 23px; }
       .top-status { display: none; }
       .nav-item { grid-template-columns:18px minmax(0,1fr); font-size: 12px; padding: 10px; }
       .source-panel, .publish-panel, .bulk-panel { padding: 16px; }
@@ -4811,7 +4811,11 @@
     /* Pass 3 · explicit interaction states */
     body.client-ui [aria-busy="true"] { cursor:progress; }
     body.client-ui button[aria-busy="true"] { position:relative; color:transparent!important; pointer-events:none; }
-    body.client-ui button[aria-busy="true"]::after { content:""; position:absolute; left:50%; top:50%; width:16px; height:16px; margin:-8px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:lfSpin .7s linear infinite; }
+    body.client-ui button[aria-busy="true"]::after { content:""; position:absolute; left:50%; top:50%; width:16px; height:16px; margin:-8px; border:2px solid var(--lf-blue); border-right-color:transparent; border-radius:50%; animation:lfSpin .7s linear infinite; }
+    /* A URL import is deliberately cancellable: the same button must remain
+       readable and clickable while a server-side import is running. */
+    body.client-ui #loadUrlBtn[data-import-running][aria-busy="true"] { color:#fff!important; pointer-events:auto; }
+    body.client-ui #loadUrlBtn[data-import-running][aria-busy="true"]::after { display:none; }
     body.client-ui .field input[aria-invalid="true"], body.client-ui .field select[aria-invalid="true"], body.client-ui .field textarea[aria-invalid="true"] { border-color:var(--lf-red)!important; box-shadow:0 0 0 3px var(--lf-red-bg)!important; }
     body.client-ui .inline-error { margin:5px 0 0; color:var(--lf-red); font-size:11px; line-height:1.4; }
     body.client-ui .source-status.error, body.client-ui .validation.error, body.client-ui .validator-result.error { border-left:3px solid var(--lf-red)!important; }
@@ -5276,7 +5280,8 @@
       align-items:start!important;
       min-width:0!important;
       max-width:100%!important;
-      overflow:hidden!important;
+      position:relative;
+      overflow:visible!important;
     }
     body.client-ui .overview-feed-main,
     body.client-ui .overview-feed-actions {
@@ -5933,7 +5938,7 @@
         <div>
           <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
           <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать проект"><option value="">Все проекты</option></select></label>
-          <h1>Рабочая область фидов</h1>
+          <p class="topbar-page-context" aria-live="polite">Рабочая область фидов</p>
           <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
         </div>
         <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
@@ -6319,7 +6324,7 @@
               <div class="photo-order-settings-head">
                 <div>
                   <h3 id="photoOrderTitle">Очередность изображений</h3>
-                  <p>Расставьте типы изображений стрелками. Этот порядок применяется ко всем объектам текущего фида.</p>
+                  <p>Выберите позицию для каждого типа изображений. Порядок применяется ко всем объектам текущего фида.</p>
                 </div>
                 <button id="resetPhotoOrderBtn" type="button">По умолчанию</button>
               </div>
@@ -6328,7 +6333,7 @@
             </div>
           </div>
           <div class="template-layer-editor">
-            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Рабочая область устроена как в графическом редакторе: безопасная зона — контейнер для планировки, остальные слои можно добавлять, выбирать и менять местами. Доступные поля: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{floor}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
+            <div class="layer-editor-head"><div><h3>Слои шаблона</h3><p>Рабочая область устроена как в графическом редакторе: безопасная зона — контейнер для планировки, остальные слои можно добавлять, выбирать и менять местами. Чтобы показать этаж квартиры, вставьте поле <code>{{floor}}</code> в заголовок, подпись или отдельный текстовый слой — например, «{{floor}} этаж». Доступны также: <code>{{price}}</code>, <code>{{area}}</code>, <code>{{rooms}}</code>, <code>{{complex}}</code>.</p></div><span>Предпросмотр обновляется сразу</span></div>
             <div class="layer-list" aria-label="Слои шаблона">
               <div><b>1</b><span><strong>Подложка</strong><small>Фоновое изображение</small></span></div>
               <div><b>2</b><span><strong>Безопасная зона</strong><small>Контейнер для всех планировок</small></span></div>
@@ -8983,7 +8988,7 @@
         const step = item.querySelector(".step-number");
         if (step) step.textContent = String(index + 1).padStart(2, "0");
       });
-      document.querySelector(".topbar h1").textContent = titles[activePage];
+      document.querySelector(".topbar-page-context").textContent = titles[activePage];
       const breadcrumb = document.querySelector("#pageBreadcrumb");
       breadcrumb.hidden = !currentProject || activePage === "projects";
       document.querySelector("#breadcrumbProjectName").textContent = currentProject?.name || "";
@@ -9529,14 +9534,14 @@
     // menu cannot remain over the table or trap the next action.
     document.addEventListener("click", event => {
       const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest(".project-row-menu")) return;
-      document.querySelectorAll("details.project-row-menu[open]").forEach(details => {
+      if (target?.closest(".project-row-menu, .feed-actions-menu")) return;
+      document.querySelectorAll("details.project-row-menu[open], details.feed-actions-menu[open]").forEach(details => {
         details.open = false;
       });
     });
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape") return;
-      const openMenus = [...document.querySelectorAll("details.project-row-menu[open]")];
+      const openMenus = [...document.querySelectorAll("details.project-row-menu[open], details.feed-actions-menu[open]")];
       if (!openMenus.length) return;
       openMenus.forEach(details => { details.open = false; });
       openMenus[0].querySelector("summary")?.focus();

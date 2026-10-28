@@ -71,7 +71,7 @@
   }
   const fields = document.createElement('div');
   fields.className = 'le-fields';
-  fields.innerHTML = `<span class="le-hint">Вставить в выбранную строку:</span><button type="button" data-token="price">Цена</button><button type="button" data-token="area">Площадь</button><button type="button" data-token="rooms">Комнаты</button><button type="button" data-token="floor">Этаж</button><button type="button" data-token="complex">Проект</button>`;
+  fields.innerHTML = `<span class="le-hint">Вставить в выбранную строку:</span><button type="button" data-token="price">Цена</button><button type="button" data-token="area">Площадь</button><button type="button" data-token="rooms">Комнаты</button><button type="button" data-token="floor" title="Подставит этаж конкретной квартиры">Этаж квартиры</button><button type="button" data-token="complex">Проект</button>`;
   textControls.prepend(fields);
   const footer = document.createElement('div');
   footer.className = 'le-footer';
@@ -153,7 +153,7 @@
     const button=document.createElement('button');
     button.type='button';
     button.dataset.customToken='floor';
-    button.textContent='+ Этаж';
+    button.textContent='+ Этаж квартиры';
     target.insertBefore(button,target.lastElementChild||null);
   }
   const floorTokenObserver=new MutationObserver(ensureFloorTokenButton);
