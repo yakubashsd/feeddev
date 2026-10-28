@@ -25,7 +25,7 @@ const AUTH_USERNAME = String(process.env.AUTH_USERNAME || "sozdateli");
 const AUTH_PASSWORD = String(process.env.AUTH_PASSWORD || "");
 const AUTH_SECRET = String(process.env.AUTH_SECRET || AUTH_PASSWORD);
 const AUTH_COOKIE = "feeddev_session";
-const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
+const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 const APP_MODE = String(process.env.APP_MODE || "internal").toLowerCase() === "external" ? "external" : "internal";
 const SAAS_SESSION_SECRET = String(process.env.SAAS_SESSION_SECRET || "");
 const SESSION_SECRET = APP_MODE === "external" ? SAAS_SESSION_SECRET : AUTH_SECRET;
@@ -960,16 +960,62 @@ async function sendMonitorAlerts(payload = {}) {
   return result;
 }
 
+function internalPageBootstrap(req, res) {
+  const session = readSession(req);
+  if (APP_MODE !== "internal" || session?.role !== "internal") return null;
+  if (Number(session.expiresAt) - Date.now() < SESSION_TTL_SECONDS * 0.75) {
+    const { expiresAt, ...subject } = session;
+    setSessionCookie(req, res, createSessionToken(subject));
+  }
+  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+  const projects = readLocalProjects();
+  const projectSummaries = {};
+  for (const project of projects) {
+    const state = readLocalProjectState(project.id);
+    const suffix = project.id === "legacy" ? "" : `-${project.id}`;
+    const sourceState = state?.values?.[`feed-generator-cian-v2${suffix}`];
+    let appState = {};
+    try {
+      appState = JSON.parse(sourceState || "{}");
+    } catch {
+      appState = {};
+    }
+    projectSummaries[project.id] = {
+      feedUrl: String(appState.feedUrl || ""),
+      objectCount: Array.isArray(appState.objects) ? appState.objects.length : 0,
+      generatedLink: String(appState.generatedLink || "")
+    };
+  }
+  const projectId = String(requestUrl.searchParams.get("project") || "");
+  const selectedProject = projects.find(project => project.id === projectId);
+  const projectState = selectedProject ? readLocalProjectState(selectedProject.id) : null;
+  return { authenticated: true, mode: "internal", role: session.role, projects, projectSummaries, projectId: selectedProject?.id || "", projectState };
+}
+
 function serveStatic(req, res, pathname) {
   if (pathname.split('/').some(part=>part.startsWith('.')||part==='data'||part==='node_modules') || !['/','/feed-generator.html','/admin.html','/layout-editor.js','/layout-editor.css','/monitor-client.js','/robots.txt'].includes(pathname) && !/\.(png|jpe?g|webp|svg|ico|woff2?)$/i.test(pathname)) return sendError(res,404,'Not found');
   const filePath = pathname === "/" ? path.join(ROOT, "feed-generator.html") : path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) return sendError(res, 403, "Forbidden");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return sendError(res, 404, "Not found");
   const ext = path.extname(filePath).toLowerCase();
+  let body = null;
+  if (ext === ".html") {
+    body = fs.readFileSync(filePath, "utf8");
+    const bootstrap = internalPageBootstrap(req, res);
+    if (bootstrap && (pathname === "/" || pathname === "/feed-generator.html")) {
+      const serialized = JSON.stringify(bootstrap)
+        .replace(/</g, "\\u003c")
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
+      const script = `<script>window.__FEEDDEV_SERVER_BOOTSTRAP__=${serialized};document.documentElement.dataset.serverAuthenticated="true";</script>`;
+      body = body.replace("</head>", `${script}</head>`);
+    }
+  }
   res.writeHead(200, {
     "Content-Type": mimeTypes[ext] || "application/octet-stream",
     "Cache-Control": "no-store"
   });
+  if (body !== null) return res.end(body);
   fs.createReadStream(filePath).pipe(res);
 }
 
@@ -989,7 +1035,12 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/auth-session") {
+    const session = readSession(req);
     const actor = await currentActor(req);
+    if (actor && session && Number(session.expiresAt) - Date.now() < SESSION_TTL_SECONDS * 0.75) {
+      const { expiresAt, ...subject } = session;
+      setSessionCookie(req, res, createSessionToken(subject));
+    }
     return send(res, 200, {
       authenticated: Boolean(actor),
       configured: APP_MODE === "external" ? Boolean(saasStore && SESSION_SECRET) : Boolean(AUTH_PASSWORD && AUTH_SECRET),

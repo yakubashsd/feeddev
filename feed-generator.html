@@ -37,6 +37,31 @@
 
     [hidden] { display: none !important; }
 
+    .server-auth-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .server-auth-loading span { display: inline-flex; align-items: center; gap: 12px; }
+    .server-auth-loading span::before {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--line);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      content: "";
+      animation: server-auth-spin .8s linear infinite;
+    }
+    @keyframes server-auth-spin { to { transform: rotate(360deg); } }
+    html[data-server-authenticated="true"] #authScreen { display: none !important; }
+    html[data-server-authenticated="true"] #serverAuthLoading { display: grid !important; }
+
     .auth-screen {
       min-height: 100vh;
       display: grid;
@@ -4539,6 +4564,7 @@
       </div>
     </form>
   </section>
+  <div class="server-auth-loading" id="serverAuthLoading" hidden><span>Открываем рабочую область…</span></div>
 
   <div class="app" id="appShell" hidden>
     <aside class="sidebar">
@@ -5229,7 +5255,21 @@
       "feed-generator-complex-status-v1", "feed-generator-sources-v1",
       "feed-generator-active-source-v1", "feed-generator-source-workspaces-v1"
     ];
-    let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
+    const serverBootstrap = window.__FEEDDEV_SERVER_BOOTSTRAP__?.authenticated ? window.__FEEDDEV_SERVER_BOOTSTRAP__ : null;
+    if (serverBootstrap) {
+      if (Array.isArray(serverBootstrap.projects)) localStorage.setItem(projectIndexKey, JSON.stringify(serverBootstrap.projects));
+      const values = serverBootstrap.projectState?.values;
+      if (values && typeof values === "object" && !Array.isArray(values)) {
+        Object.entries(values).forEach(([key, value]) => {
+          if (projectStoragePrefixes.some(prefix => key === prefix || key.startsWith(`${prefix}-`)) && typeof value === "string") {
+            localStorage.setItem(key, value);
+          }
+        });
+      }
+    }
+    let projects = serverBootstrap && Array.isArray(serverBootstrap.projects)
+      ? [...serverBootstrap.projects]
+      : JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
       projects = [{ id: "legacy", name: "Мой первый проект", createdAt: new Date().toISOString() }];
       localStorage.setItem(projectIndexKey, JSON.stringify(projects));
@@ -5237,7 +5277,7 @@
     const requestedProject = new URLSearchParams(location.search).get("project");
     const currentProject = projects.find(project => project.id === requestedProject);
     let projectStateSyncTimer = 0;
-    let projectStateSyncRunning = false;
+    let projectStateSyncPromise = null;
     const projectSuffix = currentProject && currentProject.id !== "legacy" ? "-" + currentProject.id : "";
     const storageKey = "feed-generator-cian-v2" + projectSuffix;
     const legacyStorageKey = "feed-generator-cian-v1";
@@ -5508,6 +5548,8 @@
     const authBootstrapReloadKey = "feeddev-auth-bootstrap-reloaded-v1";
 
     function showLogin(message = "") {
+      document.documentElement.removeAttribute("data-server-authenticated");
+      document.querySelector("#serverAuthLoading").hidden = true;
       authScreen.hidden = false;
       appShell.hidden = true;
       loginError.textContent = message;
@@ -5515,6 +5557,8 @@
     }
 
     function showWorkspace() {
+      document.documentElement.removeAttribute("data-server-authenticated");
+      document.querySelector("#serverAuthLoading").hidden = true;
       authScreen.hidden = true;
       appShell.hidden = false;
       if (hasActiveSource()) hydrateSourceWorkspace(activeSourceId);
@@ -5586,10 +5630,11 @@
         const remoteProjects = Array.isArray(result.projects) ? result.projects : [];
         const remoteById = new Map(remoteProjects.map(project => [project.id, project]));
         const merged = new Map(remoteProjects.map(project => [project.id, project]));
+        const localStates = new Map(projects.map(project => [project.id, captureProjectState(project.id)]));
         let changed = false;
 
         for (const project of projects) {
-          const localState = captureProjectState(project.id);
+          const localState = localStates.get(project.id);
           if (!remoteById.has(project.id)) {
             const createResponse = await fetch("/api/projects", {
               method: "POST",
@@ -5601,42 +5646,39 @@
             const saved = await createResponse.json();
             merged.set(project.id, saved);
             if (projectStateHasValues(localState)) {
-              await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, {
+              const stateSaveResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, {
                 method: "PUT",
                 credentials: "same-origin",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(localState)
               });
+              if (stateSaveResponse.ok) restoreProjectState(localState);
             }
             changed = true;
-            continue;
           }
-
-          const stateResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, { credentials: "same-origin", cache: "no-store" });
-          if (stateResponse.ok) {
-            const remoteState = await stateResponse.json().catch(() => ({}));
-            if (!projectStateHasValues(remoteState) && projectStateHasValues(localState)) {
-              await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, {
-                method: "PUT",
-                credentials: "same-origin",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(localState)
-              });
-            }
-          }
-        }
-
-        for (const project of remoteProjects) {
-          if (projects.some(localProject => localProject.id === project.id)) continue;
-          const stateResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, { credentials: "same-origin", cache: "no-store" });
-          if (stateResponse.ok) {
-            const remoteState = await stateResponse.json().catch(() => ({}));
-            if (projectStateHasValues(remoteState)) restoreProjectState(remoteState);
-          }
-          changed = true;
         }
 
         const nextProjects = [...merged.values()].sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")));
+        for (const project of nextProjects) {
+          if (serverBootstrap && project.id !== requestedProject) continue;
+          const localState = localStates.get(project.id) || captureProjectState(project.id);
+          const stateResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+          if (stateResponse.ok) {
+            const remoteState = await stateResponse.json().catch(() => ({}));
+            if (projectStateHasValues(remoteState)) {
+              if (project.id === requestedProject && JSON.stringify(remoteState.values || {}) !== JSON.stringify(localState.values || {})) changed = true;
+              restoreProjectState(remoteState);
+            } else if (projectStateHasValues(localState)) {
+              const stateSaveResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, {
+                method: "PUT",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(localState)
+              });
+              if (stateSaveResponse.ok) restoreProjectState(localState);
+            }
+          }
+        }
         if (projectListSignature(nextProjects) !== projectListSignature(projects)) {
           projects = nextProjects;
           localStorage.setItem(projectIndexKey, JSON.stringify(projects));
@@ -5649,20 +5691,34 @@
     }
 
     async function persistProjectState() {
-      if (runtimeMode !== "internal" || sessionState?.role !== "internal" || !currentProject || projectStateSyncRunning) return;
-      projectStateSyncRunning = true;
+      if (runtimeMode !== "internal" || sessionState?.role !== "internal" || !currentProject) return true;
+      if (projectStateSyncPromise) return projectStateSyncPromise;
+      const syncPromise = (async () => {
+        try {
+          const response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
+            method: "PUT",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(captureProjectState(currentProject.id))
+          });
+          return response.ok;
+        } catch {
+          return false;
+        }
+      })();
+      projectStateSyncPromise = syncPromise;
       try {
-        await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
-          method: "PUT",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(captureProjectState(currentProject.id))
-        });
-      } catch {
-        // Local storage remains the immediate fallback when the server is unavailable.
+        await syncPromise;
       } finally {
-        projectStateSyncRunning = false;
+        if (projectStateSyncPromise === syncPromise) projectStateSyncPromise = null;
       }
+    }
+
+    async function flushProjectStateSync() {
+      window.clearTimeout(projectStateSyncTimer);
+      const saved = await persistProjectState();
+      if (!saved) showToast("Не удалось сохранить проект на сервере. Проверьте соединение и повторите.");
+      return saved;
     }
 
     function scheduleProjectStateSync() {
@@ -5737,6 +5793,20 @@
         loginButton.textContent = "Войти";
         loginButton.setAttribute("aria-busy", "true");
         try {
+        if (serverBootstrap) {
+          sessionState = {
+            authenticated: true,
+            configured: true,
+            mode: serverBootstrap.mode || "internal",
+            role: serverBootstrap.role || "internal",
+            subscriptionActive: true
+          };
+          configureExternalMode(sessionState);
+          clearAuthBootstrapReload();
+          showWorkspace();
+          renderBilling();
+          return;
+        }
         const response = await fetch("/api/auth-session", { credentials: "same-origin", cache: "no-store" });
         if (!response.ok) throw new Error(`Сервер вернул HTTP ${response.status}`);
         const state = await response.json();
@@ -5752,7 +5822,7 @@
             : await syncInternalProjects();
           // A fresh browser may need one bootstrap reload after restoring a project
           // from the server. Never repeat that reload on every navigation/click.
-          if (projectsSynced && requestedProject && !currentProject && !authBootstrapWasReloadedFor(requestedProject)) {
+          if (projectsSynced && requestedProject && !serverBootstrap && !authBootstrapWasReloadedFor(requestedProject)) {
             rememberAuthBootstrapReload(requestedProject);
             location.replace(location.href);
             return;
@@ -5762,7 +5832,7 @@
           if (runtimeMode === "external" && !state.subscriptionActive) switchPage("billing");
           renderBilling();
         }
-        else showLogin(state.configured ? "" : "Вход ещё не настроен в параметрах Vercel.");
+        else showLogin(state.configured ? "" : "Вход ещё не настроен на сервере.");
       } catch (error) {
         showLogin(`Не удалось проверить доступ: ${error.message}`);
       } finally {
@@ -5805,9 +5875,17 @@
         }
         sessionState = session;
         configureExternalMode(session);
-        if (await syncExternalProjects()) {
-          location.reload();
-          return;
+        if (runtimeMode === "external") {
+          if (await syncExternalProjects()) {
+            location.reload();
+            return;
+          }
+        } else {
+          await syncInternalProjects();
+          if (requestedProject && !currentProject && projects.some(project => project.id === requestedProject)) {
+            location.replace(location.href);
+            return;
+          }
         }
         showWorkspace();
         if (runtimeMode === "external" && !session.subscriptionActive) switchPage("billing");
@@ -6660,8 +6738,10 @@
       const visible = projects.filter(project => project.name.toLowerCase().includes(query));
       document.querySelector("#projectList").innerHTML = visible.map(project => {
         const suffix = project.id === "legacy" ? "" : "-" + project.id;
-        const state = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
-        return '<article class="project-entry"><a class="project-entry-main" href="?project=' + encodeURIComponent(project.id) + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + (state.objects?.length || 0) + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : state.objects?.length ? "В работе" : "Настройка") + '</span><a href="?project=' + encodeURIComponent(project.id) + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
+        const localState = JSON.parse(localStorage.getItem("feed-generator-cian-v2" + suffix) || "{}");
+        const state = serverBootstrap?.projectSummaries?.[project.id] || localState;
+        const objectCount = Number(state.objectCount ?? state.objects?.length ?? 0);
+        return '<article class="project-entry"><a class="project-entry-main" href="?project=' + encodeURIComponent(project.id) + '"><strong>' + escapeXml(project.name) + '</strong><small>' + escapeXml(state.feedUrl || "Источник ещё не подключён") + '</small></a><span>' + objectCount + ' помещений</span><span>' + (state.generatedLink ? "Опубликован" : objectCount ? "В работе" : "Настройка") + '</span><a href="?project=' + encodeURIComponent(project.id) + '">Открыть →</a><button type="button" class="project-delete" data-delete-project="' + escapeXml(project.id) + '">Удалить</button></article>';
       }).join("") || '<div class="project-empty"><h3>' + (query ? "Проекты не найдены" : "Начните с первого проекта") + '</h3><p>Создайте проект, подключите XML, настройте планировки и получите ссылку для площадки.</p></div>';
       const createButton = document.querySelector("#newProjectBtn");
       if (runtimeMode === "external") {
@@ -6796,9 +6876,17 @@
     document.querySelector("#newProjectBtn").addEventListener("click", () => document.querySelector("#projectDialog").showModal());
     document.querySelector("#cancelProject").addEventListener("click", () => document.querySelector("#projectDialog").close());
     document.querySelector("#projectSearch").addEventListener("input", renderProjects);
-    document.querySelector("#projectList").addEventListener("click", event => {
+    document.querySelector("#projectList").addEventListener("click", async event => {
       const button = event.target.closest("[data-delete-project]");
-      if (button) deleteProject(button.dataset.deleteProject);
+      if (button) {
+        deleteProject(button.dataset.deleteProject);
+        return;
+      }
+      const projectLink = event.target.closest('a[href*="?project="]');
+      if (!projectLink) return;
+      event.preventDefault();
+      if (!await flushProjectStateSync()) return;
+      location.assign(projectLink.href);
     });
     document.querySelector("#projectForm").addEventListener("submit", async event => {
       event.preventDefault();
