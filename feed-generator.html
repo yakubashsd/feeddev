@@ -4580,7 +4580,7 @@
 
       <section class="projects-page" data-page="projects">
         <div class="projects-heading"><div><h2>Проекты фидов</h2><p>Источники, помещения, планировки и готовые ссылки каждого проекта.</p></div><button class="primary" id="newProjectBtn">Создать проект</button></div>
-        <p class="panel-caption">Проекты сохраняются в этом браузере. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
+        <p class="panel-caption">Проекты сохраняются в рабочей области и доступны после входа с другого браузера. Опубликованные XML доступны по постоянным серверным ссылкам.</p>
         <input id="projectSearch" type="search" placeholder="Найти проект" aria-label="Найти проект">
         <div id="projectList"></div>
       </section>
@@ -5220,6 +5220,13 @@
     let authFormMode = "login";
     let sessionState = null;
     const projectIndexKey = "feeddev-projects-v1";
+    const projectStoragePrefixes = [
+      "feed-generator-cian-v1", "feed-generator-cian-v2", "feed-generator-published-v1",
+      "feed-generator-brand-profiles-v1", "feed-generator-monitor-v1",
+      "feed-generator-monitor-notifications-v1", "feed-generator-change-log-v1",
+      "feed-generator-complex-status-v1", "feed-generator-sources-v1",
+      "feed-generator-active-source-v1", "feed-generator-source-workspaces-v1"
+    ];
     let projects = JSON.parse(localStorage.getItem(projectIndexKey) || "[]");
     if (!projects.length && localStorage.getItem("feed-generator-cian-v2")) {
       projects = [{ id: "legacy", name: "Мой первый проект", createdAt: new Date().toISOString() }];
@@ -5227,6 +5234,8 @@
     }
     const requestedProject = new URLSearchParams(location.search).get("project");
     const currentProject = projects.find(project => project.id === requestedProject);
+    let projectStateSyncTimer = 0;
+    let projectStateSyncRunning = false;
     const projectSuffix = currentProject && currentProject.id !== "legacy" ? "-" + currentProject.id : "";
     const storageKey = "feed-generator-cian-v2" + projectSuffix;
     const legacyStorageKey = "feed-generator-cian-v1";
@@ -5532,6 +5541,126 @@
       loginError.textContent = "";
     }
 
+    function projectStorageKey(prefix, projectId) {
+      return prefix + (projectId === "legacy" ? "" : `-${projectId}`);
+    }
+
+    function captureProjectState(projectId) {
+      const values = {};
+      projectStoragePrefixes.forEach(prefix => {
+        const key = projectStorageKey(prefix, projectId);
+        const value = localStorage.getItem(key);
+        if (value !== null) values[key] = value;
+      });
+      return { version: 1, updatedAt: new Date().toISOString(), values };
+    }
+
+    function restoreProjectState(state) {
+      const values = state && typeof state.values === "object" && !Array.isArray(state.values) ? state.values : {};
+      Object.entries(values).forEach(([key, value]) => {
+        if (!projectStoragePrefixes.some(prefix => key === prefix || key.startsWith(`${prefix}-`))) return;
+        if (typeof value === "string") localStorage.setItem(key, value);
+      });
+    }
+
+    function projectStateHasValues(state) {
+      return Boolean(state && state.values && typeof state.values === "object" && Object.keys(state.values).length);
+    }
+
+    async function syncInternalProjects() {
+      if (runtimeMode !== "internal" || sessionState?.role !== "internal") return false;
+      try {
+        const response = await fetch("/api/projects", { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return false;
+        const result = await response.json();
+        const remoteProjects = Array.isArray(result.projects) ? result.projects : [];
+        const remoteById = new Map(remoteProjects.map(project => [project.id, project]));
+        const merged = new Map(remoteProjects.map(project => [project.id, project]));
+        let changed = false;
+
+        for (const project of projects) {
+          const localState = captureProjectState(project.id);
+          if (!remoteById.has(project.id)) {
+            const createResponse = await fetch("/api/projects", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(project)
+            });
+            if (!createResponse.ok) continue;
+            const saved = await createResponse.json();
+            merged.set(project.id, saved);
+            if (projectStateHasValues(localState)) {
+              await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, {
+                method: "PUT",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(localState)
+              });
+            }
+            changed = true;
+            continue;
+          }
+
+          const stateResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+          if (stateResponse.ok) {
+            const remoteState = await stateResponse.json().catch(() => ({}));
+            if (!projectStateHasValues(remoteState) && projectStateHasValues(localState)) {
+              await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, {
+                method: "PUT",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(localState)
+              });
+            }
+          }
+        }
+
+        for (const project of remoteProjects) {
+          if (projects.some(localProject => localProject.id === project.id)) continue;
+          const stateResponse = await fetch(`/api/projects/${encodeURIComponent(project.id)}/state`, { credentials: "same-origin", cache: "no-store" });
+          if (stateResponse.ok) {
+            const remoteState = await stateResponse.json().catch(() => ({}));
+            if (projectStateHasValues(remoteState)) restoreProjectState(remoteState);
+          }
+          changed = true;
+        }
+
+        const nextProjects = [...merged.values()].sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")));
+        if (JSON.stringify(nextProjects) !== JSON.stringify(projects)) {
+          projects = nextProjects;
+          localStorage.setItem(projectIndexKey, JSON.stringify(projects));
+          changed = true;
+        }
+        return changed;
+      } catch {
+        return false;
+      }
+    }
+
+    async function persistProjectState() {
+      if (runtimeMode !== "internal" || sessionState?.role !== "internal" || !currentProject || projectStateSyncRunning) return;
+      projectStateSyncRunning = true;
+      try {
+        await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(captureProjectState(currentProject.id))
+        });
+      } catch {
+        // Local storage remains the immediate fallback when the server is unavailable.
+      } finally {
+        projectStateSyncRunning = false;
+      }
+    }
+
+    function scheduleProjectStateSync() {
+      if (runtimeMode !== "internal" || sessionState?.role !== "internal" || !currentProject) return;
+      window.clearTimeout(projectStateSyncTimer);
+      projectStateSyncTimer = window.setTimeout(() => persistProjectState(), 500);
+    }
+
     async function syncExternalProjects() {
       if (runtimeMode !== "external" || sessionState?.role !== "customer") return false;
       const response = await fetch("/api/projects", { credentials: "same-origin", cache: "no-store" });
@@ -5581,7 +5710,10 @@
           return;
         }
         if (state.authenticated) {
-          if (await syncExternalProjects()) {
+          const projectsSynced = runtimeMode === "external"
+            ? await syncExternalProjects()
+            : await syncInternalProjects();
+          if (projectsSynced) {
             location.reload();
             return;
           }
@@ -5696,6 +5828,7 @@
         saveProjectSources();
       }
       localStorage.setItem(storageKey, JSON.stringify({ objects, originalObjects, activePlatform, feedUrl: appState.feedUrl, feedName: appState.feedName, serverBaseUrl: appState.serverBaseUrl, generatedLink: appState.generatedLink, generatedFeedId: appState.generatedFeedId || "" }));
+      scheduleProjectStateSync();
     }
 
     function readSourceWorkspaces() {
@@ -6495,13 +6628,15 @@
     async function deleteProject(projectId) {
       const project = projects.find(item => item.id === projectId);
       if (!project) return;
-      if (!confirm(`Удалить проект «${project.name}»? Настройки, источники и черновик будут удалены из этого браузера. Уже опубликованный XML останется доступен по своей ссылке.`)) return;
+      if (!confirm(`Удалить проект «${project.name}»? Настройки, источники и черновик будут удалены из рабочей области. Уже опубликованный XML останется доступен по своей ссылке.`)) return;
       if (runtimeMode === "external") {
         await fetch(`/api/telegram-link?project=${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" }).catch(() => {});
         await fetch(`/api/monitor?project=${encodeURIComponent(projectId)}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feeds: [] }) }).catch(() => {});
         const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) return showToast(result.error || "Не удалось удалить проект.");
+      } else if (runtimeMode === "internal") {
+        await fetch(`/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE", credentials: "same-origin" }).catch(() => {});
       }
       const suffix = project.id === "legacy" ? "" : `-${project.id}`;
       [
@@ -6622,7 +6757,7 @@
         return;
       }
       let project = { id: crypto.randomUUID(), name, createdAt: new Date().toISOString() };
-      if (runtimeMode === "external") {
+      if (runtimeMode === "external" || runtimeMode === "internal") {
         const response = await fetch("/api/projects", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) return showToast(result.error || "Не удалось создать проект.");

@@ -14,8 +14,10 @@ const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
 const FEEDS_DIR = path.join(DATA_DIR, "feeds");
 const LAYOUTS_DIR = path.join(DATA_DIR, "layouts");
+const PROJECT_STATES_DIR = path.join(DATA_DIR, "projects");
 const INDEX_FILE = path.join(DATA_DIR, "feeds-index.json");
 const LAYOUTS_INDEX_FILE = path.join(DATA_DIR, "layouts-index.json");
+const PROJECTS_INDEX_FILE = path.join(DATA_DIR, "projects-index.json");
 const BRAND_PROFILES_FILE = path.join(DATA_DIR, "brand-profiles.json");
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
 const MAX_LAYOUT_BYTES = 12 * 1024 * 1024;
@@ -85,8 +87,10 @@ const mimeTypes = {
 function ensureStorage() {
   fs.mkdirSync(FEEDS_DIR, { recursive: true });
   fs.mkdirSync(LAYOUTS_DIR, { recursive: true });
+  fs.mkdirSync(PROJECT_STATES_DIR, { recursive: true });
   if (!fs.existsSync(INDEX_FILE)) fs.writeFileSync(INDEX_FILE, "[]\n");
   if (!fs.existsSync(LAYOUTS_INDEX_FILE)) fs.writeFileSync(LAYOUTS_INDEX_FILE, "[]\n");
+  if (!fs.existsSync(PROJECTS_INDEX_FILE)) fs.writeFileSync(PROJECTS_INDEX_FILE, "[]\n");
 }
 
 function usesBlobStorage() {
@@ -138,6 +142,52 @@ function readLocalLayoutsIndex() {
 function writeLocalLayoutsIndex(layouts) {
   ensureStorage();
   fs.writeFileSync(LAYOUTS_INDEX_FILE, `${JSON.stringify(layouts, null, 2)}\n`);
+}
+
+function readLocalProjects() {
+  ensureStorage();
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PROJECTS_INDEX_FILE, "utf8"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalProjects(projects) {
+  ensureStorage();
+  fs.writeFileSync(PROJECTS_INDEX_FILE, `${JSON.stringify(projects, null, 2)}\n`);
+}
+
+function isSafeProjectId(value) {
+  return /^[a-zA-Z0-9_-]{1,100}$/.test(String(value || ""));
+}
+
+function localProjectStatePath(projectId) {
+  if (!isSafeProjectId(projectId)) return "";
+  return path.join(PROJECT_STATES_DIR, `${projectId}.json`);
+}
+
+function readLocalProjectState(projectId) {
+  const filePath = localProjectStatePath(projectId);
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalProjectState(projectId, state) {
+  const filePath = localProjectStatePath(projectId);
+  if (!filePath) throw new Error("Некорректный идентификатор проекта.");
+  const serialized = JSON.stringify(state && typeof state === "object" ? state : {});
+  if (Buffer.byteLength(serialized, "utf8") > 18 * 1024 * 1024) {
+    throw new Error("Состояние проекта слишком большое. Удалите старые черновики или изображения и повторите попытку.");
+  }
+  ensureStorage();
+  fs.writeFileSync(filePath, `${serialized}\n`);
 }
 
 function readBrandProfiles() {
@@ -1038,22 +1088,71 @@ async function handleApi(req, res, url) {
     return sendError(res, 405, "Метод не поддерживается");
   }
 
-  if (APP_MODE === "external" && req.method === "GET" && url.pathname === "/api/projects") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
-    return send(res, 200, { projects: await saasStore.listProjects(actor.userId), limit: actor.user.projectLimit || PLAN.minProjects });
+  if (req.method === "GET" && url.pathname === "/api/projects") {
+    if (APP_MODE === "external") {
+      if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+      return send(res, 200, { projects: await saasStore.listProjects(actor.userId), limit: actor.user.projectLimit || PLAN.minProjects });
+    }
+    return send(res, 200, { projects: readLocalProjects() });
   }
 
-  if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/projects") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+  if (req.method === "POST" && url.pathname === "/api/projects") {
     const payload = await parseBody(req);
-    return send(res, 201, await saasStore.createProject(actor.userId, payload.name));
+    if (APP_MODE === "external") {
+      if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+      return send(res, 201, await saasStore.createProject(actor.userId, payload.name));
+    }
+    const id = String(payload.id || crypto.randomUUID()).trim();
+    const name = String(payload.name || "").trim().slice(0, 200);
+    if (!isSafeProjectId(id) || !name) return sendError(res, 400, "Укажите корректное имя проекта.");
+    const projects = readLocalProjects();
+    const existing = projects.find(project => project.id === id);
+    const record = {
+      id,
+      name,
+      createdAt: existing?.createdAt || String(payload.createdAt || new Date().toISOString()),
+      updatedAt: new Date().toISOString()
+    };
+    writeLocalProjects([record, ...projects.filter(project => project.id !== id)]);
+    if (payload.state && typeof payload.state === "object" && !Array.isArray(payload.state)) writeLocalProjectState(id, payload.state);
+    return send(res, existing ? 200 : 201, record);
   }
 
-  const projectDeleteMatch = APP_MODE === "external" ? url.pathname.match(/^\/api\/projects\/([a-f0-9-]+)$/i) : null;
-  if (projectDeleteMatch && req.method === "DELETE") {
-    if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
-    const deleted = await saasStore.deleteProject(actor.userId, projectDeleteMatch[1]);
-    return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Проект не найден." });
+  const projectStateMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/state$/);
+  if (projectStateMatch && isSafeProjectId(projectStateMatch[1])) {
+    const projectId = projectStateMatch[1];
+    if (APP_MODE === "external") {
+      if (actor.role !== "customer" || !await saasStore.ownsProject(actor.userId, projectId)) return sendError(res, 403, "Проект недоступен.");
+      return sendError(res, 404, "Хранилище состояния проекта недоступно для этого контура.");
+    }
+    const project = readLocalProjects().find(item => item.id === projectId);
+    if (!project) return sendError(res, 404, "Проект не найден.");
+    if (req.method === "GET") return send(res, 200, readLocalProjectState(projectId) || {});
+    if (req.method === "PUT") {
+      const payload = await parseBody(req);
+      writeLocalProjectState(projectId, payload);
+      const updated = { ...project, updatedAt: new Date().toISOString() };
+      writeLocalProjects([updated, ...readLocalProjects().filter(item => item.id !== projectId)]);
+      return send(res, 200, updated);
+    }
+    return sendError(res, 405, "Метод не поддерживается");
+  }
+
+  const projectDeleteMatch = url.pathname.match(/^\/api\/projects\/([^/]+)$/);
+  if (projectDeleteMatch && isSafeProjectId(projectDeleteMatch[1]) && req.method === "DELETE") {
+    const projectId = projectDeleteMatch[1];
+    if (APP_MODE === "external") {
+      if (actor.role !== "customer") return sendError(res, 403, "Раздел доступен клиентам.");
+      const deleted = await saasStore.deleteProject(actor.userId, projectId);
+      return send(res, deleted ? 200 : 404, deleted ? { deleted: true } : { error: "Проект не найден." });
+    }
+    const projects = readLocalProjects();
+    const next = projects.filter(project => project.id !== projectId);
+    if (next.length === projects.length) return sendError(res, 404, "Проект не найден.");
+    writeLocalProjects(next);
+    const statePath = localProjectStatePath(projectId);
+    if (statePath && fs.existsSync(statePath)) fs.unlinkSync(statePath);
+    return send(res, 200, { deleted: true });
   }
 
   if (APP_MODE === "external" && req.method === "POST" && url.pathname === "/api/billing/checkout") {
