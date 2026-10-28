@@ -5234,6 +5234,7 @@
     const complexStatusStorageKey = "feed-generator-complex-status-v1" + projectSuffix;
     const projectSourcesStorageKey = "feed-generator-sources-v1" + projectSuffix;
     const activeSourceStorageKey = "feed-generator-active-source-v1" + projectSuffix;
+    const sourceSelectionSessionKey = "feeddev-source-selection-v1" + projectSuffix;
     const sourceWorkspacesStorageKey = "feed-generator-source-workspaces-v1" + projectSuffix;
     const bulkSections = {
       main: {
@@ -5447,6 +5448,7 @@
     let projectSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
     let sourceWorkspaces = readSourceWorkspaces();
     let activeSourceId = localStorage.getItem(activeSourceStorageKey) || "";
+    let sourceSelectionAcknowledged = false;
     let sourceEditorMode = activeSourceId ? "edit" : "";
     const legacyPublishedSourceUrl = "https://feeds.sozdateli.ru/f/https-pb19924-profitbase-ru-export-avito-02e9e7c3e7cf0a68cbcfefdb04a6fa26-scheme.php";
     const canonicalProfitbaseSourceUrl = "https://pb19924.profitbase.ru/export/avito/02e9e7c3e7cf0a68cbcfefdb04a6fa26?scheme=https";
@@ -5469,6 +5471,11 @@
       activeSourceId = "";
       sourceEditorMode = "";
       localStorage.removeItem(activeSourceStorageKey);
+    }
+    try {
+      sourceSelectionAcknowledged = Boolean(activeSourceId && sessionStorage.getItem(sourceSelectionSessionKey) === activeSourceId);
+    } catch {
+      sourceSelectionAcknowledged = false;
     }
     migrateSourceWorkspaces();
 
@@ -5742,6 +5749,16 @@
       return Boolean(getActiveSource());
     }
 
+    function acknowledgeSourceSelection(sourceId = activeSourceId) {
+      if (!sourceId) return;
+      sourceSelectionAcknowledged = true;
+      try {
+        sessionStorage.setItem(sourceSelectionSessionKey, sourceId);
+      } catch {
+        // Session storage may be unavailable in strict privacy mode.
+      }
+    }
+
     function persistActiveSourceWorkspace() {
       const source = getActiveSource();
       if (!source) return;
@@ -5780,6 +5797,7 @@
       activeSourceId = sourceId;
       sourceEditorMode = "edit";
       localStorage.setItem(activeSourceStorageKey, sourceId);
+      acknowledgeSourceSelection(sourceId);
       hydrateSourceWorkspace(sourceId);
       renderAll();
       save();
@@ -5791,7 +5809,9 @@
       if (hasActiveSource()) persistActiveSourceWorkspace();
       activeSourceId = "";
       sourceEditorMode = "";
+      sourceSelectionAcknowledged = false;
       localStorage.removeItem(activeSourceStorageKey);
+      try { sessionStorage.removeItem(sourceSelectionSessionKey); } catch {}
       activePage = "source";
       renderAll();
     }
@@ -5800,7 +5820,9 @@
       if (hasActiveSource()) persistActiveSourceWorkspace();
       activeSourceId = "";
       sourceEditorMode = "create";
+      sourceSelectionAcknowledged = false;
       localStorage.removeItem(activeSourceStorageKey);
+      try { sessionStorage.removeItem(sourceSelectionSessionKey); } catch {}
       selectedId = "";
       checkedIds = new Set();
       renderAll();
@@ -6504,6 +6526,7 @@
         const activeSection = document.querySelector(`[data-page="${activePage}"]:not(.workflow-nav)`);
         if (activeSection) pageTransitionFrame = window.requestAnimationFrame(() => activeSection.classList.add("page-entering"));
       }
+      const workflowUnlocked = Boolean(currentProject && hasActiveSource() && sourceSelectionAcknowledged);
       const stepOrder = Object.values(stepPages);
       const activeStepIndex = stepOrder.indexOf(activePage);
       document.querySelectorAll("[data-nav]").forEach(item => {
@@ -6517,8 +6540,10 @@
         if (state) item.dataset.state = state;
         else delete item.dataset.state;
         item.hidden = item.dataset.nav === "billing"
-          ? runtimeMode !== "external"
-          : !currentProject || unavailable;
+          ? runtimeMode !== "external" || !workflowUnlocked
+          : item.dataset.nav === "source"
+            ? !currentProject
+            : !workflowUnlocked || unavailable;
       });
       document.querySelector(".topbar h1").textContent = titles[activePage];
       document.querySelector(".subtitle").textContent = currentProject?.name || "Управляйте источниками и выгрузками";
@@ -9015,6 +9040,7 @@ ${photos}
         if (hasActiveSource()) persistActiveSourceWorkspace();
         activeSourceId = existingSource.id;
         sourceEditorMode = "edit";
+        sourceSelectionAcknowledged = false;
         localStorage.setItem(activeSourceStorageKey, existingSource.id);
         hydrateSourceWorkspace(existingSource.id);
       }
@@ -9099,6 +9125,7 @@ ${photos}
         activeSourceId = id;
         sourceEditorMode = "edit";
         localStorage.setItem(activeSourceStorageKey, id);
+        if (!existingSource) acknowledgeSourceSelection(id);
         sourceWorkspaces[id] = workspaceFromCurrentState(sourceRecord);
         localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
         saveProjectSources();
@@ -9963,6 +9990,7 @@ ${photos}
         activeSourceId = sourceId;
         sourceEditorMode = "edit";
         localStorage.setItem(activeSourceStorageKey, sourceId);
+        if (!existingSource) acknowledgeSourceSelection(sourceId);
         sourceWorkspaces[sourceId] = workspaceFromCurrentState(sourceRecord);
         localStorage.setItem(sourceWorkspacesStorageKey, JSON.stringify(sourceWorkspaces));
         saveProjectSources();
