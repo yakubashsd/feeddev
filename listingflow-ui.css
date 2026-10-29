@@ -97,6 +97,7 @@ body.client-ui .nav-workflow-items .nav-item[data-state="issue"] .nav-step{borde
 body.client-ui .nav-workflow-items .nav-item.active .nav-step{border-color:var(--lf-accent);background:var(--lf-accent);color:#fff}
 body.client-ui .nav-workflow-items .nav-item[data-state="optional"] .nav-step{border-style:dashed;color:#858c99}
 body.client-ui .nav-workflow-items .nav-text{min-width:0}
+body.client-ui .nav-workflow-items .nav-item[data-nav="branding"] .nav-text{white-space:nowrap!important}
 body.client-ui .nav-optional{display:inline-block;margin-left:4px;color:#858c99;font-size:10px;font-weight:400;white-space:nowrap}
 body.client-ui .page-breadcrumb:not([hidden]){display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;max-width:48vw!important;margin:1px 0 0!important;overflow:hidden!important;color:var(--lf-muted)!important;font-size:11px!important;line-height:16px!important;white-space:nowrap!important}
 body.client-ui .page-breadcrumb a{color:var(--lf-muted)!important;text-decoration:none!important}

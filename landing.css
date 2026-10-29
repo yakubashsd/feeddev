@@ -136,3 +136,39 @@ body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice>div{margin-top:1
   .landing-button:active,.landing-nav-cta:active{transform:none}
   .landing-faq summary::after{transition:none}
 }
+
+/* Conversion clarity: make the trial promise and the product proof explicit. */
+.landing-trial-note{display:flex;align-items:center;gap:6px;max-width:590px;margin:0 0 22px;color:var(--landing-ink);font-size:14px;line-height:1.45}
+.landing-trial-note strong{color:var(--landing-blue)}
+.landing-trial-note-inverse{margin-top:18px;margin-bottom:0;color:#dce9f6;font-size:13px}
+.landing-trial-note-inverse strong{color:#fff}
+
+.landing-monitoring-card{display:grid;gap:12px;margin-top:30px;padding:17px;border:1px solid #c5d9f2;border-radius:12px;background:#fff;color:var(--landing-ink)}
+.landing-monitoring-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:11px;border-bottom:1px solid var(--landing-line)}
+.landing-monitoring-head strong{font-size:13px}.landing-monitoring-head span{color:var(--landing-muted);font-size:11px}
+.landing-monitoring-status{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:start;gap:10px;padding:10px;border-radius:8px;background:#f5fbf7}
+.landing-monitoring-status-warning{background:#fff7f0}
+.landing-status-dot{width:9px;height:9px;margin-top:4px;border-radius:50%;background:var(--landing-success)}
+.landing-status-dot-warning{background:#df7b21}
+.landing-monitoring-status div{display:grid;gap:3px;min-width:0}.landing-monitoring-status strong{font-size:13px}.landing-monitoring-status span:not(.landing-status-dot){color:var(--landing-muted);font-size:11px;line-height:1.35}.landing-monitoring-status>b{font-size:11px;font-weight:700;white-space:nowrap}
+.landing-monitoring-details{border-top:1px solid var(--landing-line);padding-top:11px}
+.landing-monitoring-details summary{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--landing-blue);font-size:12px;font-weight:800;cursor:pointer;list-style:none}
+.landing-monitoring-details summary::-webkit-details-marker{display:none}.landing-monitoring-details summary::after{content:"＋";font-size:16px;font-weight:400}.landing-monitoring-details[open] summary::after{content:"−"}
+.landing-monitoring-details summary:focus-visible{outline:3px solid rgba(4,68,252,.28);outline-offset:3px;border-radius:4px}
+.landing-monitoring-details p{margin:10px 0 0;color:var(--landing-muted);font-size:12px;line-height:1.5}
+
+.landing-comparison{max-width:1280px;margin:0 auto;padding:86px 0 22px;border-top:1px solid var(--landing-line)}
+.landing-comparison-table{overflow:hidden;border:1px solid var(--landing-line);border-radius:12px;background:#fff}
+.landing-comparison-row{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--landing-line)}
+.landing-comparison-row:first-child{border-top:0}.landing-comparison-row>*{min-width:0;padding:18px 22px;color:var(--landing-muted);font-size:14px;line-height:1.45}.landing-comparison-row>*+*{border-left:1px solid var(--landing-line)}
+.landing-comparison-head{background:var(--landing-soft)}.landing-comparison-head>*{color:var(--landing-ink);font-size:15px;font-weight:800}.landing-comparison-row span:nth-child(2){color:var(--landing-ink)}
+.landing-mobile-cta{display:none}
+
+@media(max-width:720px){
+  .landing-comparison{padding:58px 0 10px}.landing-comparison-row{grid-template-columns:1fr}.landing-comparison-row>*{padding:14px 16px}.landing-comparison-row>*+*{border-top:1px solid var(--landing-line);border-left:0}.landing-comparison-head>*+*{border-top:1px solid var(--landing-line)}
+  .landing-monitoring-card{padding:14px}.landing-monitoring-head{align-items:flex-start;flex-direction:column;gap:4px}.landing-monitoring-status{grid-template-columns:9px minmax(0,1fr)}.landing-monitoring-status>b{grid-column:2}
+  .landing-mobile-cta{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:80;display:block;padding:7px;border:1px solid var(--landing-line);border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 12px 30px rgba(17,56,94,.16)}
+  .landing-mobile-cta .landing-button{width:100%;min-height:46px}.landing-screen{padding-bottom:92px}
+  body.client-ui:has(.landing-screen:not([hidden])) #cookieNotice{z-index:90;bottom:78px!important}
+}
+@media(prefers-reduced-motion:reduce){.landing-mobile-cta{box-shadow:none}}

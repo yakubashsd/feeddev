@@ -112,7 +112,8 @@ test("dense feed controls use position selects and visible direct actions instea
   assert.doesNotMatch(html, /details\.feed-actions-menu\[open\]/);
   assert.match(html, /\.topbar-page-context/);
   assert.match(html, /<p class="topbar-page-context"/);
-  assert.match(html, /\.topbar-page-context"\)\.textContent/);
+  assert.match(html, /topbarContext\.textContent = titles\[activePage\]/);
+  assert.match(html, /topbarContext\.hidden = activePage === "projects"/);
   assert.doesNotMatch(require("node:fs").readFileSync("listingflow-finish.css", "utf8"), /feed-actions-menu > summary::marker/);
 });
 
@@ -144,6 +145,8 @@ test("project rows open the project workspace and hide the global projects nav i
 });
 
 test("workflow navigation stays hidden until a concrete feed is selected", () => {
+  assert.match(html, /data-nav="branding" aria-label="Оформление планировок"><span class="nav-step">4<\/span><span class="nav-text">Оформление планировок<\/span>/);
+  assert.doesNotMatch(html, /data-nav="branding"[^>]*>[\s\S]*?по желанию/);
   const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];
   assert.match(renderPage, /const hasSelectedFeed = Boolean\(currentProject && activePage !== "overview" && projectSources\.some\(source => source\.id === activeSourceId\)\)/);
   assert.match(renderPage, /workflow\.hidden = !hasSelectedFeed/);

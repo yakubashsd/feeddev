@@ -28,6 +28,9 @@ test("landing navigation and conversion actions resolve to real targets", () => 
   assert.match(html, /id="landingWorkflow"/);
   assert.match(html, /id="landingPrice"/);
   assert.match(html, /id="landingFaq"/);
+  assert.match(html, /id="landingDemo"/);
+  assert.match(html, /id="landingComparison"/);
+  assert.match(html, /class="landing-mobile-cta"/);
 });
 
 test("landing copy matches implemented capabilities and avoids unsupported promises", () => {
@@ -36,6 +39,16 @@ test("landing copy matches implemented capabilities and avoids unsupported promi
   assert.match(html, /до 100/);
   assert.match(html, /от 30 мин/);
   assert.match(html, /финальное решение всегда принимает площадка/);
+  assert.match(html, /14 дней бесплатно:.*один проект и один тестовый фид/);
+  assert.match(html, /Фид обновлён/);
+  assert.match(html, /15 объектов/);
+  assert.match(html, /1 ошибка/);
+  assert.match(html, /Открыть диагностику/);
+  assert.match(html, /Таблицы и несколько кабинетов/);
+  assert.match(html, /История изменений и ручные настройки сохраняются на сервере/);
+  for (const goal of ["hero_cta_click", "demo_open", "branding_cta_click", "pricing_cta_click", "faq_open", "registration_started", "registration_completed"]) {
+    assert.match(html, new RegExp(goal));
+  }
   assert.doesNotMatch(html, /доходят до площадки/);
   assert.doesNotMatch(html, /Домклик<\/span>/);
 });

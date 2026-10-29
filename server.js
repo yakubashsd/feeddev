@@ -1531,7 +1531,37 @@ async function handleApi(req, res, url) {
         // orphan in project health while the cleanup request completes.
         .filter(feed => !sourceRecords.length || sourceIds.has(String(feed.sourceId || "")) || (!feed.sourceId && sourceRecords.length === 1 && sourceRecords[0]?.url === feed.sourceUrl));
       const editorObjects = Array.isArray(editor?.objects) ? editor.objects : [];
-      const sourceSummaries = sourceRecords.map(source => ({
+      const sourceSummaries = sourceRecords.map(source => {
+        const sourceId = String(source.id || "");
+        const sourceUrl = String(source.url || "");
+        const sourceFeedRecords = projectFeeds.filter(feed => (
+          (sourceId && String(feed.sourceId || "") === sourceId)
+          || (sourceUrl && String(feed.sourceUrl || "") === sourceUrl)
+        ));
+        const latestSourceFeed = sourceFeedRecords.reduce((latest, feed) => {
+          if (!latest) return feed;
+          const latestAt = new Date(latest.lastImportSuccessAt || latest.lastSuccessAt || latest.updatedAt || 0).getTime();
+          const feedAt = new Date(feed.lastImportSuccessAt || feed.lastSuccessAt || feed.updatedAt || 0).getTime();
+          return Number.isFinite(feedAt) && feedAt > latestAt ? feed : latest;
+        }, null);
+        const newestTimestamp = (...values) => values
+          .filter(Boolean)
+          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || null;
+        // The project snapshot can contain a historical source timestamp while
+        // the published feed already has a newer successful server sync. Always
+        // expose the newest server-side value so the UI cannot roll back.
+        const lastImportSuccessAt = newestTimestamp(
+          source.lastImportSuccessAt,
+          source.lastSuccessAt,
+          latestSourceFeed?.lastImportSuccessAt,
+          latestSourceFeed?.lastSuccessAt,
+          latestSourceFeed?.updatedAt
+        );
+        const updatedAt = newestTimestamp(source.updatedAt, lastImportSuccessAt, latestSourceFeed?.updatedAt);
+        const lastImportAttemptAt = newestTimestamp(source.lastImportAttemptAt, latestSourceFeed?.lastImportAttemptAt);
+        const lastSuccessAt = newestTimestamp(source.lastSuccessAt, latestSourceFeed?.lastSuccessAt, lastImportSuccessAt);
+        const nextRunAt = newestTimestamp(source.nextRunAt, source.nextAutoSyncAt, latestSourceFeed?.nextRunAt, latestSourceFeed?.nextAutoSyncAt);
+        return {
         id: source.id || "",
         sourceId: source.id || "",
         sourceUrl: source.url || "",
@@ -1553,12 +1583,18 @@ async function handleApi(req, res, url) {
           return sourceRecords.length === 1 && editorObjects.length ? editorObjects.length : 0;
         })(),
         createdAt: source.createdAt || null,
-        updatedAt: source.updatedAt || null,
-        lastSuccessAt: null,
-        nextRunAt: null,
-        stale: false,
-        autoSyncError: source.error || ""
-      }));
+        updatedAt,
+        lastImportSuccessAt,
+        lastImportAttemptAt,
+        lastImportStatus: source.lastImportStatus || latestSourceFeed?.lastImportStatus || (lastImportSuccessAt ? "success" : "pending"),
+        lastSuccessAt,
+        nextRunAt,
+        stale: Boolean(source.feedStale || latestSourceFeed?.feedStale),
+        autoSyncError: source.error || latestSourceFeed?.autoSyncError || "",
+        lastImportError: source.lastImportError || latestSourceFeed?.lastImportError || "",
+        lastImportWarning: source.lastImportWarning || latestSourceFeed?.lastImportWarning || ""
+        };
+      });
       const stale = projectFeeds.some(feed => feed.feedStale || (feed.nextAutoSyncAt && new Date(feed.nextAutoSyncAt).getTime() < Date.now() && feed.autoSyncError));
       const sourceObjectTotal = sourceSummaries.reduce((total, source) => total + (Number(source.objectCount) > 0 ? Number(source.objectCount) : 0), 0);
       const publishedSourceIds = new Set(projectFeeds.map(feed => String(feed.sourceId || "")).filter(Boolean));

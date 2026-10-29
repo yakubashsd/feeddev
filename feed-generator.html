@@ -6217,8 +6217,10 @@
         <p class="landing-kicker">Управление объявлениями для застройщиков и агентств</p>
         <h1 id="landingTitle">Выпускайте объявления <span>без ручной рутины.</span></h1>
         <p class="landing-lead">Загрузите источник один раз: ListingFlow сгруппирует объекты по ЖК, найдёт ошибки, оформит планировки и поддержит публикации на нужных площадках.</p>
+        <p class="landing-trial-note"><strong>14 дней бесплатно:</strong> один проект и один тестовый фид</p>
         <div class="landing-actions">
-          <button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Начать с тестового фида <span aria-hidden="true">→</span></button>
+          <button class="landing-button landing-button-primary" type="button" data-landing-auth="register" data-landing-goal="hero_cta_click">Начать с тестового фида <span aria-hidden="true">→</span></button>
+          <button class="landing-button landing-button-secondary" type="button" data-landing-demo aria-controls="landingDemo">Открыть демо</button>
           <a class="landing-button landing-button-secondary" href="#landingBenefits">Посмотреть возможности</a>
         </div>
         <p class="landing-note">ЦИАН · Авито Недвижимость · Яндекс Недвижимость</p>
@@ -6268,7 +6270,7 @@
           <li><strong>Фирменный стиль агентства</strong><span>Логотип, цвета и подложка остаются едиными во всех публикациях.</span></li>
           <li><strong>Готово для площадок</strong><span>Проверяйте результат до выпуска и сохраняйте версии для безопасного отката.</span></li>
         </ul>
-        <button class="landing-button landing-button-secondary" type="button" data-landing-auth="register">Попробовать оформление <span aria-hidden="true">→</span></button>
+        <button class="landing-button landing-button-secondary" type="button" data-landing-auth="register" data-landing-goal="branding_cta_click">Попробовать оформление <span aria-hidden="true">→</span></button>
       </div>
       <figure class="landing-branding-visual">
         <img src="/assets/landing-branding-before-after.png" alt="Сравнение обычной и брендированной планировки квартиры">
@@ -6283,7 +6285,7 @@
 
     <section class="landing-bento" id="landingWorkflow" aria-labelledby="workflowTitle">
       <div class="landing-bento-main"><p class="landing-kicker">Путь к рабочему фиду</p><h2 id="workflowTitle">От исходника до публикации без лишних шагов.</h2><div class="landing-steps"><div><b>01</b><strong>Добавьте исходный фид</strong><span>По ссылке или файлом</span></div><div><b>02</b><strong>Выберите ЖК</strong><span>Оставьте нужные объекты</span></div><div><b>03</b><strong>Исправьте данные</strong><span>Поля и планировки</span></div><div><b>04</b><strong>Опубликуйте</strong><span>Получите постоянную ссылку</span></div></div></div>
-      <div class="landing-bento-side"><span class="landing-feature-icon">⌁</span><h3>Ошибка не останется незамеченной</h3><p>Мониторинг проверяет источник и опубликованный результат. При сбое вы увидите причину в кабинете и сможете подключить уведомления в Telegram.</p><div class="landing-xml-visual"><b>LIVE</b><span>→</span><i>✓</i><i>!</i><i>↻</i></div></div>
+      <div class="landing-bento-side"><span class="landing-feature-icon" aria-hidden="true">⌁</span><h3>Ошибка не останется незамеченной</h3><p>Мониторинг проверяет источник и опубликованный результат. При сбое вы увидите причину в кабинете и сможете подключить уведомления в Telegram.</p><div class="landing-monitoring-card" id="landingDemo" aria-label="Пример мониторинга фида"><div class="landing-monitoring-head"><strong>Мониторинг фида</strong><span>сегодня, 12:40</span></div><div class="landing-monitoring-status"><span class="landing-status-dot landing-status-dot-success" aria-hidden="true"></span><div><strong>Фид обновлён</strong><span>15 объектов обработано</span></div><b>12:40</b></div><div class="landing-monitoring-status landing-monitoring-status-warning"><span class="landing-status-dot landing-status-dot-warning" aria-hidden="true"></span><div><strong>1 ошибка</strong><span>Требует проверки перед публикацией</span></div><b>1 объект</b></div><details class="landing-monitoring-details"><summary>Открыть диагностику</summary><p>Откройте список проблем, исправьте данные и повторите проверку. История изменений останется в проекте.</p></details></div></div>
     </section>
 
     <section class="landing-difference" aria-labelledby="differenceTitle">
@@ -6291,11 +6293,14 @@
       <div class="landing-checklist" role="list"><div role="listitem"><span>01</span><strong>Исходный источник сохраняется для сравнения и отката</strong></div><div role="listitem"><span>02</span><strong>Ручные правки сохраняются между синхронизациями</strong></div><div role="listitem"><span>03</span><strong>Проект и фиды синхронизируются между коллегами</strong></div><div role="listitem"><span>04</span><strong>История выпусков показывает, что и когда опубликовано</strong></div></div>
     </section>
 
-    <section class="landing-price" id="landingPrice" aria-labelledby="priceTitle"><div><p class="landing-kicker">Один понятный тариф</p><h2 id="priceTitle">5 000 ₽ <small>за проект / 30 дней</small></h2><p>Фиды проекта, массовые правки, оформление планировок, проверка, постоянные ссылки, история выпусков и мониторинг.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Начать с первого фида <span aria-hidden="true">→</span></button></section>
+    <section class="landing-price" id="landingPrice" aria-labelledby="priceTitle"><div><p class="landing-kicker">Один понятный тариф</p><h2 id="priceTitle">5 000 ₽ <small>за проект / 30 дней</small></h2><p>Фиды проекта, массовые правки, оформление планировок, проверка, постоянные ссылки, история выпусков и мониторинг.</p><p class="landing-trial-note landing-trial-note-inverse"><strong>14 дней бесплатно:</strong> один проект и один тестовый фид</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register" data-landing-goal="pricing_cta_click">Начать с первого фида <span aria-hidden="true">→</span></button></section>
 
-    <section class="landing-faq" id="landingFaq" aria-labelledby="faqTitle"><div class="landing-section-heading"><div><p class="landing-kicker">Вопросы перед стартом</p><h2 id="faqTitle">Всё важное — до загрузки фида.</h2></div></div><div class="landing-faq-list"><details><summary>Какие форматы поддерживает ListingFlow?</summary><p>Постоянные публикации доступны для ЦИАН, Авито Недвижимости и Яндекс Недвижимости. Для Домклик можно подготовить и скачать тестовую выгрузку; постоянная публикация откроется после подтверждения схемы площадкой.</p></details><details><summary>Что делать, если в одном источнике несколько жилых комплексов?</summary><p>После загрузки ListingFlow сгруппирует объекты по ЖК. Вы сможете выбрать конкретный проект, отредактировать только его квартиры и выпустить отдельный фид.</p></details><details><summary>Изменится ли мой исходный файл?</summary><p>Нет. ListingFlow хранит исходную версию отдельно. Изменения применяются к рабочей копии и опубликованным выпускам внутри проекта.</p></details><details><summary>Гарантирует ли сервис приём фида площадкой?</summary><p>Нет: финальное решение всегда принимает площадка. ListingFlow проверяет структуру и обязательные поля по встроенным правилам, чтобы найти типовые ошибки до отправки.</p></details><details><summary>Как я узнаю, что источник или публикация перестали работать?</summary><p>Состояние видно в списке фидов и разделе мониторинга. Для проекта можно подключить Telegram-бота и получать уведомления о сбоях.</p></details><details><summary>Что входит в 5 000 ₽?</summary><p>Один проект на 30 дней: работа с его фидами и объектами, массовые правки, оформление планировок, публикация, версии, мониторинг и техническая поддержка.</p></details></div></section>
+    <section class="landing-comparison" id="landingComparison" aria-labelledby="comparisonTitle"><div class="landing-section-heading"><div><p class="landing-kicker">Сравните подходы</p><h2 id="comparisonTitle">Меньше ручных действий — больше контроля.</h2></div><p class="landing-section-intro">ListingFlow собирает ежедневную работу с объявлениями в одном понятном проекте и сохраняет контекст для всей команды.</p></div><div class="landing-comparison-table" role="table" aria-label="Сравнение ручной работы и ListingFlow"><div class="landing-comparison-row landing-comparison-head" role="row"><strong role="columnheader">Когда всё вручную</strong><strong role="columnheader">С ListingFlow</strong></div><div class="landing-comparison-row" role="row"><span role="cell">Таблицы и несколько кабинетов</span><span role="cell">Единый проект и фиды в одном рабочем пространстве</span></div><div class="landing-comparison-row" role="row"><span role="cell">Непонятно, где именно остановилась выгрузка</span><span role="cell">Диагностика показывает площадку, объект и причину ошибки</span></div><div class="landing-comparison-row" role="row"><span role="cell">Правки приходится повторять после обновления</span><span role="cell">История изменений и ручные настройки сохраняются на сервере</span></div><div class="landing-comparison-row" role="row"><span role="cell">Коллеги работают с разными версиями файла</span><span role="cell">Один актуальный проект доступен всей команде</span></div></div></section>
 
-    <section class="landing-final"><div><img src="/assets/listingflow-mark.png" alt=""><h2>Загрузите фид и увидьте, что можно улучшить.</h2><p>Регистрация открывает рабочую область: добавьте источник, выберите ЖК и пройдите путь до готовой публикации.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register">Начать с тестового фида <span aria-hidden="true">→</span></button></section>
+    <section class="landing-faq" id="landingFaq" aria-labelledby="faqTitle"><div class="landing-section-heading"><div><p class="landing-kicker">Вопросы перед стартом</p><h2 id="faqTitle">Всё важное — до загрузки фида.</h2></div></div><div class="landing-faq-list"><details><summary>Какие форматы поддерживает ListingFlow?</summary><p>Постоянные публикации доступны для ЦИАН, Авито Недвижимости и Яндекс Недвижимости. Для Домклик можно подготовить и скачать тестовую выгрузку; постоянная публикация откроется после подтверждения схемы площадкой.</p></details><details><summary>Что делать, если в одном источнике несколько жилых комплексов?</summary><p>После загрузки ListingFlow сгруппирует объекты по ЖК. Вы сможете выбрать конкретный проект, отредактировать только его квартиры и выпустить отдельный фид.</p></details><details><summary>Что произойдёт после 14 дней бесплатного периода?</summary><p>Тестовый проект и фид сохранятся в аккаунте. Чтобы продолжить автоматические обновления и публикацию, подключите тариф до окончания пробного периода.</p></details><details><summary>Сохранятся ли ручные правки после обновления фида?</summary><p>Да. Ручные настройки и правки хранятся отдельно от исходного источника на сервере и применяются к новым версиям, если поле доступно для переопределения.</p></details><details><summary>Видят ли коллеги изменения в проекте?</summary><p>Да. Проект, фиды, версии и история изменений привязаны к аккаунту и доступны коллегам с правами доступа из другого браузера или сессии.</p></details><details><summary>Что происходит при удалении фида?</summary><p>После подтверждения фид исчезает из проекта, его обновления останавливаются, а опубликованная ссылка больше не обновляется. Чтобы вернуть его в работу, источник нужно добавить заново.</p></details><details><summary>Изменится ли мой исходный файл?</summary><p>Нет. ListingFlow хранит исходную версию отдельно. Изменения применяются к рабочей копии и опубликованным выпускам внутри проекта.</p></details><details><summary>Гарантирует ли сервис приём фида площадкой?</summary><p>Нет: финальное решение всегда принимает площадка. ListingFlow проверяет структуру и обязательные поля по встроенным правилам, чтобы найти типовые ошибки до отправки.</p></details><details><summary>Как я узнаю, что источник или публикация перестали работать?</summary><p>Состояние видно в списке фидов и разделе мониторинга. Для проекта можно подключить Telegram-бота и получать уведомления о сбоях.</p></details><details><summary>Что входит в 5 000 ₽?</summary><p>Один проект на 30 дней: работа с его фидами и объектами, массовые правки, оформление планировок, публикация, версии, мониторинг и техническая поддержка.</p></details></div></section>
+
+    <section class="landing-final"><div><img src="/assets/listingflow-mark.png" alt=""><h2>Загрузите фид и увидьте, что можно улучшить.</h2><p>Регистрация открывает рабочую область: добавьте источник, выберите ЖК и пройдите путь до готовой публикации.</p></div><button class="landing-button landing-button-primary" type="button" data-landing-auth="register" data-landing-goal="hero_cta_click">Начать с тестового фида <span aria-hidden="true">→</span></button></section>
+    <div class="landing-mobile-cta" aria-label="Начать бесплатный тест"><button class="landing-button landing-button-primary" type="button" data-landing-auth="register" data-landing-goal="hero_cta_click">Начать бесплатно <span aria-hidden="true">→</span></button></div>
     <footer class="landing-footer"><span>© ListingFlow</span><span>Управление публикациями недвижимости</span><span><a href="/legal.html#privacy">Политика конфиденциальности</a></span><span><button type="button" data-landing-auth="login">Войти</button></span></footer>
   </main>
   <section class="auth-screen" id="authScreen" hidden>
@@ -6359,7 +6364,7 @@
           <button type="button" class="nav-item" data-nav="source" hidden><span class="nav-step">1</span><span class="nav-text">Фиды</span></button>
           <button type="button" class="nav-item" data-nav="complexes"><span class="nav-step">2</span><span class="nav-text">Жилые комплексы</span></button>
           <button type="button" class="nav-item" data-nav="apartments"><span class="nav-step">3</span><span class="nav-text">Объявления и квартиры</span></button>
-          <button type="button" class="nav-item" data-nav="branding" aria-label="Оформление планировок, необязательный шаг"><span class="nav-step">4</span><span class="nav-text">Оформление планировок <small class="nav-optional">по желанию</small></span></button>
+          <button type="button" class="nav-item" data-nav="branding" aria-label="Оформление планировок"><span class="nav-step">4</span><span class="nav-text">Оформление планировок</span></button>
           <button type="button" class="nav-item" data-nav="results"><span class="nav-step">5</span><span class="nav-text">Проверка и публикация</span></button>
         </div>
       </div>
@@ -7588,12 +7593,31 @@
         ...(Array.isArray(currentProject?.summary?.sources) ? currentProject.summary.sources : []),
         ...(Array.isArray(currentProject?.summary?.feeds) ? currentProject.summary.feeds : [])
       ];
-      return summaries.find(item => (
+      const matches = summaries.filter(item => (
         String(item.sourceId || item.id || "") === String(source.id || "")
         || (item.sourceUrl && source.url && item.sourceUrl === source.url)
         || (item.url && source.url && item.url === source.url)
         || (item.name && source.name && item.name === source.name)
-      )) || null;
+      ));
+      return matches.sort((a, b) => {
+        const timestamp = item => new Date(item.lastImportSuccessAt || item.lastSuccessAt || item.updatedAt || item.createdAt || 0).getTime();
+        return timestamp(b) - timestamp(a);
+      })[0] || null;
+    }
+
+    // A fresh local save can briefly be newer than the project summary that
+    // arrived with the page. Never let that older summary make a feed appear
+    // to have rolled back. The server timestamp still wins when it is newer,
+    // while the local value remains visible until the next cloud snapshot.
+    function sourceLastUpdatedAt(source, publication = {}) {
+      const summary = sourceSummaryRecord(source);
+      return [
+        summary?.lastImportSuccessAt,
+        summary?.lastSuccessAt,
+        summary?.updatedAt,
+        publication?.updatedAt,
+        source?.updatedAt
+      ].filter(Boolean).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || "";
     }
 
     function sourceObjectCount(source) {
@@ -7787,6 +7811,14 @@
     let landingMotionObserver = null;
     let landingTaglineObserver = null;
 
+    function trackLandingGoal(name, params = {}) {
+      if (!name) return;
+      try {
+        if (typeof window.ym === "function") window.ym(112732392, "reachGoal", name, params);
+      } catch (_) {}
+      window.dispatchEvent(new CustomEvent("listingflow:landing-goal", { detail: { name, params } }));
+    }
+
     function setupLandingMotion() {
       if (!landingScreen || landingScreen.hidden) return;
       const targets = [
@@ -7794,7 +7826,7 @@
           ".landing-proof > div, .landing-section-heading, .landing-benefits article, " +
           ".landing-branding-copy, .landing-branding-visual, .landing-channels-copy, " +
           ".landing-channel-chart, .landing-bento-main, .landing-bento-side, " +
-          ".landing-difference-copy, .landing-checklist, .landing-price, .landing-faq, .landing-final"
+          ".landing-difference-copy, .landing-checklist, .landing-price, .landing-comparison, .landing-faq, .landing-final"
         )
       ];
       if (!targets.length) return;
@@ -8376,6 +8408,7 @@
         if (!response.ok) throw new Error(result.error || `Сервер вернул HTTP ${response.status}`);
         if (forgot) { setAuthFormMode("login"); loginError.textContent = result.message; return; }
         if (reset) { history.replaceState({}, "", location.pathname); setAuthFormMode("login"); loginError.textContent = "Пароль обновлён. Теперь войдите в аккаунт."; return; }
+        if (register) trackLandingGoal("registration_completed");
         if (["owner", "manager", "admin"].includes(result.role)) {
           location.href = "/admin.html";
           return;
@@ -9199,8 +9232,9 @@
       const intervalMinutes = Number(source.interval);
       if (!intervalMinutes || source.interval === "manual") return { label: "Только вручную", title: "Для этого источника автообновление выключено" };
       const serverSummary = sourceSummaryRecord(source);
+      const serverSuccessAt = serverSummary?.lastImportSuccessAt;
       const scheduledAt = new Date(serverSummary?.nextRunAt || 0).getTime();
-      const updatedAt = new Date(serverSummary?.lastImportSuccessAt || source.updatedAt || 0).getTime();
+      const updatedAt = new Date(sourceLastUpdatedAt(source) || serverSuccessAt || 0).getTime();
       const dueAt = Number.isFinite(scheduledAt) && scheduledAt > 0
         ? scheduledAt
         : updatedAt + intervalMinutes * 60 * 1000;
@@ -9254,7 +9288,7 @@
         const publication = publicationForSource(source.id);
         const publishedUrl = publication.url || (activeSourceId === source.id ? appState.generatedLink : "");
         const serverSummary = sourceSummaryRecord(source);
-        const updatedAt = serverSummary?.lastImportSuccessAt || publication.updatedAt || source.updatedAt;
+        const updatedAt = sourceLastUpdatedAt(source, publication);
         const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
         const nextSync = sourceNextSync(source);
         const issueCount = sourceIssueCount(source.id);
@@ -9530,7 +9564,14 @@
         const step = item.querySelector(".step-number");
         if (step) step.textContent = String(index + 1).padStart(2, "0");
       });
-      document.querySelector(".topbar-page-context").textContent = titles[activePage];
+      const topbarContext = document.querySelector(".topbar-page-context");
+      if (topbarContext) {
+        topbarContext.textContent = titles[activePage];
+        // The projects index already has a prominent page heading in its
+        // content area. Hiding the duplicate topbar label keeps the overview
+        // hierarchy clear without changing titles for project pages.
+        topbarContext.hidden = activePage === "projects";
+      }
       const breadcrumb = document.querySelector("#pageBreadcrumb");
       breadcrumb.hidden = !currentProject || activePage === "projects";
       document.querySelector("#breadcrumbProjectName").textContent = currentProject?.name || "";
@@ -9680,7 +9721,7 @@
         const publishedCount = projectSources.reduce((total, source) => total + (publicationForSource(source.id)?.url ? 1 : 0), 0);
         const lastUpdate = projectSources.reduce((latest, source) => {
           const summary = sourceSummaryRecord(source);
-          const timestamp = new Date(summary?.lastImportSuccessAt || source.updatedAt || 0).getTime();
+          const timestamp = new Date(sourceLastUpdatedAt(source) || 0).getTime();
           return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
         }, 0);
         const nextStep = !hasFeeds
@@ -9745,12 +9786,13 @@
           const platform = platformProfiles[source.platform]?.name || source.platform || "Площадка";
           const isPublished = Boolean(publication.id || publication.url);
           const created = formatFeedDate(source.createdAt || publication.createdAt || source.updatedAt);
-          const updatedAt = publication.updatedAt || source.updatedAt;
+          const serverSummary = sourceSummaryRecord(source);
+          const updatedAt = sourceLastUpdatedAt(source, publication);
           const updated = updatedAt ? new Date(updatedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ещё не обновлялся";
           const objectCount = sourceObjectCount(source);
           const issueCount = sourceIssueCount(source.id);
           const nextSync = sourceNextSync(source);
-          const serverHealth = sourceSummaryRecord(source);
+          const serverHealth = serverSummary || sourceSummaryRecord(source);
           const healthIssue = source.error || serverHealth?.lastImportError || serverHealth?.lastImportWarning || "";
           const healthLabel = healthIssue
             ? `Требует внимания: ${healthIssue}`
@@ -10187,7 +10229,29 @@
     });
 
     document.querySelectorAll("[data-auth-mode]").forEach(button => button.addEventListener("click", () => setAuthFormMode(button.dataset.authMode)));
+    document.querySelectorAll("[data-landing-goal]").forEach(button => button.addEventListener("click", () => {
+      trackLandingGoal(button.dataset.landingGoal);
+    }));
+    document.querySelectorAll("[data-landing-demo]").forEach(button => button.addEventListener("click", () => {
+      const details = document.querySelector("#landingDemo details");
+      document.querySelector("#landingDemo")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (details && !details.open) details.open = true;
+      else trackLandingGoal("demo_open");
+    }));
+    document.querySelectorAll(".landing-monitoring-details").forEach(details => details.addEventListener("toggle", () => {
+      if (details.open && !details.dataset.tracked) {
+        details.dataset.tracked = "1";
+        trackLandingGoal("demo_open");
+      }
+    }));
+    document.querySelectorAll(".landing-faq details").forEach(details => details.addEventListener("toggle", () => {
+      if (details.open && !details.dataset.tracked) {
+        details.dataset.tracked = "1";
+        trackLandingGoal("faq_open", { question: details.querySelector("summary")?.textContent.trim() || "" });
+      }
+    }));
     document.querySelectorAll("[data-landing-auth]").forEach(button => button.addEventListener("click", () => {
+      if (button.dataset.landingAuth === "register") trackLandingGoal("registration_started");
       landingScreen.hidden = true;
       authScreen.hidden = false;
       setAuthFormMode(button.dataset.landingAuth || "register");
