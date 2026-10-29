@@ -363,6 +363,52 @@ async function persistFeedRecord(record) {
   return operation;
 }
 
+async function deleteFeedRecords({ projectId = "", sourceId = "", sourceUrl = "", ownerId = "" } = {}) {
+  const projectKey = String(projectId || "");
+  const sourceKey = String(sourceId || "");
+  const urlKey = String(sourceUrl || "");
+  if (!projectKey || (!sourceKey && !urlKey)) return { deleted: 0, slugs: [] };
+
+  const operation = feedRecordWriteQueue.then(async () => {
+    requireWritableStorage();
+    const feeds = usesBlobStorage() ? await readFeeds() : readLocalIndex();
+    const matches = feeds.filter(feed => {
+      if (String(feed.projectId || "") !== projectKey) return false;
+      if (ownerId && String(feed.ownerId || "") !== String(ownerId)) return false;
+      const sameSource = sourceKey && String(feed.sourceId || "") === sourceKey;
+      const legacySource = urlKey && String(feed.sourceUrl || "") === urlKey && (!feed.sourceId || String(feed.sourceId) === "all");
+      return sameSource || legacySource;
+    });
+    if (!matches.length) return { deleted: 0, slugs: [] };
+
+    const slugs = matches.map(feed => String(feed.slug || "")).filter(Boolean);
+    const remaining = feeds.filter(feed => !matches.includes(feed));
+    if (!usesBlobStorage()) {
+      writeLocalIndex(remaining);
+      for (const slug of slugs) {
+        const xmlPath = path.join(FEEDS_DIR, `${slug}.xml`);
+        if (xmlPath.startsWith(FEEDS_DIR + path.sep) && fs.existsSync(xmlPath)) fs.unlinkSync(xmlPath);
+        const releaseDir = path.join(FEEDS_DIR, "releases", slug);
+        if (releaseDir.startsWith(path.join(FEEDS_DIR, "releases") + path.sep) && fs.existsSync(releaseDir)) fs.rmSync(releaseDir, { recursive: true, force: true });
+      }
+    } else {
+      const blobPaths = [];
+      for (const feed of matches) {
+        const slug = String(feed.slug || "");
+        if (!slug) continue;
+        blobPaths.push(`feed-records/${slug}.json`, `feeds/${slug}.xml`);
+        const releases = await list({ prefix: `feed-releases/${slug}/`, limit: 1000 });
+        releases.blobs.forEach(blob => blobPaths.push(blob.url || blob.pathname));
+      }
+      await Promise.allSettled(blobPaths.filter(Boolean).map(blobPath => del(blobPath)));
+      invalidateFeedIndexCache();
+    }
+    return { deleted: matches.length, slugs };
+  });
+  feedRecordWriteQueue = operation.catch(() => {});
+  return operation;
+}
+
 async function persistLayoutFile(fileName, bytes, contentType) {
   requireWritableStorage();
   if (!usesBlobStorage()) {
@@ -1416,11 +1462,16 @@ async function handleApi(req, res, url) {
     const projectList = await saasStore.listProjects(actor.userId);
     const feeds = await readFeeds();
     const summaries = await Promise.all(projectList.map(async project => {
-      const projectFeeds = feeds.filter(feed => feed.ownerId === actor.userId && feed.projectId === project.id);
       const saved = await projectStateStore.get(actor.userId, project.id);
       const editor = saved.state?.["feed-generator-cian-v2-" + project.id];
       const savedSources = saved.state?.["feed-generator-sources-v1-" + project.id];
       const sourceRecords = Array.isArray(savedSources) ? savedSources : [];
+      const sourceIds = new Set(sourceRecords.map(source => String(source?.id || "")).filter(Boolean));
+      const projectFeeds = feeds.filter(feed => feed.ownerId === actor.userId && feed.projectId === project.id)
+        // A source can be removed from the project state before an older
+        // client has deleted its published record. Do not surface that
+        // orphan in project health while the cleanup request completes.
+        .filter(feed => !sourceRecords.length || sourceIds.has(String(feed.sourceId || "")) || (!feed.sourceId && sourceRecords.length === 1 && sourceRecords[0]?.url === feed.sourceUrl));
       const editorObjects = Array.isArray(editor?.objects) ? editor.objects : [];
       const sourceSummaries = sourceRecords.map(source => ({
         id: source.id || "",
@@ -1624,7 +1675,19 @@ async function handleApi(req, res, url) {
     });
     const expected = req.headers["if-match"]?.replace(/^\"|\"$/g, "");
     try {
+      const previousState = await projectStateStore.get(actor.userId, projectStateMatch[1]);
+      const previousSources = Array.isArray(previousState.state?.["feed-generator-sources-v1-" + projectStateMatch[1]])
+        ? previousState.state["feed-generator-sources-v1-" + projectStateMatch[1]]
+        : [];
+      const nextSources = Array.isArray(payload.state?.["feed-generator-sources-v1-" + projectStateMatch[1]])
+        ? payload.state["feed-generator-sources-v1-" + projectStateMatch[1]]
+        : [];
+      const nextSourceIds = new Set(nextSources.map(source => String(source?.id || "")).filter(Boolean));
+      const removedSources = previousSources.filter(source => source?.id && !nextSourceIds.has(String(source.id)));
       const saved = await projectStateStore.put(actor.userId, projectStateMatch[1], payload.state, expected === undefined ? undefined : Number(expected));
+      for (const source of removedSources) {
+        await deleteFeedRecords({ projectId: projectStateMatch[1], sourceId: String(source.id), sourceUrl: String(source.url || ""), ownerId: actor.userId });
+      }
       await saasStore.recordAudit(actor.userId, "save", "project-state", projectStateMatch[1], { revision: saved.revision }).catch(error => console.error("Audit log:", error.message));
       const changedFeedId = String(payload.feedId || "").trim();
       if (changedFeedId && changedFeedId !== "all") {
@@ -1751,6 +1814,19 @@ async function handleApi(req, res, url) {
     const ownedFeeds = APP_MODE === "external" ? feeds.filter(feed => feed.ownerId === actor.userId) : feeds;
     const projectId = String(url.searchParams.get("projectId") || "").trim();
     return send(res, 200, { feeds: projectId ? ownedFeeds.filter(feed => feed.projectId === projectId) : ownedFeeds });
+  }
+
+  if (req.method === "DELETE" && url.pathname === "/api/feeds") {
+    const projectId = String(url.searchParams.get("projectId") || "").trim();
+    const sourceId = String(url.searchParams.get("sourceId") || "").trim();
+    const sourceUrl = String(url.searchParams.get("sourceUrl") || "").trim();
+    if (!projectId || (!sourceId && !sourceUrl)) return sendError(res, 400, "Не указан проект или источник фида.");
+    if (APP_MODE === "external" && !await saasStore.ownsProject(actor.userId, projectId)) return sendError(res, 403, "Проект недоступен.");
+    const result = await deleteFeedRecords({ projectId, sourceId, sourceUrl, ownerId: APP_MODE === "external" ? actor.userId : "" });
+    if (APP_MODE === "external" && actor?.userId && result.deleted) {
+      await saasStore.recordFeedHistory(actor.userId, sourceId || sourceUrl, "delete", { projectId, sourceId, sourceUrl, deletedSlugs: result.slugs }).catch(error => console.error("Feed history:", error.message));
+    }
+    return send(res, 200, result);
   }
 
   const feedHealthMatch = url.pathname.match(/^\/api\/feeds\/([a-z0-9а-яё-]+)\/health$/i);
@@ -2080,7 +2156,12 @@ if (require.main === module) {
     const tick=()=>monitor.run().catch(error=>console.error('Monitor:',error.message));
     tick();setInterval(tick,60000).unref();
     const syncTick=()=>runScheduledFeedSync().catch(error=>console.error('Feed sync:',error.message));
-    syncTick();setInterval(syncTick,60000).unref();
+    // Feed imports are scheduled from each feed's nextRunAt/nextAutoSyncAt.
+    // Do not trigger an extra import on process start: a restart (or deploy)
+    // must not look like a user opening the cabinet caused a feed refresh.
+    // The first scheduler pass runs within a minute and still processes every
+    // feed whose selected interval has actually elapsed.
+    setInterval(syncTick,60000).unref();
     pollTelegram();setInterval(pollTelegram,25000).unref();
   });
 }

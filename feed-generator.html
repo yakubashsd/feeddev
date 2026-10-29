@@ -9021,7 +9021,7 @@
         const hasObjects = workingObjects().length > 0;
         rows.innerHTML = `
           <tr>
-            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : `Объявлений пока нет. Добавьте исходный фид в «Источниках фидов». <button type="button" data-open-object-source>Открыть источники фидов</button>`}</td>
+            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : `Объявлений пока нет. Добавьте исходный фид в разделе «Рабочая область». <button type="button" data-open-object-workspace>Открыть рабочую область</button>`}</td>
           </tr>
         `;
         renderSelectAllState();
@@ -9129,10 +9129,16 @@
       return sourceObjects(sourceId).reduce((total, item) => total + requiredIssues(item).length, 0);
     }
 
-    function removeSourceFeed(sourceId) {
+    async function removeSourceFeed(sourceId) {
       const source = projectSources.find(item => item.id === sourceId);
       if (!source) return false;
       if (!confirm(`Удалить фид «${source.name || source.url}» и полученные только из него квартиры?`)) return false;
+      if (currentProject?.id) {
+        const params = new URLSearchParams({ projectId: currentProject.id, sourceId, sourceUrl: source.url || "" });
+        const response = await fetch(`/api/feeds?${params.toString()}`, { method: "DELETE", credentials: "same-origin" });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Не удалось удалить опубликованный фид на сервере.");
+      }
       projectSources = projectSources.filter(item => item.id !== sourceId);
       objects = objects.reduce((result, item) => {
         const remaining = (item._sourceIds || [item._sourceId]).filter(Boolean).filter(value => value !== sourceId);
@@ -9141,10 +9147,13 @@
         return result;
       }, []);
       originalObjects = structuredClone(objects);
-      if (appState.publishedFeeds && sourceId in appState.publishedFeeds) delete appState.publishedFeeds[sourceId];
+      if (appState.publishedFeeds) {
+        Object.entries(appState.publishedFeeds).forEach(([key, publication]) => {
+          if (key === sourceId || key.startsWith(`${sourceId}::`) || publication?.sourceId === sourceId) delete appState.publishedFeeds[key];
+        });
+      }
       if (activeSourceId === sourceId) setSourceContext("all");
-      saveProjectSources();
-      save();
+      await persistProjectStateNow();
       if (!objects.length) feedErrorPanelActivated = false;
       renderAll();
       showToast("Фид удалён");
@@ -9152,7 +9161,7 @@
     }
 
     function sourceIntervalLabel(value) {
-      return ({ manual: "Вручную", 60: "Каждый час", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
+      return ({ manual: "Вручную", 30: "Каждые 30 минут", 60: "Каждый час", 120: "Каждые 2 часа", 180: "Каждые 3 часа", 360: "Каждые 6 часов", 720: "Каждые 12 часов", 1440: "Каждые сутки" })[value] || "Вручную";
     }
 
     function formatFeedDate(value, fallback = "Дата не указана") {
@@ -9454,7 +9463,12 @@
       const stepStates = getWorkflowStepStates();
       const activeStepIndex = stepOrder.indexOf(activePage);
       const workflow = document.querySelector(".nav-workflow");
-      workflow.hidden = !currentProject;
+      const hasSelectedFeed = Boolean(currentProject && projectSources.some(source => source.id === activeSourceId));
+      // Keep the project workflow out of the way until the user has chosen a
+      // concrete feed.  The project workspace is useful on its own, while
+      // these steps only make sense once there is a feed to configure.
+      workflow.hidden = !hasSelectedFeed;
+      if (!hasSelectedFeed) workflow.classList.remove("expanded");
       const projectNavLabel = document.querySelector("#projectNavLabel");
       if (projectNavLabel) projectNavLabel.hidden = !currentProject;
       document.querySelector("#projectControlLabel").hidden = !currentProject;
@@ -9464,7 +9478,7 @@
       document.querySelector("#projectsNav").removeAttribute("aria-current");
       if (activePage === "projects") document.querySelector("#projectsNav").setAttribute("aria-current", "page");
       if (activeStepIndex >= 0) workflow.classList.add("expanded");
-      workflow.querySelector(".nav-workflow-toggle").setAttribute("aria-expanded", String(workflow.classList.contains("expanded")));
+      workflow.querySelector(".nav-workflow-toggle").setAttribute("aria-expanded", String(hasSelectedFeed && workflow.classList.contains("expanded")));
       document.querySelectorAll("[data-nav]").forEach(item => {
         const state = stepStates[item.dataset.nav] || "";
         item.classList.toggle("active", item.dataset.nav === activePage);
@@ -9657,7 +9671,10 @@
       const platformHealthTarget = document.querySelector("#overviewPlatformHealth");
       if (platformHealthTarget) {
         const statusLabels = { healthy: "Работает", error: "Ошибка", blocked: "Остановлено", stale: "Устарел", pending: "Ожидает проверки" };
-        const serverPlatformRows = Array.isArray(currentProject.summary?.platformHealth) ? currentProject.summary.platformHealth : [];
+        const activeSourceIds = new Set(projectSources.map(source => String(source.id || "")).filter(Boolean));
+        const serverPlatformRows = Array.isArray(currentProject.summary?.platformHealth)
+          ? currentProject.summary.platformHealth.filter(row => !row.sourceId || activeSourceIds.has(String(row.sourceId)))
+          : [];
         const platformRows = serverPlatformRows.length ? serverPlatformRows : projectSources.map(source => {
           const sourceHealth = sourceSummaryRecord(source) || {};
           const importStatus = String(source.lastImportStatus || sourceHealth.lastImportStatus || "").toLowerCase();
@@ -13760,8 +13777,8 @@ ${photos}
     }
 
     rows.addEventListener("click", event => {
-      if (event.target.closest("[data-open-object-source]")) {
-        switchPage("source");
+      if (event.target.closest("[data-open-object-workspace]")) {
+        switchPage("overview");
         return;
       }
       if (event.target.closest("[data-reset-object-filters]")) {
@@ -14232,7 +14249,7 @@ ${photos}
       }
       if (syncButton) loadFeedFromUrl(syncButton.dataset.sourceSync);
       if (renameButton) renameSourceFeed(renameButton.dataset.sourceRename).catch(error => showToast(error.message));
-      if (removeButton) removeSourceFeed(removeButton.dataset.sourceRemove);
+      if (removeButton) removeSourceFeed(removeButton.dataset.sourceRemove).catch(error => showToast(error.message));
     });
     document.querySelector("#workflowSaveBtn")?.addEventListener("click", () => saveCurrentFeedDraft().catch(error => showToast(`Не удалось сохранить изменения: ${error.message}`)));
     document.querySelector("#generateLinkBtn").addEventListener("click", generateFeedLink);

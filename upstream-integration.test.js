@@ -86,6 +86,16 @@ test("feed refresh scheduling is server-side and opening a client tab never down
   assert.match(html, /serverSummary\?\.lastImportSuccessAt/);
   assert.match(server, /const syncTick=\(\)=>runScheduledFeedSync\(\)/);
   assert.match(server, /setInterval\(syncTick,60000\)/);
+  assert.doesNotMatch(server, /const syncTick=\(\)=>runScheduledFeedSync\(\)[\s\S]*?\n\s*syncTick\(\);/);
+  assert.match(html, /30: "Каждые 30 минут"/);
+  assert.match(html, /120: "Каждые 2 часа"/);
+});
+
+test("deleting a source removes published records and stale health rows", () => {
+  assert.match(html, /method: "DELETE", credentials: "same-origin"/);
+  assert.match(html, /platformHealth\.filter\(row => !row\.sourceId \|\| activeSourceIds\.has/);
+  assert.match(server, /deleteFeedRecords\(\{ projectId, sourceId, sourceUrl/);
+  assert.match(server, /feed-records\/\$\{slug\}\.json/);
 });
 
 test("dense feed controls use position selects and visible direct actions instead of arrow-button clusters", () => {
@@ -127,6 +137,23 @@ test("project rows open the project workspace and hide the global projects nav i
   assert.match(html, /event\.target\.closest\("a, button, input, select, textarea, label"\)/);
   const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];
   assert.match(renderPage, /projectsNav\.hidden = Boolean\(currentProject\)/);
+});
+
+test("workflow navigation stays hidden until a concrete feed is selected", () => {
+  const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];
+  assert.match(renderPage, /const hasSelectedFeed = Boolean\(currentProject && projectSources\.some\(source => source\.id === activeSourceId\)\)/);
+  assert.match(renderPage, /workflow\.hidden = !hasSelectedFeed/);
+  assert.match(renderPage, /if \(!hasSelectedFeed\) workflow\.classList\.remove\("expanded"\)/);
+  assert.match(renderPage, /String\(hasSelectedFeed && workflow\.classList\.contains\("expanded"\)\)/);
+});
+
+test("empty apartments state returns to the project workspace", () => {
+  assert.match(html, /Добавьте исходный фид в разделе «Рабочая область»/);
+  assert.match(html, /data-open-object-workspace>Открыть рабочую область/);
+  const objectRows = html.match(/    rows\.addEventListener\("click", event => \{[\s\S]*?\n    \}\);/)[0];
+  assert.match(objectRows, /data-open-object-workspace/);
+  assert.match(objectRows, /switchPage\("overview"\)/);
+  assert.doesNotMatch(objectRows, /data-open-object-source/);
 });
 
 test("account notification preferences are shared while project data stays scoped", () => {
@@ -498,4 +525,12 @@ test("publication URLs stay stable, history versions do not repeat, and project 
   const filteredFirst = filtered.feeds.find(item => item.id === first.id);
   assert.equal(filteredFirst.sourceId, "source-a");
   assert.equal(filteredFirst.name, "Основной фид ЦИАН");
+  const removed = await request("/api/feeds?projectId=project-a&sourceId=source-a", "DELETE");
+  assert.equal(removed.deleted, 2);
+  const afterDelete = await request("/api/feeds?projectId=project-a");
+  assert.deepEqual(afterDelete.feeds, []);
+  const publicAfterDelete = await fetch(`${base}/f/${first.id}.xml`);
+  assert.equal(publicAfterDelete.status, 404);
+  const otherProjectFeeds = await request("/api/feeds?projectId=project-b");
+  assert.deepEqual(otherProjectFeeds.feeds.map(item => item.id), [other.id]);
 });
