@@ -9472,7 +9472,11 @@
       const stepStates = getWorkflowStepStates();
       const activeStepIndex = stepOrder.indexOf(activePage);
       const workflow = document.querySelector(".nav-workflow");
-      const hasSelectedFeed = Boolean(currentProject && projectSources.some(source => source.id === activeSourceId));
+      // The project overview is a neutral feed picker. A persisted source
+      // context must not make the workflow look selected before the user
+      // chooses a concrete feed there; the steps appear once navigation moves
+      // into that feed's workspace (or after a new feed is added).
+      const hasSelectedFeed = Boolean(currentProject && activePage !== "overview" && projectSources.some(source => source.id === activeSourceId));
       // Keep the project workflow out of the way until the user has chosen a
       // concrete feed.  The project workspace is useful on its own, while
       // these steps only make sense once there is a feed to configure.

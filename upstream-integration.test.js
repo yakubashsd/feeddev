@@ -140,11 +140,12 @@ test("project rows open the project workspace and hide the global projects nav i
   assert.match(html, /event\.target\.closest\("a, button, input, select, textarea, label"\)/);
   const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];
   assert.match(renderPage, /projectsNav\.hidden = Boolean\(currentProject\)/);
+  assert.match(renderPage, /const hasSelectedFeed = Boolean\(currentProject && activePage !== "overview" && projectSources\.some\(source => source\.id === activeSourceId\)\)/);
 });
 
 test("workflow navigation stays hidden until a concrete feed is selected", () => {
   const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];
-  assert.match(renderPage, /const hasSelectedFeed = Boolean\(currentProject && projectSources\.some\(source => source\.id === activeSourceId\)\)/);
+  assert.match(renderPage, /const hasSelectedFeed = Boolean\(currentProject && activePage !== "overview" && projectSources\.some\(source => source\.id === activeSourceId\)\)/);
   assert.match(renderPage, /workflow\.hidden = !hasSelectedFeed/);
   assert.match(renderPage, /if \(!hasSelectedFeed\) workflow\.classList\.remove\("expanded"\)/);
   assert.match(renderPage, /String\(hasSelectedFeed && workflow\.classList\.contains\("expanded"\)\)/);
