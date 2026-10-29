@@ -5774,6 +5774,350 @@
       body.client-ui .project-table-footer { display:flex!important; flex-wrap:wrap!important; gap:12px!important; }
       body.client-ui .project-table-footer > * { max-width:100%!important; }
     }
+
+    body.client-ui .overview-heading-actions {
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    body.client-ui .overview-heading-actions[hidden] { display:none!important; }
+    body.client-ui .overview-published-empty {
+      display:grid;
+      justify-items:center;
+      gap:10px;
+      padding:44px 24px;
+      text-align:center;
+    }
+    body.client-ui .overview-published-empty strong { color:var(--lf-text); font-size:17px; }
+    body.client-ui .overview-published-empty span { max-width:520px; line-height:1.55; }
+    body.client-ui .overview-published-empty button { margin-top:8px; }
+    body.client-ui .project-list-mode .project-cell-link {
+      display:flex;
+      align-items:center;
+      width:100%;
+      min-height:44px;
+      color:inherit;
+      text-decoration:none;
+    }
+    body.client-ui .project-list-mode .project-cell-link:hover,
+    body.client-ui .project-list-mode .project-status-link:hover { color:var(--lf-blue); }
+    body.client-ui .project-list-mode .project-status-link {
+      align-items:center!important;
+      justify-content:flex-start!important;
+      min-height:44px!important;
+      box-sizing:border-box!important;
+      text-decoration:none!important;
+    }
+    body.client-ui .project-list-mode .project-row td { vertical-align:middle!important; }
+    @media (min-width:761px) {
+      body.client-ui .project-list-mode .project-actions-cell {
+        width:176px!important;
+        min-width:176px!important;
+        max-width:176px!important;
+      }
+      body.client-ui .project-list-mode .project-open-action {
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        width:auto!important;
+        min-width:104px!important;
+        height:36px!important;
+        padding:0 14px!important;
+        font-size:12px!important;
+        font-weight:700!important;
+      }
+    }
+    @media (max-width:760px) {
+      body.client-ui .overview-heading-actions { width:100%; justify-content:stretch; }
+      body.client-ui .overview-heading-actions > button { flex:1 1 100%; width:100%; }
+      body.client-ui .project-list-mode .project-cell-link,
+      body.client-ui .project-list-mode .project-status-link { justify-content:flex-end!important; text-align:right!important; }
+      body.client-ui .project-list-mode .project-open-action { width:auto!important; padding-inline:12px!important; }
+    }
+
+    /* Operate-mode workspace: persistent navigation, compact decisions and
+       progressive disclosure.  These overrides intentionally sit last so the
+       client shell has one predictable density at every application page. */
+    @media (min-width:1180px) and (max-width:1280px) {
+      body.client-ui .app,
+      body.client-ui .app:not(.feeds-mode):not(.project-list-mode):not(.layouts-mode):not(.validator-mode) {
+        grid-template-columns:232px minmax(0,1fr) minmax(300px,31vw)!important;
+      }
+      body.client-ui .app.feeds-mode,
+      body.client-ui .app.project-list-mode,
+      body.client-ui .app.layouts-mode,
+      body.client-ui .app.validator-mode {
+        grid-template-columns:232px minmax(0,1fr)!important;
+      }
+      body.client-ui .sidebar {
+        position:relative!important;
+        inset:auto!important;
+        grid-column:1!important;
+        grid-row:1!important;
+        width:auto!important;
+        height:100dvh!important;
+        transform:none!important;
+        box-shadow:none!important;
+      }
+      body.client-ui .main,
+      body.client-ui .app.feeds-mode .main,
+      body.client-ui .app.project-list-mode .main,
+      body.client-ui .app.layouts-mode .main,
+      body.client-ui .app.validator-mode .main { grid-column:2!important; }
+      body.client-ui .editor { grid-column:3!important; }
+      body.client-ui .mobile-menu-toggle { display:none!important; }
+      body.client-ui .topbar { left:auto!important; width:auto!important; }
+    }
+
+    body.client-ui .overview-project-summary {
+      display:grid;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    body.client-ui .overview-summary-metrics {
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      overflow:hidden;
+      border:1px solid var(--lf-line);
+      border-radius:var(--lf-radius-lg);
+      background:var(--lf-surface);
+    }
+    body.client-ui .overview-summary-metrics > div {
+      display:grid;
+      gap:5px;
+      min-width:0;
+      padding:16px 18px;
+      border-right:1px solid var(--lf-line);
+    }
+    body.client-ui .overview-summary-metrics > div:last-child { border-right:0; }
+    body.client-ui .overview-summary-metrics span,
+    body.client-ui .overview-next-step > span {
+      color:var(--lf-muted);
+      font-size:12px;
+      font-weight:650;
+    }
+    body.client-ui .overview-summary-metrics strong {
+      min-width:0;
+      overflow:hidden;
+      color:var(--lf-text);
+      font-size:18px;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    body.client-ui .overview-next-step {
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      align-items:center;
+      gap:14px;
+      padding:14px 16px;
+      border:1px solid var(--lf-line);
+      border-left:3px solid var(--lf-blue);
+      border-radius:var(--lf-radius-lg);
+      background:var(--lf-surface);
+    }
+    body.client-ui .overview-next-step > div { display:grid; gap:2px; min-width:0; }
+    body.client-ui .overview-next-step > div strong { color:var(--lf-text); }
+    body.client-ui .overview-next-step > div small { color:var(--lf-muted); line-height:1.4; }
+    body.client-ui .overview-next-step button { min-height:38px!important; padding-inline:14px!important; }
+
+    body.client-ui .overview-published-row {
+      grid-template-columns:minmax(0,1fr) auto!important;
+      align-items:center!important;
+      gap:16px!important;
+      padding:16px 18px!important;
+    }
+    body.client-ui .overview-feed-actions {
+      display:flex!important;
+      align-items:center!important;
+      justify-content:flex-end!important;
+      width:auto!important;
+      flex-wrap:nowrap!important;
+      gap:8px!important;
+    }
+    body.client-ui .overview-feed-primary {
+      min-height:40px!important;
+      padding:0 14px!important;
+      font-size:14px!important;
+      white-space:nowrap!important;
+    }
+    body.client-ui .overview-feed-menu { position:relative; flex:0 0 auto; }
+    body.client-ui .overview-feed-menu > summary {
+      display:grid;
+      place-items:center;
+      width:40px;
+      height:40px;
+      padding:0;
+      border:1px solid var(--lf-line-strong);
+      border-radius:var(--lf-radius-sm);
+      background:var(--lf-surface);
+      color:var(--lf-text);
+      cursor:pointer;
+      list-style:none;
+      font-weight:800;
+      letter-spacing:2px;
+    }
+    body.client-ui .overview-feed-menu > summary::-webkit-details-marker { display:none; }
+    body.client-ui .overview-feed-menu > summary:hover,
+    body.client-ui .overview-feed-menu[open] > summary { border-color:var(--lf-blue); color:var(--lf-blue); }
+    body.client-ui .overview-feed-menu-popover {
+      position:absolute;
+      z-index:30;
+      top:calc(100% + 7px);
+      right:0;
+      display:grid;
+      width:190px;
+      padding:6px;
+      border:1px solid var(--lf-line);
+      border-radius:var(--lf-radius-md);
+      background:var(--lf-surface);
+      box-shadow:0 14px 34px rgba(17,56,94,.16);
+    }
+    body.client-ui .overview-feed-menu-popover button {
+      justify-content:flex-start!important;
+      min-height:36px!important;
+      padding:0 10px!important;
+      border:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
+      text-align:left!important;
+    }
+    body.client-ui .overview-feed-menu-popover button:hover { background:var(--lf-surface-2)!important; }
+
+    body.client-ui .object-filter-panel {
+      display:grid!important;
+      grid-template-columns:minmax(250px,5fr) minmax(120px,2fr) minmax(100px,2fr) minmax(170px,3fr) auto!important;
+      grid-template-areas:"search status rooms issue reset" "advanced advanced advanced advanced advanced"!important;
+      align-items:end!important;
+      gap:12px!important;
+    }
+    body.client-ui .object-filter-panel > .field:nth-of-type(1) { grid-area:search!important; }
+    body.client-ui .object-filter-panel > .field:nth-of-type(2) { grid-area:status!important; }
+    body.client-ui .object-filter-panel > .field:nth-of-type(3) { grid-area:rooms!important; }
+    body.client-ui .object-filter-panel > .field:nth-of-type(4) { grid-area:issue!important; }
+    body.client-ui .object-filter-reset {
+      grid-area:reset;
+      min-height:40px!important;
+      padding:0 12px!important;
+      color:var(--lf-blue)!important;
+      background:transparent!important;
+      box-shadow:none!important;
+    }
+    body.client-ui .object-filter-reset[hidden] { display:none!important; }
+    body.client-ui .object-filter-advanced {
+      grid-area:advanced;
+      min-width:0;
+      border-top:1px solid var(--lf-line);
+    }
+    body.client-ui .object-filter-advanced > summary {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      width:max-content;
+      padding:12px 0 0;
+      color:var(--lf-blue);
+      cursor:pointer;
+      font-size:13px;
+      font-weight:700;
+    }
+    body.client-ui .object-filter-advanced > summary span {
+      display:inline-grid;
+      place-items:center;
+      min-width:20px;
+      height:20px;
+      padding:0 5px;
+      border-radius:999px;
+      background:var(--lf-blue-soft);
+      color:var(--lf-blue);
+      font-size:11px;
+    }
+    body.client-ui .object-filter-advanced > summary span[hidden] { display:none!important; }
+    body.client-ui .object-filter-advanced-grid {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+      padding-top:14px;
+    }
+    body.client-ui .object-filter-panel .object-filter-advanced-grid > .field {
+      grid-area:auto!important;
+      grid-column:auto!important;
+      grid-row:auto!important;
+    }
+    body.client-ui .object-filter-advanced .range-filter-controls {
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:10px!important;
+    }
+    body.client-ui #bulkPanel[hidden] { display:none!important; }
+
+    @media (min-width:901px) and (max-width:1280px) {
+      body.client-ui .object-filter-panel {
+        grid-template-columns:repeat(12,minmax(0,1fr))!important;
+        grid-template-areas:
+          "search search search search search search status status status rooms rooms rooms"
+          "issue issue issue issue issue issue issue issue reset reset reset reset"
+          "advanced advanced advanced advanced advanced advanced advanced advanced advanced advanced advanced advanced"!important;
+      }
+      body.client-ui .object-filter-advanced-grid { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:900px) {
+      body.client-ui .overview-summary-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      body.client-ui .overview-summary-metrics > div:nth-child(2) { border-right:0; }
+      body.client-ui .overview-summary-metrics > div:nth-child(-n+2) { border-bottom:1px solid var(--lf-line); }
+      body.client-ui .overview-next-step { grid-template-columns:1fr; }
+      body.client-ui .overview-next-step button { width:100%; }
+      body.client-ui .overview-published-row { grid-template-columns:1fr!important; }
+      body.client-ui .overview-feed-actions { justify-content:flex-start!important; }
+      body.client-ui .object-filter-panel {
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        grid-template-areas:"search search" "status rooms" "issue issue" "reset reset" "advanced advanced"!important;
+      }
+      body.client-ui .object-filter-advanced-grid { grid-template-columns:1fr; }
+    }
+    @media (max-width:560px) {
+      body.client-ui .overview-summary-metrics { grid-template-columns:1fr; }
+      body.client-ui .overview-summary-metrics > div { border-right:0; border-bottom:1px solid var(--lf-line); }
+      body.client-ui .overview-summary-metrics > div:last-child { border-bottom:0; }
+      body.client-ui .overview-feed-actions { width:100%!important; }
+      body.client-ui .overview-feed-primary { flex:1 1 auto!important; }
+      body.client-ui .object-filter-panel {
+        grid-template-columns:1fr!important;
+        grid-template-areas:"search" "status" "rooms" "issue" "reset" "advanced"!important;
+      }
+      body.client-ui .project-list-mode .project-row .project-actions-cell {
+        display:flex!important;
+        align-items:center!important;
+        justify-content:flex-end!important;
+        gap:8px!important;
+        width:100%!important;
+        min-width:100%!important;
+        max-width:100%!important;
+        box-sizing:border-box!important;
+        overflow:visible!important;
+      }
+      body.client-ui .project-list-mode .project-row .project-actions-cell::before { display:none!important; }
+      body.client-ui .project-list-mode .project-row .project-actions-cell .project-open-action {
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        width:auto!important;
+        min-width:92px!important;
+        height:38px!important;
+        padding:0 14px!important;
+        overflow:hidden!important;
+        white-space:nowrap!important;
+      }
+      body.client-ui .project-list-mode .project-row .project-row-menu,
+      body.client-ui .project-list-mode .project-row .project-row-menu > summary {
+        flex:0 0 38px!important;
+        width:38px!important;
+        min-width:38px!important;
+        height:38px!important;
+        min-height:38px!important;
+        margin:0!important;
+      }
+    }
   </style>
   <link rel="stylesheet" href="listingflow-finish.css?v=20261027-design-skills">
 </head>
@@ -5938,7 +6282,7 @@
       </section>
       <div class="nav-label">Проекты</div>
       <a class="nav-item" id="projectsNav" href="/" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16v13H4z"/><path d="M8 4h8v3M8 12h8M8 16h5"/></svg><span class="nav-text">Все проекты</span></a>
-      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Список фидов</span></button>
+      <button type="button" class="nav-item" data-nav="overview"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">Рабочая область</span></button>
       <div class="nav-workflow expanded">
         <button type="button" class="nav-item nav-workflow-toggle" aria-expanded="true" aria-controls="feedWorkflowNav"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 18H6a3 3 0 0 1 0-6h2m8 0h2a3 3 0 1 1 0 6h-2"/><path d="M9 15h6"/></svg><span class="nav-text">Настроить и выпустить</span><svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
         <div class="nav-workflow-items" id="feedWorkflowNav">
@@ -5972,7 +6316,7 @@
           <button class="mobile-menu-toggle" id="sidebarToggle" type="button" aria-label="Открыть меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
           <label class="topbar-project-picker" for="projectSwitcherSelect" aria-label="Текущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7.5h7l2 2H21v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg><select id="projectSwitcherSelect" aria-label="Выбрать проект"><option value="">Все проекты</option></select></label>
           <p class="topbar-page-context" aria-live="polite">Рабочая область фидов</p>
-          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Все проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
+          <nav class="subtitle page-breadcrumb" id="pageBreadcrumb" aria-label="Навигационная цепочка" hidden><a href="/">Проекты</a><span aria-hidden="true">/</span><span id="breadcrumbProjectName"></span><span id="breadcrumbFeedDivider" aria-hidden="true" hidden>/</span><span id="breadcrumbFeedName" hidden></span></nav>
         </div>
         <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
@@ -5993,8 +6337,9 @@
         <button type="button" data-step=".feeds-panel"><span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg></span><span class="step-copy"><span class="step-number">06</span><span class="step-title">Мониторинг</span></span></button>
       </nav>
       <section class="project-overview page-hidden" data-page="overview">
-        <div class="overview-heading"><div><h1 id="overviewTitle">Список фидов</h1></div><button class="primary" type="button" data-overview-go="source">Добавить фид</button></div>
-        <section class="overview-card overview-published"><div class="overview-card-head"><div><h2>Фиды</h2><p class="panel-caption">Выберите фид для редактирования или добавьте новый.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
+        <div class="overview-heading"><div><h1 id="overviewTitle">Рабочая область проекта</h1><p id="overviewDescription">Фиды и действия проекта собраны здесь.</p></div><div class="overview-heading-actions" id="overviewHeadingActions"><button class="primary" id="overviewContinueAction" type="button" data-overview-continue>Продолжить настройку</button><button id="overviewAddFeedAction" type="button" data-overview-go="source">Добавить фид</button></div></div>
+        <section class="overview-project-summary" id="overviewProjectSummary" aria-label="Сводка проекта"></section>
+        <section class="overview-card overview-published"><div class="overview-card-head"><div><h2>Фиды проекта</h2><p class="panel-caption">Выберите фид, чтобы продолжить настройку, проверить публикацию или обновить данные.</p></div></div><div id="overviewPublishedFeeds" class="overview-published-list"></div></section>
         <section class="overview-card platform-health-card"><div class="overview-card-head"><div><h2>Состояние по площадкам</h2><p class="panel-caption">Сводка последней серверной синхронизации по каждому фиду.</p></div></div><div id="overviewPlatformHealth" class="platform-health-grid"></div></section>
       </section>
       <section class="projects-page" data-page="projects">
@@ -6204,42 +6549,48 @@
               <option value="4">4+</option>
             </select>
           </div>
-          <div class="field range-filter">
-            <label>Цена, ₽</label>
-            <div class="range-filter-controls">
-              <div class="range-filter-row">
-                <span>от</span>
-                <input id="priceFromRange" class="filter-range-sync" type="range" aria-label="Минимальная цена" tabindex="-1" hidden>
-                <input id="priceFrom" type="number" min="0" aria-label="Цена — от" placeholder="мин.">
-              </div>
-              <div class="range-filter-row">
-                <span>до</span>
-                <input id="priceToRange" class="filter-range-sync" type="range" aria-label="Максимальная цена" tabindex="-1" hidden>
-                <input id="priceTo" type="number" min="0" aria-label="Цена — до" placeholder="макс.">
-              </div>
-            </div>
-          </div>
-          <div class="field range-filter">
-            <label>Площадь, м²</label>
-            <div class="range-filter-controls">
-              <div class="range-filter-row">
-                <span>от</span>
-                <input id="areaFromRange" class="filter-range-sync" type="range" step="0.1" aria-label="Минимальная площадь" tabindex="-1" hidden>
-                <input id="areaFrom" type="number" min="0" step="0.1" aria-label="Площадь — от" placeholder="мин.">
-              </div>
-              <div class="range-filter-row">
-                <span>до</span>
-                <input id="areaToRange" class="filter-range-sync" type="range" step="0.1" aria-label="Максимальная площадь" tabindex="-1" hidden>
-                <input id="areaTo" type="number" min="0" step="0.1" aria-label="Площадь — до" placeholder="макс.">
-              </div>
-            </div>
-          </div>
           <div class="field compact">
             <label for="issueFilter">Ошибка</label>
             <select id="issueFilter">
               <option value="all">Все объекты</option>
             </select>
           </div>
+          <button class="object-filter-reset" type="button" data-reset-object-filters hidden>Сбросить</button>
+          <details class="object-filter-advanced" id="objectFilterAdvanced">
+            <summary>Дополнительные фильтры <span id="advancedFilterCount" hidden></span></summary>
+            <div class="object-filter-advanced-grid">
+              <div class="field range-filter">
+                <label>Цена, ₽</label>
+                <div class="range-filter-controls">
+                  <div class="range-filter-row">
+                    <span>от</span>
+                    <input id="priceFromRange" class="filter-range-sync" type="range" aria-label="Минимальная цена" tabindex="-1" hidden>
+                    <input id="priceFrom" type="number" min="0" aria-label="Цена — от" placeholder="мин.">
+                  </div>
+                  <div class="range-filter-row">
+                    <span>до</span>
+                    <input id="priceToRange" class="filter-range-sync" type="range" aria-label="Максимальная цена" tabindex="-1" hidden>
+                    <input id="priceTo" type="number" min="0" aria-label="Цена — до" placeholder="макс.">
+                  </div>
+                </div>
+              </div>
+              <div class="field range-filter">
+                <label>Площадь, м²</label>
+                <div class="range-filter-controls">
+                  <div class="range-filter-row">
+                    <span>от</span>
+                    <input id="areaFromRange" class="filter-range-sync" type="range" step="0.1" aria-label="Минимальная площадь" tabindex="-1" hidden>
+                    <input id="areaFrom" type="number" min="0" step="0.1" aria-label="Площадь — от" placeholder="мин.">
+                  </div>
+                  <div class="range-filter-row">
+                    <span>до</span>
+                    <input id="areaToRange" class="filter-range-sync" type="range" step="0.1" aria-label="Максимальная площадь" tabindex="-1" hidden>
+                    <input id="areaTo" type="number" min="0" step="0.1" aria-label="Площадь — до" placeholder="макс.">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
         <div class="table-scroll">
           <table>
@@ -6259,7 +6610,7 @@
         </div>
       </section>
 
-      <section class="bulk-panel" data-page="apartments">
+      <section class="bulk-panel" id="bulkPanel" data-page="apartments" hidden>
         <div class="bulk-head">
           <div>
             <h2 class="panel-title">Массовые правки</h2>
@@ -7739,7 +8090,7 @@
         renderAll();
         const indicator = document.querySelector("#cloudSaveStatus");
         if (indicator) indicator.textContent = `Обновлено коллегой в ${new Date(remote.updatedAt || Date.now()).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
-        if (activePage === "overview") showToast("Список фидов обновлён — доступны последние изменения коллеги.");
+        if (activePage === "overview") showToast("Рабочая область обновлена — доступны последние изменения коллеги.");
         return true;
       } finally {
         projectStatePollInFlight = false;
@@ -8476,6 +8827,44 @@
       return sortObjects(filtered);
     }
 
+    function activeObjectFilters() {
+      const value = selector => String(document.querySelector(selector)?.value || "").trim();
+      const advanced = ["#priceFrom", "#priceTo", "#areaFrom", "#areaTo"].filter(selector => value(selector));
+      const primary = [
+        value("#search"),
+        value("#statusFilter") !== "all" ? value("#statusFilter") : "",
+        value("#roomsFilter") !== "all" ? value("#roomsFilter") : "",
+        value("#issueFilter") !== "all" ? value("#issueFilter") : ""
+      ].filter(Boolean);
+      return { count: primary.length + advanced.length, advancedCount: advanced.length };
+    }
+
+    function renderObjectFilterState() {
+      const state = activeObjectFilters();
+      const reset = document.querySelector(".object-filter-reset");
+      const badge = document.querySelector("#advancedFilterCount");
+      const advanced = document.querySelector("#objectFilterAdvanced");
+      if (reset) reset.hidden = state.count === 0;
+      if (badge) {
+        badge.hidden = state.advancedCount === 0;
+        badge.textContent = String(state.advancedCount);
+      }
+      if (advanced && state.advancedCount) advanced.open = true;
+    }
+
+    function resetObjectFilters() {
+      document.querySelector("#search").value = "";
+      document.querySelector("#statusFilter").value = "all";
+      document.querySelector("#roomsFilter").value = "all";
+      document.querySelector("#issueFilter").value = "all";
+      ["#priceFrom", "#priceTo", "#areaFrom", "#areaTo"].forEach(selector => {
+        const input = document.querySelector(selector);
+        if (input) input.value = "";
+      });
+      syncFilterRanges();
+      renderRows();
+    }
+
     function workingObjects() {
       const scoped = sourceWorkingObjects();
       if (typeof activeComplexKey === "undefined" || !activeComplexKey) return scoped;
@@ -8557,6 +8946,7 @@
 
     function renderRows() {
       const visible = filteredObjects();
+      renderObjectFilterState();
       if (!visible.length) {
         const hasObjects = workingObjects().length > 0;
         rows.innerHTML = `
@@ -8723,9 +9113,19 @@
     function sourceActionsMarkup(sourceId, { overview = false } = {}) {
       const id = escapeXml(sourceId);
       const editAttribute = overview ? "data-overview-edit-source" : "data-source-edit";
-      const diagnostics = overview ? `<button type="button" data-source-diagnostics="${id}">Диагностика</button>` : "";
+      if (overview) {
+        return `<button type="button" class="primary overview-feed-primary" ${editAttribute}="${id}">Продолжить настройку</button>
+          <details class="overview-feed-menu">
+            <summary aria-label="Другие действия с фидом" title="Другие действия"><span aria-hidden="true">•••</span></summary>
+            <div class="overview-feed-menu-popover" role="group" aria-label="Действия с фидом">
+              <button type="button" aria-label="Открыть диагностику фида" data-source-diagnostics="${id}">Диагностика</button>
+              <button type="button" aria-label="Обновить фид сейчас" data-source-sync="${id}">Обновить сейчас</button>
+              <button type="button" aria-label="Переименовать фид" data-source-rename="${id}">Переименовать</button>
+              <button type="button" class="danger" aria-label="Удалить фид" data-source-remove="${id}">Удалить</button>
+            </div>
+          </details>`;
+      }
       return `<button type="button" class="primary" ${editAttribute}="${id}">Редактировать фид</button>
-        ${diagnostics}
         <button type="button" data-source-sync="${id}">Обновить сейчас</button>
         <button type="button" data-source-rename="${id}">Переименовать</button>
         <button type="button" class="danger" data-source-remove="${id}">Удалить</button>`;
@@ -8734,7 +9134,7 @@
     function renderProjectSources() {
       const node = document.querySelector("#projectSourceList");
       if (!node) return;
-      // Existing feeds belong in «Список фидов». Only show a record while
+      // Existing feeds belong in the project workspace. Only show a record while
       // the user is in the same session that just added it.
       if (!sourceEntrySessionActive) {
         node.innerHTML = "";
@@ -8854,7 +9254,6 @@
       };
       document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorTotal, errorFeedNames, syncErrorTotal, syncErrorFeedNames, objectCount, status, updated }) => {
         const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
-        const monitorUrl = `${projectUrl}&page=feeds`;
         const [statusLabel, statusTone] = statusMeta[status];
         const errorNamesLabel = errorFeedNames?.length ? errorFeedNames.join(", ") : "Фид проекта";
         const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Сбой синхронизации${syncErrorTotal ? `: ${syncErrorTotal} ${pluralRu(syncErrorTotal, "фид", "фида", "фидов")}` : ""}` : status === "warning" && errorTotal ? `${errorTotal} ${pluralRu(errorTotal, "замечание", "замечания", "замечаний")}` : statusLabel;
@@ -8863,15 +9262,15 @@
         const projectIdShort = project.id === "legacy" ? "legacy" : project.id.slice(0, 8).toUpperCase();
         const actionMenu = status === "archived"
           ? `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><button type="button" data-restore-project="${escapeXml(project.id)}">Восстановить проект</button></div></details>`
-          : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><a href="${projectUrl}">Открыть проект</a><a href="${monitorUrl}">Открыть мониторинг</a><button type="button" data-rename-project="${escapeXml(project.id)}">Переименовать</button><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
+          : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><button type="button" data-rename-project="${escapeXml(project.id)}">Переименовать</button><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
         return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td data-label="Проект"><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
-          <td data-label="Фиды"><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></td>
-          <td data-label="Объекты" class="project-object-count">${Number(objectCount).toLocaleString("ru-RU")}</td>
-          <td data-label="Публикация"><span class="project-status ${statusTone}" title="${escapeXml(publicationStatusTitle)}"><i aria-hidden="true"></i>${escapeXml(publicationStatus)}</span></td>
-          <td data-label="Обновление" class="project-updated">${updatedLabel}</td>
-          <td data-label="Действия" class="project-actions-cell"><a class="project-row-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></a><a class="project-row-action" href="${monitorUrl}" aria-label="Мониторинг проекта ${escapeXml(project.name)}" title="Открыть мониторинг"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19h16M7 16V9m5 7V5m5 11v-4"/></svg></a>${actionMenu}</td>
+          <td data-label="Фиды"><a class="project-cell-link" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}"><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></a></td>
+          <td data-label="Объекты" class="project-object-count"><a class="project-cell-link" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}">${Number(objectCount).toLocaleString("ru-RU")}</a></td>
+          <td data-label="Публикация"><a class="project-status project-status-link ${statusTone}" href="${projectUrl}" title="Открыть проект · ${escapeXml(publicationStatusTitle)}" aria-label="Открыть проект ${escapeXml(project.name)}. ${escapeXml(publicationStatusTitle)}"><i aria-hidden="true"></i>${escapeXml(publicationStatus)}</a></td>
+          <td data-label="Обновление" class="project-updated"><a class="project-cell-link" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}">${updatedLabel}</a></td>
+          <td data-label="Действия" class="project-actions-cell"><a class="project-row-action project-open-action" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}" title="Открыть проект">Открыть</a>${actionMenu}</td>
         </tr>`;
       }).join("") || `<tr class="project-table-empty"><td colspan="7"><strong>${query || statusFilter !== "all" ? "Ничего не найдено" : "Проектов пока нет"}</strong><span>${query || statusFilter !== "all" ? "Измените запрос или сбросьте фильтр." : "Создайте проект, чтобы добавить первый фид и начать работу."}</span></td></tr>`;
       const firstItem = filtered.length ? (projectPage - 1) * pageSize + 1 : 0;
@@ -8955,7 +9354,7 @@
         activePage = currentProject ? "overview" : "projects";
         syncPageUrl(activePage);
       }
-      const titles = { projects: "Проекты", overview: "Список фидов", source: "Фиды проекта", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", history: "История изменений", billing: "Тариф и оплата", support: "Техническая поддержка" };
+      const titles = { projects: "Проекты", overview: "Рабочая область проекта", source: "Добавление фида", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", history: "История изменений", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
       const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!(sessionState?.subscriptionActive || sessionState?.trialActive) || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
@@ -9020,7 +9419,7 @@
       const breadcrumb = document.querySelector("#pageBreadcrumb");
       breadcrumb.hidden = !currentProject || activePage === "projects";
       document.querySelector("#breadcrumbProjectName").textContent = currentProject?.name || "";
-      const activeFeed = activePage === "source" && !sourceEntrySessionActive
+      const activeFeed = activePage === "overview" || (activePage === "source" && !sourceEntrySessionActive)
         ? null
         : projectSources.find(source => source.id === activeSourceId);
       const feedDivider = document.querySelector("#breadcrumbFeedDivider");
@@ -9126,9 +9525,63 @@
       }
     }
 
+    function continueProjectSetup() {
+      const source = projectSources.find(item => item.id === activeSourceId) || projectSources[0];
+      if (!source) {
+        prepareNewFeedFlow();
+        switchPage("source");
+        return;
+      }
+      setSourceContext(source.id);
+      save();
+      if (source.error || sourceSummaryRecord(source)?.lastImportError) {
+        switchPage("feeds");
+        return;
+      }
+      const states = getWorkflowStepStates();
+      const availableSteps = shouldShowComplexesStep()
+        ? ["complexes", "apartments", "results"]
+        : ["apartments", "results"];
+      const target = availableSteps.find(page => states[page] === "issue")
+        || availableSteps.find(page => states[page] === "todo")
+        || "apartments";
+      switchPage(target);
+    }
+
     function renderProjectOverview() {
       if (!currentProject) return;
-      document.querySelector("#overviewTitle").textContent = "Список фидов";
+      document.querySelector("#overviewTitle").textContent = currentProject.name || "Рабочая область проекта";
+      const overviewDescription = document.querySelector("#overviewDescription");
+      if (overviewDescription) overviewDescription.textContent = "Управляйте фидами проекта и продолжайте настройку с того места, где остановились.";
+      const hasFeeds = projectSources.length > 0;
+      const headingActions = document.querySelector("#overviewHeadingActions");
+      const continueAction = document.querySelector("#overviewContinueAction");
+      if (headingActions) headingActions.hidden = !hasFeeds;
+      if (continueAction) continueAction.hidden = true;
+      const projectSummary = document.querySelector("#overviewProjectSummary");
+      if (projectSummary) {
+        const totalObjects = projectSources.reduce((total, source) => total + sourceObjectCount(source), 0);
+        const totalIssues = projectSources.reduce((total, source) => total + sourceIssueCount(source.id), 0);
+        const publishedCount = projectSources.reduce((total, source) => total + (publicationForSource(source.id)?.url ? 1 : 0), 0);
+        const lastUpdate = projectSources.reduce((latest, source) => {
+          const summary = sourceSummaryRecord(source);
+          const timestamp = new Date(summary?.lastImportSuccessAt || source.updatedAt || 0).getTime();
+          return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
+        }, 0);
+        const nextStep = !hasFeeds
+          ? { title: "Добавьте первый фид", text: "После загрузки появятся объекты и этапы настройки.", page: "source", action: "Добавить фид" }
+          : totalIssues
+            ? { title: "Проверьте данные", text: `${totalIssues.toLocaleString("ru-RU")} ${pluralRu(totalIssues, "объект требует", "объекта требуют", "объектов требуют")} внимания.`, action: "Продолжить настройку" }
+            : publishedCount < projectSources.length
+              ? { title: "Подготовьте публикацию", text: "Данные загружены — проверьте обязательные поля и выпустите фид.", action: "Продолжить настройку" }
+              : { title: "Проект работает", text: "Публикации активны, сервер продолжает обновлять фиды по расписанию.", action: "Открыть фиды" };
+        projectSummary.innerHTML = `<div class="overview-summary-metrics">
+          <div><span>Фиды</span><strong>${projectSources.length.toLocaleString("ru-RU")}</strong></div>
+          <div><span>Объекты</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong></div>
+          <div><span>Опубликовано</span><strong>${publishedCount} из ${projectSources.length}</strong></div>
+          <div><span>Последнее обновление</span><strong>${lastUpdate ? escapeXml(new Date(lastUpdate).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })) : "Ещё не было"}</strong></div>
+        </div><div class="overview-next-step"><span>Следующий шаг</span><div><strong>${escapeXml(nextStep.title)}</strong><small>${escapeXml(nextStep.text)}</small></div><button type="button" class="${hasFeeds ? "primary" : ""}" ${nextStep.page ? `data-overview-go="${nextStep.page}"` : "data-overview-continue"}>${escapeXml(nextStep.action)}</button></div>`;
+      }
       const platformHealthTarget = document.querySelector("#overviewPlatformHealth");
       if (platformHealthTarget) {
         const statusLabels = { healthy: "Работает", error: "Ошибка", blocked: "Остановлено", stale: "Устарел", pending: "Ожидает проверки" };
@@ -9195,7 +9648,7 @@
           const created = formatFeedDate(publication.createdAt || source?.createdAt || publication.updatedAt);
           return `<article class="overview-published-row"><div class="overview-feed-main"><strong>${escapeXml(publication.name || `${source?.name || platform} · ${publication.complexName}`)} <span class="overview-feed-status is-published">Опубликован</span></strong><span class="overview-feed-platform">${platformMark(publication.platform || source?.platform)}<span>${escapeXml(platform)} · ${objectCount.toLocaleString("ru-RU")} ${pluralRu(objectCount, "объект", "объекта", "объектов")}</span></span><small class="overview-feed-created">Создан: ${escapeXml(created)}</small><small>ЖК: ${escapeXml(publication.complexName)}</small><small>Ссылка: <a href="${escapeXml(publication.url)}" target="_blank" rel="noreferrer">${escapeXml(publication.url)}</a></small></div><div class="overview-feed-actions"><button type="button" class="primary" data-overview-edit-context="${escapeXml(key)}">Редактировать ЖК</button></div></article>`;
         }).join("");
-        publishedList.innerHTML = sourceRows || complexRows ? `${sourceRows}${complexRows}` : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте первый фид, чтобы редактировать его и получить ссылку публикации.</span></div>`;
+        publishedList.innerHTML = sourceRows || complexRows ? `${sourceRows}${complexRows}` : `<div class="overview-published-empty"><strong>В проекте пока нет фидов</strong><span>Добавьте исходный фид — после загрузки появятся объекты и этапы настройки публикации.</span><button type="button" class="primary" data-overview-go="source">Добавить фид</button></div>`;
       }
       // Bind the primary overview actions directly after each render. The feed
       // rows are rebuilt from state, so relying only on a parent delegation
@@ -9259,6 +9712,12 @@
           event.stopPropagation();
           if (button.dataset.overviewGo === "source") prepareNewFeedFlow();
           switchPage(button.dataset.overviewGo);
+        };
+      });
+      document.querySelectorAll(".project-overview [data-overview-continue]").forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          continueProjectSetup();
         };
       });
     }
@@ -11698,7 +12157,9 @@
     function renderBulkStatus() {
       const selection = document.querySelector("#bulkSelection");
       const applyButton = document.querySelector("#applyBulkBtn");
+      const panel = document.querySelector("#bulkPanel");
       const bulkInputs = ["#bulkSection", "#bulkField", "#bulkMode", "#bulkValue"].map(selector => document.querySelector(selector)).filter(Boolean);
+      if (panel) panel.hidden = checkedIds.size === 0;
       if (selection) {
         selection.textContent = checkedIds.size
           ? checkedIds.size === objects.length
@@ -11711,7 +12172,7 @@
         input.disabled = !checkedIds.size;
       });
       document.querySelector("#bulkStatus").textContent = checkedIds.size
-        ? `Изменение применится только к ${checkedIds.size} выбранным объектам.`
+        ? `Изменение применится только к ${checkedIds.size} ${pluralRu(checkedIds.size, "выбранному объекту", "выбранным объектам", "выбранным объектам")}.`
         : "Сначала отметьте одну или несколько строк в таблице выше.";
     }
 
@@ -13232,11 +13693,7 @@ ${photos}
         return;
       }
       if (event.target.closest("[data-reset-object-filters]")) {
-        document.querySelector("#search").value = "";
-        document.querySelector("#statusFilter").value = "all";
-        document.querySelector("#roomsFilter").value = "all";
-        document.querySelector("#issueFilter").value = "all";
-        renderRows();
+        resetObjectFilters();
         return;
       }
       const checkbox = event.target.closest(".row-check");
@@ -13319,6 +13776,9 @@ ${photos}
     ["#search", "#statusFilter", "#roomsFilter", "#issueFilter"].forEach(selector => {
       document.querySelector(selector).addEventListener("input", renderRows);
       document.querySelector(selector).addEventListener("change", renderRows);
+    });
+    document.querySelector(".object-filter-panel").addEventListener("click", event => {
+      if (event.target.closest("[data-reset-object-filters]")) resetObjectFilters();
     });
     document.querySelector("#issueDiagnostics").addEventListener("click", event => {
       const button = event.target.closest("[data-filter-issue]");
