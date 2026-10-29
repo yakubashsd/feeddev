@@ -1583,6 +1583,13 @@
       background: var(--site-gray);
     }
 
+    .validator-auto-status {
+      align-self: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
     .validator-summary {
       display: grid;
       grid-template-columns: repeat(3, minmax(140px, 1fr));
@@ -5556,6 +5563,10 @@
       background:var(--lf-amber-bg)!important;
       color:#684b13!important;
     }
+    body.client-ui .validator-auto-status { min-height:40px; display:flex; align-items:center; padding:0 14px; border:1px solid var(--lf-line); border-radius:8px; background:var(--lf-surface); color:var(--lf-muted); font-size:12px; font-weight:700; }
+    body.client-ui .validator-auto-status.has-errors { border-color:var(--lf-line-strong); background:var(--lf-red-bg); color:var(--lf-red); }
+    body.client-ui .validator-auto-status.has-warnings { border-color:var(--lf-line-strong); background:var(--lf-amber-bg); color:var(--lf-amber); }
+    body.client-ui .validator-auto-status.is-ready { border-color:var(--lf-line-strong); background:var(--lf-green-bg); color:var(--lf-green); }
     body.client-ui .release-preflight p { margin:8px 0 0!important; line-height:1.5!important; }
     body.client-ui .release-preflight .preflight-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
     body.client-ui .release-preflight .preflight-actions button { margin:0!important; }
@@ -5590,6 +5601,38 @@
     }
     body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-toggle svg { width:17px!important; height:17px!important; }
     body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-count { font-size:12px; font-weight:800; }
+    /* Keep the compact error indicator as one control. The previous nested
+       head/button borders were allowed to paint on different radii, which
+       made the outline look clipped at the corners in the top bar. */
+    body.client-ui .topbar-actions > .feed-error-popover.minimized {
+      display:flex!important;
+      align-items:stretch!important;
+      border:1px solid var(--lf-line-strong)!important;
+      border-radius:8px!important;
+      background:var(--lf-surface)!important;
+      overflow:hidden!important;
+    }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-head {
+      display:flex!important;
+      align-items:stretch!important;
+      width:100%!important;
+      height:100%!important;
+      padding:0!important;
+      background:transparent!important;
+    }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-toggle {
+      min-width:48px!important;
+      width:100%!important;
+      height:100%!important;
+      border:0!important;
+      border-radius:0!important;
+      background:transparent!important;
+      color:var(--lf-amber)!important;
+    }
+    body.client-ui .topbar-actions > .feed-error-popover.minimized .feed-error-toggle:focus-visible {
+      outline:2px solid var(--lf-blue)!important;
+      outline-offset:-3px!important;
+    }
     body.client-ui .topbar-actions > .feed-error-popover:not(.minimized) {
       position:fixed!important;
       top:72px!important;
@@ -6118,7 +6161,9 @@
       grid-template-columns:repeat(2,minmax(0,1fr))!important;
       gap:10px!important;
     }
-    body.client-ui #bulkPanel[hidden] { display:none!important; }
+    /* Массовое редактирование выполняется в правом редакторе выбранных объектов.
+       Не дублируем этот же сценарий отдельной секцией под таблицей. */
+    body.client-ui #bulkPanel { display:none!important; }
 
     @media (min-width:901px) and (max-width:1280px) {
       body.client-ui .object-filter-panel {
@@ -6570,15 +6615,15 @@
 
       <section class="validator-panel page-hidden" id="validatorPanel" data-page="feeds">
         <div>
-          <h2 class="panel-title">Проверка текущего фида</h2>
-          <div class="panel-caption">Ручная проверка входит в мониторинг: сервис применит правила выбранной площадки, проверит обязательные поля и допустимые значения перед отправкой.</div>
+          <h2 class="panel-title">Диагностика фида</h2>
+          <div class="panel-caption">Проверка выполняется автоматически после загрузки, изменения и серверного обновления фида.</div>
         </div>
         <div class="validator-toolbar">
           <div class="field compact">
             <label for="validatorPlatform">Определённый формат</label>
             <input id="validatorPlatform" readonly value="ЦИАН">
           </div>
-          <button id="runValidatorBtn" type="button" class="primary">Проверить текущий фид</button>
+          <div id="validatorAutoStatus" class="validator-auto-status" role="status">Обновляется автоматически</div>
         </div>
         <div class="validator-summary" id="validatorSummary"></div>
         <div class="validator-results" id="validatorResults"></div>
@@ -7097,7 +7142,7 @@
       <div class="feed-error-body" id="feedErrorBody"></div>
       <div class="feed-error-actions">
         <button type="button" id="feedErrorOpenApartments">Исправить</button>
-        <button type="button" class="primary" id="feedErrorOpenValidator">Валидатор</button>
+        <button type="button" class="primary" id="feedErrorOpenValidator">Открыть диагностику</button>
       </div>
     </aside>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -12959,6 +13004,15 @@ ${photos}
       const findings = validateFeedForPlatform(activePlatform);
       const errors = findings.filter(item => item.severity === "error").length;
       const warnings = findings.filter(item => item.severity === "warning").length;
+      const autoStatus = document.querySelector("#validatorAutoStatus");
+      if (autoStatus) {
+        autoStatus.className = `validator-auto-status ${errors ? "has-errors" : warnings ? "has-warnings" : "is-ready"}`;
+        autoStatus.textContent = errors
+          ? `Проверено автоматически · ${errors} ${pluralRu(errors, "ошибка", "ошибки", "ошибок")}`
+          : warnings
+            ? `Проверено автоматически · ${warnings} ${pluralRu(warnings, "предупреждение", "предупреждения", "предупреждений")}`
+            : "Проверено автоматически · ошибок нет";
+      }
       summary.innerHTML = `
         <div class="validator-stat"><span>Объекты</span><strong>${workingObjects().length}</strong></div>
         <div class="validator-stat"><span>Критические ошибки</span><strong>${errors}</strong></div>
@@ -13709,8 +13763,8 @@ ${photos}
         missingFields.length ? `${missingFields.length} ${pluralRu(missingFields.length, "замечание", "замечания", "замечаний")} в ${objectsWithIssues} ${pluralRu(objectsWithIssues, "объекте", "объектах", "объектах")}` : "",
         platformErrors.length ? `${platformErrors.length} ${pluralRu(platformErrors.length, "ошибка схемы", "ошибки схемы", "ошибок схемы")}` : ""
       ].filter(Boolean).join(" · ");
-      const detail = `${complexes.length ? `Проекты: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `${findings}. Публикация доступна; проверьте данные перед отправкой на площадку.` : "Замечаний не найдено. Фид готов к публикации."}`;
-      const actions = errors ? `<div class="preflight-actions">${missingFields.length ? '<button type="button" data-preflight-go="apartments">Проверить объявления</button>' : ''}${platformErrors.length ? '<button type="button" data-preflight-go="feeds">Проверить схему</button>' : ''}</div>` : "";
+      const detail = `${complexes.length ? `Проекты: ${complexes.slice(0, 5).map(escapeXml).join(", ")}${complexes.length > 5 ? ` и ещё ${complexes.length - 5}` : ""}. ` : ""}${errors ? `${findings}. Проверка выполнена автоматически — откройте диагностику перед отправкой на площадку.` : "Проверка выполнена автоматически. Замечаний не найдено, фид готов к публикации."}`;
+      const actions = errors ? '<div class="preflight-actions"><button type="button" data-preflight-go="feeds">Открыть диагностику</button></div>' : "";
       target.innerHTML = `<strong>${currentObjects.length.toLocaleString("ru-RU")} ${pluralRu(currentObjects.length, "объект", "объекта", "объектов")} · ${escapeXml(platformProfiles[activePlatform]?.name || activePlatform)}</strong><p>${detail}</p>${actions}`;
     }
 
@@ -14313,10 +14367,6 @@ ${photos}
     document.querySelector("#sidebarToggle").addEventListener("click", event => {
       const expanded = document.querySelector("#appShell").classList.toggle("nav-open");
       event.currentTarget.setAttribute("aria-expanded", String(expanded));
-    });
-    document.querySelector("#runValidatorBtn")?.addEventListener("click", () => {
-      renderFeedValidator();
-      showToast("Проверка фида завершена");
     });
     document.querySelector("#selectVisible").addEventListener("change", event => {
       if (event.target.checked) {

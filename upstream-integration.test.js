@@ -77,6 +77,19 @@ test("cloud project saves serialize revisioned writes and do not duplicate quota
   assert.match(html, /persistenceFailureMessage\(persistence\)/);
 });
 
+test("compact feed error indicator keeps one continuous outline in the top bar", () => {
+  assert.match(html, /body\.client-ui \.topbar-actions > \.feed-error-popover\.minimized \{[\s\S]*?border:1px solid var\(--lf-line-strong\)!important/);
+  assert.match(html, /body\.client-ui \.topbar-actions > \.feed-error-popover\.minimized \.feed-error-head \{[\s\S]*?background:transparent!important/);
+  assert.match(html, /body\.client-ui \.topbar-actions > \.feed-error-popover\.minimized \.feed-error-toggle \{[\s\S]*?border:0!important[\s\S]*?border-radius:0!important/);
+});
+
+test("bulk editing stays available in the right editor without duplicating the main page panel", () => {
+  assert.match(html, /<section class="bulk-panel" id="bulkPanel" data-page="apartments" hidden>/);
+  assert.match(html, /body\.client-ui #bulkPanel \{ display:none!important; \}/);
+  assert.match(html, /if \(checked\.length > 1\) \{[\s\S]*?Редактируется \$\{checked\.length\} выбранных объектов/);
+  assert.match(html, /Измените справа только поля, которые нужно применить ко всем выбранным/);
+});
+
 test("project boot uses bounded requests and cannot wait forever on project APIs", () => {
   const sync = html.match(/    async function syncExternalProjects\([\s\S]*?\n    }\n\n    function projectStateKeys/)[0];
   const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
@@ -127,6 +140,16 @@ test("dense feed controls use position selects and visible direct actions instea
   assert.match(html, /topbarContext\.textContent = titles\[activePage\]/);
   assert.match(html, /topbarContext\.hidden = activePage === "projects"/);
   assert.doesNotMatch(require("node:fs").readFileSync("listingflow-finish.css", "utf8"), /feed-actions-menu > summary::marker/);
+});
+
+test("feed validation is automatic and the release step exposes one diagnostics action", () => {
+  assert.match(html, /Проверка выполняется автоматически после загрузки, изменения и серверного обновления фида/);
+  assert.match(html, /id="validatorAutoStatus" class="validator-auto-status"/);
+  assert.doesNotMatch(html, /id="runValidatorBtn"/);
+  assert.match(html, /id="feedErrorOpenValidator">Открыть диагностику/);
+  assert.match(html, /const actions = errors \? '<div class="preflight-actions"><button type="button" data-preflight-go="feeds">Открыть диагностику<\/button><\/div>'/);
+  assert.doesNotMatch(html, /data-preflight-go="apartments"/);
+  assert.match(html, /renderFeedValidator\(\);[\s\S]*renderFeedErrorPopover\(\);/);
 });
 
 test("project bootstrap has a visible fallback and cannot reload forever", () => {
