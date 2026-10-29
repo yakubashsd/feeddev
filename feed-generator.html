@@ -7876,8 +7876,12 @@
       if (runtimeMode === "external" && currentProject) {
         clearInterval(projectStatePushTimer);
         clearInterval(projectStatePollTimer);
-        projectStatePushTimer = window.setInterval(() => pushExternalProjectState().catch(() => {}), 15000);
-        projectStatePollTimer = window.setInterval(() => pollExternalProjectState().catch(() => {}), 10000);
+        // Changes are saved through the debounced sync below. These timers are
+        // only a safety net for edits made by legacy controls, so keep them
+        // deliberately infrequent to avoid serializing the full project state
+        // while a user is simply working in the cabinet.
+        projectStatePushTimer = window.setInterval(() => pushExternalProjectState().catch(() => {}), 60000);
+        projectStatePollTimer = window.setInterval(() => pollExternalProjectState().catch(() => {}), 30000);
       }
     }
 
@@ -8750,7 +8754,17 @@
       return Object.entries(issueGuides).find(([, guide]) => guide.label.toLowerCase() === normalized)?.[0] || normalized;
     }
 
+    let requiredIssuesCache = new WeakMap();
+    let requiredIssuesCachePlatform = "";
+
     function requiredIssues(item) {
+      if (!item || typeof item !== "object") return [];
+      if (requiredIssuesCachePlatform !== activePlatform) {
+        requiredIssuesCache = new WeakMap();
+        requiredIssuesCachePlatform = activePlatform;
+      }
+      const cached = requiredIssuesCache.get(item);
+      if (cached) return cached;
       const rules = [
         ["externalId", "ID объекта"],
         ["phone", "телефон"],
@@ -8789,7 +8803,9 @@
       }
       const photos = String(item.photos || "").split(/\n+/).filter(Boolean);
       if (!photos.length) missing.push("хотя бы одно фото");
-      return [...new Set(missing)];
+      const result = [...new Set(missing)];
+      requiredIssuesCache.set(item, result);
+      return result;
     }
 
     function issueKeys(item) {

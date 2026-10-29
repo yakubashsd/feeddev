@@ -11,7 +11,7 @@ const path = require("path");
 const crypto = require("crypto");
 const zlib = require("zlib");
 const nodemailer = require("nodemailer");
-const { del, list, put } = require("@vercel/blob");
+const { del, get, list, put } = require("@vercel/blob");
 const { XMLParser, XMLValidator } = require("fast-xml-parser");
 const { PLAN, createSaasStore, isSubscriptionActive, isTrialActive, hasWorkspaceAccess, hasSubscriptionReadAccess, subscriptionGraceUntil, normalizeEmail } = require("./saas-store");
 const { createProjectStateStore } = require("./project-state-store");
@@ -102,6 +102,7 @@ const platega = createPlatega({
 const PLATEGA_CHECKOUT_READY = BILLING_MODE === "platega" && platega.configured() && ONLINE_RECEIPTS_READY;
 const INDEX_CACHE_TTL_MS = 2000;
 const BLOB_INDEX_CACHE_TTL_MS = 5000;
+const BLOB_FEED_INDEX_PATH = "private/feed-records-index.json";
 const staticAssetCache = new Map();
 let feedIndexCache = { value: null, expiresAt: 0 };
 let layoutsIndexCache = { value: null, expiresAt: 0 };
@@ -283,17 +284,46 @@ async function readFeeds() {
   }
   if (feedIndexCache.value && feedIndexCache.expiresAt > now) return feedIndexCache.value;
 
-  const result = await list({ prefix: "feed-records/", limit: 1000 });
-  const records = await Promise.all(result.blobs.map(async blob => {
-    const response = await fetch(blob.url, { cache: "no-store" });
-    return response.ok ? response.json() : null;
-  }));
+  let value = null;
+  try {
+    const manifest = await get(BLOB_FEED_INDEX_PATH, { access: "private", useCache: false });
+    if (manifest?.stream) {
+      const parsed = JSON.parse(await new Response(manifest.stream).text());
+      if (Array.isArray(parsed)) value = parsed;
+    }
+  } catch (error) {
+    if (error?.status !== 404 && error?.code !== "BLOB_NOT_FOUND") {
+      console.warn("Feed manifest unavailable, falling back to record listing:", error.message);
+    }
+  }
 
-  const value = records
-    .filter(Boolean)
-    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  // One-time/backward-compatible migration path for existing Blob records.
+  // New writes maintain the private manifest, so normal reads are one request
+  // instead of one list request plus one fetch per feed.
+  if (!value) {
+    const result = await list({ prefix: "feed-records/", limit: 1000 });
+    const records = await Promise.all(result.blobs.map(async blob => {
+      const response = await fetch(blob.url, { cache: "no-store" });
+      return response.ok ? response.json() : null;
+    }));
+    value = records.filter(Boolean);
+    try { await persistBlobFeedManifest(value); } catch (error) { console.warn("Could not create feed manifest:", error.message); }
+  }
+
+  value = value.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
   feedIndexCache = { value, expiresAt: now + BLOB_INDEX_CACHE_TTL_MS };
   return value;
+}
+
+async function persistBlobFeedManifest(feeds) {
+  if (!usesBlobStorage()) return;
+  await put(BLOB_FEED_INDEX_PATH, JSON.stringify(feeds), {
+    access: "private",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json; charset=utf-8",
+    cacheControlMaxAge: 5
+  });
 }
 
 async function readLayouts() {
@@ -357,6 +387,8 @@ async function persistFeedRecord(record) {
       contentType: "application/json; charset=utf-8",
       cacheControlMaxAge: 60
     });
+    const next = [record, ...(feedIndexCache.value || []).filter(feed => feed.slug !== record.slug)];
+    try { await persistBlobFeedManifest(next); } catch (error) { console.warn("Could not update feed manifest:", error.message); }
     invalidateFeedIndexCache();
   });
   feedRecordWriteQueue = operation.catch(() => {});
@@ -401,6 +433,7 @@ async function deleteFeedRecords({ projectId = "", sourceId = "", sourceUrl = ""
         releases.blobs.forEach(blob => blobPaths.push(blob.url || blob.pathname));
       }
       await Promise.allSettled(blobPaths.filter(Boolean).map(blobPath => del(blobPath)));
+      try { await persistBlobFeedManifest(remaining); } catch (error) { console.warn("Could not update feed manifest after delete:", error.message); }
       invalidateFeedIndexCache();
     }
     return { deleted: matches.length, slugs };
@@ -504,19 +537,29 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
   const serialized = type.includes("json") ? JSON.stringify(body) : body;
   const rawBody = Buffer.isBuffer(serialized) ? serialized : Buffer.from(String(serialized ?? ""));
   const acceptsGzip = /gzip/i.test(String(res.req?.headers?.["accept-encoding"] || ""));
-  const compressedBody = acceptsGzip && rawBody.length > 1024 ? zlib.gzipSync(rawBody, { level: 6 }) : rawBody;
-  const headers = {
-    "Content-Type": type,
-    "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, If-Match",
-    Vary: "Accept-Encoding",
-    "Content-Length": String(compressedBody.length)
+  const write = (payload, compressed = false) => {
+    const headers = {
+      "Content-Type": type,
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, If-Match",
+      Vary: "Accept-Encoding",
+      "Content-Length": String(payload.length)
+    };
+    if (compressed) headers["Content-Encoding"] = "gzip";
+    res.writeHead(status, headers);
+    res.end(payload);
   };
-  if (compressedBody !== rawBody) headers["Content-Encoding"] = "gzip";
-  res.writeHead(status, headers);
-  res.end(compressedBody);
+  if (acceptsGzip && rawBody.length > 1024) {
+    // Compression must not block the event loop while a large project state or
+    // feed diagnostic response is being returned.
+    return zlib.gzip(rawBody, { level: 6 }, (error, compressedBody) => {
+      if (error) return write(rawBody);
+      write(compressedBody, true);
+    });
+  }
+  write(rawBody);
 }
 
 function sendError(res, status, message) {
@@ -935,6 +978,7 @@ let feedSyncRunning = false;
 const FEED_SYNC_CONCURRENCY = Math.max(1, Math.min(4, Number(process.env.FEED_SYNC_CONCURRENCY || 3) || 3));
 
 async function syncPublishedFeed(record) {
+  const startedAt = Date.now();
   const configuredSources = Array.isArray(record.sourceFeeds) && record.sourceFeeds.length
     ? record.sourceFeeds.filter(source => source.sourceType === "url" && source.url && normalizeAutoSyncInterval(source.autoSyncIntervalMinutes || record.autoSyncIntervalMinutes))
     : record.sourceUrl && record.sourceType === "url"
@@ -942,16 +986,21 @@ async function syncPublishedFeed(record) {
       : [];
   if (!configuredSources.length) return;
   const downloadedSources = await Promise.all(configuredSources.map(async source => ({ source, xml: await safeDownload(source.url) })));
-  const filePath = path.join(FEEDS_DIR, `${record.slug}.xml`);
-  if (!fs.existsSync(filePath)) throw new Error("Опубликованный XML не найден");
-  const publishedXml = fs.readFileSync(filePath, "utf8");
+  const downloadedAt = Date.now();
+  const publishedXml = await readPublishedFeedXml(record);
+  const sourceRecords = downloadedSources.map(({ xml }) => feedRecords(xml));
+  const publishedRecords = feedRecords(publishedXml);
+  const parsedAt = Date.now();
   const managedIds = configuredSources.flatMap(source => Array.isArray(source.objectIds) ? source.objectIds : []);
-  const policyExcludedIds = downloadedSources.flatMap(({ source, xml }) => trafficPolicyExcludedIds(feedRecords(xml), { mode: source.trafficPolicy, selections: source.trafficSelections }));
+  const policyExcludedIds = downloadedSources.flatMap(({ source }, index) => trafficPolicyExcludedIds(sourceRecords[index], { mode: source.trafficPolicy, selections: source.trafficSelections }));
   const excludedIds = [...new Set(configuredSources.flatMap(source => Array.isArray(source.excludedObjectIds) ? source.excludedObjectIds : []).concat(policyExcludedIds))];
   const result = synchronizeFeed(publishedXml, downloadedSources.map(item => item.xml), {
     ...(managedIds.length ? { managedIds } : {}),
-    excludedIds
+    excludedIds,
+    sourceRecords,
+    publishedRecords
   });
+  const synchronizedAt = Date.now();
   if (!result.sourceCount) throw new Error("В источнике не найдены объявления с ценой");
   if (result.invalidSourceRecords) throw new Error(`В источнике есть объявления без ID или цены: ${result.invalidSourceRecords}`);
   if (result.publishedDuplicateIds.length) throw new Error(`В опубликованном фиде повторяются ID: ${result.publishedDuplicateIds.slice(0, 5).join(", ")}`);
@@ -985,9 +1034,8 @@ async function syncPublishedFeed(record) {
       history.unshift({ id, version: Math.max(0, ...history.map(item => Number(item.version) || 0)) + 1, createdAt: new Date().toISOString(), objectCount: result.outputCount, platform: record.platform, checksum: nextChecksum });
     }
     record.releases = history.slice(0, 100);
-    const tempPath = `${filePath}.${process.pid}.tmp`;
-    fs.writeFileSync(tempPath, result.xml, { mode: 0o600 });
-    fs.renameSync(tempPath, filePath);
+    const storedFeed = await persistFeedXml(record.slug, result.xml);
+    if (storedFeed?.url) record.blobUrl = storedFeed.url;
     const publicationHistory = Array.isArray(record.history) ? record.history : [];
     const publicationVersion = Math.max(Number(record.publicationVersion) || 0, ...publicationHistory.map(item => Number(item.version) || 0)) + 1;
     record.history = [{
@@ -1005,8 +1053,8 @@ async function syncPublishedFeed(record) {
   const now = new Date();
   record.objectCount = result.outputCount;
   record.sourceFeeds = (record.sourceFeeds || []).map(source => {
-    const downloaded = downloadedSources.find(item => item.source.id === source.id && item.source.url === source.url);
-    return downloaded ? { ...source, objectIds: feedRecords(downloaded.xml).map(item => item.id).filter(Boolean) } : source;
+    const index = downloadedSources.findIndex(item => item.source.id === source.id && item.source.url === source.url);
+    return index >= 0 ? { ...source, objectIds: sourceRecords[index].map(item => item.id).filter(Boolean) } : source;
   });
   record.lastAutoSyncAt = now.toISOString();
   record.nextAutoSyncAt = new Date(now.getTime() + record.autoSyncIntervalMinutes * 60 * 1000).toISOString();
@@ -1027,7 +1075,14 @@ async function syncPublishedFeed(record) {
     previousCount: transition.previousCount,
     currentCount: transition.currentCount,
     attemptedAt: now.toISOString(),
-    summary: result
+    summary: {
+      ...result,
+      timings: {
+        downloadMs: Math.max(0, downloadedAt - startedAt),
+        parseMs: Math.max(0, parsedAt - downloadedAt),
+        synchronizeMs: Math.max(0, synchronizedAt - parsedAt)
+      }
+    }
   });
   record.lastSyncErrorNotification = "";
   record.telegramSyncNotificationError = "";
@@ -1036,11 +1091,14 @@ async function syncPublishedFeed(record) {
   if (APP_MODE === "external" && record.ownerId && (result.updated || result.added || result.removed)) {
     await saasStore.recordFeedHistory(record.ownerId, record.sourceId || record.slug, "sync", { projectId: record.projectId, feedName: record.name, platform: record.platform, updated: result.updated, added: result.added, removed: result.removed, objectCount: result.outputCount }).catch(error => console.error("Feed history:", error.message));
   }
-  console.log(`Feed sync: ${record.slug}, prices: ${result.updated}/${result.checked}, objects: +${result.added}/-${result.removed}`);
+  console.log(`Feed sync: ${record.slug}, prices: ${result.updated}/${result.checked}, objects: +${result.added}/-${result.removed}, timings: download=${Math.max(0, downloadedAt - startedAt)}ms parse=${Math.max(0, parsedAt - downloadedAt)}ms sync=${Math.max(0, synchronizedAt - parsedAt)}ms total=${Date.now() - startedAt}ms`);
 }
 
 async function runScheduledFeedSync() {
-  if (feedSyncRunning || usesBlobStorage()) return;
+  // Blob-backed deployments on a long-running host use the same scheduler as
+  // local storage. Serverless runtimes must provide an external cron/worker
+  // because this process is not kept alive between requests.
+  if (feedSyncRunning || process.env.VERCEL) return;
   feedSyncRunning = true;
   try {
     const now = Date.now();
@@ -1305,7 +1363,7 @@ async function handleApi(req, res, url) {
       mode: APP_MODE,
       storage: usesBlobStorage() ? "vercel-blob" : "local",
       feedPublishingReady: usesBlobStorage() || !process.env.VERCEL,
-      backgroundSyncReady: Boolean(APP_MODE === "external" && !usesBlobStorage() && canUseLocalStorage()),
+      backgroundSyncReady: Boolean(APP_MODE === "external" && !process.env.VERCEL && (usesBlobStorage() || canUseLocalStorage())),
       backgroundSyncIntervalMinutes: 1,
       telegramAlertsReady: telegramAlertsEnabled(),
       emailAlertsReady: emailAlertsEnabled(),
@@ -1658,13 +1716,16 @@ async function handleApi(req, res, url) {
     if (!await saasStore.hasProject(actor.userId, projectStateMatch[1])) return sendError(res, 403, "Проект недоступен.");
     if (req.method === "GET") {
       if (!hasSubscriptionReadAccess(actor.user)) return sendError(res, 402, "Льготный период закончился. Продлите тариф, чтобы открыть проекты.");
-      const result = await projectStateStore.get(actor.userId, projectStateMatch[1]);
-      const etag = `"${result.revision}"`;
+      const revision = await projectStateStore.getRevision(actor.userId, projectStateMatch[1]);
+      const etag = `"${revision.revision}"`;
       if (req.headers["if-none-match"] === etag) {
         res.writeHead(304, { ETag: etag, "Cache-Control": "no-store" });
         return res.end();
       }
-      res.setHeader("ETag", etag);
+      const result = await projectStateStore.get(actor.userId, projectStateMatch[1]);
+      // The encrypted snapshot is the source of truth for the response. The
+      // sidecar only lets unchanged polls avoid decrypting it.
+      res.setHeader("ETag", `"${result.revision}"`);
       return send(res, 200, result);
     }
     if (!await saasStore.ownsProject(actor.userId, projectStateMatch[1])) return sendError(res, 409, "Архивный проект доступен только для просмотра.");

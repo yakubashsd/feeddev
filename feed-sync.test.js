@@ -35,6 +35,20 @@ test("synchronizes source prices and object membership without replacing user ed
   assert.match(result.xml, /<ExternalId>manual-copy<\/ExternalId>/);
 });
 
+test("reuses pre-parsed source records during scheduled synchronization", () => {
+  const source = `<feed><object><ExternalId>42</ExternalId><Description>Source</Description><Address>A</Address><BargainTerms><Price>9100000</Price></BargainTerms></object></feed>`;
+  const published = `<feed><object><ExternalId>42</ExternalId><Description>Edited</Description><Address>A</Address><BargainTerms><Price>8900000</Price></BargainTerms></object></feed>`;
+  const { records } = require("./feed-sync");
+  const result = require("./feed-sync").synchronizeFeed(published, [source], {
+    sourceRecords: [records(source)],
+    publishedRecords: records(published),
+    managedIds: ["42"]
+  });
+  assert.equal(result.updated, 1);
+  assert.equal(result.outputCount, 1);
+  assert.match(result.xml, /<Description>Edited<\/Description>[\s\S]*?<Price>9100000<\/Price>/);
+});
+
 test("excluded source objects stay excluded and additions work for Avito", () => {
   const source = `<Ads><Ad><Id>one</Id><Description>One</Description><Address>A</Address><Price>10</Price></Ad><Ad><Id>two</Id><Description>Two</Description><Address>B</Address><Price>20</Price></Ad></Ads>`;
   const published = `<Ads><Ad><Id>one</Id><Description>Edited one</Description><Address>A</Address><Price>9</Price></Ad></Ads>`;

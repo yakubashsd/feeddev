@@ -55,7 +55,9 @@
     try{await telegramRequest('DELETE');tgLink.hidden=true;await telegramRefresh();}catch(error){tgStatus.textContent=error.message;}
   });
   feedsNav.addEventListener('click',telegramRefresh);
-  setInterval(()=>{if(activePage==='feeds'&&!document.hidden)telegramRefresh();},5000);
+  // Telegram connection state changes infrequently; avoid a request every
+  // five seconds while keeping the status fresh in the active feed section.
+  setInterval(()=>{if(activePage==='feeds'&&!document.hidden)telegramRefresh();},30000);
   async function request(method='GET',body){
     const response=await fetch(endpoint(),{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
     const result=await response.json();if(!response.ok)throw Error(result.error||`HTTP ${response.status}`);return result;
@@ -88,5 +90,5 @@
   feedsNav.addEventListener('click',refresh);
   window.addEventListener('listingflow:workspace-ready',()=>refresh());
   monitorPanel.querySelector('.panel-caption')?.replaceChildren(document.createTextNode('Добавьте постоянные ссылки: сервис проверяет XML, состав фида и доступность изображений по расписанию, а о новых ошибках отправляет уведомление.'));
-  setInterval(()=>{if(activePage==='feeds')refresh();},30000);
+  setInterval(()=>{if(activePage==='feeds'&&!document.hidden)refresh();},60000);
 })();

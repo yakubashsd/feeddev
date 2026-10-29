@@ -14,6 +14,7 @@ function createProjectStateStore({ dataDir, secret }) {
     if (!/^[a-f0-9-]{20,}$/i.test(userId) || !/^[a-f0-9-]{20,}$/i.test(projectId)) throw new Error("Некорректный идентификатор проекта.");
     return path.join(root, `${userId}-${projectId}.enc`);
   }
+  function revisionFile(target) { return `${target}.meta`; }
 
   function stamp(target) {
     try {
@@ -54,6 +55,16 @@ function createProjectStateStore({ dataDir, secret }) {
     if (!record) return { state: null, updatedAt: null, revision: 0 };
     return { state: record.state || {}, updatedAt: record.updatedAt || null, revision: Number(record.revision || 1) };
   }
+  async function getRevision(userId, projectId) {
+    const target = file(userId, projectId);
+    try {
+      const meta = JSON.parse(fs.readFileSync(revisionFile(target), "utf8"));
+      return { revision: Number(meta.revision || 0), updatedAt: meta.updatedAt || null };
+    } catch {
+      const record = readRecord(target);
+      return { revision: Number(record?.revision || 0), updatedAt: record?.updatedAt || null };
+    }
+  }
   function put(userId, projectId, state, expectedRevision) {
     if (!state || typeof state !== "object" || Array.isArray(state)) throw new Error("Некорректное состояние проекта.");
     const target = file(userId, projectId);
@@ -69,6 +80,13 @@ function createProjectStateStore({ dataDir, secret }) {
         throw conflict;
       }
       const record = { version: 2, revision: currentRevision + 1, userId, projectId, state, updatedAt: new Date().toISOString() };
+      const metaTarget = revisionFile(target);
+      const metaTemp = `${metaTarget}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+      fs.writeFileSync(metaTemp, `${JSON.stringify({ revision: record.revision, updatedAt: record.updatedAt })}\n`, { mode: 0o600 });
+      fs.renameSync(metaTemp, metaTarget);
+      // Publish the revision marker first. If the process crashes between the
+      // two renames, a client may retry against the older encrypted snapshot,
+      // but it will never receive a false 304 for newer state.
       const temp = `${target}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
       fs.writeFileSync(temp, `${encrypt(record)}\n`, { mode: 0o600 });
       fs.renameSync(temp, target);
@@ -82,10 +100,11 @@ function createProjectStateStore({ dataDir, secret }) {
     const target = file(userId, projectId);
     if (!fs.existsSync(target)) return false;
     fs.unlinkSync(target);
+    try { fs.unlinkSync(revisionFile(target)); } catch {}
     cache.delete(target);
     return true;
   }
-  return { get, put, remove };
+  return { get, getRevision, put, remove };
 }
 
 module.exports = { createProjectStateStore };

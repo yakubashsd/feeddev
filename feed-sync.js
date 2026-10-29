@@ -130,9 +130,16 @@ function insertBeforeRootClose(xml, blocks, tag) {
  * authoritative for prices and for the set of source-managed objects.
  */
 function synchronizeFeed(publishedXml, sourceXmls, options = {}) {
-  const sources = (Array.isArray(sourceXmls) ? sourceXmls : [sourceXmls]).map(records);
+  // Scheduled syncs may already have parsed each source for traffic policies.
+  // Reuse those records instead of running the regex parser again for every
+  // source. Keep the string-based API for existing callers and tests.
+  const sources = Array.isArray(options.sourceRecords)
+    ? options.sourceRecords.map(items => Array.isArray(items) ? items : records(items))
+    : (Array.isArray(sourceXmls) ? sourceXmls : [sourceXmls]).map(records);
   const sourceRecords = sources.flat();
-  const publishedRecords = records(publishedXml);
+  const publishedRecords = Array.isArray(options.publishedRecords)
+    ? options.publishedRecords
+    : records(publishedXml);
   const sourceById = new Map(sourceRecords.filter(item => item.id).map(item => [item.id, item]));
   const publishedById = new Map(publishedRecords.filter(item => item.id).map(item => [item.id, item]));
   const excludedIds = new Set((options.excludedIds || []).map(normalizeId).filter(Boolean));
