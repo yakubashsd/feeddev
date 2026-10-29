@@ -5876,6 +5876,11 @@
       text-decoration:none!important;
     }
     body.client-ui .project-list-mode .project-row td { vertical-align:middle!important; }
+    body.client-ui .project-list-mode .project-row[data-open-project] { cursor:pointer; }
+    body.client-ui .project-list-mode .project-row[data-open-project]:focus-visible {
+      outline:2px solid var(--lf-blue)!important;
+      outline-offset:-2px!important;
+    }
     @media (min-width:761px) {
       body.client-ui .project-list-mode .project-actions-cell {
         width:176px!important;
@@ -9328,7 +9333,7 @@
         const actionMenu = status === "archived"
           ? `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><button type="button" data-restore-project="${escapeXml(project.id)}">Восстановить проект</button></div></details>`
           : `<details class="project-row-menu"><summary aria-label="Действия с проектом ${escapeXml(project.name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></summary><div class="project-row-menu-items"><button type="button" data-rename-project="${escapeXml(project.id)}">Переименовать</button><button type="button" data-delete-project="${escapeXml(project.id)}">Переместить в архив</button></div></details>`;
-        return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}">
+        return `<tr class="project-row ${status === "archived" ? "is-archived" : ""}" data-open-project="${projectUrl}" tabindex="0" aria-label="Открыть проект ${escapeXml(project.name)}">
           <td class="project-select-cell"><input type="checkbox" data-project-select="${escapeXml(project.id)}" aria-label="Выбрать проект ${escapeXml(project.name)}" ${selectedProjectIds.has(project.id) ? "checked" : ""}></td>
           <td data-label="Проект"><a class="project-name-link" href="${projectUrl}"><strong>${escapeXml(project.name)}</strong><small>ID ${escapeXml(projectIdShort)}</small></a></td>
           <td data-label="Фиды"><a class="project-cell-link" href="${projectUrl}" aria-label="Открыть проект ${escapeXml(project.name)}"><span class="project-platform"><span><strong>${feedCount} ${pluralRu(feedCount, "фид", "фида", "фидов")}</strong><small>${feedCount ? escapeXml(platform) : "Фиды ещё не добавлены"}</small></span></span></a></td>
@@ -9453,7 +9458,9 @@
       const projectNavLabel = document.querySelector("#projectNavLabel");
       if (projectNavLabel) projectNavLabel.hidden = !currentProject;
       document.querySelector("#projectControlLabel").hidden = !currentProject;
-      document.querySelector("#projectsNav").classList.toggle("active", activePage === "projects");
+      const projectsNav = document.querySelector("#projectsNav");
+      projectsNav.hidden = Boolean(currentProject);
+      projectsNav.classList.toggle("active", activePage === "projects");
       document.querySelector("#projectsNav").removeAttribute("aria-current");
       if (activePage === "projects") document.querySelector("#projectsNav").setAttribute("aria-current", "page");
       if (activeStepIndex >= 0) workflow.classList.add("expanded");
@@ -10043,7 +10050,7 @@
         return;
       }
       const card = event.target.closest("[data-open-project]");
-      if (card && !event.target.closest("a, button")) location.href = card.dataset.openProject;
+      if (card && !event.target.closest("a, button, input, select, textarea, label")) location.href = card.dataset.openProject;
     });
     function positionProjectRowMenu(details) {
       if (!(details instanceof HTMLDetailsElement)) return;

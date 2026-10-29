@@ -122,6 +122,13 @@ test("project bootstrap has a visible fallback and cannot reload forever", () =>
   assert.doesNotMatch(init, /\n            location\.reload\(\);/);
 });
 
+test("project rows open the project workspace and hide the global projects nav in context", () => {
+  assert.match(html, /<tr class=\"project-row[^>]*data-open-project=\"\$\{projectUrl\}\"[^>]*tabindex=\"0\"/);
+  assert.match(html, /event\.target\.closest\("a, button, input, select, textarea, label"\)/);
+  const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];
+  assert.match(renderPage, /projectsNav\.hidden = Boolean\(currentProject\)/);
+});
+
 test("account notification preferences are shared while project data stays scoped", () => {
   assert.match(html, /const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1";/);
   assert.doesNotMatch(html, /const monitorNotificationsStorageKey = "feed-generator-monitor-notifications-v1" \+ projectSuffix/);
