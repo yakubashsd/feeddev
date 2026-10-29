@@ -8066,11 +8066,13 @@
     // list in the in-memory snapshot as well, so a QuotaExceededError cannot
     // silently omit it from the next server save.
     let pendingProjectStateOverrides = {};
+    let cloudSaveFlight = null;
+    let cloudSaveQueued = false;
 
-    async function pushExternalProjectState(overrides = {}) {
+    async function pushExternalProjectStateRequest() {
       if (runtimeMode !== "external" || !currentProject || !(sessionState?.subscriptionActive || sessionState?.trialActive)) return;
       if (cloudSaveConflict) return;
-      const requestedOverrides = { ...pendingProjectStateOverrides, ...overrides };
+      const requestedOverrides = { ...pendingProjectStateOverrides };
       const state = captureProjectBrowserState(requestedOverrides);
       if (!Object.keys(state).length) return;
       const snapshot = JSON.stringify(state);
@@ -8108,12 +8110,16 @@
         }
         cloudSaveRevision = Number(result.current?.revision || 0);
         cloudSavedSnapshot = JSON.stringify(remoteState);
-        showToast("Проект изменён в другой вкладке. Текущие данные сохранены локально; обновите страницу, когда будете готовы загрузить серверную версию.");
-        return;
+        const conflict = new Error("Проект изменён в другой вкладке. Обновите страницу и повторите сохранение.");
+        conflict.code = "REVISION_CONFLICT";
+        conflict.status = 409;
+        throw conflict;
       }
       if (!response.ok) {
         if (indicator) indicator.textContent = response.status === 402 ? "Тариф истёк — доступен просмотр и оплата" : "Не удалось сохранить — повторим автоматически";
-        throw new Error(result.error || `HTTP ${response.status}`);
+        const error = new Error(result.error || `Не удалось сохранить проект (HTTP ${response.status})`);
+        error.status = response.status;
+        throw error;
       }
       cloudSaveRevision = Number(result.revision || cloudSaveRevision);
       cloudSavedSnapshot = snapshot;
@@ -8121,6 +8127,30 @@
         if (pendingProjectStateOverrides[key] === value) delete pendingProjectStateOverrides[key];
       }
       if (indicator) indicator.textContent = `Сохранено в облаке в ${new Date(result.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+    }
+
+    // Every cloud write carries the current revision. Keep the writes in one
+    // flight so a quota fallback, a debounced save and a manual save cannot
+    // send the same If-Match value concurrently and create a false 409.
+    function pushExternalProjectState(overrides = {}) {
+      Object.assign(pendingProjectStateOverrides, overrides);
+      clearTimeout(projectStateSyncTimer);
+      projectStateSyncTimer = 0;
+      if (cloudSaveFlight) {
+        cloudSaveQueued = true;
+        return cloudSaveFlight;
+      }
+      cloudSaveFlight = (async () => {
+        do {
+          cloudSaveQueued = false;
+          await pushExternalProjectStateRequest();
+        } while (cloudSaveQueued && !cloudSaveConflict);
+      })();
+      cloudSaveFlight.then(
+        () => { cloudSaveFlight = null; cloudSaveQueued = false; },
+        () => { cloudSaveFlight = null; cloudSaveQueued = false; }
+      );
+      return cloudSaveFlight;
     }
 
     let projectStateSyncTimer = 0;
@@ -8500,16 +8530,15 @@
       // localStorage is only a best-effort browser cache and may be full after
       // several large XML feeds or branding images have been loaded.
       const serializedSources = JSON.stringify(projectSources);
-      const savedLocally = safeStorageSet(storageKey, serialized);
-      const savedSourcesLocally = safeStorageSet(projectSourcesStorageKey, serializedSources);
+      safeStorageSet(storageKey, serialized);
+      safeStorageSet(projectSourcesStorageKey, serializedSources);
       const stateOverrides = {
         ...cloudOverrides,
         [storageKey]: serialized,
         [projectSourcesStorageKey]: serializedSources
       };
-      if ((!savedLocally || !savedSourcesLocally) && runtimeMode === "external" && currentProject) {
-        pushExternalProjectState(stateOverrides).catch(() => {});
-      }
+      // Keep quota handling in the same debounced queue as regular saves. A
+      // direct fallback here used to race the immediate save after an import.
       scheduleProjectStateSync(stateOverrides);
     }
 
@@ -12999,6 +13028,14 @@ ${photos}
       showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
     }
 
+    function persistenceFailureMessage(persistence) {
+      const error = persistence?.error;
+      if (error?.code === "REVISION_CONFLICT" || error?.status === 409) return "Проект изменён в другой вкладке. Обновите страницу и повторите сохранение.";
+      if (error?.status === 402) return error.message || "Срок доступа закончился. Продлите тариф, чтобы сохранить фид.";
+      if (error?.status === 413) return error.message || "Состояние проекта слишком большое. Уменьшите изображения и повторите сохранение.";
+      return error?.message || "Не удалось подтвердить сохранение на сервере. Проверьте соединение и повторите попытку.";
+    }
+
     function currentIssueCount() {
       return workingObjects().reduce((sum, item) => sum + requiredIssues(item).length, 0);
     }
@@ -13331,12 +13368,12 @@ ${photos}
         const brandingNote = brandingResult.decision === "edit" ? " Открыт редактор шаблона." : brandingResult.decision === "later" ? " Шаблон для новых объектов отложен." : brandingResult.applied ? ` Шаблон применён: ${brandingResult.applied}.` : "";
         const published = didPublish ? " Постоянная ссылка обновлена." : autoPublish ? " Публикация не обновлена — проверьте ошибки." : "";
         const persistenceNote = persistence.cloud
-          ? persistence.saved ? ` Сохранено в проекте «${currentProject?.name || "текущий проект"}».` : " Данные изменены в другой вкладке: обновите страницу перед продолжением."
+          ? persistence.saved ? ` Сохранено в проекте «${currentProject?.name || "текущий проект"}».` : ` ${persistenceFailureMessage(persistence)}`
           : "";
         setLoadStatus(`Источник синхронизирован. Определено: ${platformProfiles[activePlatform].name}. Получено квартир: ${parsed.objects.length}.${correction}${brandingNote}${published}${persistenceNote}`, persistence.saved ? "ok" : "bad");
         showToast(persistence.saved
           ? didPublish ? `Источник и опубликованный фид сохранены: ${parsed.objects.length} квартир` : `Фид сохранён в проекте «${currentProject?.name || "текущий проект"}»`
-          : "Фид загружен, но не подтверждён в облаке. Проверьте соединение и повторите сохранение.");
+          : `Фид загружен, но не сохранён в облаке. ${persistenceFailureMessage(persistence)}`);
       } catch (error) {
         if (existingSource) {
           existingSource.error = error.message;
@@ -14434,10 +14471,10 @@ ${photos}
         const brandingResult = await handleNewObjectBranding(newObjectIds);
         const brandingNote = brandingResult.decision === "edit" ? " Открыт редактор шаблона." : brandingResult.decision === "later" ? " Шаблон для новых объектов отложен." : brandingResult.applied ? ` Шаблон применён: ${brandingResult.applied}.` : "";
         const persistenceNote = persistence.cloud
-          ? persistence.saved ? ` Сохранено в проекте «${currentProject?.name || "текущий проект"}».` : " Данные изменены в другой вкладке: обновите страницу перед продолжением."
+          ? persistence.saved ? ` Сохранено в проекте «${currentProject?.name || "текущий проект"}».` : ` ${persistenceFailureMessage(persistence)}`
           : "";
         setLoadStatus(`Файл загружен: ${file.name}. Получено квартир: ${next.length}.${brandingNote}${persistenceNote}`, persistence.saved ? "ok" : "bad");
-        showToast(persistence.saved ? `Фид сохранён в проекте «${currentProject?.name || "текущий проект"}»` : "Файл загружен, но не подтверждён в облаке. Проверьте соединение и повторите сохранение.");
+        showToast(persistence.saved ? `Фид сохранён в проекте «${currentProject?.name || "текущий проект"}»` : `Файл загружен, но не сохранён в облаке. ${persistenceFailureMessage(persistence)}`);
       } catch (error) {
         setLoadStatus(`Не удалось загрузить «${file.name}»: ${error.message || "проверьте формат и содержимое файла"}. Выберите корректный XML, JSON или CSV и попробуйте снова.`, "bad");
       } finally {

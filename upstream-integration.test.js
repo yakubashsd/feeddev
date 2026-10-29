@@ -24,13 +24,13 @@ test("client scripts remain syntactically valid after integrating both branches"
 
 test("external clients always hydrate the server project state without a local-version prompt", () => {
   const hydrate = html.match(/    async function hydrateExternalProjectState\([\s\S]*?\n    }\n\n    async function renderBillingPayments/)[0];
-  const push = html.match(/    async function pushExternalProjectState\([\s\S]*?\n    }\n\n    let projectStateSyncTimer/)[0];
+  const push = html.match(/    function pushExternalProjectState\([\s\S]*?\n    }\n\n    let projectStateSyncTimer/)[0];
   assert.doesNotMatch(hydrate, /confirm\(/);
   assert.doesNotMatch(hydrate, /pushExternalProjectState\(/);
   assert.match(hydrate, /for \(const key of projectStateKeys\(\)\) localStorage\.removeItem\(key\)/);
   assert.doesNotMatch(push, /const useLocal = confirm/);
   assert.doesNotMatch(push, /location\.reload\(\)/);
-  assert.match(push, /обновите данные вручную/);
+  assert.match(html, /обновите данные вручную/);
 });
 
 test("a direct project URL can hydrate on a fresh browser without a local project index", () => {
@@ -62,7 +62,19 @@ test("project feeds are confirmed in cloud and refreshed when a background tab r
   assert.match(persist, /await pushExternalProjectState\(\)/);
   assert.match(persist, /cloudSavedSnapshot === JSON\.stringify\(captureProjectBrowserState\(\)\)/);
   assert.match(html, /Фид сохранён в проекте «\$\{currentProject\?\.name/);
-  assert.match(html, /не подтверждён в облаке/);
+  assert.match(html, /не сохранён в облаке/);
+});
+
+test("cloud project saves serialize revisioned writes and do not duplicate quota fallbacks", () => {
+  const push = html.match(/    function pushExternalProjectState\([\s\S]*?\n    }\n\n    let projectStateSyncTimer/)[0];
+  const save = html.match(/    function save\([\s\S]*?\n    }\n\n    function refreshProjectMemoryFromStorage/)[0];
+  assert.match(html, /let cloudSaveFlight = null/);
+  assert.match(html, /let cloudSaveQueued = false/);
+  assert.match(push, /if \(cloudSaveFlight\)/);
+  assert.match(push, /await pushExternalProjectStateRequest\(\)/);
+  assert.match(push, /while \(cloudSaveQueued && !cloudSaveConflict\)/);
+  assert.doesNotMatch(save, /pushExternalProjectState\(stateOverrides\)/);
+  assert.match(html, /persistenceFailureMessage\(persistence\)/);
 });
 
 test("project boot uses bounded requests and cannot wait forever on project APIs", () => {
