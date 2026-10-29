@@ -9332,7 +9332,7 @@
         published: ["Опубликовано", "success"], processing: ["Есть черновики", "info"], warning: ["Нужна проверка", "warning"], error: ["Сбой синхронизации", "error"], new: ["Не настроено", "neutral"], archived: ["В архиве", "neutral"]
       };
       document.querySelector("#projectList").innerHTML = pageEntries.map(({ project, platform, platformKey, feedCount, publishedFeedCount, draftFeedCount, errorTotal, errorFeedNames, syncErrorTotal, syncErrorFeedNames, objectCount, status, updated }) => {
-        const projectUrl = `/?project=${encodeURIComponent(project.id)}`;
+        const projectUrl = `/?project=${encodeURIComponent(project.id)}&page=overview`;
         const [statusLabel, statusTone] = statusMeta[status];
         const errorNamesLabel = errorFeedNames?.length ? errorFeedNames.join(", ") : "Фид проекта";
         const publicationStatus = status === "published" ? `Опубликовано ${publishedFeedCount} из ${feedCount}` : status === "processing" ? `Черновики: ${draftFeedCount}` : status === "error" ? `Сбой синхронизации${syncErrorTotal ? `: ${syncErrorTotal} ${pluralRu(syncErrorTotal, "фид", "фида", "фидов")}` : ""}` : status === "warning" && errorTotal ? `${errorTotal} ${pluralRu(errorTotal, "замечание", "замечания", "замечаний")}` : statusLabel;
@@ -10043,11 +10043,11 @@
     });
     document.querySelector("#projectSwitcherSelect").addEventListener("change", event => {
       const projectId = event.target.value;
-      location.href = projectId ? `/?project=${encodeURIComponent(projectId)}` : "/";
+      location.href = projectId ? `/?project=${encodeURIComponent(projectId)}&page=overview` : "/";
     });
     document.querySelector("#sidebarProjectSwitcher").addEventListener("change", event => {
       const projectId = event.target.value;
-      location.href = projectId ? `/?project=${encodeURIComponent(projectId)}` : "/";
+      location.href = projectId ? `/?project=${encodeURIComponent(projectId)}&page=overview` : "/";
     });
     document.querySelector("#notificationsButton").addEventListener("click", () => showToast("Новых уведомлений пока нет"));
     document.querySelector("#projectList").addEventListener("click", event => {
@@ -10150,7 +10150,7 @@
       projects.push(project);
       try {
         persistProjectIndex();
-        location.href = "?project=" + encodeURIComponent(project.id);
+        location.href = "?project=" + encodeURIComponent(project.id) + "&page=overview";
       } catch {
         projects.pop();
         showToast("Не удалось сохранить проект: хранилище браузера заполнено.");
