@@ -8117,43 +8117,127 @@
     let cloudSaveFlight = null;
     let cloudSaveQueued = false;
 
+    function projectStateSnapshotsEqual(left, right) {
+      return JSON.stringify(left || {}) === JSON.stringify(right || {});
+    }
+
+    function clearSavedProjectOverrides(overrides) {
+      for (const [key, value] of Object.entries(overrides || {})) {
+        if (pendingProjectStateOverrides[key] === value) delete pendingProjectStateOverrides[key];
+      }
+    }
+
+    function markCloudProjectStateSaved(snapshot, result = {}) {
+      cloudSaveRevision = Number(result.revision || cloudSaveRevision);
+      cloudSavedSnapshot = snapshot;
+      return { revision: cloudSaveRevision, updatedAt: result.updatedAt || null };
+    }
+
+    async function reconcileExternalProjectState(snapshot, requestedOverrides) {
+      const response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
+        credentials: "same-origin",
+        cache: "no-store"
+      }, 10000);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !projectStateSnapshotsEqual(result.state, captureProjectBrowserState(requestedOverrides))) return false;
+      markCloudProjectStateSaved(snapshot, result);
+      clearSavedProjectOverrides(requestedOverrides);
+      const indicator = document.querySelector("#cloudSaveStatus");
+      if (indicator) indicator.textContent = `Сохранено в облаке в ${new Date(result.updatedAt || Date.now()).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+      return true;
+    }
+
     async function pushExternalProjectStateRequest() {
-      if (runtimeMode !== "external" || !currentProject || !clientHasWorkspaceAccess()) return;
-      if (cloudSaveConflict) return;
+      if (runtimeMode !== "external") return;
+      if (!currentProject) {
+        const error = new Error("Проект ещё не загружен с сервера.");
+        error.code = "PROJECT_NOT_READY";
+        throw error;
+      }
+      if (cloudSaveConflict) {
+        const error = new Error("Проект изменён в другой вкладке. Обновите страницу и повторите сохранение.");
+        error.code = "REVISION_CONFLICT";
+        error.status = 409;
+        throw error;
+      }
       const requestedOverrides = { ...pendingProjectStateOverrides };
       const state = captureProjectBrowserState(requestedOverrides);
-      if (!Object.keys(state).length) return;
+      if (!Object.keys(state).length) {
+        const error = new Error("Нет данных проекта для сохранения.");
+        error.code = "STATE_NOT_READY";
+        throw error;
+      }
       const snapshot = JSON.stringify(state);
       if (snapshot === cloudSavedSnapshot) {
-        for (const [key, value] of Object.entries(requestedOverrides)) {
-          if (pendingProjectStateOverrides[key] === value) delete pendingProjectStateOverrides[key];
-        }
+        clearSavedProjectOverrides(requestedOverrides);
         return;
       }
       const indicator = document.querySelector("#cloudSaveStatus");
       if (indicator) indicator.textContent = "Сохраняю в облако…";
       let response;
-      try {
-        response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
-          // Project snapshots can contain thousands of feed objects and
-          // several branding assets. `keepalive` is intentionally omitted:
-          // browsers impose a small payload quota on keepalive requests and
-          // reject larger saves as the opaque `TypeError: Failed to fetch`.
-          method: "PUT",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` },
-          body: JSON.stringify({
-            state,
-            feedId: activeSourceId && activeSourceId !== "all" ? activeSourceId : "",
-            feedName: projectSources.find(source => source.id === activeSourceId)?.name || ""
-          })
-        });
-      } catch (error) {
-        if (indicator) indicator.textContent = "Нет связи с облаком — повторим автоматически";
-        throw error;
+      const request = {
+        // Project snapshots can contain thousands of feed objects and
+        // several branding assets. `keepalive` is intentionally omitted:
+        // browsers impose a small payload quota on keepalive requests and
+        // reject larger saves as the opaque `TypeError: Failed to fetch`.
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` },
+        body: JSON.stringify({
+          state,
+          feedId: activeSourceId && activeSourceId !== "all" ? activeSourceId : "",
+          feedName: projectSources.find(source => source.id === activeSourceId)?.name || ""
+        })
+      };
+      let lastNetworkError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          // Use the same bounded request path as the rest of the client. A
+          // stalled upload must become a retryable timeout, not an unresolved
+          // promise that leaves the feed in an ambiguous save state.
+          response = await fetchWithTimeout(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, request, 60000);
+          if (response.status >= 500 && attempt < 2) {
+            try { await response.body?.cancel(); } catch (_) {}
+            await new Promise(resolve => setTimeout(resolve, 350 * (attempt + 1)));
+            continue;
+          }
+          break;
+        } catch (error) {
+          lastNetworkError = error;
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 350 * (attempt + 1)));
+            continue;
+          }
+          // The server may have committed the PUT before the connection was
+          // interrupted. Reconcile by reading the authoritative snapshot;
+          // otherwise the next retry would incorrectly report a conflict.
+          try {
+            if (await reconcileExternalProjectState(snapshot, requestedOverrides)) return;
+          } catch (_) {}
+          if (indicator) indicator.textContent = "Нет связи с облаком — повторим автоматически";
+          throw lastNetworkError;
+        }
+      }
+      // A proxy or application error can arrive after the server has already
+      // committed the snapshot. Verify the authoritative state before showing
+      // a failure and asking the user to repeat the same update.
+      if (response.status >= 500) {
+        try { await response.body?.cancel(); } catch (_) {}
+        try {
+          if (await reconcileExternalProjectState(snapshot, requestedOverrides)) return;
+        } catch (_) {}
       }
       const result = await response.json().catch(() => ({}));
       if (response.status === 409) {
+        // A lost response can make a successful write look like a conflict on
+        // the retry. If the server already has exactly this snapshot, accept
+        // it as saved and continue with the returned revision.
+        if (projectStateSnapshotsEqual(result.current?.state, state)) {
+          markCloudProjectStateSaved(snapshot, result.current || {});
+          clearSavedProjectOverrides(requestedOverrides);
+          if (indicator) indicator.textContent = `Сохранено в облаке в ${new Date(result.current?.updatedAt || Date.now()).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+          return;
+        }
         cloudSaveConflict = true;
         pendingProjectStateOverrides = {};
         if (indicator) indicator.textContent = "Проект изменён в другой вкладке — обновите данные вручную";
@@ -8175,11 +8259,8 @@
         error.status = response.status;
         throw error;
       }
-      cloudSaveRevision = Number(result.revision || cloudSaveRevision);
-      cloudSavedSnapshot = snapshot;
-      for (const [key, value] of Object.entries(requestedOverrides)) {
-        if (pendingProjectStateOverrides[key] === value) delete pendingProjectStateOverrides[key];
-      }
+      markCloudProjectStateSaved(snapshot, result);
+      clearSavedProjectOverrides(requestedOverrides);
       if (indicator) indicator.textContent = `Сохранено в облаке в ${new Date(result.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
     }
 
@@ -8308,13 +8389,14 @@
 
     async function persistProjectStateNow() {
       saveProjectSources();
-      save();
+      const stateOverrides = save();
       if (runtimeMode !== "external" || !currentProject) return { saved: true, cloud: false };
       try {
-        await pushExternalProjectState();
-        return { saved: !cloudSaveConflict && cloudSavedSnapshot === JSON.stringify(captureProjectBrowserState()), cloud: true };
+        await pushExternalProjectState(stateOverrides);
+        const expectedSnapshot = JSON.stringify(captureProjectBrowserState(stateOverrides));
+        return { saved: !cloudSaveConflict && cloudSavedSnapshot === expectedSnapshot, cloud: true, revision: cloudSaveRevision };
       } catch (error) {
-        return { saved: false, cloud: true, error };
+        return { saved: false, cloud: true, revision: cloudSaveRevision, error };
       }
     }
 
@@ -8594,6 +8676,7 @@
       // Keep quota handling in the same debounced queue as regular saves. A
       // direct fallback here used to race the immediate save after an import.
       scheduleProjectStateSync(stateOverrides);
+      return stateOverrides;
     }
 
     function refreshProjectMemoryFromStorage() {
@@ -13094,6 +13177,7 @@ ${photos}
     function persistenceFailureMessage(persistence) {
       const error = persistence?.error;
       if (error?.name === "TypeError" && /failed to fetch/i.test(error.message || "")) return "Не удалось связаться с сервером. Проверьте соединение и повторите сохранение.";
+      if (error?.name === "AbortError" || /сервер не ответил вовремя|timeout|timed out|aborted/i.test(error?.message || "")) return "Сервер не ответил вовремя. Проверьте соединение — мы повторим сохранение автоматически.";
       if (error?.code === "REVISION_CONFLICT" || error?.status === 409) return "Проект изменён в другой вкладке. Обновите страницу и повторите сохранение.";
       if (error?.status === 402) return error.message || "Срок доступа закончился. Продлите тариф, чтобы сохранить фид.";
       if (error?.status === 413) return error.message || "Состояние проекта слишком большое. Уменьшите изображения и повторите сохранение.";

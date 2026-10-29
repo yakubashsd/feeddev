@@ -711,17 +711,21 @@ function parseBody(req, { maxBytes = MAX_BODY_BYTES, tooLargeMessage = "Фид �
 
   return new Promise((resolve, reject) => {
     let size = 0;
+    let tooLarge = false;
     const chunks = [];
     req.on("data", chunk => {
       size += chunk.length;
       if (size > maxBytes) {
-        reject(new Error(tooLargeMessage));
-        req.destroy();
+        tooLarge = true;
         return;
       }
       chunks.push(chunk);
     });
     req.on("end", () => {
+      if (tooLarge) {
+        reject(Object.assign(new Error(tooLargeMessage), { status: 413 }));
+        return;
+      }
       try {
         const raw = Buffer.concat(chunks).toString("utf8");
         const contentType = String(req.headers["content-type"] || "").toLowerCase();

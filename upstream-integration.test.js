@@ -59,8 +59,8 @@ test("project feeds are confirmed in cloud and refreshed when a background tab r
   assert.match(html, /window\.addEventListener\("pageshow"/);
   assert.match(html, /window\.addEventListener\("online"/);
   assert.match(persist, /saveProjectSources\(\)/);
-  assert.match(persist, /await pushExternalProjectState\(\)/);
-  assert.match(persist, /cloudSavedSnapshot === JSON\.stringify\(captureProjectBrowserState\(\)\)/);
+  assert.match(persist, /await pushExternalProjectState\(stateOverrides\)/);
+  assert.match(persist, /cloudSavedSnapshot === expectedSnapshot/);
   assert.match(html, /Фид сохранён в проекте «\$\{currentProject\?\.name/);
   assert.match(html, /не сохранён в облаке/);
 });
@@ -74,11 +74,22 @@ test("cloud project saves serialize revisioned writes and do not duplicate quota
   assert.match(push, /await pushExternalProjectStateRequest\(\)/);
   assert.match(push, /while \(cloudSaveQueued && !cloudSaveConflict\)/);
   assert.doesNotMatch(html, /method: "PUT", credentials: "same-origin", keepalive: true/);
+  assert.match(html, /function reconcileExternalProjectState\(/);
+  assert.match(html, /if \(await reconcileExternalProjectState\(snapshot, requestedOverrides\)\) return;/);
+  assert.match(html, /response = await fetchWithTimeout\(`\/api\/projects\/\$\{encodeURIComponent\(currentProject\.id\)\}\/state`, request, 60000\)/);
+  assert.match(html, /if \(response\.status >= 500\) \{[\s\S]*?reconcileExternalProjectState\(snapshot, requestedOverrides\)/);
+  assert.match(html, /Сервер не ответил вовремя\. Проверьте соединение — мы повторим сохранение автоматически/);
+  assert.match(html, /projectStateSnapshotsEqual\(result\.current\?\.state, state\)/);
   assert.match(html, /Не удалось связаться с сервером\. Проверьте соединение и повторите сохранение\./);
-  assert.doesNotMatch(save, /pushExternalProjectState\(stateOverrides\)/);
+  assert.match(save, /return stateOverrides;/);
+  assert.match(html, /await pushExternalProjectState\(stateOverrides\)/);
+  assert.match(html, /const expectedSnapshot = JSON\.stringify\(captureProjectBrowserState\(stateOverrides\)\)/);
   assert.match(html, /persistenceFailureMessage\(persistence\)/);
   assert.match(html, /function clientHasWorkspaceAccess\(\)/);
-  assert.match(html, /if \(runtimeMode !== "external" \|\| !currentProject \|\| !clientHasWorkspaceAccess\(\)\) return;/);
+  assert.match(html, /if \(runtimeMode !== "external"\) return;/);
+  assert.match(html, /error\.code = "PROJECT_NOT_READY"/);
+  assert.match(server, /let tooLarge = false/);
+  assert.match(server, /status: 413/);
 });
 
 test("feed refresh persists the updated source snapshot before reporting success", () => {

@@ -80,16 +80,16 @@ function createProjectStateStore({ dataDir, secret }) {
         throw conflict;
       }
       const record = { version: 2, revision: currentRevision + 1, userId, projectId, state, updatedAt: new Date().toISOString() };
+      // Publish the encrypted snapshot first, then its small revision marker.
+      // This ordering prevents a reader from observing a new ETag while still
+      // receiving the previous snapshot if the process stops mid-write.
+      const temp = `${target}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+      fs.writeFileSync(temp, `${encrypt(record)}\n`, { mode: 0o600 });
+      fs.renameSync(temp, target);
       const metaTarget = revisionFile(target);
       const metaTemp = `${metaTarget}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
       fs.writeFileSync(metaTemp, `${JSON.stringify({ revision: record.revision, updatedAt: record.updatedAt })}\n`, { mode: 0o600 });
       fs.renameSync(metaTemp, metaTarget);
-      // Publish the revision marker first. If the process crashes between the
-      // two renames, a client may retry against the older encrypted snapshot,
-      // but it will never receive a false 304 for newer state.
-      const temp = `${target}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
-      fs.writeFileSync(temp, `${encrypt(record)}\n`, { mode: 0o600 });
-      fs.renameSync(temp, target);
       cache.set(target, { stamp: stamp(target), record });
       return { updatedAt: record.updatedAt, revision: record.revision };
     });
