@@ -73,8 +73,18 @@ test("cloud project saves serialize revisioned writes and do not duplicate quota
   assert.match(push, /if \(cloudSaveFlight\)/);
   assert.match(push, /await pushExternalProjectStateRequest\(\)/);
   assert.match(push, /while \(cloudSaveQueued && !cloudSaveConflict\)/);
+  assert.doesNotMatch(html, /method: "PUT", credentials: "same-origin", keepalive: true/);
+  assert.match(html, /Не удалось связаться с сервером\. Проверьте соединение и повторите сохранение\./);
   assert.doesNotMatch(save, /pushExternalProjectState\(stateOverrides\)/);
   assert.match(html, /persistenceFailureMessage\(persistence\)/);
+});
+
+test("feed refresh persists the updated source snapshot before reporting success", () => {
+  const refresh = html.match(/    async function loadFeedFromUrl\([\s\S]*?\n    }\n\n    function refreshScheduledFeedLabels/)[0];
+  assert.match(refresh, /const sourceRecord = \{/);
+  assert.match(refresh, /const persistence = await persistProjectStateNow\(\)/);
+  assert.match(refresh, /persistence\.saved \? "ok" : "bad"/);
+  assert.match(refresh, /Фид загружен, но не сохранён в облаке/);
 });
 
 test("compact feed error indicator keeps one continuous outline in the top bar", () => {

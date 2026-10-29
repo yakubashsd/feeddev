@@ -8132,12 +8132,18 @@
       let response;
       try {
         response = await fetch(`/api/projects/${encodeURIComponent(currentProject.id)}/state`, {
-        method: "PUT", credentials: "same-origin", keepalive: true,
-        headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` }, body: JSON.stringify({
-          state,
-          feedId: activeSourceId && activeSourceId !== "all" ? activeSourceId : "",
-          feedName: projectSources.find(source => source.id === activeSourceId)?.name || ""
-        })
+          // Project snapshots can contain thousands of feed objects and
+          // several branding assets. `keepalive` is intentionally omitted:
+          // browsers impose a small payload quota on keepalive requests and
+          // reject larger saves as the opaque `TypeError: Failed to fetch`.
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "If-Match": `\"${cloudSaveRevision}\"` },
+          body: JSON.stringify({
+            state,
+            feedId: activeSourceId && activeSourceId !== "all" ? activeSourceId : "",
+            feedName: projectSources.find(source => source.id === activeSourceId)?.name || ""
+          })
         });
       } catch (error) {
         if (indicator) indicator.textContent = "Нет связи с облаком — повторим автоматически";
@@ -13084,6 +13090,7 @@ ${photos}
 
     function persistenceFailureMessage(persistence) {
       const error = persistence?.error;
+      if (error?.name === "TypeError" && /failed to fetch/i.test(error.message || "")) return "Не удалось связаться с сервером. Проверьте соединение и повторите сохранение.";
       if (error?.code === "REVISION_CONFLICT" || error?.status === 409) return "Проект изменён в другой вкладке. Обновите страницу и повторите сохранение.";
       if (error?.status === 402) return error.message || "Срок доступа закончился. Продлите тариф, чтобы сохранить фид.";
       if (error?.status === 413) return error.message || "Состояние проекта слишком большое. Уменьшите изображения и повторите сохранение.";
