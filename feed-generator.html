@@ -5997,11 +5997,15 @@
       border-radius:var(--lf-radius-lg);
       background:var(--lf-surface);
     }
-    body.client-ui .overview-summary-metrics > div {
+    body.client-ui .overview-summary-metrics > :is(div,button) {
       display:grid;
       gap:5px;
       min-width:0;
       padding:16px 18px;
+      text-align:left;
+      border:0;
+      border-radius:0;
+      background:transparent;
       border-right:1px solid var(--lf-line);
     }
     body.client-ui .overview-summary-metrics > div:last-child { border-right:0; }
@@ -6178,8 +6182,8 @@
 
     @media (max-width:900px) {
       body.client-ui .overview-summary-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
-      body.client-ui .overview-summary-metrics > div:nth-child(2) { border-right:0; }
-      body.client-ui .overview-summary-metrics > div:nth-child(-n+2) { border-bottom:1px solid var(--lf-line); }
+      body.client-ui .overview-summary-metrics > :is(div,button):nth-child(2) { border-right:0; }
+      body.client-ui .overview-summary-metrics > :is(div,button):nth-child(-n+2) { border-bottom:1px solid var(--lf-line); }
       body.client-ui .overview-next-step { grid-template-columns:1fr; }
       body.client-ui .overview-next-step button { width:100%; }
       body.client-ui .overview-published-row { grid-template-columns:1fr!important; }
@@ -6192,7 +6196,7 @@
     }
     @media (max-width:560px) {
       body.client-ui .overview-summary-metrics { grid-template-columns:1fr; }
-      body.client-ui .overview-summary-metrics > div { border-right:0; border-bottom:1px solid var(--lf-line); }
+      body.client-ui .overview-summary-metrics > :is(div,button) { border-right:0; border-bottom:1px solid var(--lf-line); }
       body.client-ui .overview-summary-metrics > div:last-child { border-bottom:0; }
       body.client-ui .overview-feed-actions { width:100%!important; }
       body.client-ui .overview-feed-primary { flex:1 1 auto!important; }
@@ -6441,6 +6445,7 @@
         <div class="topbar-actions"><button class="topbar-icon-action" id="notificationsButton" type="button" aria-label="Уведомления" title="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><div class="topbar-account"><span class="account-avatar" id="accountAvatar" aria-hidden="true">LF</span><span class="account-copy"><strong id="accountName">Личный кабинет</strong><small id="accountEmail">ListingFlow</small></span></div><button class="theme-toggle" id="themeToggle" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Переключить тему"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button><div class="top-status" id="cloudSaveStatus" aria-live="polite">Сервис работает</div></div>
       </div>
 
+      <div id="cloudSaveAlert" class="cloud-save-alert" role="alert" hidden><span id="cloudSaveAlertText"></span><button id="cloudSaveRetry" type="button">Повторить сохранение</button></div>
       <aside class="usage-hint" id="usageHint" aria-live="polite" aria-atomic="true">
         <span class="usage-hint-step" id="usageHintStep"></span>
         <div class="usage-hint-copy"><strong id="usageHintTitle"></strong><p id="usageHintText"></p></div>
@@ -6712,6 +6717,8 @@
             </div>
           </details>
         </div>
+        <div id="activeObjectFilters" class="active-object-filters" aria-label="Активные фильтры" hidden></div>
+        <div id="objectFilterResult" class="object-filter-result" role="status" aria-live="polite"></div>
         <div class="table-scroll">
           <table>
             <thead>
@@ -6823,6 +6830,7 @@
             <div class="brand-action-row">
               <button id="insertBrandPhotoBtn" type="button" class="primary">Сформировать изображения</button>
               <button id="stopBrandPhotoBtn" type="button" class="danger" hidden>Остановить</button>
+              <progress id="brandGenerationProgress" max="1" value="0" aria-label="Прогресс формирования изображений" hidden></progress>
             </div>
             <div class="photo-order-settings" aria-labelledby="photoOrderTitle" hidden>
               <div class="photo-order-settings-head">
@@ -6866,7 +6874,7 @@
             <canvas id="brandPreviewCanvas" width="960" height="640" tabindex="0" role="img" aria-label="Предпросмотр готовой планировки. Перетащите изображение или нажмите, чтобы открыть крупнее."></canvas>
             <div class="brand-preview-help">
               <strong>Предпросмотр первого изображения</strong>
-              <div id="brandStatus">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
+              <div id="brandStatus" role="status" aria-live="polite">Выберите подложку и объект с планировкой, чтобы увидеть предпросмотр.</div>
               <div class="brand-safe-zone-hint"><span aria-hidden="true">◌</span> Безопасная зона работает для всех площадок: задайте её ширину, высоту и положение, а планировка автоматически впишется внутрь без обрезания.</div>
               <div>Планировку можно двигать мышкой или задавать точный сдвиг в полях X/Y. Клик без движения открывает изображение крупнее.</div>
             </div>
@@ -8130,6 +8138,7 @@
     function markCloudProjectStateSaved(snapshot, result = {}) {
       cloudSaveRevision = Number(result.revision || cloudSaveRevision);
       cloudSavedSnapshot = snapshot;
+      document.querySelector("#cloudSaveAlert").hidden = true;
       return { revision: cloudSaveRevision, updatedAt: result.updatedAt || null };
     }
 
@@ -8170,6 +8179,7 @@
       const snapshot = JSON.stringify(state);
       if (snapshot === cloudSavedSnapshot) {
         clearSavedProjectOverrides(requestedOverrides);
+        document.querySelector("#cloudSaveAlert").hidden = true;
         return;
       }
       const indicator = document.querySelector("#cloudSaveStatus");
@@ -8283,7 +8293,15 @@
       })();
       cloudSaveFlight.then(
         () => { cloudSaveFlight = null; cloudSaveQueued = false; },
-        () => { cloudSaveFlight = null; cloudSaveQueued = false; }
+        error => {
+          cloudSaveFlight = null;
+          cloudSaveQueued = false;
+          const alert = document.querySelector("#cloudSaveAlert");
+          const retry = document.querySelector("#cloudSaveRetry");
+          document.querySelector("#cloudSaveAlertText").textContent = persistenceFailureMessage({ error });
+          retry.hidden = Boolean(cloudSaveConflict || error?.status === 401 || error?.status === 402 || error?.status === 403 || error?.status === 413);
+          alert.hidden = false;
+        }
       );
       return cloudSaveFlight;
     }
@@ -8292,9 +8310,19 @@
     function scheduleProjectStateSync(overrides = {}) {
       if (runtimeMode !== "external" || !currentProject) return;
       Object.assign(pendingProjectStateOverrides, overrides);
+      const indicator = document.querySelector("#cloudSaveStatus");
+      if (indicator && !cloudSaveConflict) indicator.textContent = "Есть несохранённые изменения";
       clearTimeout(projectStateSyncTimer);
       projectStateSyncTimer = setTimeout(() => pushExternalProjectState().catch(() => {}), 1200);
     }
+
+    document.querySelector("#cloudSaveRetry").addEventListener("click", async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = "Сохраняем…";
+      try { await pushExternalProjectState(); } catch (_) { /* The persistent alert contains the cause. */ }
+      finally { button.disabled = false; button.textContent = "Повторить сохранение"; }
+    });
 
     async function hydrateExternalProjectState() {
       if (runtimeMode !== "external" || !currentProject || !["client", "customer"].includes(sessionState?.role)) return false;
@@ -9144,6 +9172,17 @@
         badge.textContent = String(state.advancedCount);
       }
       if (advanced && state.advancedCount) advanced.open = true;
+      const chips = document.querySelector("#activeObjectFilters");
+      if (chips) {
+        const fields = [["search", "Поиск"], ["statusFilter", "Статус"], ["roomsFilter", "Комнат"], ["issueFilter", "Ошибка"], ["priceFrom", "Цена от"], ["priceTo", "Цена до"], ["areaFrom", "Площадь от"], ["areaTo", "Площадь до"]];
+        chips.innerHTML = fields.flatMap(([id, label]) => {
+          const input = document.getElementById(id);
+          if (!input || !input.value || input.value === "all") return [];
+          const value = input.tagName === "SELECT" ? input.selectedOptions[0]?.textContent : input.value;
+          return [`<button type="button" data-clear-object-filter="${id}" aria-label="Убрать фильтр ${escapeXml(label)}">${escapeXml(label)}: ${escapeXml(value)} <span aria-hidden="true">×</span></button>`];
+        }).join("");
+        chips.hidden = !chips.children.length;
+      }
     }
 
     function resetObjectFilters() {
@@ -9241,6 +9280,8 @@
     function renderRows() {
       const visible = filteredObjects();
       renderObjectFilterState();
+      const result = document.querySelector("#objectFilterResult");
+      if (result) result.textContent = activeObjectFilters().count ? `Найдено: ${visible.length} из ${workingObjects().length}` : "";
       if (!visible.length) {
         const hasObjects = workingObjects().length > 0;
         rows.innerHTML = `
@@ -9664,7 +9705,7 @@
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
       const saveIndicator = document.querySelector("#cloudSaveStatus");
       if (projectReadOnly && saveIndicator) saveIndicator.textContent = currentProject.status === "archived" ? "Архивный проект · просмотр" : sessionState?.subscriptionReadOnly ? "Тариф истёк · льготный просмотр" : "Доступ ограничен · продлите тариф";
-      else if (saveIndicator && runtimeMode === "external" && currentProject && clientHasWorkspaceAccess() && !cloudSaveConflict) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Сохраняю проект в облако";
+      else if (saveIndicator && runtimeMode === "external" && currentProject && clientHasWorkspaceAccess() && !cloudSaveConflict && !cloudSaveFlight && !projectStateSyncTimer && !Object.keys(pendingProjectStateOverrides).length) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Ожидается сохранение";
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", false);
       shell.classList.toggle("project-list-mode", activePage === "projects");
@@ -9828,6 +9869,10 @@
       setSourceContext(sourceId);
       save();
       switchPage("apartments");
+      if (sourceIssueCount(sourceId)) {
+        document.querySelector("#statusFilter").value = "warn";
+        renderRows();
+      }
       if (!publication?.id) {
         showToast("Фид ещё не опубликован. Открыта проверка объектов в редакторе.");
         return;
@@ -9898,8 +9943,8 @@
               ? { title: "Подготовьте публикацию", text: "Данные загружены — проверьте обязательные поля и выпустите фид.", action: "Продолжить настройку" }
               : { title: "Проект работает", text: "Публикации активны, сервер продолжает обновлять фиды по расписанию.", action: "Открыть фиды" };
         projectSummary.innerHTML = `<div class="overview-summary-metrics">
-          <div><span>Фиды</span><strong>${projectSources.length.toLocaleString("ru-RU")}</strong></div>
-          <div><span>Объекты</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong></div>
+          <button type="button" data-overview-metric="feeds"><span>Фиды</span><strong>${projectSources.length.toLocaleString("ru-RU")}</strong></button>
+          <button type="button" data-overview-metric="objects"><span>Объекты</span><strong>${totalObjects.toLocaleString("ru-RU")}</strong></button>
           <div><span>Опубликовано</span><strong>${publishedCount} из ${projectSources.length}</strong></div>
           <div><span>Последнее обновление</span><strong>${lastUpdate ? escapeXml(new Date(lastUpdate).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })) : "Ещё не было"}</strong></div>
         </div><div class="overview-next-step"><span>Следующий шаг</span><div><strong>${escapeXml(nextStep.title)}</strong><small>${escapeXml(nextStep.text)}</small></div><button type="button" class="${hasFeeds ? "primary" : ""}" ${nextStep.page ? `data-overview-go="${nextStep.page}"` : "data-overview-continue"}>${escapeXml(nextStep.action)}</button></div>`;
@@ -10007,6 +10052,18 @@
         button.onclick = event => {
           event.stopPropagation();
           loadFeedFromUrl(button.dataset.sourceSync);
+        };
+      });
+      document.querySelectorAll(".project-overview [data-overview-metric]").forEach(button => {
+        button.onclick = () => {
+          if (button.dataset.overviewMetric === "objects" && projectSources.length === 1) {
+            setSourceContext(projectSources[0].id);
+            switchPage("apartments");
+            return;
+          }
+          const list = document.querySelector("#overviewPublishedFeeds");
+          list?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+          list?.querySelector("button")?.focus({ preventScroll: true });
         };
       });
       document.querySelectorAll(".project-overview [data-source-diagnostics]").forEach(button => {
@@ -10347,6 +10404,7 @@
     // menu cannot remain over the table or trap the next action.
     document.addEventListener("click", event => {
       const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest(".overview-feed-menu")) document.querySelectorAll(".overview-feed-menu[open]").forEach(menu => { menu.open = false; });
       if (target?.closest(".project-row-menu")) return;
       document.querySelectorAll("details.project-row-menu[open]").forEach(details => {
         details.open = false;
@@ -10354,6 +10412,9 @@
     });
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape") return;
+      const feedMenus = [...document.querySelectorAll(".overview-feed-menu[open]")];
+      feedMenus.forEach(menu => { menu.open = false; });
+      feedMenus[0]?.querySelector("summary")?.focus();
       const openMenus = [...document.querySelectorAll("details.project-row-menu[open]")];
       if (!openMenus.length) return;
       openMenus.forEach(details => { details.open = false; });
@@ -11750,6 +11811,8 @@
       await ensureCanvasLayerImages(projectConfig.canvasLayers, { signal });
       await persistActiveBrandProfile();
       const uniqueUrls = [...new Set(targets.map(item => item.layoutPhoto).filter(Boolean))];
+      const progress = document.querySelector("#brandGenerationProgress");
+      if (signal && progress) { progress.max = Math.max(1, uniqueUrls.length); progress.value = 0; progress.hidden = false; }
       for (let index = 0; index < uniqueUrls.length; index += 1) {
         const sourceUrl = uniqueUrls[index];
         const firstItem = targets.find(item => item.layoutPhoto === sourceUrl) || targets[0];
@@ -11776,6 +11839,7 @@
             message: error.message || "ссылка недоступна"
           });
         }
+        if (signal && progress) progress.value = index + 1;
       }
       return { urlMap, skipped };
     }
@@ -11950,6 +12014,7 @@
         stopButton.hidden = !running;
         stopButton.disabled = !running;
       }
+      if (!running) document.querySelector("#brandGenerationProgress").hidden = true;
     }
 
     function applyGeneratedBranding(urlMap, targets) {
@@ -13418,6 +13483,12 @@ ${photos}
       setLoadStatus("Загружаю фид по ссылке...");
       if (existingSource) showToast(`Обновляю фид «${existingSource.name || existingSource.url}»…`);
       loadFeedFromUrl.running = true;
+      const syncAction = sourceId ? document.querySelector(`.project-overview [data-source-sync="${CSS.escape(sourceId)}"]`) : null;
+      if (syncAction) {
+        syncAction.disabled = true;
+        syncAction.setAttribute("aria-busy", "true");
+        syncAction.textContent = "Обновляем…";
+      }
       const loadButton = document.querySelector("#loadUrlBtn");
       const importButton = document.querySelector("#importBtn");
       const sourcePanel = document.querySelector('.source-panel[data-page="source"]');
@@ -13535,6 +13606,11 @@ ${photos}
       } finally {
         fetchFeedXmlByUrl.jobId = "";
         loadFeedFromUrl.running = false;
+        if (syncAction) {
+          syncAction.disabled = false;
+          syncAction.removeAttribute("aria-busy");
+          syncAction.textContent = "Обновить сейчас";
+        }
         loadButton.disabled = false;
         loadButton.textContent = "Добавить фид";
         delete loadButton.dataset.importRunning;
@@ -14146,6 +14222,16 @@ ${photos}
     });
     document.querySelector(".object-filter-panel").addEventListener("click", event => {
       if (event.target.closest("[data-reset-object-filters]")) resetObjectFilters();
+    });
+    document.querySelector("#activeObjectFilters").addEventListener("click", event => {
+      const button = event.target.closest("[data-clear-object-filter]");
+      if (!button) return;
+      const input = document.getElementById(button.dataset.clearObjectFilter);
+      if (!input) return;
+      input.value = input.tagName === "SELECT" ? "all" : "";
+      syncFilterRanges();
+      renderRows();
+      input.focus();
     });
     document.querySelector("#issueDiagnostics").addEventListener("click", event => {
       const button = event.target.closest("[data-filter-issue]");
