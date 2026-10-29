@@ -7227,6 +7227,12 @@
     const changeLogStorageKey = "feed-generator-change-log-v1" + projectSuffix;
     const complexStatusStorageKey = "feed-generator-complex-status-v1" + projectSuffix;
     const projectSourcesStorageKey = "feed-generator-sources-v1" + projectSuffix;
+    // A server snapshot may exceed the browser cache quota. Keep the latest
+    // values in memory when localStorage cannot accept them.
+    const projectStateMemory = new Map();
+    function readProjectStateValue(key) {
+      return projectStateMemory.has(key) ? projectStateMemory.get(key) : localStorage.getItem(key);
+    }
     const bulkSections = {
       main: {
         label: "Основное",
@@ -8100,6 +8106,7 @@
 
     function clearExternalClientSnapshot() {
       if (runtimeMode !== "external") return;
+      projectStateMemory.clear();
       for (const key of [...projectStateKeys(), projectIndexKey]) {
         try { localStorage.removeItem(key); } catch (_) {}
       }
@@ -8113,7 +8120,7 @@
     function captureProjectBrowserState(overrides = {}) {
       return Object.fromEntries(projectStateKeys().flatMap(key => {
         if (Object.hasOwn(overrides, key)) return [[key, overrides[key]]];
-        const value = localStorage.getItem(key);
+        const value = readProjectStateValue(key);
         return value === null ? [] : [[key, value]];
       }));
     }
@@ -8254,7 +8261,7 @@
         const remoteState = result.current?.state || {};
         for (const key of projectStateKeys()) {
           if (Object.hasOwn(remoteState, key)) safeStorageSet(key, remoteState[key]);
-          else localStorage.removeItem(key);
+          else { projectStateMemory.delete(key); localStorage.removeItem(key); }
         }
         cloudSaveRevision = Number(result.current?.revision || 0);
         cloudSavedSnapshot = JSON.stringify(remoteState);
@@ -8332,7 +8339,7 @@
         // A fully expired account may still open the shell for billing/read-only
         // navigation, but its local project payload is not usable there.
         if (response.status === 402) {
-          for (const key of projectStateKeys()) localStorage.removeItem(key);
+          for (const key of projectStateKeys()) { projectStateMemory.delete(key); localStorage.removeItem(key); }
           refreshProjectMemoryFromStorage();
           return true;
         }
@@ -8343,13 +8350,13 @@
       cloudSavedSnapshot = JSON.stringify(remote.state || {});
       const local = captureProjectBrowserState();
       if (!remote.state) {
-        for (const key of projectStateKeys()) localStorage.removeItem(key);
+        for (const key of projectStateKeys()) { projectStateMemory.delete(key); localStorage.removeItem(key); }
         return Object.keys(local).length > 0;
       }
       if (JSON.stringify(remote.state) === JSON.stringify(local)) return false;
       for (const key of projectStateKeys()) {
         if (Object.hasOwn(remote.state, key)) safeStorageSet(key, remote.state[key]);
-        else localStorage.removeItem(key);
+        else { projectStateMemory.delete(key); localStorage.removeItem(key); }
       }
       pendingProjectStateOverrides = {};
       return true;
@@ -8380,7 +8387,7 @@
         }
         for (const key of projectStateKeys()) {
           if (Object.hasOwn(remoteState, key)) safeStorageSet(key, remoteState[key]);
-          else localStorage.removeItem(key);
+          else { projectStateMemory.delete(key); localStorage.removeItem(key); }
         }
         pendingProjectStateOverrides = {};
         cloudSaveRevision = remoteRevision;
@@ -8633,7 +8640,7 @@
 
     function load() {
       try {
-        const saved = JSON.parse(localStorage.getItem(storageKey));
+        const saved = JSON.parse(readProjectStateValue(storageKey));
         if (Array.isArray(saved?.objects)) return {
           objects: saved.objects,
           originalObjects: saved.originalObjects?.length ? saved.originalObjects : structuredClone(saved.objects),
@@ -8662,10 +8669,12 @@
     function safeStorageSet(key, value) {
       try {
         localStorage.setItem(key, value);
+        projectStateMemory.delete(key);
         return true;
       } catch (error) {
         const quotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
         if (!quotaError) throw error;
+        projectStateMemory.set(key, String(value));
         if (!storageQuotaWarningShown) {
           storageQuotaWarningShown = true;
           document.querySelector("#cloudSaveStatus")?.replaceChildren(document.createTextNode("Локальный кэш переполнен — сохраняем данные в аккаунт"));
@@ -8724,7 +8733,7 @@
         publishedComplexes = new Set();
       }
       try {
-        const storedSources = JSON.parse(localStorage.getItem(projectSourcesStorageKey) || "[]");
+        const storedSources = JSON.parse(readProjectStateValue(projectSourcesStorageKey) || "[]");
         projectSources = Array.isArray(storedSources) ? storedSources : [];
       } catch (_) {
         projectSources = [];
@@ -9206,6 +9215,9 @@
 
     function sourceWorkingObjects() {
       if (activeSourceId === "all") return objects;
+      // Older single-feed snapshots predate source IDs. They are unambiguous;
+      // preserve editability instead of displaying their objects as empty.
+      if (projectSources.length === 1 && !objects.some(item => item._sourceId || item._sourceIds?.length)) return objects;
       return objects.filter(item => (item._sourceIds || (item._sourceId ? [item._sourceId] : [])).includes(activeSourceId));
     }
 
@@ -9284,9 +9296,11 @@
       if (result) result.textContent = activeObjectFilters().count ? `Найдено: ${visible.length} из ${workingObjects().length}` : "";
       if (!visible.length) {
         const hasObjects = workingObjects().length > 0;
+        const selectedSource = projectSources.find(source => source.id === activeSourceId);
+        const missingSavedObjects = !hasObjects && selectedSource && sourceObjectCount(selectedSource) > 0;
         rows.innerHTML = `
           <tr>
-            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : `Объявлений пока нет. Добавьте исходный фид в разделе «Рабочая область». <button type="button" data-open-object-workspace>Открыть рабочую область</button>`}</td>
+            <td class="empty-row" colspan="7">${hasObjects ? `По этим фильтрам объявлений нет. <button type="button" data-reset-object-filters>Сбросить фильтры</button>` : missingSavedObjects ? `Объекты этого фида не найдены в сохранённых данных проекта. Вернитесь к фиду и проверьте источник. <button type="button" data-open-object-workspace>Открыть фид</button>` : `Объявлений пока нет. Выберите или добавьте фид в рабочей области. <button type="button" data-open-object-workspace>Выбрать фид</button>`}</td>
           </tr>
         `;
         renderSelectAllState();

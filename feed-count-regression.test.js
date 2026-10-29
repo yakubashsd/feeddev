@@ -66,6 +66,32 @@ test("cloud saves include the source registry when browser storage is unavailabl
   assert.match(html, /let pendingProjectStateOverrides = \{\}/);
 });
 
+test("server snapshots remain readable when browser storage is full", () => {
+  const source = html.match(/    function safeStorageSet\(key, value\) \{[\s\S]*?\n    \}\n\n    function save\(/)[0].replace(/\n\n    function save\($/, "");
+  const values = new Map([["editor", "old"]]);
+  const context = {
+    projectStateMemory: new Map(), storageQuotaWarningShown: false,
+    localStorage: { setItem() { const error = new Error("quota"); error.name = "QuotaExceededError"; throw error; }, getItem(key) { return values.get(key) ?? null; } },
+    document: { querySelector() { return null; } }, showToast() {}
+  };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  vm.runInContext('safeStorageSet("editor", JSON.stringify({objects:[{externalId:"1"}]}))', context);
+  assert.equal(JSON.parse(context.projectStateMemory.get("editor")).objects[0].externalId, "1");
+  assert.match(html, /JSON\.parse\(readProjectStateValue\(storageKey\)\)/);
+  assert.match(html, /JSON\.parse\(readProjectStateValue\(projectSourcesStorageKey\)/);
+});
+
+test("legacy untagged objects remain editable only for an unambiguous single feed", () => {
+  const source = html.match(/    function sourceWorkingObjects\(\) \{[\s\S]*?\n    \}/)[0];
+  const context = { activeSourceId: "a", projectSources: [{ id: "a" }], objects: [{ externalId: "1" }] };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  assert.equal(vm.runInContext("sourceWorkingObjects().length", context), 1);
+  context.projectSources.push({ id: "b" });
+  assert.equal(vm.runInContext("sourceWorkingObjects().length", context), 0);
+});
+
 test("URL imports run through the server job queue and can be canceled", () => {
   assert.match(html, /body: JSON\.stringify\(\{ url, async: true \}\)/);
   assert.match(html, /\/api\/feeds-import\/\$\{encodeURIComponent\(data\.id\)\}/);

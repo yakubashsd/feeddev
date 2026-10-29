@@ -27,7 +27,7 @@ test("external clients always hydrate the server project state without a local-v
   const push = html.match(/    function pushExternalProjectState\([\s\S]*?\n    }\n\n    let projectStateSyncTimer/)[0];
   assert.doesNotMatch(hydrate, /confirm\(/);
   assert.doesNotMatch(hydrate, /pushExternalProjectState\(/);
-  assert.match(hydrate, /for \(const key of projectStateKeys\(\)\) localStorage\.removeItem\(key\)/);
+  assert.match(hydrate, /projectStateMemory\.delete\(key\); localStorage\.removeItem\(key\)/);
   assert.doesNotMatch(push, /const useLocal = confirm/);
   assert.doesNotMatch(push, /location\.reload\(\)/);
   assert.match(html, /обновите данные вручную/);
@@ -213,8 +213,8 @@ test("workflow navigation stays hidden until a concrete feed is selected", () =>
 });
 
 test("empty apartments state returns to the project workspace", () => {
-  assert.match(html, /Добавьте исходный фид в разделе «Рабочая область»/);
-  assert.match(html, /data-open-object-workspace>Открыть рабочую область/);
+  assert.match(html, /Выберите или добавьте фид в рабочей области/);
+  assert.match(html, /data-open-object-workspace>Выбрать фид/);
   const objectRows = html.match(/    rows\.addEventListener\("click", event => \{[\s\S]*?\n    \}\);/)[0];
   assert.match(objectRows, /data-open-object-workspace/);
   assert.match(objectRows, /switchPage\("overview"\)/);

@@ -101,6 +101,21 @@ test("commercial user journeys work end-to-end and tenants stay isolated", async
   assert.equal(staleState.response.status, 409);
   assert.equal(staleState.data.current.revision, 1);
 
+  const savedEditor = { objects: [{ externalId: "1", _sourceId: "source-a" }, { externalId: "2", _sourceId: "source-a" }] };
+  const savedSources = [{ id: "source-a", name: "Тестовый фид", objectCount: 2 }];
+  const browserState = {
+    [`feed-generator-cian-v2-${projectA.id}`]: JSON.stringify(savedEditor),
+    [`feed-generator-sources-v1-${projectA.id}`]: JSON.stringify(savedSources)
+  };
+  const storedFeed = await request(`/api/projects/${projectA.id}/state`, {
+    method: "PUT", cookie: cookieA, headers: { "If-Match": '"1"' }, body: { state: browserState }
+  });
+  assert.equal(storedFeed.response.status, 200);
+  const reopenedFeed = await request(`/api/projects/${projectA.id}/state`, { cookie: cookieA });
+  assert.deepEqual(JSON.parse(reopenedFeed.data.state[`feed-generator-cian-v2-${projectA.id}`]), savedEditor);
+  const projectListWithFeed = await request("/api/projects", { cookie: cookieA });
+  assert.equal(projectListWithFeed.data.projects[0].summary.sources[0].objectCount, 2);
+
   const validXml = "<feed><object><ExternalId>1</ExternalId><Description>Квартира с отделкой</Description><Address>Тюмень, улица Тестовая, 1</Address><BargainTerms><Price>5000000</Price></BargainTerms></object></feed>";
   const invalidPublication = await request("/api/feeds", {
     method: "POST", cookie: cookieA,

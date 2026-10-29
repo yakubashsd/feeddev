@@ -1526,8 +1526,12 @@ async function handleApi(req, res, url) {
     const feeds = await readFeeds();
     const summaries = await Promise.all(projectList.map(async project => {
       const saved = await projectStateStore.get(actor.userId, project.id);
-      const editor = saved.state?.["feed-generator-cian-v2-" + project.id];
-      const savedSources = saved.state?.["feed-generator-sources-v1-" + project.id];
+      const parseSnapshotValue = value => {
+        if (typeof value !== "string") return value;
+        try { return JSON.parse(value); } catch { return null; }
+      };
+      const editor = parseSnapshotValue(saved.state?.["feed-generator-cian-v2-" + project.id]);
+      const savedSources = parseSnapshotValue(saved.state?.["feed-generator-sources-v1-" + project.id]);
       const sourceRecords = Array.isArray(savedSources) ? savedSources : [];
       const sourceIds = new Set(sourceRecords.map(source => String(source?.id || "")).filter(Boolean));
       const projectFeeds = feeds.filter(feed => feed.ownerId === actor.userId && feed.projectId === project.id)
