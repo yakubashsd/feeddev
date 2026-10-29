@@ -7187,6 +7187,9 @@
     let projectStatePushTimer = 0;
     let projectStatePollTimer = 0;
     let projectStatePollInFlight = false;
+    function clientHasWorkspaceAccess() {
+      return runtimeMode !== "external" || Boolean(sessionState?.subscriptionActive || sessionState?.trialActive || sessionState?.demoAccess || sessionState?.user?.demoAccess);
+    }
     const projectIndexKey = "feeddev-projects-v1";
     function persistProjectIndex() {
       if (runtimeMode === "external") return;
@@ -8115,7 +8118,7 @@
     let cloudSaveQueued = false;
 
     async function pushExternalProjectStateRequest() {
-      if (runtimeMode !== "external" || !currentProject || !(sessionState?.subscriptionActive || sessionState?.trialActive)) return;
+      if (runtimeMode !== "external" || !currentProject || !clientHasWorkspaceAccess()) return;
       if (cloudSaveConflict) return;
       const requestedOverrides = { ...pendingProjectStateOverrides };
       const state = captureProjectBrowserState(requestedOverrides);
@@ -8436,7 +8439,7 @@
           markBootstrapStage("state");
           showWorkspace();
           await hydratePublishedFeedState();
-          if (runtimeMode === "external" && !(state.subscriptionActive || state.trialActive) && activePage !== "support") {
+          if (runtimeMode === "external" && !clientHasWorkspaceAccess() && activePage !== "support") {
             switchPage(state.subscriptionReadOnly ? (currentProject ? "apartments" : "projects") : "billing");
           }
           renderBilling();
@@ -9574,11 +9577,11 @@
       }
       const titles = { projects: "Проекты", overview: "Рабочая область проекта", source: "Добавление фида", complexes: "Жилые комплексы", apartments: "Объявления и квартиры", branding: "Оформление планировок", results: "Проверка и публикация", strategy: "Стратегия публикации", feeds: "Мониторинг и ошибки", history: "История изменений", billing: "Тариф и оплата", support: "Техническая поддержка" };
       const shell = document.querySelector("#appShell");
-      const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!(sessionState?.subscriptionActive || sessionState?.trialActive) || currentProject.status === "archived");
+      const projectReadOnly = runtimeMode === "external" && Boolean(currentProject) && (!clientHasWorkspaceAccess() || currentProject.status === "archived");
       shell.classList.toggle("project-read-only", projectReadOnly && activePage !== "billing");
       const saveIndicator = document.querySelector("#cloudSaveStatus");
       if (projectReadOnly && saveIndicator) saveIndicator.textContent = currentProject.status === "archived" ? "Архивный проект · просмотр" : sessionState?.subscriptionReadOnly ? "Тариф истёк · льготный просмотр" : "Доступ ограничен · продлите тариф";
-      else if (saveIndicator && runtimeMode === "external" && currentProject && (sessionState?.subscriptionActive || sessionState?.trialActive) && !cloudSaveConflict) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Сохраняю проект в облако";
+      else if (saveIndicator && runtimeMode === "external" && currentProject && clientHasWorkspaceAccess() && !cloudSaveConflict) saveIndicator.textContent = cloudSavedSnapshot ? "Проект синхронизирован" : "Сохраняю проект в облако";
       shell.classList.toggle("feeds-mode", activePage !== "apartments");
       shell.classList.toggle("validator-mode", false);
       shell.classList.toggle("project-list-mode", activePage === "projects");
@@ -10286,7 +10289,7 @@
       event.preventDefault();
       const name = document.querySelector("#projectName").value.trim();
       if (!name) return;
-      if (runtimeMode === "external" && !(sessionState?.subscriptionActive || sessionState?.trialActive)) {
+      if (runtimeMode === "external" && !clientHasWorkspaceAccess()) {
         document.querySelector("#projectDialog").close();
         switchPage("billing");
         return;

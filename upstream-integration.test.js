@@ -77,6 +77,8 @@ test("cloud project saves serialize revisioned writes and do not duplicate quota
   assert.match(html, /Не удалось связаться с сервером\. Проверьте соединение и повторите сохранение\./);
   assert.doesNotMatch(save, /pushExternalProjectState\(stateOverrides\)/);
   assert.match(html, /persistenceFailureMessage\(persistence\)/);
+  assert.match(html, /function clientHasWorkspaceAccess\(\)/);
+  assert.match(html, /if \(runtimeMode !== "external" \|\| !currentProject \|\| !clientHasWorkspaceAccess\(\)\) return;/);
 });
 
 test("feed refresh persists the updated source snapshot before reporting success", () => {

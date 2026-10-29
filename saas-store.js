@@ -56,7 +56,7 @@ function isDemoUnlimitedUser(user = {}) { return normalizeEmail(user.email) === 
 function publicUser(user = {}) {
   const unlimited = isDemoUnlimitedUser(user);
   const trial = isTrialActive(user);
-  return { id: user.id, role: "client", email: user.email, name: user.name, company: user.company || "", phone: user.phone || "", status: user.status, projectLimit: unlimited ? UNLIMITED_PROJECT_LIMIT : trial ? TRIAL_PROJECT_LIMIT : Number(user.projectLimit || 1), feedLimit: unlimited ? UNLIMITED_FEED_LIMIT : trial ? TRIAL_FEED_LIMIT : DEFAULT_FEED_LIMIT, subscriptionUntil: user.subscriptionUntil || null, trialUntil: user.trialUntil || null, trialActive: trial, sessionVersion: Number(user.sessionVersion || 1), createdAt: user.createdAt, updatedAt: user.updatedAt || user.createdAt };
+  return { id: user.id, role: "client", email: user.email, name: user.name, company: user.company || "", phone: user.phone || "", status: user.status, demoAccess: unlimited, projectLimit: unlimited ? UNLIMITED_PROJECT_LIMIT : trial ? TRIAL_PROJECT_LIMIT : Number(user.projectLimit || 1), feedLimit: unlimited ? UNLIMITED_FEED_LIMIT : trial ? TRIAL_FEED_LIMIT : DEFAULT_FEED_LIMIT, subscriptionUntil: user.subscriptionUntil || null, trialUntil: user.trialUntil || null, trialActive: trial, sessionVersion: Number(user.sessionVersion || 1), createdAt: user.createdAt, updatedAt: user.updatedAt || user.createdAt };
 }
 function publicStaff(staff) { return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, status: staff.status, sessionVersion: Number(staff.sessionVersion || 1), createdAt: staff.createdAt }; }
 function isUnlimitedProjectLimit(value) { return Number(value) === UNLIMITED_PROJECT_LIMIT; }
@@ -365,7 +365,7 @@ async function deleteProject(userId, projectId) {
 }
 function isSubscriptionActive(user) { return user?.status === "active" && Boolean(user.subscriptionUntil) && new Date(user.subscriptionUntil) > new Date(); }
 function isTrialActive(user) { return user?.status === "trial" && Boolean(user.trialUntil) && new Date(user.trialUntil) > new Date(); }
-function hasWorkspaceAccess(user) { return isSubscriptionActive(user) || isTrialActive(user); }
+function hasWorkspaceAccess(user) { return isDemoUnlimitedUser(user) || isSubscriptionActive(user) || isTrialActive(user); }
 const SUBSCRIPTION_GRACE_DAYS = 7;
 function subscriptionGraceUntil(user) {
   if (!user?.subscriptionUntil) return null;

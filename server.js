@@ -1389,6 +1389,7 @@ async function handleApi(req, res, url) {
       mode: APP_MODE,
       role: actor?.role || null,
       user: actor?.user || null,
+      demoAccess: Boolean(actor?.user?.demoAccess),
       subscriptionActive: actor?.user ? isSubscriptionActive(actor.user) : APP_MODE === "internal",
       trialActive: actor?.user ? isTrialActive(actor.user) : false,
       trialUntil: actor?.user?.trialUntil || null,

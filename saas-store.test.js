@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { createSaasStore, verifyPassword } = require("./saas-store");
+const { createSaasStore, verifyPassword, hasWorkspaceAccess } = require("./saas-store");
 const { createPlatega } = require("./platega");
 const { runBackup } = require("./backup");
 
@@ -47,6 +47,8 @@ test("demo account has unlimited projects and feeds without changing limits for 
     const demo = await store.register({ email: "DEMO@listingflow.ru", password: "demo-password", name: "Демо", acceptedOffer: true, acceptedPersonalData: true });
     assert.equal(demo.projectLimit, -1);
     assert.equal(demo.feedLimit, -1);
+    assert.equal(demo.demoAccess, true);
+    assert.equal(hasWorkspaceAccess({ email: "demo@listingflow.ru", status: "active" }), true);
 
     const payment = await store.createPayment(demo.id, 1);
     await store.completePaymentByProviderTransactionId(payment.id, payment.amount);
