@@ -135,6 +135,7 @@ test("project bootstrap has a visible fallback and cannot reload forever", () =>
 test("project rows open the project workspace and hide the global projects nav in context", () => {
   assert.match(html, /const projectUrl = `\/\?project=\$\{encodeURIComponent\(project\.id\)\}&page=overview`;/);
   assert.match(html, /projectId \? `\/\?project=\$\{encodeURIComponent\(projectId\)\}&page=overview` : "\/"/);
+  assert.match(html, /if \(currentProject && activePage === "projects"\) \{[\s\S]*?activePage = \["overview", "complexes", "apartments", "branding", "results", "strategy", "feeds", "history", "billing"\]\.includes\(requestedPage\)/);
   assert.match(html, /<tr class=\"project-row[^>]*data-open-project=\"\$\{projectUrl\}\"[^>]*tabindex=\"0\"/);
   assert.match(html, /event\.target\.closest\("a, button, input, select, textarea, label"\)/);
   const renderPage = html.match(/    function renderPage\(\)[\s\S]*?\n    }\n\n    function getWorkflowStepStates/)[0];

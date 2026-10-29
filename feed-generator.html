@@ -8292,6 +8292,15 @@
             markBootstrapStage("projects");
             updateBootStatus("Список проектов обновлён…");
           }
+          // The project list is authoritative on the server. On a fresh
+          // browser the initial activePage is calculated before that list
+          // arrives, so a valid project URL must open its workspace instead
+          // of remaining on the account-wide projects overview.
+          if (currentProject && activePage === "projects") {
+            activePage = ["overview", "complexes", "apartments", "branding", "results", "strategy", "feeds", "history", "billing"].includes(requestedPage)
+              ? requestedPage
+              : "overview";
+          }
           markBootstrapStage("projects");
           updateBootStatus("Загружаю данные проекта…");
           const shouldHydrateProject = Boolean(currentProject);
